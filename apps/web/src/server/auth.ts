@@ -7,6 +7,11 @@ import { getEnv } from "./env";
 import { encryptForOrg } from "./crypto";
 
 export const authOptions: NextAuthOptions = {
+  pages: {
+    signIn: "/auth/signin",
+    error: "/auth/signin",
+  },
+  debug: process.env.NODE_ENV !== "production",
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
