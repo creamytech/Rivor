@@ -10,6 +10,9 @@
                 },
     "dependencies":  {
                          "react-dom":  "18.3.1",
+                          "@rivor/config": "file:../../packages/config",
+                          "@rivor/crypto": "file:../../packages/crypto",
+                          "@rivor/db": "file:../../packages/db",
                          "@stripe/stripe-js":  "^7.8.0",
                          "@trpc/react-query":  "^11.4.4",
                          "@tanstack/react-query":  "^5.85.0",
