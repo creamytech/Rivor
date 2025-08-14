@@ -9,7 +9,9 @@ function getConnection() {
 
 async function processJob(job: Job) {
   const { orgId, threadId, mode } = job.data as { orgId: string; threadId: string; mode?: 'short'|'medium'|'detailed' };
-  await summarizeThread(orgId, threadId, mode ?? 'short');
+  // Map 'medium' to 'detailed' since summarizeThread only accepts 'short' or 'detailed'
+  const summarizeMode = mode === 'medium' ? 'detailed' : (mode ?? 'short');
+  await summarizeThread(orgId, threadId, summarizeMode);
 }
 
 export function startEmailSummarizeWorker() {

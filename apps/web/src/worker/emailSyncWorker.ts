@@ -1,6 +1,7 @@
 ﻿import { Worker, Job } from "bullmq";
 import { prisma } from "../server/db";
-import { decryptForOrg } from "../server/crypto";
+import { GmailService } from "../server/gmail";
+import { MicrosoftGraphService } from "../server/microsoft-graph";
 
 function getConnection() {
   const url = process.env.REDIS_URL;
@@ -11,13 +12,65 @@ function getConnection() {
 async function processJob(job: Job) {
   const { orgId, emailAccountId } = job.data as { orgId: string; emailAccountId: string };
   console.log("[worker] email:sync", { orgId, emailAccountId });
-  // TODO: Implement Gmail/Graph incremental sync; placeholder respects FLE contract
-  // Example of decrypting a field when necessary:
-  // const messages = await prisma.emailMessage.findMany({ where: { orgId }, take: 1 });
-  // if (messages[0]?.subjectEnc) {
-  //   const subject = await decryptForOrg(orgId, messages[0].subjectEnc, 'email:subject');
-  //   console.log('decrypted subject len', subject.length);
-  // }
+  
+  try {
+    // Get email account to determine provider
+    const emailAccount = await prisma.emailAccount.findUnique({
+      where: { id: emailAccountId }
+    });
+
+    if (!emailAccount) {
+      throw new Error(`Email account ${emailAccountId} not found`);
+    }
+
+    // Sync based on provider
+    if (emailAccount.provider === 'google') {
+      const gmailService = await GmailService.createFromAccount(orgId, emailAccountId);
+      await gmailService.syncMessages(orgId, emailAccountId, emailAccount.historyId || undefined);
+      
+      // Set up push notifications if not already done
+      if (!emailAccount.historyId) {
+        await gmailService.watchMailbox(orgId, emailAccountId);
+      }
+      
+    } else if (emailAccount.provider === 'azure-ad') {
+      const graphService = await MicrosoftGraphService.createFromAccount(orgId, emailAccountId);
+      await graphService.syncMessages(orgId, emailAccountId, emailAccount.historyId || undefined);
+      
+      // Set up webhook if not already done
+      if (!emailAccount.historyId) {
+        await graphService.createSubscription(orgId, emailAccountId);
+      }
+      
+      // Also sync calendar events
+      await graphService.syncCalendar(orgId, emailAccountId);
+    }
+
+    // Update account status
+    await prisma.emailAccount.update({
+      where: { id: emailAccountId },
+      data: { 
+        status: 'connected',
+        updatedAt: new Date()
+      }
+    });
+
+    console.log(`[worker] Successfully synced ${emailAccount.provider} account ${emailAccountId}`);
+
+  } catch (error) {
+    console.error(`[worker] Email sync failed for ${emailAccountId}:`, error);
+    
+    // Update account status on error
+    await prisma.emailAccount.update({
+      where: { id: emailAccountId },
+      data: { 
+        status: 'error',
+        updatedAt: new Date()
+      }
+    }).catch(() => {}); // Ignore update errors
+    
+    throw error;
+  }
 }
 
 export function startEmailSyncWorker() {
