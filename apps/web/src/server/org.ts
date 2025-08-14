@@ -1,0 +1,1 @@
+import { NextRequest } from 'next/server';\n\nexport function getOrgIdFromRequest(req: NextRequest): string | null {\n  const header = req.headers.get('x-org-id');\n  return header || null;\n}\n\nexport function assertOrgAccess(orgId: string | null) {\n  if (!orgId) {\n    throw new Response('Org not found', { status: 403 });\n  }\n}\n

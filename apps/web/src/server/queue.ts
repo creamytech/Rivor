@@ -1,0 +1,1 @@
+export async function enqueueEmailSync(orgId: string, emailAccountId: string) {\n  try {\n    // TODO: wire BullMQ queue here; placeholder for now\n    console.log('[queue] email:sync queued', { orgId, emailAccountId });\n  } catch (err) {\n    console.warn('[queue] enqueueEmailSync failed', err);\n  }\n}\n
