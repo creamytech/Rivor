@@ -28,7 +28,7 @@ export const authOptions: NextAuthOptions = {
     signIn: "/auth/signin",
     error: "/auth/signin",
   },
-  debug: process.env.NODE_ENV !== "production" || process.env.NEXTAUTH_DEBUG === "true",
+  debug: process.env.NEXTAUTH_DEBUG === "true",
   secret: process.env.NEXTAUTH_SECRET,
   providers,
     session: { strategy: "jwt" },
