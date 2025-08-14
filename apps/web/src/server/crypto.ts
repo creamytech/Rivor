@@ -6,8 +6,14 @@ import { aes256gcmEncrypt, aes256gcmDecrypt, packEncryptedBlob, unpackEncryptedB
 type DekCacheEntry = { dek: Uint8Array; expiresAtMs: number };
 
 const dekCache = new Map<string, DekCacheEntry>();
-const env = getEnv();
-const kms = createKmsClient(env.KMS_PROVIDER, env.KMS_KEY_ID);
+
+let _kms: ReturnType<typeof createKmsClient> | null = null;
+function getKms() {
+  if (_kms) return _kms;
+  const env = getEnv();
+  _kms = createKmsClient(env.KMS_PROVIDER, env.KMS_KEY_ID);
+  return _kms;
+}
 
 function nowMs() { return Date.now(); }
 
@@ -16,7 +22,8 @@ export async function getOrgDek(orgId: string): Promise<Uint8Array> {
   if (cached && cached.expiresAtMs > nowMs()) return cached.dek;
   const org = await prisma.org.findUnique({ where: { id: orgId }, select: { encryptedDekBlob: true } });
   if (!org?.encryptedDekBlob) throw new Error('Org DEK not found');
-  const dek = await kms.decryptDek(new Uint8Array(org.encryptedDekBlob));
+  const env = getEnv();
+  const dek = await getKms().decryptDek(new Uint8Array(org.encryptedDekBlob));
   dekCache.set(orgId, { dek, expiresAtMs: nowMs() + env.ENCRYPTION_CACHE_TTL_SECONDS * 1000 });
   return dek;
 }
