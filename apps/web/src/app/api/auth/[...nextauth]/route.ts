@@ -1,9 +1,15 @@
-import NextAuth from 'next-auth';
-import { authOptions } from '@/server/auth';
-
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const fetchCache = 'force-no-store';
 
-const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
+export async function GET(req: Request) {
+  const mod = await import('@/server/auth');
+  // @ts-expect-error NextAuth handlers typing
+  return mod.handlers.GET(req);
+}
+
+export async function POST(req: Request) {
+  const mod = await import('@/server/auth');
+  // @ts-expect-error NextAuth handlers typing
+  return mod.handlers.POST(req);
+}
