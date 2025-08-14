@@ -10,6 +10,7 @@ const geistSans = Inter({
 const geistMono = IBM_Plex_Mono({
   variable: "--font-plex-mono",
   subsets: ["latin"],
+  weight: ["400"],
 });
 
 export const metadata: Metadata = {
@@ -32,4 +33,3 @@ export default function RootLayout({
     </html>
   );
 }
-
