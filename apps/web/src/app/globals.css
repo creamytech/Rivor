@@ -1,26 +1,97 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0f1f; /* Deep Blue */
+  --foreground: #e6f0ff; /* Light on dark */
+  --rivor-deep: #0a0f1f; /* Deep Blue */
+  --rivor-indigo: #3c49b8; /* Indigo */
+  --rivor-teal: #16a3a5; /* Teal */
+  --rivor-aqua: #5be7e7; /* Aqua */
+  --muted: #0f1730;
+  --muted-foreground: #a6b4d6;
+  --border: #1e2a4a;
+  --focus: #5be7e7;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-plex-mono);
 }
 
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #ffffff;
+    --foreground: #0f1730;
+    --muted: #f4f7ff;
+    --muted-foreground: #42557a;
+    --border: #e5eaf6;
   }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Focus rings */
+:where(button, a, input, textarea, select, [tabindex]){
+  outline: none;
+}
+:where(button, a, input, textarea, select, [tabindex]):focus-visible{
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--focus) 40%, transparent);
+  border-radius: 6px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+}
+
+/* Skeletons */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--muted) 70%, transparent) 25%, color-mix(in oklab, var(--muted) 90%, transparent) 37%, color-mix(in oklab, var(--muted) 70%, transparent) 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.8s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
+
+/* Utility tokens */
+.brand-gradient {
+  background: linear-gradient(135deg, var(--rivor-indigo), var(--rivor-teal));
+}
+.wave-gradient {
+  background: radial-gradient(1200px 200px at 50% 0%, color-mix(in oklab, var(--rivor-aqua) 20%, transparent), transparent),
+              linear-gradient(135deg, color-mix(in oklab, var(--rivor-indigo) 80%, transparent), color-mix(in oklab, var(--rivor-teal) 60%, transparent));
+}
+
+.card {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 16px;
+  padding-right: 16px;
 }
