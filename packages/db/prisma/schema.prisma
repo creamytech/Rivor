@@ -1,0 +1,223 @@
+// prisma schema for rivor core models
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String       @id @default(cuid())
+  email       String       @unique
+  name        String?
+  image       String?
+  timezone    String       @default("America/New_York")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  orgMembers  OrgMember[]
+  accounts    OAuthAccount[]
+}
+
+model Org {
+  id                   String              @id @default(cuid())
+  name                 String
+  brandName            String              @default("Rivor")
+  encryptedDekBlob     Bytes
+  dekVersion           Int                 @default(1)
+  ephemeralMode        Boolean             @default(false)
+  retentionDays        Int                 @default(90)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  members              OrgMember[]
+  emailAccounts        EmailAccount[]
+  calendarAccounts     CalendarAccount[]
+  leads                Lead[]
+  pipelineStages       PipelineStage[]
+  threads              EmailThread[]
+  messages             EmailMessage[]
+  calendarEvents       CalendarEvent[]
+  tasks                Task[]
+  webhookSubscriptions WebhookSubscription[]
+  stripeCustomers      StripeCustomer[]
+  subscriptions        Subscription[]
+}
+
+model OrgMember {
+  id        String   @id @default(cuid())
+  org       Org      @relation(fields: [orgId], references: [id])
+  orgId     String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  role      String   @default("member")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([orgId, userId])
+}
+
+model OAuthAccount {
+  id            String   @id @default(cuid())
+  user          User     @relation(fields: [userId], references: [id])
+  userId        String
+  provider      String
+  providerId    String
+  accessToken   Bytes
+  refreshToken  Bytes
+  scope         String?
+  expiresAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([provider, providerId])
+}
+
+model EmailAccount {
+  id          String   @id @default(cuid())
+  org         Org      @relation(fields: [orgId], references: [id])
+  orgId       String
+  provider    String
+  status      String   @default("connected")
+  historyId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  threads     EmailThread[]
+}
+
+model EmailThread {
+  id                 String        @id @default(cuid())
+  org                Org           @relation(fields: [orgId], references: [id])
+  orgId              String
+  account            EmailAccount  @relation(fields: [accountId], references: [id])
+  accountId          String
+  subjectEnc         Bytes?
+  participantsEnc    Bytes?
+  subjectIndex       String?       @db.Text
+  participantsIndex  String?       @db.Text
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  messages           EmailMessage[]
+}
+
+model EmailMessage {
+  id                 String       @id @default(cuid())
+  thread             EmailThread  @relation(fields: [threadId], references: [id])
+  threadId           String
+  org                Org          @relation(fields: [orgId], references: [id])
+  orgId              String
+  sentAt             DateTime
+  fromEnc            Bytes?
+  toEnc              Bytes?
+  ccEnc              Bytes?
+  bccEnc             Bytes?
+  subjectEnc         Bytes?
+  snippetEnc         Bytes?
+  bodyRefEnc         Bytes?
+  attachmentsMetaEnc Bytes?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+}
+
+model CalendarAccount {
+  id          String   @id @default(cuid())
+  org         Org      @relation(fields: [orgId], references: [id])
+  orgId       String
+  provider    String
+  status      String   @default("connected")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  events      CalendarEvent[]
+}
+
+model CalendarEvent {
+  id             String          @id @default(cuid())
+  org            Org             @relation(fields: [orgId], references: [id])
+  orgId          String
+  account        CalendarAccount @relation(fields: [accountId], references: [id])
+  accountId      String
+  start          DateTime
+  end            DateTime
+  titleEnc       Bytes?
+  locationEnc    Bytes?
+  notesEnc       Bytes?
+  attendeesEnc   Bytes?
+  titleIndex     String?         @db.Text
+  locationIndex  String?         @db.Text
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model Lead {
+  id                   String   @id @default(cuid())
+  org                  Org      @relation(fields: [orgId], references: [id])
+  orgId                String
+  nameEnc              Bytes?
+  emailEnc             Bytes?
+  phoneEnc             Bytes?
+  propertyAddressEnc   Bytes?
+  notesEnc             Bytes?
+  nameIndex            String?  @db.Text
+  emailIndex           String?  @db.Text
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model Task {
+  id            String   @id @default(cuid())
+  org           Org      @relation(fields: [orgId], references: [id])
+  orgId         String
+  title         String
+  dueAt         DateTime?
+  done          Boolean  @default(false)
+  linkThreadId  String?
+  linkLeadId    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model PipelineStage {
+  id        String   @id @default(cuid())
+  org       Org      @relation(fields: [orgId], references: [id])
+  orgId     String
+  name      String
+  order     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WebhookSubscription {
+  id        String   @id @default(cuid())
+  org       Org      @relation(fields: [orgId], references: [id])
+  orgId     String
+  provider  String
+  secret    Bytes
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model StripeCustomer {
+  id            String   @id @default(cuid())
+  org           Org      @relation(fields: [orgId], references: [id])
+  orgId         String
+  customerId    String   @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id                String         @id @default(cuid())
+  org               Org            @relation(fields: [orgId], references: [id])
+  orgId             String
+  stripe            StripeCustomer @relation(fields: [stripeCustomerId], references: [id])
+  stripeCustomerId  String
+  status            String
+  priceId           String
+  seats             Int            @default(1)
+  trialEndsAt       DateTime?
+  currentPeriodEnd  DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}

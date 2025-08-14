@@ -1,0 +1,1 @@
+﻿import { PrismaClient } from '@prisma/client';\n\nconst globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };\n\nexport const prisma: PrismaClient = globalForPrisma.prisma ?? new PrismaClient({\n  log: ['error', 'warn']\n});\n\nif (process.env.NODE_ENV !== 'production') {\n  globalForPrisma.prisma = prisma;\n}\n

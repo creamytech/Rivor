@@ -1,0 +1,48 @@
+﻿{
+    "name":  "web",
+    "version":  "0.1.0",
+    "private":  true,
+    "scripts":  {
+                    "dev":  "next dev --turbopack",
+                    "build":  "next build",
+                    "start":  "next start",
+                    "lint":  "next lint"
+                },
+    "dependencies":  {
+                         "react-dom":  "18.3.1",
+                         "@stripe/stripe-js":  "^7.8.0",
+                         "@trpc/react-query":  "^11.4.4",
+                         "@tanstack/react-query":  "^5.85.0",
+                         "@trpc/client":  "^11.4.4",
+                         "react":  "18.3.1",
+                         "@rivor/queue":  "workspace:*",
+                         "@trpc/next":  "^11.4.4",
+                         "next":  "14.2.12",
+                         "zod":  "^4.0.17",
+                         "@prisma/client":  "^6.14.0",
+                         "@upstash/redis":  "^1.35.3",
+                         "@sentry/nextjs":  "^10.5.0",
+                         "next-auth":  "^4.24.11",
+                         "stripe":  "^18.4.0",
+                         "bullmq":  "^5.57.0",
+                         "posthog-js":  "^1.260.1",
+                         "@trpc/server":  "^11.4.4"
+                     },
+    "devDependencies":  {
+                            "typescript":  "^5",
+                            "@types/node":  "^20",
+                            "@types/react":  "^18",
+                            "@types/react-dom":  "^18",
+                            "@tailwindcss/postcss":  "^4",
+                            "tailwindcss":  "^4",
+                            "eslint":  "^9",
+                            "eslint-config-next":  "14.2.12",
+                            "@eslint/eslintrc":  "^3"
+                        },
+    "pnpm":  {
+                 "overrides":  {
+                                   "@types/react":  "^18",
+                                   "@types/react-dom":  "^18"
+                               }
+             }
+}

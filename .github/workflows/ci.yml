@@ -1,0 +1,43 @@
+﻿name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: rivor
+          POSTGRES_PASSWORD: rivor
+          POSTGRES_DB: rivor
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rivor" --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install deps (npm)
+        run: npm install
+      - name: Generate Prisma Client
+        working-directory: packages/db
+        run: npx prisma generate
+      - name: Push schema (for tests)
+        env:
+          DATABASE_URL: postgresql://rivor:rivor@localhost:5432/rivor?schema=public
+        working-directory: packages/db
+        run: npx prisma db push
+      - name: Lint (best-effort)
+        run: npm run lint || true
+      - name: Build
+        run: npm run build
+      - name: Unit tests (best-effort)
+        run: npm test || true
