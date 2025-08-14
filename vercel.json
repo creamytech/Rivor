@@ -1,1 +1,1 @@
-﻿{"version":2,"framework":"nextjs","installCommand":"npm install","buildCommand":"npm --prefix packages/db run prisma:generate && npm run build"}
+{"version":2,"framework":"nextjs","installCommand":"npm install","buildCommand":"npm --prefix packages/db run prisma:generate \u0026\u0026 npm run build"}
