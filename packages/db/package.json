@@ -1,4 +1,4 @@
-{
+﻿{
     "name":  "@rivor/db",
     "version":  "0.1.0",
     "private":  true,
@@ -12,11 +12,10 @@
                     "prisma:migrate":  "prisma migrate dev"
                 },
     "dependencies":  {
-                         "@prisma/client":  "^5.16.1",
-                         "rivor":  "file:../.."
+                         "@prisma/client":  "^6.14.0"
                      },
     "devDependencies":  {
-                            "prisma":  "^5.16.1",
-                            "typescript":  "^5.5.4"
+                            "typescript":  "^5.5.4",
+                            "prisma":  "^6.14.0"
                         }
 }
