@@ -6,25 +6,31 @@ import { createKmsClient, generateDek } from "@rivor/crypto";
 import { getEnv } from "./env";
 import { encryptForOrg } from "./crypto";
 
+const providers = [] as any[];
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  providers.push(Google({
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    authorization: { params: { access_type: "offline", prompt: "consent", scope: process.env.GOOGLE_OAUTH_SCOPES } },
+  }));
+}
+if (process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET) {
+  providers.push(AzureAD({
+    clientId: process.env.MICROSOFT_CLIENT_ID,
+    clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
+    tenantId: process.env.MICROSOFT_TENANT_ID ?? "common",
+    authorization: { params: { scope: process.env.MICROSOFT_OAUTH_SCOPES } },
+  }));
+}
+
 export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/auth/signin",
     error: "/auth/signin",
   },
-  debug: process.env.NODE_ENV !== "production",
-  providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-      authorization: { params: { access_type: "offline", prompt: "consent", scope: process.env.GOOGLE_OAUTH_SCOPES } },
-    }),
-    AzureAD({
-      clientId: process.env.MICROSOFT_CLIENT_ID || "",
-      clientSecret: process.env.MICROSOFT_CLIENT_SECRET || "",
-      tenantId: process.env.MICROSOFT_TENANT_ID ?? "common",
-      authorization: { params: { scope: process.env.MICROSOFT_OAUTH_SCOPES } },
-    }),
-  ],
+  debug: process.env.NODE_ENV !== "production" || process.env.NEXTAUTH_DEBUG === "true",
+  secret: process.env.NEXTAUTH_SECRET,
+  providers,
     session: { strategy: "jwt" },
   events: {
     async signIn({ user, account, profile }) {

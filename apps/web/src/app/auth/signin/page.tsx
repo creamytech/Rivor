@@ -1,8 +1,9 @@
 "use client";
 import { signIn } from "next-auth/react";
 export default function SignInPage() {
-  const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-  const error = params.get('error');
+  const isClient = typeof window !== 'undefined';
+  const params = isClient ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const error = isClient ? params.get('error') : null;
   return (
     <div className="min-h-screen grid md:grid-cols-2">
       <div className="hidden md:block wave-gradient" />
