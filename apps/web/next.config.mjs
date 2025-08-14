@@ -21,7 +21,7 @@ const nextConfig = {
       ...(config.resolve.alias || {}),
       "@rivor/config/env": path.join(__dirname, "../../packages/config/src/env.ts"),
       "@rivor/config": path.join(__dirname, "../../packages/config/src/index.ts"),
-      "@rivor/db": path.join(__dirname, "../../packages/db/dist/index.js"),
+      "@rivor/db": path.join(__dirname, "../../packages/db/src/index.ts"),
     };
     // Avoid bundling @google-cloud/kms in edge/client; mark as external in webpack
     config.externals = Array.isArray(config.externals) ? config.externals : [];

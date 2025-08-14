@@ -22,7 +22,7 @@
       "@/*": ["./src/*"],
       "@rivor/crypto": ["../../packages/crypto/src"],
       "@rivor/config/*": ["../../packages/config/src/*"],
-      "@rivor/db": ["../../packages/db/dist"]
+      "@rivor/db": ["../../packages/db/src"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
