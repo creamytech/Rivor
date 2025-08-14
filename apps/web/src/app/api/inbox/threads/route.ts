@@ -2,6 +2,8 @@ import { auth } from '@/server/auth';
 import { listThreads } from '@/server/email';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const fetchCache = 'force-no-store';
 
 export async function GET() {
   const session = await auth();
