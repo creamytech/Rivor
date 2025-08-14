@@ -15,30 +15,17 @@ if (process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET) {
     clientId: process.env.MICROSOFT_CLIENT_ID,
     clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
     tenantId: process.env.MICROSOFT_TENANT_ID ?? "common",
-    authorization: { params: { scope: process.env.MICROSOFT_OAUTH_SCOPES } },
+    authorization: { 
+      params: { 
+        scope: process.env.MICROSOFT_OAUTH_SCOPES || "openid email profile https://graph.microsoft.com/mail.read" 
+      } 
+    },
   }));
 }
 
-// Google OAuth (feature flagged - requires FEATURE_GOOGLE=true)
+// Google OAuth (enabled if configured)
 const REQUIRED_GOOGLE_SCOPES = "openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly";
-if (process.env.FEATURE_GOOGLE === "true") {
-  if (!process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID.trim() === "") {
-    throw new Error("Missing GOOGLE_CLIENT_ID. Set it in the environment to enable Google authentication.");
-  }
-  if (!process.env.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET.trim() === "") {
-    throw new Error("Missing GOOGLE_CLIENT_SECRET. Set it in the environment to enable Google authentication.");
-  }
-  if (!process.env.GOOGLE_OAUTH_SCOPES || process.env.GOOGLE_OAUTH_SCOPES.trim() === "") {
-    throw new Error(
-      `Missing GOOGLE_OAUTH_SCOPES. It must contain: ${REQUIRED_GOOGLE_SCOPES}`
-    );
-  }
-  if (process.env.GOOGLE_OAUTH_SCOPES.trim() !== REQUIRED_GOOGLE_SCOPES) {
-    throw new Error(
-      `GOOGLE_OAUTH_SCOPES must be exactly: ${REQUIRED_GOOGLE_SCOPES}`
-    );
-  }
-
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   providers.push(
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
@@ -47,11 +34,33 @@ if (process.env.FEATURE_GOOGLE === "true") {
         params: {
           access_type: "offline",
           prompt: "consent",
-          scope: process.env.GOOGLE_OAUTH_SCOPES,
+          scope: process.env.GOOGLE_OAUTH_SCOPES || REQUIRED_GOOGLE_SCOPES,
         },
       },
     })
   );
+}
+
+// Add a demo provider if no real providers are configured (for testing)
+if (providers.length === 0 && process.env.NODE_ENV !== "production") {
+  console.warn("No OAuth providers configured. Adding demo provider for development.");
+  providers.push({
+    id: "demo",
+    name: "Demo Login",
+    type: "oauth",
+    authorization: "https://example.com/oauth/authorize",
+    token: "https://example.com/oauth/token",
+    userinfo: "https://example.com/oauth/userinfo",
+    clientId: "demo",
+    clientSecret: "demo",
+    profile(profile: any) {
+      return {
+        id: "demo-user",
+        name: "Demo User",
+        email: "demo@example.com",
+      }
+    },
+  });
 }
 
 export const authOptions: NextAuthOptions = {
