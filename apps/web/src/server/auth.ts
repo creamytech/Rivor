@@ -9,13 +9,13 @@ import { encryptForOrg } from "./crypto";
 export const authOptions: NextAuthOptions = {
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
       authorization: { params: { access_type: "offline", prompt: "consent", scope: process.env.GOOGLE_OAUTH_SCOPES } },
     }),
     AzureAD({
-      clientId: process.env.MICROSOFT_CLIENT_ID!,
-      clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
+      clientId: process.env.MICROSOFT_CLIENT_ID || "",
+      clientSecret: process.env.MICROSOFT_CLIENT_SECRET || "",
       tenantId: process.env.MICROSOFT_TENANT_ID ?? "common",
       authorization: { params: { scope: process.env.MICROSOFT_OAUTH_SCOPES } },
     }),
