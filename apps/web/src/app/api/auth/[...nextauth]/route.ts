@@ -2,12 +2,8 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const fetchCache = 'force-no-store';
 
-export async function GET(req: Request) {
-  const mod = await import('@/server/auth');
-  return mod.handlers.GET(req);
-}
+import NextAuth from 'next-auth';
+import { authOptions } from '@/server/auth';
 
-export async function POST(req: Request) {
-  const mod = await import('@/server/auth');
-  return mod.handlers.POST(req);
-}
+const handler = NextAuth(authOptions);
+export { handler as GET, handler as POST };
