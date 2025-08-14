@@ -55,4 +55,8 @@ export async function summarizeThread(orgId: string, threadId: string, mode: 'sh
   await prisma.emailThread.update({ where: { id: threadId }, data: { summaryEnc: blob, summaryAt: new Date() } });
 }
 
+export async function summarizeSnippets(mode: 'short' | 'medium' | 'detailed', sanitizedSnippets: string[]): Promise<string> {
+  return callOpenAI(mode, sanitizedSnippets);
+}
+
 

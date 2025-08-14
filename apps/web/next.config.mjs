@@ -16,6 +16,9 @@ const nextConfig = {
       "@rivor/config/env": path.join(__dirname, "../../packages/config/src/env.ts"),
       "@rivor/config": path.join(__dirname, "../../packages/config/src/index.ts"),
     };
+    // Avoid bundling @google-cloud/kms in edge/client; treat as external for node runtime only
+    config.externals = Array.isArray(config.externals) ? config.externals : [];
+    config.externals.push({ '@google-cloud/kms': 'commonjs @google-cloud/kms' });
     return config;
   },
 };

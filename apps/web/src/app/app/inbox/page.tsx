@@ -50,14 +50,23 @@ export default function InboxPage() {
   }, [loading, error, selectedId, threads, indexById]);
 
   useEffect(() => {
-    const t = setTimeout(() => {
-      setThreads([
-        { id: "t1", subject: "Showing request on 123 Oak St", date: "Today", unread: true },
-        { id: "t2", subject: "Offer details for Maple Ave", date: "Yesterday" },
-      ]);
-      setLoading(false);
-    }, 500);
-    return () => clearTimeout(t);
+    let cancelled = false;
+    async function load() {
+      try {
+        setLoading(true);
+        const res = await fetch('/api/inbox/threads');
+        if (!res.ok) throw new Error('load');
+        const json = await res.json();
+        if (cancelled) return;
+        const rows = (json.threads as any[]).map((t) => ({ id: t.id, subject: t.subject || t.participants || '(no subject)', date: new Date(t.updatedAt).toLocaleDateString() }));
+        setThreads(rows);
+        setLoading(false);
+      } catch (e) {
+        if (!cancelled) { setError('Failed to load'); setLoading(false); }
+      }
+    }
+    load();
+    return () => { cancelled = true; };
   }, []);
 
   const right = (
