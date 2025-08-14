@@ -18,7 +18,35 @@ export async function indexThread(threadId: string) {
 }
 
 export async function indexLead(leadId: string) {
-  await prisma.lead.update({ where: { id: leadId }, data: { nameIndex: '', emailIndex: '' } });
+  const lead = await prisma.lead.findUnique({ 
+    where: { id: leadId }, 
+    select: { id: true, orgId: true }
+  });
+  if (!lead) return;
+  
+  // Note: Lead model doesn't have indexable fields in current schema
+  // This function is kept for future indexing needs
+  // For now, we just validate the lead exists
+  console.log(`Lead ${leadId} validation completed`);
+}
+
+export async function indexContact(contactId: string) {
+  const contact = await prisma.contact.findUnique({ 
+    where: { id: contactId }, 
+    select: { id: true, orgId: true, nameEnc: true, emailEnc: true, companyEnc: true }
+  });
+  if (!contact) return;
+  
+  // Do not decrypt; only derive index from safe sources when available
+  // For now, use empty indexes as placeholder until proper decryption is implemented
+  const nameIndex = '';
+  const emailIndex = '';
+  const companyIndex = '';
+  
+  await prisma.contact.update({ 
+    where: { id: contactId }, 
+    data: { nameIndex, emailIndex, companyIndex } 
+  });
 }
 
 
