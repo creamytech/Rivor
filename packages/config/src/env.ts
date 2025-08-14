@@ -1,1 +1,45 @@
-﻿import { z } from 'zod';\n\nexport const EnvSchema = z.object({\n  NEXTAUTH_URL: z.string().optional(),\n  NEXTAUTH_SECRET: z.string().optional(),\n  APP_URL: z.string().optional(),\n  APP_BRAND_NAME: z.string().default('Rivor'),\n  DEFAULT_TIMEZONE: z.string().default('America/New_York'),\n  DATABASE_URL: z.string().optional(),\n  REDIS_URL: z.string().optional(),\n  GOOGLE_CLIENT_ID: z.string().optional(),\n  GOOGLE_CLIENT_SECRET: z.string().optional(),\n  GOOGLE_PROJECT_ID: z.string().optional(),\n  GOOGLE_PUBSUB_TOPIC: z.string().optional(),\n  GOOGLE_PUBSUB_VERIFICATION_TOKEN: z.string().optional(),\n  GOOGLE_OAUTH_SCOPES: z.string().optional(),\n  MICROSOFT_CLIENT_ID: z.string().optional(),\n  MICROSOFT_CLIENT_SECRET: z.string().optional(),\n  MICROSOFT_TENANT_ID: z.string().default('common'),\n  MICROSOFT_OAUTH_SCOPES: z.string().optional(),\n  STRIPE_SECRET_KEY: z.string().optional(),\n  STRIPE_WEBHOOK_SECRET: z.string().optional(),\n  STRIPE_PRICE_PRO_MONTH: z.string().optional(),\n  SENTRY_DSN: z.string().optional(),\n  POSTHOG_API_KEY: z.string().optional(),\n  POSTHOG_HOST: z.string().optional(),\n  KMS_PROVIDER: z.enum(['gcp','aws','azure']).optional(),\n  KMS_KEY_ID: z.string().optional(),\n  ENCRYPTION_CACHE_TTL_SECONDS: z.coerce.number().default(60),\n  EPHEMERAL_STORAGE_MODE: z.coerce.boolean().default(false),\n  RETENTION_DAYS: z.coerce.number().default(90)\n});\n\nexport type Env = z.infer<typeof EnvSchema>;\n\nexport function getEnv(): Env {\n  const parsed = EnvSchema.safeParse(process.env);\n  if (!parsed.success) {\n    const summary = parsed.error.issues.map(i => ${i.path.join('.')}: ).join('\n');\n    throw new Error(Invalid environment variables:\n);\n  }\n  return parsed.data;\n}\n
+﻿import { z } from 'zod';
+
+export const EnvSchema = z.object({
+  NEXTAUTH_URL: z.string().optional(),
+  NEXTAUTH_SECRET: z.string().optional(),
+  APP_URL: z.string().optional(),
+  APP_BRAND_NAME: z.string().default('Rivor'),
+  DEFAULT_TIMEZONE: z.string().default('America/New_York'),
+  DATABASE_URL: z.string().optional(),
+  REDIS_URL: z.string().optional(),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_PROJECT_ID: z.string().optional(),
+  GOOGLE_PUBSUB_TOPIC: z.string().optional(),
+  GOOGLE_PUBSUB_VERIFICATION_TOKEN: z.string().optional(),
+  GOOGLE_OAUTH_SCOPES: z.string().optional(),
+  MICROSOFT_CLIENT_ID: z.string().optional(),
+  MICROSOFT_CLIENT_SECRET: z.string().optional(),
+  MICROSOFT_TENANT_ID: z.string().default('common'),
+  MICROSOFT_OAUTH_SCOPES: z.string().optional(),
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_PRICE_PRO_MONTH: z.string().optional(),
+  SENTRY_DSN: z.string().optional(),
+  POSTHOG_API_KEY: z.string().optional(),
+  POSTHOG_HOST: z.string().optional(),
+  KMS_PROVIDER: z.enum(['gcp','aws','azure']).optional(),
+  KMS_KEY_ID: z.string().optional(),
+  ENCRYPTION_CACHE_TTL_SECONDS: z.coerce.number().default(60),
+  EPHEMERAL_STORAGE_MODE: z.coerce.boolean().default(false),
+  RETENTION_DAYS: z.coerce.number().default(90)
+});
+
+export type Env = z.infer<typeof EnvSchema>;
+
+export function getEnv(): Env {
+  const parsed = EnvSchema.safeParse(process.env);
+  if (!parsed.success) {
+    const summary = parsed.error.issues
+      .map((issue) => `- ${issue.path.join('.')}: ${issue.message}`)
+      .join('\n');
+    throw new Error(`Invalid environment variables:\n${summary}`);
+  }
+  return parsed.data;
+}

@@ -2,18 +2,22 @@
 import { enqueueEmailSync } from "./queue";import NextAuth, { type NextAuthOptions } from "next-auth";
 import Google from "next-auth/providers/google";
 import AzureAD from "next-auth/providers/azure-ad";
+import { createKmsClient, generateDek } from "@rivor/crypto";
+import { getEnv } from "@rivor/config/src/env";
+import { encryptForOrg } from "./crypto";
 
 export const authOptions: NextAuthOptions = {
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      authorization: { params: { access_type: "offline", prompt: "consent" } },
+      authorization: { params: { access_type: "offline", prompt: "consent", scope: process.env.GOOGLE_OAUTH_SCOPES } },
     }),
     AzureAD({
       clientId: process.env.MICROSOFT_CLIENT_ID!,
       clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
       tenantId: process.env.MICROSOFT_TENANT_ID ?? "common",
+      authorization: { params: { scope: process.env.MICROSOFT_OAUTH_SCOPES } },
     }),
   ],
     session: { strategy: "jwt" },
@@ -23,7 +27,12 @@ export const authOptions: NextAuthOptions = {
         // Find or create Org (placeholder: per-user org)
         let org = await prisma.org.findFirst({ where: { name: user.email || 'Org' } });
         if (!org) {
-          org = await prisma.org.create({ data: { name: user.email || 'Org', encryptedDekBlob: Buffer.from(''), retentionDays: 90 } });
+          // Generate per-org DEK and wrap with KMS
+          const env = getEnv();
+          const kms = createKmsClient(env.KMS_PROVIDER, env.KMS_KEY_ID);
+          const dek = generateDek();
+          const wrapped = await kms.encryptDek(dek);
+          org = await prisma.org.create({ data: { name: user.email || 'Org', encryptedDekBlob: Buffer.from(wrapped), retentionDays: env.RETENTION_DAYS } });
         }
         // Ensure OrgMember
         await prisma.orgMember.upsert({
@@ -31,13 +40,36 @@ export const authOptions: NextAuthOptions = {
           update: {},
           create: { orgId: org.id, userId: user.id || user.email!, role: 'member' },
         });
-        // Persist EmailAccount
+        // Persist EmailAccount and encrypted OAuth tokens
         if (account?.provider) {
           await prisma.emailAccount.upsert({
             where: { id: `${org.id}:${account.provider}:${user.email}` },
             update: { status: 'connected' },
             create: { id: `${org.id}:${account.provider}:${user.email}`, orgId: org.id, provider: account.provider, status: 'connected' },
           });
+          if (account.providerAccountId) {
+            const accessBlob = account.access_token ? await encryptForOrg(org.id, account.access_token, 'oauth:access') : Buffer.from('');
+            const refreshBlob = account.refresh_token ? await encryptForOrg(org.id, account.refresh_token, 'oauth:refresh') : Buffer.from('');
+            await prisma.oAuthAccount.upsert({
+              where: { provider_providerId: { provider: account.provider, providerId: account.providerAccountId } },
+              update: {
+                userId: user.id || user.email!,
+                accessToken: accessBlob,
+                refreshToken: refreshBlob,
+                scope: account.scope ?? null,
+                expiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null,
+              },
+              create: {
+                userId: user.id || user.email!,
+                provider: account.provider,
+                providerId: account.providerAccountId,
+                accessToken: accessBlob,
+                refreshToken: refreshBlob,
+                scope: account.scope ?? null,
+                expiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null,
+              },
+            });
+          }
           await enqueueEmailSync(org.id, `${org.id}:${account.provider}:${user.email}`);
         }
       } catch (err) {
@@ -50,7 +82,15 @@ export const authOptions: NextAuthOptions = {
       (session as any).orgId = token.orgId;
       return session;
     },
-    async jwt({ token, account, profile }) {\n      // If first time sign-in, attach or create org and member\n      // TODO: look up existing org by domain or invite; for now, create per-user org\n      if (!(token as any).orgId) { (token as any).orgId = (profile as any)?.hd ?? null; }\n      return token;\n    },
+    async jwt({ token }) {
+      if (!(token as any).orgId && token.email) {
+        try {
+          const org = await prisma.org.findFirst({ where: { name: token.email } });
+          if (org) (token as any).orgId = org.id;
+        } catch {}
+      }
+      return token;
+    },
   },
 };
 

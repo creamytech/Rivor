@@ -43,6 +43,7 @@ model Org {
   webhookSubscriptions WebhookSubscription[]
   stripeCustomers      StripeCustomer[]
   subscriptions        Subscription[]
+  audits               AuditLog[]
 }
 
 model OrgMember {
@@ -220,4 +221,17 @@ model Subscription {
   currentPeriodEnd  DateTime?
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  org        Org      @relation(fields: [orgId], references: [id])
+  orgId      String
+  actorId    String?
+  action     String   // decrypt_attempt, export, retention_change, admin_action
+  purpose    String?
+  resource   String?
+  success    Boolean
+  traceId    String?
+  createdAt  DateTime @default(now())
 }

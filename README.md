@@ -20,3 +20,7 @@ Monorepo: Next.js 14 (App Router), TypeScript, Prisma/Postgres, Redis/BullMQ, Ne
 - Build Command: npm --prefix packages/db run prisma:generate && npm run build
 - Install Command: npm install
 - Set env vars from .env.example
+
+## Environment Variables
+
+Create a `.env` at the repo root (and/or per-app) with the following variables. See `.env.example` for the complete list.
