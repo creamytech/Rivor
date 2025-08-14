@@ -8,6 +8,7 @@ export const EnvSchema = z.object({
   DEFAULT_TIMEZONE: z.string().default('America/New_York'),
   DATABASE_URL: z.string().optional(),
   REDIS_URL: z.string().optional(),
+  FEATURE_GOOGLE: z.coerce.boolean().default(false),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_PROJECT_ID: z.string().optional(),

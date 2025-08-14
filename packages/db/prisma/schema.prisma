@@ -34,6 +34,7 @@ model Org {
   members              OrgMember[]
   emailAccounts        EmailAccount[]
   calendarAccounts     CalendarAccount[]
+  contacts             Contact[]
   leads                Lead[]
   pipelineStages       PipelineStage[]
   threads              EmailThread[]
@@ -48,9 +49,9 @@ model Org {
 
 model OrgMember {
   id        String   @id @default(cuid())
-  org       Org      @relation(fields: [orgId], references: [id])
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
   orgId     String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   role      String   @default("member")
   createdAt DateTime @default(now())
@@ -61,7 +62,7 @@ model OrgMember {
 
 model OAuthAccount {
   id            String   @id @default(cuid())
-  user          User     @relation(fields: [userId], references: [id])
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId        String
   provider      String
   providerId    String
@@ -77,7 +78,7 @@ model OAuthAccount {
 
 model EmailAccount {
   id          String   @id @default(cuid())
-  org         Org      @relation(fields: [orgId], references: [id])
+  org         Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
   orgId       String
   provider    String
   status      String   @default("connected")
@@ -89,9 +90,9 @@ model EmailAccount {
 
 model EmailThread {
   id                 String        @id @default(cuid())
-  org                Org           @relation(fields: [orgId], references: [id])
+  org                Org           @relation(fields: [orgId], references: [id], onDelete: Cascade)
   orgId              String
-  account            EmailAccount  @relation(fields: [accountId], references: [id])
+  account            EmailAccount  @relation(fields: [accountId], references: [id], onDelete: Cascade)
   accountId          String
   subjectEnc         Bytes?
   participantsEnc    Bytes?
@@ -106,10 +107,11 @@ model EmailThread {
 
 model EmailMessage {
   id                 String       @id @default(cuid())
-  thread             EmailThread  @relation(fields: [threadId], references: [id])
+  thread             EmailThread  @relation(fields: [threadId], references: [id], onDelete: Cascade)
   threadId           String
-  org                Org          @relation(fields: [orgId], references: [id])
+  org                Org          @relation(fields: [orgId], references: [id], onDelete: Cascade)
   orgId              String
+  messageId          String       // External message ID from provider
   sentAt             DateTime
   fromEnc            Bytes?
   toEnc              Bytes?
@@ -119,15 +121,17 @@ model EmailMessage {
   snippetEnc         Bytes?
   bodyRefEnc         Bytes?
   attachmentsMetaEnc Bytes?
-  subjectIndex       String?    @db.Text
-  participantsIndex  String?    @db.Text
+  subjectIndex       String?      @db.Text
+  participantsIndex  String?      @db.Text
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
+
+  @@unique([orgId, messageId])
 }
 
 model CalendarAccount {
   id          String   @id @default(cuid())
-  org         Org      @relation(fields: [orgId], references: [id])
+  org         Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
   orgId       String
   provider    String
   status      String   @default("connected")
@@ -138,9 +142,9 @@ model CalendarAccount {
 
 model CalendarEvent {
   id             String          @id @default(cuid())
-  org            Org             @relation(fields: [orgId], references: [id])
+  org            Org             @relation(fields: [orgId], references: [id], onDelete: Cascade)
   orgId          String
-  account        CalendarAccount @relation(fields: [accountId], references: [id])
+  account        CalendarAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   accountId      String
   start          DateTime
   end            DateTime
@@ -154,47 +158,88 @@ model CalendarEvent {
   updatedAt      DateTime        @updatedAt
 }
 
+model Contact {
+  id              String     @id @default(cuid())
+  org             Org        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  orgId           String
+  nameEnc         Bytes?
+  emailEnc        Bytes?
+  phoneEnc        Bytes?
+  companyEnc      Bytes?
+  titleEnc        Bytes?
+  addressEnc      Bytes?
+  notesEnc        Bytes?
+  nameIndex       String?    @db.Text
+  emailIndex      String?    @db.Text
+  companyIndex    String?    @db.Text
+  source          String?    // email, manual, import, etc.
+  tags            String[]   // Array of tag strings
+  lastActivity    DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  leads           Lead[]
+
+  @@unique([orgId, emailIndex])
+}
+
 model Lead {
-  id                   String   @id @default(cuid())
-  org                  Org      @relation(fields: [orgId], references: [id])
+  id                   String          @id @default(cuid())
+  org                  Org             @relation(fields: [orgId], references: [id], onDelete: Cascade)
   orgId                String
-  nameEnc              Bytes?
-  emailEnc             Bytes?
-  phoneEnc             Bytes?
-  propertyAddressEnc   Bytes?
+  contact              Contact?        @relation(fields: [contactId], references: [id])
+  contactId            String?
+  stage                PipelineStage?  @relation(fields: [stageId], references: [id])
+  stageId              String?
+  title                String?         // Deal title/name
+  dealValueEnc         Bytes?          // Deal amount
+  probabilityPercent   Int?            // Win probability 0-100
   notesEnc             Bytes?
-  nameIndex            String?  @db.Text
-  emailIndex           String?  @db.Text
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  status               String          @default("active") // active, won, lost, archived
+  priority             String          @default("medium") // low, medium, high
+  source               String?         // email, manual, import, etc.
+  assignedToId         String?         // OrgMember ID
+  sourceThreadId       String?         // Link to email thread if created from email
+  expectedCloseDate    DateTime?
+  actualCloseDate      DateTime?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  tasks                Task[]          @relation("LeadTasks")
 }
 
 model Task {
-  id            String   @id @default(cuid())
-  org           Org      @relation(fields: [orgId], references: [id])
-  orgId         String
-  title         String
-  dueAt         DateTime?
-  done          Boolean  @default(false)
-  linkThreadId  String?
-  linkLeadId    String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String    @id @default(cuid())
+  org             Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  orgId           String
+  title           String
+  description     String?
+  dueAt           DateTime?
+  done            Boolean   @default(false)
+  priority        String    @default("medium") // low, medium, high
+  assignedToId    String?   // OrgMember ID
+  linkThreadId    String?   // Link to email thread
+  lead            Lead?     @relation("LeadTasks", fields: [linkLeadId], references: [id])
+  linkLeadId      String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
 
 model PipelineStage {
   id        String   @id @default(cuid())
-  org       Org      @relation(fields: [orgId], references: [id])
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
   orgId     String
   name      String
   order     Int
+  color     String?  // Hex color for UI
+  leads     Lead[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([orgId, order])
 }
 
 model WebhookSubscription {
   id        String   @id @default(cuid())
-  org       Org      @relation(fields: [orgId], references: [id])
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
   orgId     String
   provider  String
   secret    Bytes
@@ -204,7 +249,7 @@ model WebhookSubscription {
 
 model StripeCustomer {
   id            String   @id @default(cuid())
-  org           Org      @relation(fields: [orgId], references: [id])
+  org           Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
   orgId         String
   customerId    String   @unique
   createdAt     DateTime @default(now())
@@ -214,9 +259,9 @@ model StripeCustomer {
 
 model Subscription {
   id                String         @id @default(cuid())
-  org               Org            @relation(fields: [orgId], references: [id])
+  org               Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
   orgId             String
-  stripe            StripeCustomer @relation(fields: [stripeCustomerId], references: [id])
+  stripe            StripeCustomer @relation(fields: [stripeCustomerId], references: [id], onDelete: Cascade)
   stripeCustomerId  String
   status            String
   priceId           String
@@ -229,7 +274,7 @@ model Subscription {
 
 model AuditLog {
   id         String   @id @default(cuid())
-  org        Org      @relation(fields: [orgId], references: [id])
+  org        Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
   orgId      String
   actorId    String?
   action     String   // decrypt_attempt, export, retention_change, admin_action

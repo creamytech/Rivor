@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Logo from "@/components/branding/Logo";
+import CommandPalette from "@/components/common/CommandPalette";
 import { useEffect, useState } from "react";
+import { Search, Bell, HelpCircle, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -11,14 +14,13 @@ type AppShellProps = {
 };
 
 const nav = [
+  { href: "/app", label: "Dashboard", icon: "📊" },
   { href: "/app/inbox", label: "Inbox", icon: "📥" },
   { href: "/app/pipeline", label: "Pipeline", icon: "🗂️" },
-  { href: "/app/leads/1", label: "Leads", icon: "👤" },
   { href: "/app/calendar", label: "Calendar", icon: "🗓️" },
-  { href: "/app/tasks", label: "Tasks", icon: "✅" },
-  { href: "/app/analytics", label: "Analytics", icon: "📊" },
-  { href: "/app/search", label: "Search", icon: "🔎" },
-  { href: "/app/notifications", label: "Notifs", icon: "🔔" },
+  { href: "/app/contacts", label: "Contacts", icon: "👤" },
+  { href: "/app/chat", label: "Chat", icon: "💬" },
+  { href: "/app/analytics", label: "Analytics", icon: "📊", badge: "Soon" },
   { href: "/app/settings", label: "Settings", icon: "⚙️" },
 ];
 
@@ -26,7 +28,11 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
   const pathname = usePathname();
   const [query, setQuery] = useState("");
   const [showDrawer, setShowDrawer] = useState(Boolean(rightDrawer));
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  
   useEffect(() => setShowDrawer(Boolean(rightDrawer)), [rightDrawer]);
+  
+
 
   return (
     <div className="grid grid-cols-[64px_1fr] md:grid-cols-[240px_1fr] min-h-screen">
@@ -36,11 +42,16 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         </div>
         <nav className="flex-1 py-4">
           {nav.map((item) => {
-            const active = pathname.startsWith(item.href);
+            const active = pathname === item.href || (item.href !== "/app" && pathname.startsWith(item.href));
             return (
-              <Link key={item.href} href={item.href} className={`flex items-center gap-3 px-4 py-2 text-sm hover:bg-[var(--background)] ${active ? "bg-[var(--background)]" : ""}`}>
+              <Link key={item.href} href={item.href} className={`flex items-center gap-3 px-4 py-2 text-sm hover:bg-[var(--background)] transition-colors rounded-md mx-2 ${active ? "bg-[var(--background)] text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}`}>
                 <span aria-hidden>{item.icon}</span>
                 <span>{item.label}</span>
+                {item.badge && (
+                  <span className="ml-auto text-xs px-1.5 py-0.5 bg-[var(--rivor-teal)] text-white rounded-full">
+                    {item.badge}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -48,16 +59,43 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       </aside>
       <div className="grid grid-rows-[56px_1fr]">
         <header className="sticky top-0 z-30 h-14 border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--background)92%,transparent)] backdrop-blur flex items-center">
-          <div className="px-3 md:px-4 w-full flex items-center gap-2">
-            <div className="md:hidden"><Logo href="/app/inbox" variant="mark" /></div>
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search"
-              className="flex-1 px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--muted)] text-sm"
-            />
-            <Link href="/app/help" className="px-2 py-1.5 text-sm border border-[var(--border)] rounded-md">Help</Link>
-            <Link href="/app/settings" className="ml-1 w-8 h-8 rounded-full bg-[var(--muted)] border border-[var(--border)] grid place-items-center" aria-label="User menu">👤</Link>
+          <div className="px-3 md:px-4 w-full flex items-center gap-3">
+            <div className="md:hidden"><Logo href="/app/inbox" size="sm" /></div>
+            
+            {/* Command Palette Trigger */}
+            <div className="flex-1 relative">
+              <button
+                onClick={() => setShowCommandPalette(true)}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--muted)] text-sm text-[var(--muted-foreground)] hover:bg-[var(--background)] transition-colors"
+              >
+                <Search className="h-4 w-4" />
+                <span>Search or run a command...</span>
+                <div className="ml-auto text-xs bg-[var(--border)] px-1.5 py-0.5 rounded">
+                  ⌘K
+                </div>
+              </button>
+            </div>
+            
+            {/* Right side actions */}
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/app/help" aria-label="Help">
+                  <HelpCircle className="h-4 w-4" />
+                </Link>
+              </Button>
+              
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/app/notifications" aria-label="Notifications">
+                  <Bell className="h-4 w-4" />
+                </Link>
+              </Button>
+              
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/app/settings" aria-label="User menu">
+                  <User className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
           </div>
         </header>
         <div className="relative">
@@ -69,6 +107,9 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
           ) : null}
         </div>
       </div>
+      
+      {/* Command Palette */}
+      <CommandPalette isOpen={showCommandPalette} setIsOpen={setShowCommandPalette} />
     </div>
   );
 }

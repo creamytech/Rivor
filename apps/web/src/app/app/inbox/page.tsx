@@ -1,9 +1,48 @@
 "use client";
 import AppShell from "@/components/app/AppShell";
 import { Loading, Empty, ErrorState } from "@/components/common/States";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator 
+} from "@/components/ui/dropdown-menu";
 import { useEffect, useMemo, useState } from "react";
+import { 
+  Search, 
+  MoreVertical, 
+  Archive, 
+  Star, 
+  Reply, 
+  Forward, 
+  Trash2,
+  UserPlus,
+  Calendar,
+  Bot,
+  RefreshCw,
+  Clock,
+  Paperclip,
+  CheckCircle
+} from "lucide-react";
+import AIDraftModal from "@/components/inbox/AIDraftModal";
 
-type Thread = { id: string; subject: string; date: string; unread?: boolean };
+type Thread = { 
+  id: string; 
+  subject: string; 
+  date: string; 
+  unread?: boolean;
+  participants?: string;
+  snippet?: string;
+  starred?: boolean;
+  hasAttachments?: boolean;
+  messageCount?: number;
+  labels?: string[];
+};
 
 export default function InboxPage() {
   const [loading, setLoading] = useState(true);
@@ -11,6 +50,7 @@ export default function InboxPage() {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showAIDraft, setShowAIDraft] = useState(false);
   const indexById = useMemo(() => new Map(threads.map((t, i) => [t.id, i])), [threads]);
 
   useEffect(() => {
@@ -92,17 +132,34 @@ export default function InboxPage() {
     <AppShell rightDrawer={right}>
       <div className="grid md:grid-cols-[280px_1fr] h-[calc(100vh-56px)]">
         <aside className="border-r border-[var(--border)] p-3 overflow-auto">
-          <div className="mb-2 flex gap-2 text-sm">
-            {['All','Unread','Action Needed','Waiting','FYI'].map((f) => (
-              <button key={f} className="px-2 py-1 rounded border border-[var(--border)] hover:bg-[var(--muted)]">{f}</button>
+          <div className="mb-3 flex gap-1">
+            {['All','Unread','Starred','Archived'].map((f) => (
+              <Button key={f} variant="ghost" size="sm" className="text-xs">
+                {f}
+              </Button>
             ))}
           </div>
-          <input placeholder="Search" className="w-full mb-2 px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--muted)] text-sm" />
+          <div className="relative mb-3">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />
+            <Input placeholder="Search messages..." className="pl-9" />
+          </div>
           {selectedIds.length > 0 && (
-            <div className="mb-2 flex items-center gap-2 text-xs">
-              <div>{selectedIds.length} selected</div>
-              <button onClick={() => { setThreads((ts)=> ts.filter(t=>!selectedIds.includes(t.id))); setSelectedIds([]); }} className="px-2 py-1 rounded border border-[var(--border)]">Archive</button>
-              <button onClick={() => setSelectedIds([])} className="px-2 py-1 rounded border border-[var(--border)]">Clear</button>
+            <div className="mb-3 p-2 bg-[var(--muted)] rounded-md flex items-center gap-2">
+              <span className="text-sm font-medium">{selectedIds.length} selected</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => { 
+                  setThreads((ts)=> ts.filter(t=>!selectedIds.includes(t.id))); 
+                  setSelectedIds([]); 
+                }}
+              >
+                <Archive className="h-4 w-4 mr-1" />
+                Archive
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])}>
+                Clear
+              </Button>
             </div>
           )}
           {loading && <Loading />}
@@ -111,15 +168,50 @@ export default function InboxPage() {
             <Empty title="All clear — let Rivor watch for new deals." />
           )}
           {!loading && !error && threads.map((t) => (
-            <label key={t.id} className={`group w-full flex items-start gap-2 px-3 py-2 rounded hover:bg-[var(--background)] ${selectedId === t.id ? "bg-[var(--background)]" : ""}`}>
-              <input type="checkbox" checked={selectedIds.includes(t.id)} onChange={(e) => {
-                setSelectedIds((ids) => e.target.checked ? [...ids, t.id] : ids.filter((id) => id !== t.id));
-              }} className="mt-1" />
-              <button onClick={() => setSelectedId(t.id)} className="flex-1 text-left">
-                <div className="text-sm">{t.subject}</div>
-                <div className="text-xs text-[var(--muted-foreground)]">{t.date}</div>
+            <div key={t.id} className={`group w-full flex items-start gap-3 p-3 rounded-md cursor-pointer hover:bg-[var(--muted)] transition-colors ${selectedId === t.id ? "bg-[var(--muted)] border border-[var(--rivor-teal)]" : "border border-transparent"}`}>
+              <input 
+                type="checkbox" 
+                checked={selectedIds.includes(t.id)} 
+                onChange={(e) => {
+                  setSelectedIds((ids) => e.target.checked ? [...ids, t.id] : ids.filter((id) => id !== t.id));
+                }} 
+                className="mt-1 rounded" 
+              />
+              <button onClick={() => setSelectedId(t.id)} className="flex-1 text-left space-y-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {t.unread && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
+                    {t.starred && <Star className="h-4 w-4 text-yellow-500 fill-current" />}
+                    <span className={`text-sm ${t.unread ? "font-semibold" : ""}`}>
+                      {t.subject}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {t.hasAttachments && <Paperclip className="h-3 w-3 text-[var(--muted-foreground)]" />}
+                    <span className="text-xs text-[var(--muted-foreground)]">{t.date}</span>
+                  </div>
+                </div>
+                {t.participants && (
+                  <div className="text-xs text-[var(--muted-foreground)] truncate">
+                    {t.participants}
+                  </div>
+                )}
+                {t.snippet && (
+                  <div className="text-xs text-[var(--muted-foreground)] truncate">
+                    {t.snippet}
+                  </div>
+                )}
+                {t.labels && t.labels.length > 0 && (
+                  <div className="flex gap-1 mt-1">
+                    {t.labels.map(label => (
+                      <Badge key={label} variant="secondary" className="text-xs">
+                        {label}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </button>
-            </label>
+            </div>
           ))}
         </aside>
         <section className="p-3 overflow-auto">
@@ -129,35 +221,147 @@ export default function InboxPage() {
             <Empty title="Select a thread to preview" />
           )}
           {!loading && !error && selectedId && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-base font-medium">Thread Subject</div>
-                  <div className="text-xs text-[var(--muted-foreground)]">Participants…</div>
+            <div className="space-y-4">
+              {/* Thread Header */}
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <h1 className="text-lg font-semibold">Thread Subject</h1>
+                  <div className="text-sm text-[var(--muted-foreground)]">3 participants • 5 messages</div>
                 </div>
-                <div className="flex gap-2 text-sm">
-                  {['Archive','Snooze','Add to Pipeline','Create Task','Draft Reply'].map((a) => (
-                    <button key={a} className="px-2 py-1 rounded border border-[var(--border)]">{a}</button>
-                  ))}
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon">
+                    <Star className="h-4 w-4" />
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem>
+                        <Archive className="mr-2 h-4 w-4" />
+                        Archive
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Clock className="mr-2 h-4 w-4" />
+                        Snooze
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem>
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        Convert to Lead
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Create Task
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-red-600">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
-              <div className="border border-[var(--border)] rounded p-3 min-h-64">Messages list (collapsed quotes)…</div>
-              <div className="border border-[var(--border)] rounded p-3">
-                <div className="text-sm mb-2">Inline reply</div>
-                <textarea className="w-full h-24 rounded border border-[var(--border)] bg-[var(--muted)] p-2 text-sm" placeholder="Write a reply…" />
-                <div className="mt-2 flex gap-2 text-sm">
-                  <button className="px-2 py-1 rounded border border-[var(--border)]">Insert AI reply</button>
-                  <select className="px-2 py-1 rounded border border-[var(--border)] bg-transparent">
-                    <option>Short</option>
-                    <option>Neutral</option>
-                    <option>Warm</option>
-                  </select>
-                </div>
+
+              {/* AI Summary */}
+              <Card>
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Bot className="h-4 w-4 text-[var(--rivor-teal)]" />
+                      <span className="text-sm font-medium">AI Summary</span>
+                    </div>
+                    <Button variant="ghost" size="sm">
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Refresh
+                    </Button>
+                  </div>
+                  <p className="text-sm text-[var(--muted-foreground)]">
+                    Client interested in property viewing. Requesting weekend availability for 123 Main Street. 
+                    Follow-up needed on pricing and viewing schedule.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Messages */}
+              <div className="space-y-3">
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-medium">
+                          JS
+                        </div>
+                        <div>
+                          <div className="font-medium">John Smith</div>
+                          <div className="text-xs text-[var(--muted-foreground)]">john@example.com</div>
+                        </div>
+                      </div>
+                      <div className="text-xs text-[var(--muted-foreground)]">2 hours ago</div>
+                    </div>
+                    <div className="prose prose-sm max-w-none">
+                      <p>Hi there! I'm very interested in the 123 Main Street property. Could we schedule a viewing this weekend?</p>
+                      <p>I'm available Saturday morning or Sunday afternoon. Looking forward to hearing from you!</p>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
+
+              {/* Quick Reply */}
+              <Card>
+                <CardContent className="pt-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <Reply className="h-4 w-4" />
+                      Quick Reply
+                    </div>
+                    <textarea 
+                      className="w-full h-24 rounded-md border border-[var(--border)] bg-[var(--background)] p-3 text-sm resize-none focus:ring-2 focus:ring-[var(--focus)] focus:border-transparent" 
+                      placeholder="Write a reply..."
+                    />
+                    <div className="flex items-center justify-between">
+                                          <div className="flex gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => setShowAIDraft(true)}>
+                        <Bot className="h-4 w-4 mr-1" />
+                        AI Draft
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Calendar className="h-4 w-4 mr-1" />
+                        Schedule
+                      </Button>
+                    </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm">
+                          <Forward className="h-4 w-4 mr-1" />
+                          Forward
+                        </Button>
+                        <Button variant="brand" size="sm">
+                          <Reply className="h-4 w-4 mr-1" />
+                          Send
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
         </section>
       </div>
+      
+      {/* AI Draft Modal */}
+      <AIDraftModal 
+        open={showAIDraft} 
+        onOpenChange={setShowAIDraft}
+        threadContext={selectedId ? {
+          subject: "RE: Property Inquiry - 123 Main Street",
+          participants: "John Smith, You",
+          lastMessage: "Hi there! I'm very interested in the 123 Main Street property..."
+        } : undefined}
+      />
     </AppShell>
   );
 }

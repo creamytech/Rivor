@@ -7,39 +7,9 @@ import { createKmsClient, generateDek } from "@rivor/crypto";
 import { getEnv } from "./env";
 import { encryptForOrg } from "./crypto";
 
-// Enforce required Google OAuth environment at build time
-const REQUIRED_GOOGLE_SCOPES = "openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly";
-if (!process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID.trim() === "") {
-  throw new Error("Missing GOOGLE_CLIENT_ID. Set it in the environment to enable Google authentication.");
-}
-if (!process.env.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET.trim() === "") {
-  throw new Error("Missing GOOGLE_CLIENT_SECRET. Set it in the environment to enable Google authentication.");
-}
-if (!process.env.GOOGLE_OAUTH_SCOPES || process.env.GOOGLE_OAUTH_SCOPES.trim() === "") {
-  throw new Error(
-    `Missing GOOGLE_OAUTH_SCOPES. It must contain: ${REQUIRED_GOOGLE_SCOPES}`
-  );
-}
-if (process.env.GOOGLE_OAUTH_SCOPES.trim() !== REQUIRED_GOOGLE_SCOPES) {
-  throw new Error(
-    `GOOGLE_OAUTH_SCOPES must be exactly: ${REQUIRED_GOOGLE_SCOPES}`
-  );
-}
-
 const providers = [] as any[];
-providers.push(
-  Google({
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    authorization: {
-      params: {
-        access_type: "offline",
-        prompt: "consent",
-        scope: process.env.GOOGLE_OAUTH_SCOPES,
-      },
-    },
-  })
-);
+
+// Microsoft OAuth (always enabled if configured)
 if (process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET) {
   providers.push(AzureAD({
     clientId: process.env.MICROSOFT_CLIENT_ID,
@@ -47,6 +17,41 @@ if (process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET) {
     tenantId: process.env.MICROSOFT_TENANT_ID ?? "common",
     authorization: { params: { scope: process.env.MICROSOFT_OAUTH_SCOPES } },
   }));
+}
+
+// Google OAuth (feature flagged - requires FEATURE_GOOGLE=true)
+const REQUIRED_GOOGLE_SCOPES = "openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly";
+if (process.env.FEATURE_GOOGLE === "true") {
+  if (!process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID.trim() === "") {
+    throw new Error("Missing GOOGLE_CLIENT_ID. Set it in the environment to enable Google authentication.");
+  }
+  if (!process.env.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET.trim() === "") {
+    throw new Error("Missing GOOGLE_CLIENT_SECRET. Set it in the environment to enable Google authentication.");
+  }
+  if (!process.env.GOOGLE_OAUTH_SCOPES || process.env.GOOGLE_OAUTH_SCOPES.trim() === "") {
+    throw new Error(
+      `Missing GOOGLE_OAUTH_SCOPES. It must contain: ${REQUIRED_GOOGLE_SCOPES}`
+    );
+  }
+  if (process.env.GOOGLE_OAUTH_SCOPES.trim() !== REQUIRED_GOOGLE_SCOPES) {
+    throw new Error(
+      `GOOGLE_OAUTH_SCOPES must be exactly: ${REQUIRED_GOOGLE_SCOPES}`
+    );
+  }
+
+  providers.push(
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      authorization: {
+        params: {
+          access_type: "offline",
+          prompt: "consent",
+          scope: process.env.GOOGLE_OAUTH_SCOPES,
+        },
+      },
+    })
+  );
 }
 
 export const authOptions: NextAuthOptions = {

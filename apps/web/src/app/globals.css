@@ -81,6 +81,30 @@ body {
               linear-gradient(135deg, color-mix(in oklab, var(--rivor-indigo) 80%, transparent), color-mix(in oklab, var(--rivor-teal) 60%, transparent));
 }
 
+/* Flow animations for gradients */
+.bg-size-200 {
+  background-size: 200% 100%;
+}
+.bg-pos-0 {
+  background-position: 0% 0%;
+}
+.bg-pos-100 {
+  background-position: 100% 0%;
+}
+
+/* River flow animation */
+@keyframes river-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.river-flow {
+  background: linear-gradient(-45deg, var(--rivor-indigo), var(--rivor-teal), var(--rivor-aqua), var(--rivor-indigo));
+  background-size: 400% 400%;
+  animation: river-flow 8s ease-in-out infinite;
+}
+
 .card {
   background: var(--muted);
   border: 1px solid var(--border);

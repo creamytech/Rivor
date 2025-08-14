@@ -4,41 +4,39 @@ import Link from "next/link";
 
 type LogoProps = {
   href?: string;
-  variant?: "mark" | "full";
   className?: string;
+  size?: "sm" | "md" | "lg";
 };
 
-export default function Logo({ href = "/", variant = "full", className }: LogoProps) {
-  const mark = (
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="var(--rivor-indigo)" />
-          <stop offset="100%" stopColor="var(--rivor-teal)" />
-        </linearGradient>
-      </defs>
-      <rect x="2" y="2" width="24" height="24" rx="6" fill="url(#g)" />
-      <path d="M7 17c3-1.5 5-5 7-5s3 3 7 4" stroke="var(--foreground)" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
+export default function Logo({ href = "/", className, size = "md" }: LogoProps) {
+  const sizeClasses = {
+    sm: "text-lg",
+    md: "text-xl", 
+    lg: "text-2xl"
+  };
 
-  const word = (
-    <span className="ml-2 font-semibold tracking-tight" style={{ letterSpacing: "-0.02em" }}>Rivor</span>
-  );
-
-  const content = (
-    <div className={`inline-flex items-center ${className ?? ""}`}>
-      {mark}
-      {variant === "full" ? word : null}
+  const wordmark = (
+    <div className={`inline-flex items-center group transition-all duration-300 ${className ?? ""}`}>
+      <span 
+        className={`font-bold tracking-tight ${sizeClasses[size]} bg-gradient-to-r from-[var(--rivor-indigo)] via-[var(--rivor-teal)] to-[var(--rivor-aqua)] bg-clip-text text-transparent bg-size-200 bg-pos-0 group-hover:bg-pos-100 transition-all duration-500`}
+        style={{ 
+          letterSpacing: "-0.02em",
+          backgroundSize: "200% 100%",
+          backgroundPosition: "0% 0%"
+        }}
+      >
+        Rivor
+      </span>
+      <div className="ml-1 w-2 h-2 rounded-full bg-gradient-to-r from-[var(--rivor-teal)] to-[var(--rivor-aqua)] opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-110" />
     </div>
   );
 
   return href ? (
-    <Link href={href} aria-label="Rivor Home">
-      {content}
+    <Link href={href} aria-label="Rivor Home" className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 rounded-md">
+      {wordmark}
     </Link>
   ) : (
-    content
+    wordmark
   );
 }
 
