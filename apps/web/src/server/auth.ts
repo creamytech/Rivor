@@ -3,7 +3,7 @@ import { enqueueEmailSync } from "./queue";import NextAuth, { type NextAuthOptio
 import Google from "next-auth/providers/google";
 import AzureAD from "next-auth/providers/azure-ad";
 import { createKmsClient, generateDek } from "@rivor/crypto";
-import { getEnv } from "@rivor/config/src/env";
+import { getEnv } from "@rivor/config/env";
 import { encryptForOrg } from "./crypto";
 
 export const authOptions: NextAuthOptions = {

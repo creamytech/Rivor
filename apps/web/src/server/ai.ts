@@ -1,6 +1,6 @@
 import { prisma } from './db';
 import { encryptForOrg } from './crypto';
-import { getEnv } from '@rivor/config/src/env';
+import { getEnv } from '@rivor/config/env';
 
 async function callOpenAI(summaryMode: 'short' | 'medium' | 'detailed', sanitizedSnippets: string[]): Promise<string> {
   const env = getEnv();

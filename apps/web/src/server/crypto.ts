@@ -1,5 +1,5 @@
 import { prisma } from './db';
-import { getEnv } from '@rivor/config/src/env';
+import { getEnv } from '@rivor/config/env';
 import { createKmsClient } from '@rivor/crypto';
 import { aes256gcmEncrypt, aes256gcmDecrypt, packEncryptedBlob, unpackEncryptedBlob } from '@rivor/crypto';
 
