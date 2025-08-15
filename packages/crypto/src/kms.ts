@@ -42,7 +42,7 @@ function createGcpKmsClient(cryptoKeyResource: string): KmsClient {
     const { KeyManagementServiceClient } = require('@google-cloud/kms');
     const credsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
     const client = credsJson
-        ? new KeyManagementServiceClient({ credentials: JSON.parse(credsJson) })
+        ? new KeyManagementServiceClient({ credentials: JSON.parse(Buffer.from(credsJson, 'base64').toString()) })
         : new KeyManagementServiceClient();
     return {
         async encryptDek(plaintextDek: Uint8Array): Promise<Uint8Array> {
