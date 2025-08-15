@@ -110,9 +110,15 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async jwt({ token, user, account, profile }) {
-      // On first sign in, create org and set orgId
+      // On sign in (including re-auth), create org and set orgId
       if (user && account) {
-        console.log('JWT callback - first sign in:', { email: user.email, provider: account.provider });
+        console.log('JWT callback - sign in/re-auth:', { 
+          email: user.email, 
+          provider: account.provider,
+          scopes: account.scope,
+          hasAccessToken: !!account.access_token,
+          hasRefreshToken: !!account.refresh_token
+        });
         try {
           // Simple org creation - just use email as org name
           let org = await prisma.org.findFirst({ where: { name: user.email || 'Default' } });
@@ -169,6 +175,11 @@ export const authOptions: NextAuthOptions = {
                   console.log('Created OAuth account for API access');
                 } else {
                   // Update existing account with new tokens and scopes
+                  console.log('Updating existing OAuth account:', {
+                    oldScopes: existingOAuthAccount.scope,
+                    newScopes: accountData.scope,
+                    provider: account.provider
+                  });
                   await prisma.oAuthAccount.update({
                     where: { id: existingOAuthAccount.id },
                     data: {

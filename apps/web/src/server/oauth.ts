@@ -19,13 +19,24 @@ export async function checkTokenHealth(userEmail: string): Promise<TokenHealth[]
       }
     });
 
-    return accounts.map(account => ({
+    const tokenHealth = accounts.map(account => ({
       provider: account.provider,
       connected: true,
       expired: account.expiresAt ? account.expiresAt < new Date() : false,
       scopes: account.scope ? account.scope.split(' ') : [],
       lastUpdated: account.updatedAt
     }));
+
+    console.log('Token health check:', {
+      userEmail,
+      accounts: tokenHealth.map(t => ({
+        provider: t.provider,
+        scopes: t.scopes,
+        expired: t.expired
+      }))
+    });
+
+    return tokenHealth;
   } catch (error) {
     console.error('Error checking token health:', error);
     return [];

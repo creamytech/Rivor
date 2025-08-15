@@ -56,6 +56,15 @@ export default async function DashboardPage() {
   );
   const showOnboarding = !hasEmailIntegration && !hasCalendarIntegration;
 
+  // Debug logging
+  console.log('Dashboard integration check:', {
+    userEmail,
+    hasEmailIntegration,
+    hasCalendarIntegration,
+    showOnboarding,
+    tokenHealthCount: tokenHealth.length
+  });
+
   return (
     <AppShell>
       <DashboardContent 
