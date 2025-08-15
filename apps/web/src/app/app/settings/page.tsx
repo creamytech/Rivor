@@ -1,6 +1,4 @@
-"use client";
 import AppShell from "@/components/app/AppShell";
-import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,8 +6,19 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle, AlertCircle, RefreshCw, ExternalLink, Shield, Mail, Calendar, User, Plus, Download } from "lucide-react";
+import { auth } from "@/server/auth";
+import { redirect } from "next/navigation";
+import { checkTokenHealth } from "@/server/oauth";
+import ConnectedAccountsPanel from "@/components/app/ConnectedAccountsPanel";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const session = await auth();
+  if (!session) {
+    redirect("/auth/signin");
+  }
+
+  const userEmail = session.user?.email;
+  const tokenHealth = userEmail ? await checkTokenHealth(userEmail).catch(() => []) : [];
   return (
     <AppShell>
       <div className="container py-6">
@@ -37,18 +46,39 @@ export default function SettingsPage() {
                 <CardDescription>Update your personal information and preferences</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="flex items-center gap-4 mb-6">
+                  {session.user?.image && (
+                    <img 
+                      src={session.user.image} 
+                      alt="Profile"
+                      className="w-16 h-16 rounded-full border border-gray-200 dark:border-gray-700"
+                    />
+                  )}
+                  <div>
+                    <h3 className="font-semibold text-lg">{session.user?.name || 'User'}</h3>
+                    <p className="text-gray-600 dark:text-gray-400">{session.user?.email}</p>
+                  </div>
+                </div>
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Full Name</label>
-                    <Input placeholder="Enter your full name" />
+                    <Input 
+                      placeholder="Enter your full name" 
+                      defaultValue={session.user?.name || ''}
+                    />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Email</label>
-                    <Input placeholder="your.email@company.com" disabled />
+                    <Input 
+                      value={session.user?.email || ''} 
+                      disabled 
+                      className="bg-gray-50 dark:bg-gray-900"
+                    />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Timezone</label>
-                    <Select>
+                    <Select defaultValue="america/new_york">
                       <SelectTrigger>
                         <SelectValue placeholder="Select timezone" />
                       </SelectTrigger>
@@ -56,8 +86,23 @@ export default function SettingsPage() {
                         <SelectItem value="america/new_york">America/New_York</SelectItem>
                         <SelectItem value="america/los_angeles">America/Los_Angeles</SelectItem>
                         <SelectItem value="europe/london">Europe/London</SelectItem>
+                        <SelectItem value="europe/paris">Europe/Paris</SelectItem>
+                        <SelectItem value="asia/tokyo">Asia/Tokyo</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Connected Accounts</label>
+                    <div className="flex gap-2">
+                      {tokenHealth.map(account => (
+                        <Badge key={account.provider} variant="outline" className="capitalize">
+                          {account.provider === 'azure-ad' ? 'Microsoft' : account.provider}
+                        </Badge>
+                      ))}
+                      {tokenHealth.length === 0 && (
+                        <span className="text-sm text-gray-500">No accounts connected</span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <Button variant="brand">Save Changes</Button>
@@ -66,105 +111,11 @@ export default function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="integrations">
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Mail className="h-5 w-5" />
-                    Microsoft Outlook
-                  </CardTitle>
-                  <CardDescription>
-                    Connect your Microsoft Outlook account to sync emails and calendar events
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-sm font-medium">Connected</span>
-                      </div>
-                      <Badge variant="status">Healthy</Badge>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
-                        <RefreshCw className="h-4 w-4 mr-1" />
-                        Refresh
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        Disconnect
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3 pt-4 border-t">
-                    <div className="text-sm font-medium">Permissions & Scopes</div>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center justify-between">
-                        <span>Read emails</span>
-                        <Badge variant="outline">Mail.Read</Badge>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Send emails</span>
-                        <Badge variant="outline">Mail.Send</Badge>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Calendar access</span>
-                        <Badge variant="outline">Calendars.ReadWrite</Badge>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Offline access</span>
-                        <Badge variant="outline">offline_access</Badge>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 pt-4 border-t">
-                    <div className="text-sm font-medium">Health Check</div>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-sm">Token valid and refreshed recently</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-sm">Webhook subscription active</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-sm">Data sync operational</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Mail className="h-5 w-5" />
-                    Google Gmail
-                    <Badge variant="secondary">Coming Soon</Badge>
-                  </CardTitle>
-                  <CardDescription>
-                    Connect your Google account to sync Gmail and Google Calendar (feature flagged)
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2">
-                        <AlertCircle className="h-4 w-4 text-orange-500" />
-                        <span className="text-sm font-medium">Feature Flag Required</span>
-                      </div>
-                    </div>
-                    <Button variant="outline" disabled>
-                      Connect Google
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <ConnectedAccountsPanel 
+              tokenHealth={tokenHealth}
+              userEmail={userEmail || ''}
+              userName={session.user?.name || ''}
+            />
           </TabsContent>
 
           <TabsContent value="security">
