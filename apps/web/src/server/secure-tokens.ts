@@ -61,7 +61,7 @@ export async function storeTokensSecurely(
             logger.warn('KMS encryption failed, falling back to AES-GCM', {
               orgId,
               provider,
-              error: (kmsError as any)?.message
+              error: (kmsError as unknown)?.message
             });
             
             // Fallback to AES-GCM using NEXTAUTH_SECRET
@@ -99,7 +99,7 @@ export async function storeTokensSecurely(
           externalAccountId
         });
 
-      } catch (encryptionError: any) {
+      } catch (encryptionError: unknown) {
         // KMS failure - store placeholder with failed status
         logger.warn('KMS encryption failed for access token, storing as failed', {
           orgId,
@@ -151,7 +151,7 @@ export async function storeTokensSecurely(
             logger.warn('KMS encryption failed, falling back to AES-GCM', {
               orgId,
               provider,
-              error: (kmsError as any)?.message
+              error: (kmsError as unknown)?.message
             });
             
             // Fallback to AES-GCM using NEXTAUTH_SECRET
@@ -187,7 +187,7 @@ export async function storeTokensSecurely(
           externalAccountId
         });
 
-      } catch (encryptionError: any) {
+      } catch (encryptionError: unknown) {
         // KMS failure - store placeholder with failed status
         logger.warn('KMS encryption failed for refresh token, storing as failed', {
           orgId,
@@ -219,12 +219,12 @@ export async function storeTokensSecurely(
 
     return results;
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Failed to store tokens securely', {
       orgId,
       provider,
       externalAccountId,
-      error: (error as any)?.message || error
+      error: (error as unknown)?.message || error
     });
     throw error;
   }
@@ -270,10 +270,10 @@ export async function getTokensSecurely(tokenRefs: string[]): Promise<TokenData>
         result.refreshToken = decryptedToken;
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Failed to decrypt token', {
         tokenRef,
-        error: (error as any)?.message || error
+        error: (error as unknown)?.message || error
       });
     }
   }
@@ -313,7 +313,7 @@ export async function retryFailedTokenEncryption(tokenRef: string, originalToken
     logger.info('Successfully retried token encryption', { tokenRef });
     return true;
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Update retry count even on failure
     await prisma.secureToken.update({
       where: { tokenRef },
@@ -333,7 +333,7 @@ export async function retryFailedTokenEncryption(tokenRef: string, originalToken
 /**
  * Extracts error code from encryption error
  */
-function getErrorCode(error: any): string {
+function getErrorCode(error: unknown): string {
   if (error?.code) return error.code;
   if (error?.name) return error.name;
   return 'UNKNOWN_ERROR';

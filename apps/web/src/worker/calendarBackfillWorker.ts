@@ -83,7 +83,7 @@ async function processJob(job: Job) {
       calendarAccountId 
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('[worker] calendar:backfill failed', { 
       correlationId,
       orgId, 

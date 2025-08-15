@@ -149,7 +149,7 @@ export async function processTokenEncryptionJob(job: Job<EncryptTokenJobData>): 
       throw new Error('Token encryption retry failed');
     }
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Token encryption job failed', {
       jobId: job.id,
       orgId,
@@ -234,7 +234,7 @@ export async function processInitialSyncJob(job: Job<StartInitialSyncJobData>): 
       provider,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Update sync status on failure
     await prisma.emailAccount.update({
       where: { id: emailAccountId },
@@ -306,7 +306,7 @@ async function sendDeadLetterAlert(job: Job): Promise<void> {
 /**
  * Helper to extract error codes
  */
-function getErrorCode(error: any): string {
+function getErrorCode(error: unknown): string {
   if (error?.code) return error.code;
   if (error?.name) return error.name;
   return 'UNKNOWN_ERROR';
@@ -341,7 +341,7 @@ export async function getQueueStats() {
         failed: syncFailed.length,
       },
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Failed to get queue stats', { error });
     return null;
   }

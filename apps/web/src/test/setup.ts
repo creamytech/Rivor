@@ -17,7 +17,7 @@ vi.mock('next/navigation', () => ({
 
 // Mock Next.js Link
 vi.mock('next/link', () => ({
-  default: ({ children, href, ...props }: any) => {
+  default: ({ children, href, ...props }: unknown) => {
     const React = require('react');
     return React.createElement('a', { href, ...props }, children);
   },

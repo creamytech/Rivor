@@ -43,7 +43,7 @@ export function middleware(request: NextRequest) {
   
   // CSRF protection for auth pages - ensure referrer is from same origin
   if (pathname.startsWith('/auth/') && request.method === 'GET') {
-    const referer = request.headers.get('referer');
+    // const referer = request.headers.get('referer'); // TODO: Use if needed for CSRF protection
     const origin = request.headers.get('origin');
     const host = request.headers.get('host');
     

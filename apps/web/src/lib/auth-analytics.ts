@@ -7,7 +7,7 @@ export interface AuthAnalyticsEvent {
   provider?: string;
   correlationId?: string;
   duration?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 class AuthAnalytics {
@@ -36,7 +36,7 @@ class AuthAnalytics {
     userId?: string, 
     provider?: string, 
     correlationId?: string,
-    metadata: Record<string, any> = {}
+    metadata: Record<string, unknown> = {}
   ): void {
     const timestamp = Date.now();
     const session = correlationId ? this.sessionData.get(correlationId) : undefined;
@@ -76,7 +76,7 @@ class AuthAnalytics {
   }
 
   // Track page views
-  trackPageView(page: 'signin' | 'error', correlationId?: string, metadata: Record<string, any> = {}): void {
+  trackPageView(page: 'signin' | 'error', correlationId?: string, metadata: Record<string, unknown> = {}): void {
     this.track(`auth_page_${page}_viewed`, undefined, undefined, correlationId, {
       page,
       url: typeof window !== 'undefined' ? window.location.href : undefined,
@@ -90,7 +90,7 @@ class AuthAnalytics {
     action: 'provider_clicked' | 'retry_clicked' | 'help_clicked' | 'status_clicked',
     provider?: string,
     correlationId?: string,
-    metadata: Record<string, any> = {}
+    metadata: Record<string, unknown> = {}
   ): void {
     this.track(`auth_${action}`, undefined, provider, correlationId, {
       action,
@@ -136,7 +136,7 @@ class AuthAnalytics {
     metric: 'page_load' | 'provider_response' | 'callback_processing',
     duration: number,
     correlationId?: string,
-    metadata: Record<string, any> = {}
+    metadata: Record<string, unknown> = {}
   ): void {
     this.track(`auth_performance_${metric}`, undefined, undefined, correlationId, {
       metric,
@@ -146,7 +146,7 @@ class AuthAnalytics {
         // Add browser performance if available
         ...(typeof window !== 'undefined' && window.performance ? {
           navigation: window.performance.getEntriesByType('navigation')[0],
-          memory: (window.performance as any).memory
+          memory: (window.performance as unknown).memory
         } : {})
       }
     });
@@ -158,7 +158,7 @@ class AuthAnalytics {
     errorType: 'network' | 'oauth' | 'validation' | 'timeout' | 'unknown',
     provider?: string,
     correlationId?: string,
-    metadata: Record<string, any> = {}
+    metadata: Record<string, unknown> = {}
   ): void {
     this.track('auth_error_occurred', undefined, provider, correlationId, {
       error,
@@ -173,8 +173,8 @@ class AuthAnalytics {
   private sendToAnalytics(event: AuthAnalyticsEvent): void {
     try {
       // In a real implementation, this would send to PostHog, Mixpanel, etc.
-      if (typeof window !== 'undefined' && (window as any).posthog) {
-        (window as any).posthog.capture(event.event, {
+      if (typeof window !== 'undefined' && (window as unknown).posthog) {
+        (window as unknown).posthog.capture(event.event, {
           ...event.metadata,
           $user_id: event.userId,
           $duration: event.duration,
@@ -213,7 +213,7 @@ class AuthAnalytics {
 export const authAnalytics = new AuthAnalytics();
 
 // Convenience functions for common tracking scenarios
-export const trackAuthPageView = (page: 'signin' | 'error', metadata: Record<string, any> = {}) => {
+export const trackAuthPageView = (page: 'signin' | 'error', metadata: Record<string, unknown> = {}) => {
   authAnalytics.trackPageView(page, undefined, metadata);
 };
 

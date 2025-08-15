@@ -50,12 +50,12 @@ export function useTrackCTA() {
 
 // Hook for tracking conversions
 export function useTrackConversion() {
-  return (conversionType: string, properties?: Record<string, any>) => {
+  return (conversionType: string, properties?: Record<string, unknown>) => {
     import('@/lib/analytics').then(({ trackConversion, getStoredUTMParams }) => {
       const utmParams = getStoredUTMParams();
       trackConversion({
         name: 'conversion',
-        conversionType: conversionType as any,
+        conversionType: conversionType as unknown,
         properties: {
           ...properties,
           ...utmParams,

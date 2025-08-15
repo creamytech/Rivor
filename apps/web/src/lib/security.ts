@@ -162,7 +162,7 @@ export function checkRateLimit(
                     'anonymous';
   
   const now = Date.now();
-  const windowStart = now - options.windowMs;
+  // const windowStart = now - options.windowMs; // TODO: Use if needed for sliding window
   
   // Clean up old entries
   for (const [key, data] of rateLimitStore.entries()) {

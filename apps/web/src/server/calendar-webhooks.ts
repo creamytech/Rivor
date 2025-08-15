@@ -13,9 +13,9 @@ export interface CalendarChannelSetup {
 
 export class CalendarWebhookService {
   private orgId: string;
-  private oauthClient: any;
+  private oauthClient: unknown;
 
-  constructor(orgId: string, oauthClient: any) {
+  constructor(orgId: string, oauthClient: unknown) {
     this.orgId = orgId;
     this.oauthClient = oauthClient;
   }
@@ -119,7 +119,7 @@ export class CalendarWebhookService {
       });
 
       return channelSetup;
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Calendar watch channel setup failed', {
         orgId: this.orgId,
         calendarAccountId,
@@ -189,7 +189,7 @@ export class CalendarWebhookService {
       });
 
       return newChannelSetup;
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Calendar watch channel renewal failed', {
         orgId: this.orgId,
         calendarAccountId,
@@ -239,7 +239,7 @@ export class CalendarWebhookService {
         correlationId,
         action: 'calendar_watch_stopped'
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Calendar watch channel stop failed', {
         orgId: this.orgId,
         channelId,

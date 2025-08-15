@@ -7,14 +7,14 @@ export const dynamic = 'force-dynamic';
 /**
  * Create new lead
  */
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(leadFormatted);
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Lead creation API error:', error);
     return NextResponse.json(
       { error: 'Failed to create lead' },

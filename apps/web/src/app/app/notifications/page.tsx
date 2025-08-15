@@ -2,7 +2,7 @@
 import AppShell from "@/components/app/AppShell";
 
 function showToast(title: string) {
-  const bus = (window as any).__TOAST_BUS__ as EventTarget | undefined;
+  const bus = (window as unknown).__TOAST_BUS__ as EventTarget | undefined;
   if (bus) bus.dispatchEvent(new CustomEvent("toast:show", { detail: { id: Math.random().toString(36).slice(2), title, tone: "success" } }));
 }
 

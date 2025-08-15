@@ -5,14 +5,14 @@ import { AIService, EmailDraftOptions } from '@/server/ai';
 // Force dynamic rendering - this route uses session/auth data
 export const dynamic = 'force-dynamic';
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     const session = await auth();
     if (!session) {
       return new Response('Unauthorized', { status: 401 });
     }
     
-    const orgId = (session as any).orgId as string | undefined;
+    const orgId = (session as unknown).orgId as string | undefined;
     if (!orgId) {
       return new Response('Forbidden', { status: 403 });
     }

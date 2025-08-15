@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 /**
  * Report client-side errors for monitoring
  */
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     const session = await auth();
     const body = await req.json();
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       userAgent,
       url,
       userId: session?.user?.email || 'anonymous',
-      orgId: (session as any)?.orgId || null,
+      orgId: (session as unknown)?.orgId || null,
       severity: 'error',
       source: 'client',
       correlationId: `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     //     message,
     //     stack,
     //     userId: session?.user?.email,
-    //     orgId: (session as any)?.orgId,
+    //     orgId: (session as unknown)?.orgId,
     //     url,
     //     userAgent,
     //     severity: 'error',

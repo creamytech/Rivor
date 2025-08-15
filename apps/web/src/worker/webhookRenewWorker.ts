@@ -42,7 +42,7 @@ async function processJob(job: Job) {
       correlationId,
       action: 'webhook_renew_success'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Webhook renewal failed', {
       provider,
       accountId,
@@ -90,7 +90,7 @@ async function renewGmailWatch(orgId: string, emailAccountId: string, correlatio
       correlationId,
       action: 'gmail_watch_renewed'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Update account status on renewal failure
     await prisma.emailAccount.update({
       where: { id: emailAccountId },
@@ -136,7 +136,7 @@ async function renewCalendarChannel(orgId: string, calendarAccountId: string, co
       correlationId,
       action: 'calendar_channel_renewed'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Update account status on renewal failure
     await prisma.calendarAccount.update({
       where: { id: calendarAccountId },

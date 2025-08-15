@@ -6,10 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { 
   Search, 
-  Filter, 
   Download, 
   Calendar,
   User,
@@ -165,7 +163,8 @@ const mockAuditEvents: AuditEvent[] = [
 ];
 
 export default function AuditLogPage() {
-  const [events, setEvents] = useState<AuditEvent[]>(mockAuditEvents);
+  const [events] = useState<AuditEvent[]>(mockAuditEvents);
+  // TODO: Implement setEvents when API integration is added
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");

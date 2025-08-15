@@ -18,7 +18,7 @@ export interface GmailMessage {
 }
 
 export class GmailService {
-  private oauth2Client: any;
+  private oauth2Client: unknown;
 
   constructor(accessToken: string, refreshToken?: string) {
     this.oauth2Client = new google.auth.OAuth2(
@@ -152,7 +152,7 @@ export class GmailService {
         action: 'gmail_backfill_complete'
       });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Gmail initial backfill failed', {
         orgId,
         emailAccountId,
@@ -197,7 +197,7 @@ export class GmailService {
         orgId,
         emailAccountId,
         threadId,
-        error: (error as any)?.message || error
+        error: (error as unknown)?.message || error
       });
     }
   }
@@ -239,7 +239,7 @@ export class GmailService {
       console.error('Gmail sync error:', error);
       
       // Update account status if authentication failed
-      if ((error as any)?.code === 401) {
+      if ((error as unknown)?.code === 401) {
         await prisma.emailAccount.update({
           where: { id: emailAccountId },
           data: { status: 'action_needed' }
@@ -378,7 +378,7 @@ export class GmailService {
       });
 
       // Store watch metadata - this is crucial for push notifications
-      const updateData: any = {
+      const updateData: unknown = {
         status: 'connected' // Ensure account is marked as fully connected
       };
       
@@ -416,7 +416,7 @@ export class GmailService {
         action: 'gmail_watch_success'
       });
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Gmail watch setup failed', {
         orgId,
         emailAccountId,

@@ -32,7 +32,7 @@ export default function TokenHealthBanner({ className }: TokenHealthBannerProps)
         const data = await response.json();
         const newIssues: IntegrationIssue[] = [];
 
-        data.emailAccounts.forEach((account: any) => {
+        data.emailAccounts.forEach((account: unknown) => {
           if (account.requiresRetry || account.canReconnect) {
             let issue: IntegrationIssue['issue'] = 'encryption_failed';
             let message = '';

@@ -10,7 +10,7 @@ import { logger } from "@/lib/logger";
 import { handleOAuthCallback, isDuplicateCallback, type OAuthCallbackData } from "./onboarding";
 import { validateAndLogStartupConfig } from "./env";
 
-const providers = [] as any[];
+const providers = [] as unknown[];
 
 // Microsoft OAuth (always enabled if configured)
 const REQUIRED_MICROSOFT_SCOPES = "openid email profile offline_access https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/Mail.Send https://graph.microsoft.com/Calendars.ReadWrite https://graph.microsoft.com/User.Read";
@@ -180,8 +180,8 @@ export const authOptions: NextAuthOptions = {
       return `${baseUrl}/app`;
     },
     async session({ session, token }) {
-      (session as any).orgId = token.orgId;
-      (session as any).user = token.user || {
+      (session as unknown).orgId = token.orgId;
+      (session as unknown).user = token.user || {
         email: session.user?.email || '',
         name: session.user?.name || '',
         image: session.user?.image || '',
@@ -195,7 +195,7 @@ export const authOptions: NextAuthOptions = {
       if (user && account) {
         try {
           // Check for duplicate callback (idempotency)
-          const externalAccountId = account.providerAccountId || (profile as any)?.sub || (profile as any)?.id || 'unknown';
+          const externalAccountId = account.providerAccountId || (profile as unknown)?.sub || (profile as unknown)?.id || 'unknown';
           const isDuplicate = await isDuplicateCallback(
             user.email || user.id,
             account.provider,
@@ -214,7 +214,7 @@ export const authOptions: NextAuthOptions = {
               userId: user.email || user.id,
               userEmail: user.email || '',
               userName: user.name || profile?.name || '',
-              userImage: user.image || (profile as any)?.picture || '',
+              userImage: user.image || (profile as unknown)?.picture || '',
               provider: account.provider,
               externalAccountId,
               account,
@@ -225,12 +225,12 @@ export const authOptions: NextAuthOptions = {
             const result = await handleOAuthCallback(onboardingData);
 
             // Store results in token
-            (token as any).orgId = result.orgId;
-            (token as any).isFirstTime = result.isFirstTimeUser;
-            (token as any).requiresTokenRetry = result.requiresTokenRetry;
+            (token as unknown).orgId = result.orgId;
+            (token as unknown).isFirstTime = result.isFirstTimeUser;
+            (token as unknown).requiresTokenRetry = result.requiresTokenRetry;
 
             // Store user data for session access
-            (token as any).user = {
+            (token as unknown).user = {
               email: onboardingData.userEmail,
               name: onboardingData.userName,
               image: onboardingData.userImage,
@@ -248,14 +248,14 @@ export const authOptions: NextAuthOptions = {
           }
 
           // Always find and set orgId if not set
-          if (!(token as any).orgId) {
+          if (!(token as unknown).orgId) {
             const org = await prisma.org.findFirst({ 
               where: { name: user.email || 'default' } 
             });
-            (token as any).orgId = org?.id || 'default';
+            (token as unknown).orgId = org?.id || 'default';
           }
 
-        } catch (error: any) {
+        } catch (error: unknown) {
           logger.error('OAuth callback processing failed', {
             userId: user.email || '',
             provider: account.provider,
@@ -263,8 +263,8 @@ export const authOptions: NextAuthOptions = {
           });
           
           // Fallback behavior - continue auth but set defaults
-          (token as any).orgId = 'default';
-          (token as any).user = {
+          (token as unknown).orgId = 'default';
+          (token as unknown).user = {
             email: user.email || '',
             name: user.name || '',
             image: user.image || '',
@@ -275,20 +275,20 @@ export const authOptions: NextAuthOptions = {
       }
       
       // Always ensure we have an orgId
-      if (!(token as any).orgId && token.email) {
+      if (!(token as unknown).orgId && token.email) {
         console.log('JWT callback - checking existing org for:', token.email);
         try {
           const org = await prisma.org.findFirst({ where: { name: token.email } });
           if (org) {
-            (token as any).orgId = org.id;
+            (token as unknown).orgId = org.id;
             console.log('Found existing orgId:', org.id);
           } else {
-            (token as any).orgId = 'default';
+            (token as unknown).orgId = 'default';
             console.log('No org found, using default');
           }
         } catch (error) {
           console.error('Error finding org:', error);
-          (token as any).orgId = 'default';
+          (token as unknown).orgId = 'default';
         }
       }
       

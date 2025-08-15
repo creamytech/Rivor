@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: { threadId: st
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest, { params }: { params: { threadId: st
       labels: thread.labels || [],
       starred: thread.starred,
       unread: thread.unread,
-      participants: thread.messages.reduce((acc: any[], message) => {
+      participants: thread.messages.reduce((acc: unknown[], message) => {
         const participant = {
           name: message.fromName,
           email: message.fromEmail
@@ -110,7 +110,7 @@ export async function GET(req: NextRequest, { params }: { params: { threadId: st
 
     return NextResponse.json(threadFormatted);
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Thread detail API error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch thread' },
@@ -129,7 +129,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { threadId: 
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
@@ -142,7 +142,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { threadId: 
       return NextResponse.json({ success: true });
     }
 
-    const updateData: any = {};
+    const updateData: unknown = {};
 
     if (body.unread !== undefined) {
       updateData.unread = body.unread;
@@ -166,7 +166,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { threadId: 
 
     return NextResponse.json({ success: true });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Thread update API error:', error);
     return NextResponse.json(
       { error: 'Failed to update thread' },

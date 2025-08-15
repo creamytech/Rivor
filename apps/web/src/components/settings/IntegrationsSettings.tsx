@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import StatusBadge from '@/components/river/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { 
-  Gmail, 
+  Mail, 
   Calendar,
   RefreshCw,
   Pause,
@@ -16,7 +16,7 @@ import {
   Clock,
   Zap
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+
 import { useToast } from '@/components/river/RiverToast';
 
 interface Integration {
@@ -180,7 +180,7 @@ export default function IntegrationsSettings() {
                   <div className="flex items-center gap-2">
                     {getProviderIcon(integration.provider)}
                     <div className="w-6 h-6 text-slate-500">
-                      {integration.type === 'email' ? <Gmail className="h-5 w-5" /> : <Calendar className="h-5 w-5" />}
+                      {integration.type === 'email' ? <Mail className="h-5 w-5" /> : <Calendar className="h-5 w-5" />}
                     </div>
                   </div>
                   

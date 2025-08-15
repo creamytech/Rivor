@@ -9,14 +9,14 @@ export const dynamic = 'force-dynamic';
 /**
  * Retry failed token encryption endpoint
  */
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Token retry API error', {
       error: error.message,
       action: 'token_retry_failed'

@@ -3,15 +3,15 @@
 
 declare global {
   interface Window {
-    gtag?: (...args: any[]) => void;
-    mixpanel?: any;
-    posthog?: any;
+    gtag?: (...args: unknown[]) => void;
+    mixpanel?: unknown;
+    posthog?: unknown;
   }
 }
 
 export interface TrackingEvent {
   name: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
   value?: number;
 }
 

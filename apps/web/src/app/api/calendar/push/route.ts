@@ -6,7 +6,7 @@ import { logger } from '@/lib/logger';
 // Force dynamic rendering - this route uses request headers
 export const dynamic = 'force-dynamic';
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   const correlationId = `calendar-push-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const startTime = Date.now();
   
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const latency = Date.now() - startTime;
     logger.error('Calendar push notification processing failed', {
       correlationId,
@@ -169,7 +169,7 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json({ status: 'ok' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Calendar webhook validation failed', {
       correlationId,
       error: error.message,

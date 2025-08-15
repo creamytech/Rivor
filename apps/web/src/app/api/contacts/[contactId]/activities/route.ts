@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: { contactId: s
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
@@ -100,7 +100,7 @@ export async function GET(req: NextRequest, { params }: { params: { contactId: s
     ]);
 
     // Combine and format activities
-    const activities: any[] = [];
+    const activities: unknown[] = [];
 
     // Add email activities
     emailActivities.forEach(email => {
@@ -143,7 +143,7 @@ export async function GET(req: NextRequest, { params }: { params: { contactId: s
 
     return NextResponse.json({ activities: limitedActivities });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Contact activities API error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch contact activities' },

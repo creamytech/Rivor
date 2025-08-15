@@ -98,7 +98,7 @@ export default function TasksList({ className }: TasksListProps) {
     try {
       const endpoint = `/api/tasks/${taskId}`;
       let method = 'PATCH';
-      let body: any = {};
+      let body: unknown = {};
 
       switch (action) {
         case 'complete':

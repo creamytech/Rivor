@@ -26,7 +26,7 @@ function CalendarPageContent() {
     setShowCreateModal(true);
   };
 
-  const handleEventCreated = (event: any) => {
+  const handleEventCreated = (event: unknown) => {
     addToast({
       type: 'success',
       title: 'Event Created',
@@ -35,7 +35,7 @@ function CalendarPageContent() {
     // Trigger refresh by updating key or calling parent refresh
   };
 
-  const handleEventClick = (event: any) => {
+  const handleEventClick = (event: unknown) => {
     // TODO: Open event detail modal
     console.log('Event clicked:', event);
   };

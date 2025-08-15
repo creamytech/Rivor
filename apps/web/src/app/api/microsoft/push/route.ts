@@ -7,7 +7,7 @@ import { MicrosoftGraphService } from '@/server/microsoft-graph';
 export const dynamic = 'force-dynamic';
 
 // Microsoft Graph validation: when creating a subscription, Graph sends a GET with validationToken.
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get('validationToken');
   if (token) {
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json().catch(() => null) as any;
+    const body = await req.json().catch(() => null) as unknown;
     const notifications = body?.value ?? [];
     
     for (const notification of notifications) {

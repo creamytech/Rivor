@@ -42,7 +42,7 @@ export interface Alert {
   level: 'info' | 'warning' | 'critical';
   type: string;
   message: string;
-  details?: any;
+  details?: unknown;
   timestamp: string;
 }
 
@@ -158,7 +158,7 @@ export async function collectIntegrationMetrics(): Promise<IntegrationMetrics> {
 
     return metrics;
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Failed to collect integration metrics', { error: error?.message || error });
     
     // Return minimal metrics with error alert
@@ -198,9 +198,9 @@ export async function collectIntegrationMetrics(): Promise<IntegrationMetrics> {
  * Generates alerts based on collected metrics
  */
 function generateAlerts(alerts: Alert[], data: {
-  encryptionHealth: any;
-  queueHealth: any;
-  healthProbeStats: any;
+  encryptionHealth: unknown;
+  queueHealth: unknown;
+  healthProbeStats: unknown;
   connectedAccounts: number;
   totalEmailAccounts: number;
 }): void {
@@ -384,7 +384,7 @@ function calculateAccountHealthScore(metrics: IntegrationMetrics): number {
   return metrics.connectedAccounts / metrics.totalEmailAccounts;
 }
 
-function calculateEncryptionHealthScore(encryptionHealth: any): number {
+function calculateEncryptionHealthScore(encryptionHealth: unknown): number {
   if (encryptionHealth.totalTokens === 0) return 1;
   return encryptionHealth.okTokens / encryptionHealth.totalTokens;
 }
@@ -416,7 +416,7 @@ async function sendAlertsToMonitoring(alerts: Alert[]): Promise<void> {
       // Server-side only
       try {
         // Sentry.captureMessage(alert.message, 'error');
-      } catch (error: any) {
+      } catch (error: unknown) {
         logger.error('Failed to send alert to Sentry', { error: error?.message || error });
       }
     }

@@ -7,14 +7,14 @@ export const dynamic = 'force-dynamic';
 /**
  * Get organization members
  */
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ members: membersFormatted });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Organization members API error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch organization members' },

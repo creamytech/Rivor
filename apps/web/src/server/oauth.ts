@@ -38,7 +38,7 @@ export interface TokenHealth {
 /**
  * Helper function to check if account has valid refresh token by decrypting it
  */
-async function hasValidRefreshToken(orgId: string, account: any): Promise<boolean> {
+async function hasValidRefreshToken(orgId: string, account: unknown): Promise<boolean> {
   if (!account.refreshToken || account.refreshToken.length === 0) {
     return false;
   }

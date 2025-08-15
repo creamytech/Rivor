@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { signIn } from "next-auth/react";
-import { Shield, CheckCircle, Users, Zap } from "lucide-react";
+import { Shield, CheckCircle, Users } from "lucide-react";
 import Logo from "@/components/branding/Logo";
 
 type Providers = Record<string, { id: string; name: string }>;
@@ -149,7 +149,7 @@ export default function SignInPage() {
               </button>
             )}
 
-            {!loading && providers && (providers as any)['azure-ad'] && (
+            {!loading && providers && (providers as unknown)['azure-ad'] && (
               <button
                 onClick={() => handleSignIn('azure-ad')}
                 disabled={isSigningIn}

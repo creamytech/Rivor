@@ -7,7 +7,7 @@ import { logger } from '@/lib/logger';
 // Force dynamic rendering - this route uses request headers
 export const dynamic = 'force-dynamic';
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   const correlationId = `gmail-push-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const startTime = Date.now();
   
@@ -38,13 +38,13 @@ export async function POST(req: NextRequest) {
       return new Response('Forbidden', { status: 403 });
     }
     
-    const body = await req.json().catch(() => null) as any;
+    const body = await req.json().catch(() => null) as unknown;
     const message = body?.message;
     const attributes = message?.attributes ?? {};
     const dataB64: string | undefined = message?.data;
     
     // Decode the pub/sub data if available
-    let notificationData: any = {};
+    let notificationData: unknown = {};
     if (dataB64) {
       try {
         const decoded = Buffer.from(dataB64, 'base64').toString();
@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
           historyId,
           action: 'gmail_push_realtime_success'
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Check if it's an authentication error
         if (error.message?.includes('401') || error.message?.includes('unauthorized')) {
           logger.error('Gmail push notification authentication failed', {
@@ -201,7 +201,7 @@ export async function POST(req: NextRequest) {
     });
     
     return new Response('OK');
-  } catch (err: any) {
+  } catch (err: unknown) {
     const latency = Date.now() - startTime;
     logger.error('Gmail push notification processing failed', {
       correlationId,
@@ -212,7 +212,7 @@ export async function POST(req: NextRequest) {
 
     // Try to log failed push notification if we have account info
     try {
-      const body = await req.json().catch(() => null) as any;
+      const body = await req.json().catch(() => null) as unknown;
       const message = body?.message;
       const attributes = message?.attributes ?? {};
       const emailAddress = attributes.emailAddress;

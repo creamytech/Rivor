@@ -120,7 +120,7 @@ export async function runHealthProbe(emailAccountId: string): Promise<HealthProb
 
     return result;
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     result.overallStatus = 'disconnected';
     result.gmail = { status: 'fail', reason: error?.message || 'Health probe failed' };
 
@@ -138,7 +138,7 @@ export async function runHealthProbe(emailAccountId: string): Promise<HealthProb
           errorReason: `Health probe error: ${error?.message || error}`,
         },
       });
-    } catch (updateError: any) {
+    } catch (updateError: unknown) {
       logger.error('Failed to update EmailAccount after probe failure', {
         emailAccountId,
         updateError: updateError?.message || updateError,
@@ -171,7 +171,7 @@ async function runGoogleHealthProbes(accessToken: string, result: HealthProbeRes
     } else {
       result.gmail = { status: 'fail', reason: `Gmail API error: ${gmailResponse.status}` };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     result.gmail = { status: 'fail', reason: `Gmail probe error: ${error?.message || error}` };
   }
 
@@ -193,7 +193,7 @@ async function runGoogleHealthProbes(accessToken: string, result: HealthProbeRes
     } else {
       result.calendar = { status: 'fail', reason: `Calendar API error: ${calendarResponse.status}` };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     result.calendar = { status: 'fail', reason: `Calendar probe error: ${error?.message || error}` };
   }
 }
@@ -220,7 +220,7 @@ async function runMicrosoftHealthProbes(accessToken: string, result: HealthProbe
     } else {
       result.gmail = { status: 'fail', reason: `Mail API error: ${mailResponse.status}` };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     result.gmail = { status: 'fail', reason: `Mail probe error: ${error?.message || error}` };
   }
 
@@ -242,7 +242,7 @@ async function runMicrosoftHealthProbes(accessToken: string, result: HealthProbe
     } else {
       result.calendar = { status: 'fail', reason: `Calendar API error: ${calendarResponse.status}` };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     result.calendar = { status: 'fail', reason: `Calendar probe error: ${error?.message || error}` };
   }
 }
@@ -321,7 +321,7 @@ export async function scheduleHealthProbes(): Promise<void> {
       accountCount: emailAccounts.length,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Failed to schedule health probes', { error: error?.message || error });
   }
 }

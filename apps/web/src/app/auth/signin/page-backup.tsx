@@ -1,8 +1,7 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
 import { signIn } from "next-auth/react";
-import { Shield, CheckCircle, Users, Zap } from "lucide-react";
-import Logo from "@/components/branding/Logo";
+// import { Shield, CheckCircle, Users, Zap } from "lucide-react"; // TODO: Remove if not needed
+// import Logo from "@/components/branding/Logo"; // TODO: Remove if not needed
 
 export default function SignInPage() {
   return (

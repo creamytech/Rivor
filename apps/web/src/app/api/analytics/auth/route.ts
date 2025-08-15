@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
-import { rateLimit, getClientIP, createRateLimitKey, RATE_LIMITS } from '@/lib/rate-limit';
+import { rateLimit, getClientIP, createRateLimitKey } from '@/lib/rate-limit';
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Rate limit analytics requests
     const ip = getClientIP(request);

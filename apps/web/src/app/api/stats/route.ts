@@ -7,7 +7,7 @@ import { getOverallPipelineStats } from "@/server/pipeline";
 // Force dynamic rendering - this route uses session/auth data
 export const dynamic = 'force-dynamic';
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const session = await auth();
     
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
     const userEmail = session.user?.email;
 
     if (!orgId) {

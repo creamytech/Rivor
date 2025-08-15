@@ -28,7 +28,7 @@ export default function TokenErrorBanner() {
         const data = await response.json();
         const errors: TokenError[] = [];
         
-        data.emailAccounts?.forEach((account: any) => {
+        data.emailAccounts?.forEach((account: unknown) => {
           if (account.encryptionStatus === 'failed' || account.tokenStatus === 'failed') {
             errors.push({
               provider: account.provider,

@@ -68,7 +68,7 @@ export class PerformanceMonitor {
   // Memory usage tracking
   trackMemoryUsage(): void {
     if ('memory' in performance) {
-      const memory = (performance as any).memory;
+      const memory = (performance as unknown).memory;
       this.metrics.set('heap-used', memory.usedJSHeapSize);
       this.metrics.set('heap-total', memory.totalJSHeapSize);
       this.metrics.set('heap-limit', memory.jsHeapSizeLimit);
@@ -132,11 +132,11 @@ export class PerformanceMonitor {
 // Utility functions
 export const performanceMonitor = PerformanceMonitor.getInstance();
 
-export function withPerformanceTracking<T extends (...args: any[]) => any>(
+export function withPerformanceTracking<T extends (...args: unknown[]) => any>(
   fn: T,
   name: string
 ): T {
-  return ((...args: any[]) => {
+  return ((...args: unknown[]) => {
     performanceMonitor.startTiming(name);
     const result = fn(...args);
     

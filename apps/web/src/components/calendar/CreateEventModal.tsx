@@ -27,7 +27,7 @@ interface CreateEventModalProps {
   onOpenChange: (open: boolean) => void;
   defaultDate?: Date;
   defaultHour?: number;
-  onEventCreated?: (event: any) => void;
+  onEventCreated?: (event: unknown) => void;
 }
 
 export default function CreateEventModal({

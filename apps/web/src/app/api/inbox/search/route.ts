@@ -8,14 +8,14 @@ export const dynamic = 'force-dynamic';
 /**
  * Search inbox threads
  */
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
@@ -148,7 +148,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(response);
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Inbox search API error:', error);
     return NextResponse.json(
       { error: 'Failed to search threads' },

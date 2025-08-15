@@ -7,7 +7,7 @@ import { logger } from '@/lib/logger';
 // Force dynamic rendering - this route uses session/auth data and encrypted tokens
 export const dynamic = 'force-dynamic';
 
-export async function GET(req: NextRequest) {
+export async function GET(__req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     }
 
     const userEmail = session.user.email;
-    const orgId = (session as any).orgId;
+    const orgId = (session as { orgId?: string }).orgId;
 
     if (!orgId || orgId === 'unknown') {
       return NextResponse.json(
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 
     const accountDetails = await Promise.all(
       accounts.map(async (account) => {
-        const details: any = {
+        const details: Record<string, unknown> = {
           id: account.id,
           provider: account.provider,
           providerId: account.providerId,
@@ -148,15 +148,15 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(response, { status: 200 });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Google tokens debug failed', {
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
       action: 'debug_tokens_failed'
     });
 
     return NextResponse.json(
       {
-        error: error.message || 'Debug failed',
+        error: error instanceof Error ? error.message : 'Debug failed',
         timestamp: new Date().toISOString()
       },
       { status: 500 }

@@ -8,14 +8,14 @@ export const dynamic = 'force-dynamic';
 /**
  * Get pipeline stages with leads
  */
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
@@ -133,7 +133,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(response);
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Pipeline stages API error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch pipeline stages' },

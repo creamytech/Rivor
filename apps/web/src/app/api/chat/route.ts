@@ -7,8 +7,8 @@ export const dynamic = 'force-dynamic';
 interface ToolCall {
   id: string;
   tool: string;
-  parameters: Record<string, any>;
-  result?: any;
+  parameters: Record<string, unknown>;
+  result?: unknown;
 }
 
 interface ChatSource {
@@ -29,12 +29,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
 
-    const { message, history } = await req.json();
+    const { message } = await req.json();
+    // TODO: Implement history when needed
 
     if (!message || typeof message !== 'string') {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 });
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(response);
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Chat API error:', error);
     return NextResponse.json(
       { error: 'Failed to process chat message' },
@@ -244,7 +245,7 @@ async function listUpcomingEvents(orgId: string) {
 /**
  * Create task tool
  */
-async function createTask(taskData: any, orgId: string) {
+async function createTask(taskData: unknown, orgId: string) {
   try {
     const task = await prisma.task.create({
       data: {
@@ -315,7 +316,7 @@ function extractSourcesFromToolCalls(toolCalls: ToolCall[]): ChatSource[] {
 
   toolCalls.forEach(toolCall => {
     if (toolCall.tool === 'searchEmails' && toolCall.result) {
-      toolCall.result.forEach((email: any) => {
+      toolCall.result.forEach((email: unknown) => {
         sources.push({
           id: email.id,
           type: 'email',
@@ -327,7 +328,7 @@ function extractSourcesFromToolCalls(toolCalls: ToolCall[]): ChatSource[] {
     }
 
     if (toolCall.tool === 'listLeads' && toolCall.result) {
-      toolCall.result.forEach((lead: any) => {
+      toolCall.result.forEach((lead: unknown) => {
         sources.push({
           id: lead.id,
           type: 'lead',
@@ -339,7 +340,7 @@ function extractSourcesFromToolCalls(toolCalls: ToolCall[]): ChatSource[] {
     }
 
     if (toolCall.tool === 'listUpcomingEvents' && toolCall.result) {
-      toolCall.result.forEach((event: any) => {
+      toolCall.result.forEach((event: unknown) => {
         sources.push({
           id: event.id,
           type: 'event',
@@ -361,7 +362,7 @@ function extractSourcesFromToolCalls(toolCalls: ToolCall[]): ChatSource[] {
     }
 
     if (toolCall.tool === 'searchContacts' && toolCall.result) {
-      toolCall.result.forEach((contact: any) => {
+      toolCall.result.forEach((contact: unknown) => {
         sources.push({
           id: contact.id,
           type: 'contact',
@@ -400,7 +401,7 @@ async function generateResponse(message: string, toolCalls: ToolCall[]): Promise
       case 'listLeads':
         const leadCount = toolCall.result?.length || 0;
         if (leadCount > 0) {
-          const totalValue = toolCall.result?.reduce((sum: number, lead: any) => sum + lead.value, 0) || 0;
+          const totalValue = toolCall.result?.reduce((sum: number, lead: unknown) => sum + lead.value, 0) || 0;
           response += `I found ${leadCount} active lead${leadCount !== 1 ? 's' : ''} in your pipeline with a total value of $${totalValue.toLocaleString()}. `;
         } else {
           response += "You don't have any active leads in your pipeline yet. ";
@@ -463,7 +464,7 @@ function extractEmailQuery(message: string): string | null {
 }
 
 function extractTaskData(message: string) {
-  const data: any = {};
+  const data: unknown = {};
   
   // Extract task title
   const titlePatterns = [

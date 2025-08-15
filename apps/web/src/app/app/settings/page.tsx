@@ -11,11 +11,6 @@ import TokenErrorBanner from '@/components/common/TokenErrorBanner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
-  User, 
-  Building2, 
-  Shield, 
-  Bell, 
-  Palette, 
   Download,
   Save,
   Moon,

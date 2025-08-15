@@ -9,7 +9,7 @@ export async function searchThreads(orgId: string, q: string, limit = 50) {
     .filter(Boolean)
     .map((t) => `%${t.replace(/[%_]/g, '')}%`);
   if (tokens.length === 0) return [] as { id: string }[];
-  const where: any = {
+  const where: unknown = {
     orgId,
     OR: [
       { subjectIndex: { contains: tokens[0] } },

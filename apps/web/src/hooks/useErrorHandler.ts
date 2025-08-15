@@ -13,7 +13,7 @@ interface UseErrorHandlerReturn {
   error: Error | null;
   errorId: string | null;
   isError: boolean;
-  handleError: (error: Error | unknown, context?: Record<string, any>) => void;
+  handleError: (error: Error | unknown, context?: Record<string, unknown>) => void;
   clearError: () => void;
   retryWithErrorHandling: <T>(fn: () => Promise<T>) => Promise<T | null>;
 }
@@ -25,7 +25,7 @@ export function useErrorHandler(): UseErrorHandlerReturn {
     isError: false
   });
 
-  const handleError = useCallback((error: Error | unknown, context: Record<string, any> = {}) => {
+  const handleError = useCallback((error: Error | unknown, context: Record<string, unknown> = {}) => {
     const errorId = generateRequestId();
     const errorObj = error instanceof Error ? error : new Error(String(error));
     

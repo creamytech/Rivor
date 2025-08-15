@@ -14,7 +14,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { taskId: st
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
@@ -36,7 +36,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { taskId: st
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    const updateData: any = { updatedAt: new Date() };
+    const updateData: unknown = { updatedAt: new Date() };
 
     // Handle specific updates
     if (body.title !== undefined) updateData.title = body.title;
@@ -55,7 +55,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { taskId: st
 
     return NextResponse.json({ success: true, task: updatedTask });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Task update API error:', error);
     return NextResponse.json(
       { error: 'Failed to update task' },
@@ -74,7 +74,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { taskId: s
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
@@ -102,7 +102,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { taskId: s
 
     return NextResponse.json({ success: true });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Task deletion API error:', error);
     return NextResponse.json(
       { error: 'Failed to delete task' },

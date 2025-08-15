@@ -38,7 +38,7 @@ export function rateLimit(
   config: RateLimitConfig
 ): RateLimitResult {
   const now = Date.now();
-  const windowStart = now - config.windowMs;
+  // const windowStart = now - config.windowMs; // TODO: Use if needed for sliding window
   
   const entry = attempts.get(identifier);
   

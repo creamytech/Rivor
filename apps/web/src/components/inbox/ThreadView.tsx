@@ -169,7 +169,7 @@ export default function ThreadView({ threadId, onBack, className }: ThreadViewPr
     setShowCreateLead(true);
   };
 
-  const handleLeadCreated = (lead: any) => {
+  const handleLeadCreated = (lead: unknown) => {
     addToast({
       type: 'success',
       title: 'Lead Created',

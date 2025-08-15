@@ -75,7 +75,7 @@ export default function AdminHealthDashboard() {
       } else {
         setError(`HTTP ${response.status}: ${response.statusText}`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || 'Failed to fetch health data');
     } finally {
       setLoading(false);

@@ -160,7 +160,7 @@ export async function handleOAuthCallback(data: OAuthCallbackData): Promise<Onbo
       });
 
       // Step 5: Create CalendarAccount if calendar scopes are present
-      let calendarAccount: any = null;
+      let calendarAccount: unknown = null;
       const hasCalendarScopes = data.account.scope?.includes('calendar') || 
                                 data.account.scope?.includes('Calendars');
       
@@ -283,12 +283,12 @@ export async function handleOAuthCallback(data: OAuthCallbackData): Promise<Onbo
 
         result.encryptionStatus = 'failed';
         result.requiresTokenRetry = true;
-        result.errors.push(`Token storage failed but account provisioned: ${(tokenError as any)?.message || tokenError}`);
+        result.errors.push(`Token storage failed but account provisioned: ${(tokenError as unknown)?.message || tokenError}`);
 
         logger.error('Token storage failed but account provisioned', {
           correlationId,
           emailAccountId: result.emailAccountId,
-          error: (tokenError as any)?.message || tokenError,
+          error: (tokenError as unknown)?.message || tokenError,
         });
       }
     } else {
@@ -321,7 +321,7 @@ export async function handleOAuthCallback(data: OAuthCallbackData): Promise<Onbo
         logger.warn('Failed to schedule initial sync', {
           correlationId,
           emailAccountId: result.emailAccountId,
-          error: (syncError as any)?.message || syncError,
+          error: (syncError as unknown)?.message || syncError,
         });
       }
     }
@@ -360,7 +360,7 @@ export async function handleOAuthCallback(data: OAuthCallbackData): Promise<Onbo
 
     return result;
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     result.errors.push(`Onboarding failed: ${error?.message || error}`);
     
     logger.error('OAuth callback onboarding failed', {
@@ -406,7 +406,7 @@ async function upsertOrganization(userId: string, userEmail: string): Promise<{ 
     encryptedDekBlob = new Uint8Array(32);
     logger.warn('KMS encryption failed during org creation, using fallback', {
       userEmail,
-      error: (kmsError as any)?.message || kmsError,
+      error: (kmsError as unknown)?.message || kmsError,
     });
   }
 
@@ -512,7 +512,7 @@ async function scheduleInitialSync(orgId: string, emailAccountId: string, calend
 /**
  * Helper to extract error codes
  */
-function getErrorCode(error: any): string {
+function getErrorCode(error: unknown): string {
   if (error?.code) return error.code;
   if (error?.name) return error.name;
   return 'UNKNOWN_ERROR';

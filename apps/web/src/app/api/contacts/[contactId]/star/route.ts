@@ -14,7 +14,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { contactId:
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
@@ -50,7 +50,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { contactId:
       starred: updatedContact.starred 
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Contact star API error:', error);
     return NextResponse.json(
       { error: 'Failed to update contact' },

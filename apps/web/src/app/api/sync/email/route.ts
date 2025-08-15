@@ -12,7 +12,7 @@ export const runtime = 'nodejs';
  * Manual email sync API route for Vercel deployment
  * This replaces the background worker for serverless environments
  */
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   const correlationId = `manual-sync-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   
   try {
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
     if (!orgId || orgId === 'default') {
       return NextResponse.json({ 
         error: 'Authentication setup incomplete. Please sign out and sign in again with Google to complete setup.',
@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
           action: 'account_sync_completed'
         });
 
-      } catch (error: any) {
+      } catch (error: unknown) {
         logger.error('Email account sync failed', {
           correlationId,
           emailAccountId: emailAccount.id,
@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
       correlationId
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Manual email sync failed', {
       correlationId,
       error: error.message,
@@ -186,7 +186,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
     if (!orgId || orgId === 'default') {
       return NextResponse.json({ 
         error: 'Authentication setup incomplete. Please sign out and sign in again with Google to complete setup.',
@@ -223,7 +223,7 @@ export async function GET() {
       lastCheck: new Date().toISOString()
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json({ 
       error: 'Failed to check sync status', 
       details: error.message 

@@ -28,8 +28,8 @@ export interface LogContext {
   duration?: number;
   force?: boolean;
   hasData?: boolean;
-  attributes?: any;
-  notificationData?: any;
+  attributes?: unknown;
+  notificationData?: unknown;
   skipValidation?: boolean;
   gmailSuccess?: boolean;
   calendarSuccess?: boolean;
@@ -39,7 +39,7 @@ export interface LogContext {
   scheduledCount?: number;
   orgCount?: number;
   // Allow any additional fields
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
@@ -135,7 +135,7 @@ class Logger {
   }
 
   // Specific logging methods for common use cases
-  userAction(action: string, userId: string, orgId: string, metadata: Record<string, any> = {}) {
+  userAction(action: string, userId: string, orgId: string, metadata: Record<string, unknown> = {}) {
     this.info(`User action: ${action}`, {
       action,
       userId,
@@ -144,7 +144,7 @@ class Logger {
     });
   }
 
-  dataFetch(resource: string, success: boolean, orgId: string, metadata: Record<string, any> = {}) {
+  dataFetch(resource: string, success: boolean, orgId: string, metadata: Record<string, unknown> = {}) {
     const message = `Data fetch ${success ? 'successful' : 'failed'}: ${resource}`;
     if (success) {
       this.info(message, { resource, orgId, metadata });
@@ -153,7 +153,7 @@ class Logger {
     }
   }
 
-  authEvent(event: string, userId: string, provider: string, success: boolean, metadata: Record<string, any> = {}) {
+  authEvent(event: string, userId: string, provider: string, success: boolean, metadata: Record<string, unknown> = {}) {
     const message = `Auth ${event}: ${success ? 'success' : 'failure'}`;
     const level = success ? 'info' : 'warn';
     this[level](message, {

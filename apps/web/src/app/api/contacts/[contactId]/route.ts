@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: { contactId: s
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
@@ -83,7 +83,7 @@ export async function GET(req: NextRequest, { params }: { params: { contactId: s
 
     return NextResponse.json(contactFormatted);
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Contact detail API error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch contact' },
@@ -102,7 +102,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { contactId:
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
@@ -124,7 +124,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { contactId:
       return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
     }
 
-    const updateData: any = { updatedAt: new Date() };
+    const updateData: unknown = { updatedAt: new Date() };
 
     // Handle specific updates
     if (body.name !== undefined) updateData.name = body.name;
@@ -143,7 +143,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { contactId:
 
     return NextResponse.json({ success: true, contact: updatedContact });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Contact update API error:', error);
     return NextResponse.json(
       { error: 'Failed to update contact' },
@@ -162,7 +162,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { contactId
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
@@ -190,7 +190,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { contactId
 
     return NextResponse.json({ success: true });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Contact deletion API error:', error);
     return NextResponse.json(
       { error: 'Failed to delete contact' },

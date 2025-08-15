@@ -114,7 +114,7 @@ export class MicrosoftGraphService {
       console.error('Microsoft Graph sync error:', error);
       
       // Update account status if authentication failed
-      if ((error as any)?.code === 401 || (error as any)?.status === 401) {
+      if ((error as unknown)?.code === 401 || (error as unknown)?.status === 401) {
         await prisma.emailAccount.update({
           where: { id: emailAccountId },
           data: { status: 'action_needed' }
@@ -215,7 +215,7 @@ export class MicrosoftGraphService {
     }
   }
 
-  async handleWebhook(orgId: string, emailAccountId: string, notification: any): Promise<void> {
+  async handleWebhook(orgId: string, emailAccountId: string, notification: unknown): Promise<void> {
     try {
       // Get the resource URL from the notification
       const resourceUrl = notification.resource;

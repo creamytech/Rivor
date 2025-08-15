@@ -50,7 +50,7 @@ type SearchableItem = {
   description?: string;
   type: "thread" | "lead" | "contact" | "chat" | "task" | "event";
   url: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 };
 
 const mockSearchData: SearchableItem[] = [

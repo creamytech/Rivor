@@ -67,7 +67,7 @@ async function processJob(job: Job) {
         correlationId,
         emailAccountId 
       });
-    } catch (watchError: any) {
+    } catch (watchError: unknown) {
       // Don't fail the whole job if watch setup fails
       logger.warn('[worker] Gmail watch setup failed, backfill completed', {
         correlationId,
@@ -92,7 +92,7 @@ async function processJob(job: Job) {
       emailAccountId 
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('[worker] email:backfill failed', { 
       correlationId,
       orgId, 

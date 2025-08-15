@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
  * Health check endpoint showing system status
  * Access via /api/health (public) or /admin/health (protected)
  */
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   // Check if this is an admin request
   const url = new URL(req.url);
   const isAdminRequest = url.pathname.includes('/admin/health');
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
       } catch {
         schemaVersion = 'unknown';
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       dbStatus = 'error';
       dbError = error.message;
     }
@@ -166,7 +166,7 @@ export async function GET(req: NextRequest) {
       status: health.status === 'healthy' ? 200 : 503
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json({
       status: 'error',
       timestamp: new Date().toISOString(),
@@ -204,7 +204,7 @@ async function getTokenEncryptionHealthSummary() {
   } catch (error) {
     return {
       error: 'Could not fetch token health',
-      message: (error as any)?.message || error
+      message: (error as unknown)?.message || error
     };
   }
 }

@@ -42,8 +42,8 @@ interface ChatSource {
 interface ToolCall {
   id: string;
   tool: string;
-  parameters: Record<string, any>;
-  result?: any;
+  parameters: Record<string, unknown>;
+  result?: unknown;
 }
 
 interface ChatInterfaceProps {

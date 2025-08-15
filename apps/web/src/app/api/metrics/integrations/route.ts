@@ -4,14 +4,14 @@ import { auth } from '@/server/auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     // Check authentication - only allow admin users or system monitoring
     const session = await auth();
     const apiKey = req.headers.get('x-api-key');
     
     // Allow access via API key (for external monitoring) or admin session
-    if (!apiKey && (!(session as any)?.orgId)) {
+    if (!apiKey && (!(session as unknown)?.orgId)) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
       data: metrics,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Metrics API error:', error);
     return NextResponse.json(
       { 

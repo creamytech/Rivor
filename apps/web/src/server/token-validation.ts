@@ -95,7 +95,7 @@ export async function validateGoogleToken(
         needsRefresh: false,
         expiresAt: tokenInfo.expiresAt
       };
-    } catch (apiError: any) {
+    } catch (apiError: unknown) {
       // Token invalid - try to refresh if we have a refresh token
       if (tokenInfo.refreshToken) {
         logger.info('Token invalid, attempting refresh', {
@@ -119,7 +119,7 @@ export async function validateGoogleToken(
         };
       }
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Token validation error', {
       correlationId,
       error: error.message,
@@ -139,8 +139,8 @@ export async function validateGoogleToken(
  */
 async function refreshGoogleToken(
   orgId: string,
-  oauthAccount: any,
-  oauth2Client: any,
+  oauthAccount: unknown,
+  oauth2Client: unknown,
   correlationId: string
 ): Promise<TokenValidationResult> {
   try {
@@ -181,7 +181,7 @@ async function refreshGoogleToken(
       expiresAt: credentials.expiry_date ? new Date(credentials.expiry_date) : undefined,
       refreshed: true
     };
-  } catch (refreshError: any) {
+  } catch (refreshError: unknown) {
     logger.error('Token refresh failed', {
       correlationId,
       error: refreshError.message,
@@ -199,7 +199,7 @@ async function refreshGoogleToken(
 /**
  * Decrypt OAuth tokens from database
  */
-async function decryptTokens(orgId: string, oauthAccount: any): Promise<TokenInfo> {
+async function decryptTokens(orgId: string, oauthAccount: unknown): Promise<TokenInfo> {
   const accessTokenBytes = await decryptForOrg(orgId, oauthAccount.accessToken, 'oauth:access');
   const accessToken = new TextDecoder().decode(accessTokenBytes);
   
@@ -246,7 +246,7 @@ export async function createGoogleOAuthClient(orgId: string, oauthAccountId: str
       if (tokens.access_token) {
         const accessTokenEnc = await encryptForOrg(orgId, tokens.access_token, 'oauth:access');
         
-        const updateData: any = {
+        const updateData: unknown = {
           accessToken: accessTokenEnc,
           expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
           updatedAt: new Date()

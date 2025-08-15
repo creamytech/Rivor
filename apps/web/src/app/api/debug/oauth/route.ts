@@ -6,7 +6,7 @@ import { checkTokenHealth } from "@/server/oauth";
 // Force dynamic rendering - this route uses session/auth data
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+export async function GET(__request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
@@ -33,8 +33,8 @@ export async function GET(request: NextRequest) {
 
     // Check email and calendar accounts
     const org = await prisma.org.findFirst({ where: { name: userEmail } });
-    let emailAccounts: any[] = [];
-    let calendarAccounts: any[] = [];
+    let emailAccounts: Array<{ id: string; provider: string; status: string; createdAt: Date }> = [];
+    let calendarAccounts: Array<{ id: string; provider: string; status: string; createdAt: Date }> = [];
     
     if (org) {
       emailAccounts = await prisma.emailAccount.findMany({
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       userEmail,
       session: {
         user: session.user,
-        orgId: (session as any).orgId
+        orgId: (session as { orgId?: string }).orgId
       },
       oauthAccounts,
       tokenHealth,

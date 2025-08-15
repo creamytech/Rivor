@@ -14,7 +14,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { threadId: 
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
@@ -26,7 +26,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { threadId: 
       return NextResponse.json({ success: true });
     }
 
-    const updateData: any = {};
+    const updateData: unknown = {};
 
     switch (action) {
       case 'star':
@@ -74,7 +74,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { threadId: 
 
     return NextResponse.json({ success: true, thread: updatedThread });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Thread action API error:', error);
     return NextResponse.json(
       { error: 'Failed to perform thread action' },

@@ -6,7 +6,7 @@ import { logger } from '@/lib/logger';
 // Force dynamic rendering - this route uses session/auth data
 export const dynamic = 'force-dynamic';
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   const correlationId = `manual-health-check-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   
   try {
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     }
 
     const userEmail = session.user.email;
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
 
     if (!orgId || orgId === 'unknown') {
       return NextResponse.json(
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(response);
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Manual health check failed', {
       correlationId,
       error: error.message,
@@ -110,7 +110,7 @@ export async function GET(req: NextRequest) {
     }
 
     const userEmail = session.user.email;
-    const orgId = (session as any).orgId;
+    const orgId = (session as unknown).orgId;
 
     if (!orgId || orgId === 'unknown') {
       return NextResponse.json(
@@ -138,7 +138,7 @@ export async function GET(req: NextRequest) {
       accounts: integrationStatus.emailAccounts,
       summary: integrationStatus.summary
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       {
         error: error.message || 'Failed to get health status',

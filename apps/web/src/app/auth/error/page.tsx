@@ -164,7 +164,7 @@ export default function AuthErrorPage() {
                   </button>
                 )}
 
-                {!loading && providers && (providers as any)['azure-ad'] && (
+                {!loading && providers && (providers as unknown)['azure-ad'] && (
                   <button
                     onClick={() => handleRetry('azure-ad')}
                     disabled={isRetrying}
