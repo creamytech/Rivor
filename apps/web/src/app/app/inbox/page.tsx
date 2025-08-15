@@ -141,7 +141,10 @@ export default function InboxPage() {
           }
         }, 3000);
       } else {
-        setSyncStatus(`❌ ${result.message}`);
+        setSyncStatus(`❌ ${result.error || result.message}`);
+        if (result.error && result.error.includes('Authentication setup incomplete')) {
+          setSyncStatus(`❌ Please sign out and sign in again to complete Google setup.`);
+        }
       }
     } catch (error) {
       console.error('Sync error:', error);

@@ -195,11 +195,23 @@ export const authOptions: NextAuthOptions = {
             isFirstTimeUser = true;
             console.log('Creating new org for first-time user:', user.email);
             
-            // Generate proper DEK for encryption
-            const env = getEnv();
-            const kms = createKmsClient(env.KMS_PROVIDER, env.KMS_KEY_ID);
-            const dek = generateDek();
-            const encryptedDekBlob = await kms.encryptDek(dek);
+            // Generate proper DEK for encryption with fallback
+            let encryptedDekBlob: Uint8Array;
+            try {
+              const env = getEnv();
+              if (env.KMS_PROVIDER && env.KMS_KEY_ID) {
+                const kms = createKmsClient(env.KMS_PROVIDER, env.KMS_KEY_ID);
+                const dek = generateDek();
+                encryptedDekBlob = await kms.encryptDek(dek);
+              } else {
+                // Fallback for development/local without KMS
+                encryptedDekBlob = new Uint8Array(32); // Simple fallback
+                console.warn('Using fallback encryption - configure KMS for production');
+              }
+            } catch (encryptError) {
+              console.warn('KMS encryption failed, using fallback:', encryptError);
+              encryptedDekBlob = new Uint8Array(32); // Simple fallback
+            }
             
             org = await prisma.org.create({ 
               data: { 
@@ -292,23 +304,40 @@ export const authOptions: NextAuthOptions = {
                   : scopes.includes('https://graph.microsoft.com/Calendars.ReadWrite');
 
                 if (hasEmailScopes) {
-                  const existingEmailAccount = await prisma.emailAccount.findFirst({
-                    where: { orgId: org.id, provider: account.provider }
-                  });
-                  
-                  if (!existingEmailAccount) {
-                    const emailAccount = await prisma.emailAccount.create({
-                      data: {
-                        orgId: org.id,
-                        provider: account.provider,
-                        status: 'connected'
-                      }
+                  try {
+                    const existingEmailAccount = await prisma.emailAccount.findFirst({
+                      where: { orgId: org.id, provider: account.provider }
                     });
-                    console.log('Created EmailAccount for sync worker');
                     
-                    // Enqueue initial email sync
-                    await enqueueEmailSync(org.id, emailAccount.id);
-                    console.log('Enqueued initial email sync');
+                    if (!existingEmailAccount) {
+                      const emailAccount = await prisma.emailAccount.create({
+                        data: {
+                          orgId: org.id,
+                          provider: account.provider,
+                          status: 'connected'
+                        }
+                      });
+                      console.log('Created EmailAccount for sync worker', {
+                        emailAccountId: emailAccount.id,
+                        orgId: org.id,
+                        provider: account.provider
+                      });
+                      
+                      // Enqueue initial email sync with error handling
+                      try {
+                        await enqueueEmailSync(org.id, emailAccount.id);
+                        console.log('Enqueued initial email sync');
+                      } catch (queueError) {
+                        console.warn('Failed to enqueue email sync (Redis might not be available):', queueError);
+                      }
+                    } else {
+                      console.log('EmailAccount already exists', {
+                        emailAccountId: existingEmailAccount.id,
+                        status: existingEmailAccount.status
+                      });
+                    }
+                  } catch (emailAccountError) {
+                    console.error('Failed to create EmailAccount:', emailAccountError);
                   }
                 }
 

@@ -23,8 +23,12 @@ export async function POST(req: NextRequest) {
     }
 
     const orgId = (session as any).orgId;
-    if (!orgId) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 401 });
+    if (!orgId || orgId === 'default') {
+      return NextResponse.json({ 
+        error: 'Authentication setup incomplete. Please sign out and sign in again with Google to complete setup.',
+        details: 'Organization not properly created during sign-in process.',
+        action: 'Please go to Settings and reconnect your Google account.'
+      }, { status: 401 });
     }
 
     logger.info('Manual email sync triggered', {
@@ -183,8 +187,11 @@ export async function GET() {
     }
 
     const orgId = (session as any).orgId;
-    if (!orgId) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 401 });
+    if (!orgId || orgId === 'default') {
+      return NextResponse.json({ 
+        error: 'Authentication setup incomplete. Please sign out and sign in again with Google to complete setup.',
+        details: 'Organization not properly created during sign-in process.'
+      }, { status: 401 });
     }
 
     // Get email account statuses
