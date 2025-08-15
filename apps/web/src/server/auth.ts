@@ -1,6 +1,7 @@
 ﻿import { prisma } from "./db";
 import { enqueueEmailSync } from "./queue";
 import { type NextAuthOptions, getServerSession } from "next-auth";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import Google from "next-auth/providers/google";
 import AzureAD from "next-auth/providers/azure-ad";
 import { createKmsClient, generateDek } from "@rivor/crypto";
@@ -54,6 +55,7 @@ if (providers.length === 0) {
 validateAndLogStartupConfig();
 
 export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma),
   pages: {
     signIn: "/auth/signin",
     error: "/auth/error",
@@ -137,7 +139,8 @@ export const authOptions: NextAuthOptions = {
         timestamp: new Date().toISOString()
       });
       
-      // Always allow sign in - we'll handle org creation in jwt callback
+      // NextAuth should create User and Account records automatically with database strategy
+      // This callback just validates the sign-in is allowed
       return true;
     },
     async redirect({ url, baseUrl }) {
