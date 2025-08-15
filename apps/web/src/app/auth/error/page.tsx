@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { AlertTriangle, RefreshCw, Home, Mail, Shield, Users } from "lucide-react";
 import Logo from "@/components/branding/Logo";
+import { authAnalytics, trackProviderClick, trackAuthError } from "@/lib/auth-analytics";
 
 type Providers = Record<string, { id: string; name: string }>;
 
@@ -16,6 +17,12 @@ export default function AuthErrorPage() {
   const [retryProvider, setRetryProvider] = useState<string | null>(null);
 
   useEffect(() => {
+    // Track error page view with error context
+    authAnalytics.trackPageView('error', undefined, {
+      errorCode: error,
+      errorDetails: getErrorDetails(error)
+    });
+
     let cancelled = false;
     (async () => {
       try {
@@ -30,7 +37,7 @@ export default function AuthErrorPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [error]);
 
   const handleRetry = async (provider: string) => {
     setIsRetrying(true);
