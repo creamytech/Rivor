@@ -114,10 +114,10 @@ export const authOptions: NextAuthOptions = {
       if (user && account) {
         // Milestone C: OAuth callback logging with required format
         const oauthCallbackLog = {
-          userId: user.email,
+          userId: user.email || undefined,
           provider: account.provider,
           hasRefreshToken: !!account.refresh_token,
-          expiresAt: account.expires_at ? new Date(account.expires_at * 1000).toISOString() : null
+          expiresAt: account.expires_at ? new Date(account.expires_at * 1000).toISOString() : undefined
         };
         
         console.log('OAuth callback:', oauthCallbackLog);
