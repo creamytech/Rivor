@@ -6,10 +6,12 @@ import AzureAD from "next-auth/providers/azure-ad";
 import { createKmsClient, generateDek } from "@rivor/crypto";
 import { getEnv } from "./env";
 import { encryptForOrg } from "./crypto";
+import { logger } from "@/lib/logger";
 
 const providers = [] as any[];
 
 // Microsoft OAuth (always enabled if configured)
+const REQUIRED_MICROSOFT_SCOPES = "openid email profile offline_access https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/Mail.Send https://graph.microsoft.com/Calendars.ReadWrite https://graph.microsoft.com/User.Read";
 if (process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET) {
   providers.push(AzureAD({
     clientId: process.env.MICROSOFT_CLIENT_ID,
@@ -17,7 +19,7 @@ if (process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET) {
     tenantId: process.env.MICROSOFT_TENANT_ID ?? "common",
     authorization: { 
       params: { 
-        scope: process.env.MICROSOFT_OAUTH_SCOPES || "openid email profile https://graph.microsoft.com/mail.read" 
+        scope: process.env.MICROSOFT_OAUTH_SCOPES || REQUIRED_MICROSOFT_SCOPES
       } 
     },
   }));
@@ -41,26 +43,9 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   );
 }
 
-// Add a demo provider if no real providers are configured (for testing)
-if (providers.length === 0 && process.env.NODE_ENV !== "production") {
-  console.warn("No OAuth providers configured. Adding demo provider for development.");
-  providers.push({
-    id: "demo",
-    name: "Demo Login",
-    type: "oauth",
-    authorization: "https://example.com/oauth/authorize",
-    token: "https://example.com/oauth/token",
-    userinfo: "https://example.com/oauth/userinfo",
-    clientId: "demo",
-    clientSecret: "demo",
-    profile(profile: any) {
-      return {
-        id: "demo-user",
-        name: "Demo User",
-        email: "demo@example.com",
-      }
-    },
-  });
+// Only Google and Microsoft providers are supported
+if (providers.length === 0) {
+  console.warn("No OAuth providers configured. Please set up Google or Microsoft OAuth credentials.");
 }
 
 export const authOptions: NextAuthOptions = {
@@ -74,14 +59,19 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   events: {
     async signIn({ user, account, profile }) {
-      // Log successful sign in but don't block authentication
-      console.log(`User signed in: ${user.email} via ${account?.provider}`);
+      // Log successful sign in
+      if (user.email && account?.provider) {
+        logger.authEvent('signin', user.email, account.provider, true);
+      }
       
       // Optionally try to set up additional resources in background
       // but don't block the authentication flow
       if (account?.provider && user.email) {
-        // This could be moved to a background job later
-        console.log(`Setting up resources for ${user.email}`);
+        logger.info('Setting up resources for user', {
+          userId: user.email,
+          action: 'setup_resources',
+          metadata: { provider: account.provider }
+        });
       }
     },
   },

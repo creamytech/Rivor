@@ -87,4 +87,46 @@ export async function getThreadWithMessages(orgId: string, threadId: string): Pr
   return { thread: { id: thread.id, subject, participants, updatedAt: thread.updatedAt }, messages };
 }
 
+/**
+ * Get email statistics for an organization
+ */
+export async function getEmailStats(orgId: string) {
+  const [totalThreads, recentThreads] = await Promise.all([
+    prisma.emailThread.count({
+      where: { orgId }
+    }),
+    prisma.emailThread.count({
+      where: {
+        orgId,
+        updatedAt: {
+          gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
+        }
+      }
+    })
+  ]);
+
+  return {
+    totalThreads,
+    recentThreads
+  };
+}
+
+/**
+ * Get unread email count (simplified - in a real implementation you'd track read status)
+ */
+export async function getUnreadCount(orgId: string): Promise<number> {
+  // This is a simplified implementation - in reality you'd track read status
+  // For now, we'll just return recent threads as a proxy for "unread"
+  const count = await prisma.emailThread.count({
+    where: {
+      orgId,
+      updatedAt: {
+        gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
+      }
+    }
+  });
+  
+  return count;
+}
+
 

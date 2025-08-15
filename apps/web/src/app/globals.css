@@ -81,6 +81,20 @@ body {
               linear-gradient(135deg, color-mix(in oklab, var(--rivor-indigo) 80%, transparent), color-mix(in oklab, var(--rivor-teal) 60%, transparent));
 }
 
+/* Typography scale */
+.text-display-2xl { font-size: 3.75rem; line-height: 1; letter-spacing: -0.02em; }
+.text-display-xl { font-size: 3rem; line-height: 1; letter-spacing: -0.02em; }
+.text-display-lg { font-size: 2.25rem; line-height: 2.5rem; letter-spacing: -0.02em; }
+.text-display-md { font-size: 1.875rem; line-height: 2.25rem; letter-spacing: -0.01em; }
+.text-display-sm { font-size: 1.5rem; line-height: 2rem; }
+
+/* Component spacing utilities */
+.spacing-component-xs { gap: 0.25rem; }
+.spacing-component-sm { gap: 0.5rem; }
+.spacing-component-md { gap: 0.75rem; }
+.spacing-component-lg { gap: 1rem; }
+.spacing-component-xl { gap: 1.5rem; }
+
 /* Flow animations for gradients */
 .bg-size-200 {
   background-size: 200% 100%;

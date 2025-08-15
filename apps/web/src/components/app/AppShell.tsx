@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Logo from "@/components/branding/Logo";
-import CommandPalette from "@/components/common/CommandPalette";
+import EnhancedCommandPalette from "@/components/app/EnhancedCommandPalette";
 import { useEffect, useState } from "react";
 import { Search, Bell, HelpCircle, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,13 +14,12 @@ type AppShellProps = {
 };
 
 const nav = [
-  { href: "/app", label: "Dashboard", icon: "📊" },
+  { href: "/app", label: "App", icon: "📊", exactMatch: true },
   { href: "/app/inbox", label: "Inbox", icon: "📥" },
   { href: "/app/pipeline", label: "Pipeline", icon: "🗂️" },
   { href: "/app/calendar", label: "Calendar", icon: "🗓️" },
   { href: "/app/contacts", label: "Contacts", icon: "👤" },
   { href: "/app/chat", label: "Chat", icon: "💬" },
-  { href: "/app/analytics", label: "Analytics", icon: "📊", badge: "Soon" },
   { href: "/app/settings", label: "Settings", icon: "⚙️" },
 ];
 
@@ -42,7 +41,9 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         </div>
         <nav className="flex-1 py-4">
           {nav.map((item) => {
-            const active = pathname === item.href || (item.href !== "/app" && pathname.startsWith(item.href));
+            const active = item.exactMatch 
+              ? pathname === item.href 
+              : pathname === item.href || pathname.startsWith(item.href + '/');
             return (
               <Link key={item.href} href={item.href} className={`flex items-center gap-3 px-4 py-2 text-sm hover:bg-[var(--background)] transition-colors rounded-md mx-2 ${active ? "bg-[var(--background)] text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}`}>
                 <span aria-hidden>{item.icon}</span>
@@ -109,7 +110,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       </div>
       
       {/* Command Palette */}
-      <CommandPalette isOpen={showCommandPalette} setIsOpen={setShowCommandPalette} />
+      <EnhancedCommandPalette isOpen={showCommandPalette} setIsOpen={setShowCommandPalette} />
     </div>
   );
 }
