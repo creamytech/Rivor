@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FlowCard from '@/components/river/FlowCard';
 import PillFilter from '@/components/river/PillFilter';
@@ -71,11 +71,7 @@ export default function ContactsList({ className, onContactClick }: ContactsList
     { id: 'table', label: 'Table', icon: <List className="h-4 w-4" /> }
   ];
 
-  useEffect(() => {
-    fetchContacts();
-  }, []);
-
-  const fetchContacts = async () => {
+  const fetchContacts = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/contacts');
@@ -88,7 +84,11 @@ export default function ContactsList({ className, onContactClick }: ContactsList
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchContacts();
+  }, [fetchContacts]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);

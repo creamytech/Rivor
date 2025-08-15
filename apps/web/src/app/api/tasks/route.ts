@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(url.searchParams.get('limit') || '50');
     const offset = parseInt(url.searchParams.get('offset') || '0');
 
-    let whereClause: any = { orgId };
+    const whereClause: any = { orgId };
 
     if (status) {
       whereClause.status = status;

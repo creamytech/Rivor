@@ -26,7 +26,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { threadId: 
       return NextResponse.json({ success: true });
     }
 
-    let updateData: any = {};
+    const updateData: any = {};
 
     switch (action) {
       case 'star':

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FlowCard from '@/components/river/FlowCard';
 import PillFilter from '@/components/river/PillFilter';
@@ -71,11 +71,7 @@ export default function TasksList({ className }: TasksListProps) {
     ).length }
   ];
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/tasks');
@@ -88,7 +84,11 @@ export default function TasksList({ className }: TasksListProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -96,7 +96,7 @@ export default function TasksList({ className }: TasksListProps) {
 
   const handleTaskAction = async (taskId: string, action: 'complete' | 'reopen' | 'delete') => {
     try {
-      let endpoint = `/api/tasks/${taskId}`;
+      const endpoint = `/api/tasks/${taskId}`;
       let method = 'PATCH';
       let body: any = {};
 

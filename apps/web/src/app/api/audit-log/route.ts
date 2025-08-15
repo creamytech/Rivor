@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
       }
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Audit log API error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch audit logs' },

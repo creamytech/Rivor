@@ -33,8 +33,8 @@ export async function getSecurityContext(): Promise<SecurityContext | null> {
     return {
       userId: session.user.id || session.user.email,
       userEmail: session.user.email,
-      orgId: (session as any).orgId,
-      role: (session as any).role || 'member',
+      orgId: (session as unknown as { orgId: string }).orgId,
+      role: (session as unknown as { role: 'owner' | 'admin' | 'member' }).role || 'member',
       ipAddress,
       userAgent
     };
@@ -98,7 +98,7 @@ export function hasPermission(
 /**
  * Generate WHERE clause for row-level security
  */
-export function getOrgScopedWhere(context: SecurityContext | null, additionalWhere: any = {}) {
+export function getOrgScopedWhere(context: SecurityContext | null, additionalWhere: Record<string, unknown> = {}) {
   if (!context) {
     throw new Error('Unauthorized: No security context');
   }
@@ -112,7 +112,7 @@ export function getOrgScopedWhere(context: SecurityContext | null, additionalWhe
 /**
  * Validate and sanitize user input
  */
-export function sanitizeInput(input: any): any {
+export function sanitizeInput(input: unknown): unknown {
   if (typeof input === 'string') {
     // Basic XSS protection - remove script tags and dangerous attributes
     return input
@@ -129,7 +129,7 @@ export function sanitizeInput(input: any): any {
   }
 
   if (typeof input === 'object' && input !== null) {
-    const sanitized: any = {};
+    const sanitized: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(input)) {
       // Sanitize object keys and values
       const cleanKey = sanitizeInput(key);
@@ -206,7 +206,7 @@ export interface AuditLogEntry {
   ipAddress?: string;
   userAgent?: string;
   severity: 'low' | 'medium' | 'high';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**

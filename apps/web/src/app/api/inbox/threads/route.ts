@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Build where clause based on filter
-    let whereClause: any = {
+    const whereClause: any = {
       orgId,
       messages: {
         some: {} // Only threads with messages

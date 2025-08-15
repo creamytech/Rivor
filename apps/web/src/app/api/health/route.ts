@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
     
     // Check Redis connectivity (optional)
     let redisStatus = 'not_configured';
-    let redisError: string | null = null;
+    const redisError: string | null = null;
     if (env.REDIS_URL) {
       // Redis is optional, so we just mark it as configured
       redisStatus = 'configured';

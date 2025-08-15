@@ -70,7 +70,7 @@ export async function collectIntegrationMetrics(): Promise<IntegrationMetrics> {
 
     // Encryption health across all orgs
     const allOrgs = await prisma.org.findMany({ select: { id: true } });
-    let encryptionHealth = {
+    const encryptionHealth = {
       totalTokens: 0,
       okTokens: 0,
       pendingTokens: 0,

@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
       message: 'Error report received and logged'
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error reporting API error:', error);
     
     // Even if error reporting fails, we should respond gracefully
