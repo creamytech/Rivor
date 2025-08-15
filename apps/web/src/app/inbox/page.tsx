@@ -4,6 +4,7 @@ import { auth } from "@/server/auth";
 import Link from "next/link";
 import { listThreads } from "@/server/email";
 import { searchThreads } from "@/server/search";
+import SyncButton from "@/components/inbox/SyncButton";
 
 export default async function InboxPage({ searchParams }: { searchParams?: { q?: string } }) {
   const session = await auth();
@@ -31,6 +32,7 @@ export default async function InboxPage({ searchParams }: { searchParams?: { q?:
       </aside>
       <section className="col-span-4 border-r p-4 overflow-y-auto">
         <div className="mb-3 text-xs text-gray-500">Signed in as {userEmail} · Org {orgId}</div>
+        <SyncButton />
         <form action="/inbox" className="mb-3 flex gap-2">
           <input name="q" defaultValue={q} placeholder="Search" className="border rounded px-2 py-1 text-sm w-full" />
           <button className="border rounded px-3 text-sm">Go</button>

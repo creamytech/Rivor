@@ -1,113 +1,225 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
-import { enqueueEmailSync } from '@/server/queue';
+import { GmailService } from '@/server/gmail';
+import { MicrosoftGraphService } from '@/server/microsoft-graph';
+import { logger } from '@/lib/logger';
 
-// Force dynamic rendering - this route uses session/auth data
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
+/**
+ * Manual email sync API route for Vercel deployment
+ * This replaces the background worker for serverless environments
+ */
 export async function POST(req: NextRequest) {
+  const correlationId = `manual-sync-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  
   try {
+    // Get authenticated user session
     const session = await auth();
     if (!session) {
-      return new Response('Unauthorized', { status: 401 });
-    }
-    
-    const orgId = (session as any).orgId as string | undefined;
-    if (!orgId) {
-      return new Response('Forbidden', { status: 403 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Find email accounts for this org
+    const orgId = (session as any).orgId;
+    if (!orgId) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 401 });
+    }
+
+    logger.info('Manual email sync triggered', {
+      correlationId,
+      orgId,
+      action: 'manual_sync_triggered'
+    });
+
+    // Find all email accounts for this org
     const emailAccounts = await prisma.emailAccount.findMany({
-      where: { orgId },
+      where: { orgId, status: 'connected' }
     });
 
     if (emailAccounts.length === 0) {
-      return Response.json({ 
-        success: false, 
-        message: 'No email accounts configured. Please sign in again to set up email sync.',
-        accounts: []
+      logger.warn('No connected email accounts found', {
+        correlationId,
+        orgId,
+        action: 'no_accounts_found'
       });
+      
+      return NextResponse.json({ 
+        error: 'No connected email accounts found. Please sign in with Google or Microsoft first.',
+        accountsFound: 0 
+      }, { status: 404 });
     }
 
-    // Trigger sync for all accounts
-    const syncResults = [];
-    for (const account of emailAccounts) {
+    const results = [];
+
+    // Process each email account
+    for (const emailAccount of emailAccounts) {
       try {
-        await enqueueEmailSync(orgId, account.id);
-        syncResults.push({
-          accountId: account.id,
-          provider: account.provider,
-          status: 'queued'
+        logger.info('Processing email account', {
+          correlationId,
+          emailAccountId: emailAccount.id,
+          provider: emailAccount.provider,
+          action: 'processing_account'
         });
-      } catch (error) {
-        syncResults.push({
-          accountId: account.id,
-          provider: account.provider,
+
+        let syncResult;
+
+        if (emailAccount.provider === 'google') {
+          const gmailService = await GmailService.createFromAccount(orgId, emailAccount.id);
+          await gmailService.syncMessages(orgId, emailAccount.id, emailAccount.historyId || undefined);
+          
+          // Set up push notifications if not already done
+          if (!emailAccount.historyId) {
+            await gmailService.watchMailbox(orgId, emailAccount.id);
+          }
+          
+          syncResult = { provider: 'google', status: 'success' };
+          
+        } else if (emailAccount.provider === 'azure-ad') {
+          const graphService = await MicrosoftGraphService.createFromAccount(orgId, emailAccount.id);
+          await graphService.syncMessages(orgId, emailAccount.id, emailAccount.historyId || undefined);
+          
+          // Set up webhook if not already done
+          if (!emailAccount.historyId) {
+            await graphService.createSubscription(orgId, emailAccount.id);
+          }
+          
+          // Also sync calendar events
+          await graphService.syncCalendar(orgId, emailAccount.id);
+          
+          syncResult = { provider: 'microsoft', status: 'success' };
+        } else {
+          syncResult = { provider: emailAccount.provider, status: 'unsupported' };
+        }
+
+        // Update account status
+        await prisma.emailAccount.update({
+          where: { id: emailAccount.id },
+          data: { 
+            status: 'connected',
+            updatedAt: new Date()
+          }
+        });
+
+        results.push({
+          accountId: emailAccount.id,
+          ...syncResult
+        });
+
+        logger.info('Email account sync completed', {
+          correlationId,
+          emailAccountId: emailAccount.id,
+          provider: emailAccount.provider,
+          action: 'account_sync_completed'
+        });
+
+      } catch (error: any) {
+        logger.error('Email account sync failed', {
+          correlationId,
+          emailAccountId: emailAccount.id,
+          provider: emailAccount.provider,
+          error: error.message,
+          action: 'account_sync_failed'
+        });
+
+        // Update account status on error
+        await prisma.emailAccount.update({
+          where: { id: emailAccount.id },
+          data: { 
+            status: 'error',
+            updatedAt: new Date()
+          }
+        }).catch(() => {}); // Ignore update errors
+
+        results.push({
+          accountId: emailAccount.id,
+          provider: emailAccount.provider,
           status: 'error',
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error.message
         });
       }
     }
 
-    return Response.json({
-      success: true,
-      message: `Email sync queued for ${emailAccounts.length} account(s)`,
-      accounts: syncResults
+    logger.info('Manual email sync completed', {
+      correlationId,
+      orgId,
+      totalAccounts: emailAccounts.length,
+      results,
+      action: 'manual_sync_completed'
     });
 
-  } catch (error) {
-    console.error('Email sync trigger error:', error);
-    return Response.json({
-      success: false,
-      message: error instanceof Error ? error.message : 'Failed to trigger email sync'
+    return NextResponse.json({ 
+      success: true,
+      message: `Synced ${emailAccounts.length} email account(s)`,
+      accountsProcessed: emailAccounts.length,
+      results,
+      correlationId
+    });
+
+  } catch (error: any) {
+    logger.error('Manual email sync failed', {
+      correlationId,
+      error: error.message,
+      action: 'manual_sync_failed'
+    });
+
+    return NextResponse.json({ 
+      error: 'Email sync failed', 
+      details: error.message,
+      correlationId 
     }, { status: 500 });
   }
 }
 
-export async function GET(req: NextRequest) {
+/**
+ * GET endpoint to check sync status
+ */
+export async function GET() {
   try {
     const session = await auth();
     if (!session) {
-      return new Response('Unauthorized', { status: 401 });
-    }
-    
-    const orgId = (session as any).orgId as string | undefined;
-    if (!orgId) {
-      return new Response('Forbidden', { status: 403 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check sync status
+    const orgId = (session as any).orgId;
+    if (!orgId) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 401 });
+    }
+
+    // Get email account statuses
     const emailAccounts = await prisma.emailAccount.findMany({
       where: { orgId },
-    });
-
-    const threadCount = await prisma.emailThread.count({
-      where: { orgId }
-    });
-
-    const messageCount = await prisma.emailMessage.count({
-      where: { orgId }
-    });
-
-    return Response.json({
-      accounts: emailAccounts.map(account => ({
-        id: account.id,
-        provider: account.provider,
-        status: account.status,
-        updatedAt: account.updatedAt
-      })),
-      data: {
-        threadCount,
-        messageCount
+      select: {
+        id: true,
+        provider: true,
+        status: true,
+        updatedAt: true,
+        historyId: true
       }
     });
 
-  } catch (error) {
-    console.error('Email sync status error:', error);
-    return Response.json({
-      error: error instanceof Error ? error.message : 'Failed to get sync status'
+    // Get recent email threads count
+    const threadsCount = await prisma.emailThread.count({
+      where: { orgId }
+    });
+
+    // Get recent messages count
+    const messagesCount = await prisma.emailMessage.count({
+      where: { orgId }
+    });
+
+    return NextResponse.json({
+      emailAccounts,
+      threadsCount,
+      messagesCount,
+      lastCheck: new Date().toISOString()
+    });
+
+  } catch (error: any) {
+    return NextResponse.json({ 
+      error: 'Failed to check sync status', 
+      details: error.message 
     }, { status: 500 });
   }
 }
