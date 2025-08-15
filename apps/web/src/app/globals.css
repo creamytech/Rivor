@@ -71,13 +71,32 @@ body {
   color: var(--foreground);
 }
 
-/* Focus rings */
+/* Focus rings - WCAG 2.1 AA compliant */
 :where(button, a, input, textarea, select, [tabindex]){
   outline: none;
 }
 :where(button, a, input, textarea, select, [tabindex]):focus-visible{
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--focus) 40%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--focus) 50%, transparent);
   border-radius: 6px;
+  transition: box-shadow 0.2s ease;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :where(button, a, input, textarea, select, [tabindex]):focus-visible{
+    box-shadow: 0 0 0 3px currentColor;
+  }
+}
+
+/* Touch-friendly target sizes - WCAG 2.1 AA compliance */
+@media (pointer: coarse) {
+  button, 
+  a[role="button"],
+  input[type="button"],
+  input[type="submit"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
 /* Motion & Animation System - Brand Specification */
@@ -341,6 +360,14 @@ body {
   box-shadow: 0 4px 20px color-mix(in oklab, var(--rivor-deep) 8%, transparent);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform, box-shadow;
+  max-width: 440px;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .card {
+    max-width: 520px;
+  }
 }
 
 .card:hover {
@@ -598,6 +625,8 @@ body {
   position: relative;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 44px; /* Mobile accessibility requirement */
+  min-width: 44px;
 }
 
 .btn-primary::before {

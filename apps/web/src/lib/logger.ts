@@ -69,7 +69,7 @@ class Logger {
   }
 
   private log(level: LogLevel, message: string, context: LogContext = {}) {
-    const entry = this.createLogEntry(level, message, context);
+    const entry = this.createLogEntry(level, message, this.redactSensitiveData(context));
     
     // In development, use console with nice formatting
     if (this.environment === 'development') {
@@ -79,6 +79,43 @@ class Logger {
       // In production, log structured JSON for log aggregation
       console.log(JSON.stringify(entry));
     }
+  }
+
+  private redactSensitiveData(context: LogContext): LogContext {
+    const redacted = { ...context };
+    const sensitiveKeys = [
+      'password', 'token', 'secret', 'key', 'auth', 'credential',
+      'accessToken', 'refreshToken', 'idToken', 'sessionToken'
+    ];
+    
+    // Redact sensitive fields
+    for (const key of Object.keys(redacted)) {
+      const lowerKey = key.toLowerCase();
+      if (sensitiveKeys.some(sensitive => lowerKey.includes(sensitive))) {
+        redacted[key] = '[REDACTED]';
+      }
+      
+      // Hash email addresses for privacy while keeping them trackable
+      if ((key === 'userId' || key === 'emailAddress') && typeof redacted[key] === 'string') {
+        redacted[key] = this.hashEmail(redacted[key] as string);
+      }
+    }
+    
+    return redacted;
+  }
+
+  private hashEmail(email: string): string {
+    if (!email || typeof email !== 'string' || !email.includes('@')) return '[REDACTED]';
+    
+    // Keep first 2 chars and domain for debugging while protecting PII
+    const [local, domain] = email.split('@');
+    if (!local || !domain) return '[REDACTED]';
+    
+    const hashedLocal = local.length > 2 
+      ? local.substring(0, 2) + '***' 
+      : '***';
+    
+    return `${hashedLocal}@${domain}`;
   }
 
   debug(message: string, context: LogContext = {}) {
@@ -116,13 +153,56 @@ class Logger {
     }
   }
 
-  authEvent(event: string, userId: string, provider: string, success: boolean) {
+  authEvent(event: string, userId: string, provider: string, success: boolean, metadata: Record<string, any> = {}) {
     const message = `Auth ${event}: ${success ? 'success' : 'failure'}`;
-    this.info(message, {
+    const level = success ? 'info' : 'warn';
+    this[level](message, {
       action: `auth_${event}`,
       userId,
-      metadata: { provider, success }
+      provider,
+      success,
+      correlationId: metadata.correlationId || this.generateCorrelationId(),
+      metadata: { ...metadata, provider, success }
     });
+  }
+
+  // Security-specific logging methods
+  securityEvent(
+    event: 'rate_limit_exceeded' | 'invalid_origin' | 'csrf_attempt' | 'suspicious_activity' | 'token_manipulation',
+    details: LogContext = {}
+  ) {
+    this.warn(`Security event: ${event}`, {
+      action: 'security_event',
+      event,
+      severity: 'medium',
+      requiresReview: true,
+      correlationId: this.generateCorrelationId(),
+      ...details
+    });
+  }
+
+  rateLimitEvent(identifier: string, attempts: number, windowMs: number, ip?: string) {
+    this.warn('Rate limit exceeded', {
+      action: 'rate_limit_exceeded',
+      identifier: this.hashEmail(identifier), // Hash for privacy
+      attempts,
+      windowMs,
+      ip: ip ? this.hashIP(ip) : undefined,
+      correlationId: this.generateCorrelationId()
+    });
+  }
+
+  private hashIP(ip: string): string {
+    // Hash IP while keeping some structure for debugging
+    const parts = ip.split('.');
+    if (parts.length === 4) {
+      return `${parts[0]}.${parts[1]}.***.***.***`;
+    }
+    return '***';
+  }
+
+  private generateCorrelationId(): string {
+    return `corr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   apiRequest(method: string, path: string, userId?: string, orgId?: string, statusCode?: number, duration?: number) {

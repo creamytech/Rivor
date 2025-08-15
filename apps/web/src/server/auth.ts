@@ -51,12 +51,45 @@ if (providers.length === 0) {
 export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/auth/signin",
-    error: "/auth/signin",
+    error: "/auth/error",
   },
   debug: process.env.NEXTAUTH_DEBUG === "true",
   secret: process.env.NEXTAUTH_SECRET,
   providers,
-  session: { strategy: "jwt" },
+  session: { 
+    strategy: "jwt",
+    maxAge: 24 * 60 * 60, // 24 hours
+    updateAge: 60 * 60,   // 1 hour - refresh session
+  },
+  cookies: {
+    sessionToken: {
+      name: `__Secure-next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production'
+      }
+    },
+    callbackUrl: {
+      name: `__Secure-next-auth.callback-url`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production'
+      }
+    },
+    csrfToken: {
+      name: `__Host-next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production'
+      }
+    }
+  },
   events: {
     async signIn({ user, account, profile }) {
       // Log successful sign in
@@ -81,21 +114,42 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     async redirect({ url, baseUrl }) {
-      // Redirect to app after successful sign in
+      // Enhanced redirect logic for deep links and user flow
       console.log('Redirect callback:', { url, baseUrl });
       
       // If the URL is relative or matches our domain, use it
       if (url.startsWith("/") || url.startsWith(baseUrl)) {
-        // If it's just the callback URL, redirect to app
-        if (url.includes('/api/auth/callback') || url === baseUrl || url === `${baseUrl}/`) {
-          console.log('Redirecting to /app');
+        // Handle auth callback URLs - extract original destination if available
+        if (url.includes('/api/auth/callback')) {
+          const callbackUrl = new URL(url);
+          const originalUrl = callbackUrl.searchParams.get('callbackUrl');
+          
+          if (originalUrl) {
+            // Validate that it's a safe internal URL
+            if (originalUrl.startsWith('/app') || originalUrl.startsWith('/inbox') || 
+                originalUrl.startsWith('/calendar') || originalUrl.startsWith('/contacts') ||
+                originalUrl.startsWith('/tasks') || originalUrl.startsWith('/analytics') ||
+                originalUrl.startsWith('/settings')) {
+              console.log('Redirecting to original deep link:', originalUrl);
+              return `${baseUrl}${originalUrl}`;
+            }
+          }
+          
+          console.log('Redirecting to /app from callback');
           return `${baseUrl}/app`;
         }
+        
+        // Handle base URL redirects
+        if (url === baseUrl || url === `${baseUrl}/` || url === '/') {
+          return `${baseUrl}/app`;
+        }
+        
+        // For other internal URLs, use as-is (already validated above)
         return url;
       }
       
-      // Default to app
-      console.log('Default redirect to /app');
+      // For external URLs, redirect to app for security
+      console.log('External URL detected, redirecting to /app');
       return `${baseUrl}/app`;
     },
     async session({ session, token }) {
@@ -112,12 +166,16 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account, profile }) {
       // On sign in (including re-auth), create org and set orgId
       if (user && account) {
+        // Check if this is a first-time user
+        let isFirstTimeUser = false;
+        
         // Milestone C: OAuth callback logging with required format
         const oauthCallbackLog = {
           userId: user.email || undefined,
           provider: account.provider,
           hasRefreshToken: !!account.refresh_token,
-          expiresAt: account.expires_at ? new Date(account.expires_at * 1000).toISOString() : undefined
+          expiresAt: account.expires_at ? new Date(account.expires_at * 1000).toISOString() : undefined,
+          isFirstTime: false // Will be updated below
         };
         
         console.log('OAuth callback:', oauthCallbackLog);
@@ -134,7 +192,8 @@ export const authOptions: NextAuthOptions = {
           // Create org with proper encryption key
           let org = await prisma.org.findFirst({ where: { name: user.email || 'Default' } });
           if (!org) {
-            console.log('Creating new org for user:', user.email);
+            isFirstTimeUser = true;
+            console.log('Creating new org for first-time user:', user.email);
             
             // Generate proper DEK for encryption
             const env = getEnv();
@@ -149,9 +208,14 @@ export const authOptions: NextAuthOptions = {
                 retentionDays: 365 
               } 
             });
-            console.log('Created org with proper encryption key');
+            console.log('Created org with proper encryption key for first-time user');
+            
+            // Update the log with first-time user flag
+            oauthCallbackLog.isFirstTime = true;
+            logger.info('First-time user detected', oauthCallbackLog);
           }
           (token as any).orgId = org.id;
+          (token as any).isFirstTime = isFirstTimeUser;
           
           // Sync user profile data from OAuth provider
           if (profile) {
