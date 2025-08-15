@@ -20,13 +20,19 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd "pg_isready -U rivor" --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
       - name: Install deps (npm)
-        run: npm install
+        run: npm install --legacy-peer-deps
       - name: Generate Prisma Client
         working-directory: packages/db
         run: npx prisma generate
@@ -38,6 +44,12 @@ jobs:
       - name: Lint (best-effort)
         run: npm run lint || true
       - name: Build
+        env:
+          DATABASE_URL: postgresql://rivor:rivor@localhost:5432/rivor?schema=public
+          NEXTAUTH_SECRET: test-secret-for-ci
+          NEXTAUTH_URL: http://localhost:3000
+          OPENAI_API_KEY: sk-test-key-for-ci-build
+          REDIS_URL: redis://localhost:6379
         run: npm run build
       - name: Unit tests (best-effort)
         run: npm test || true
