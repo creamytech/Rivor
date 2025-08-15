@@ -42,6 +42,7 @@ jobs:
         working-directory: packages/db
         run: npx prisma db push
       - name: Lint (best-effort)
+        working-directory: apps/web
         run: npm run lint || true
       - name: Build
         env:
@@ -50,6 +51,8 @@ jobs:
           NEXTAUTH_URL: http://localhost:3000
           OPENAI_API_KEY: sk-test-key-for-ci-build
           REDIS_URL: redis://localhost:6379
+        working-directory: apps/web
         run: npm run build
       - name: Unit tests (best-effort)
+        working-directory: apps/web
         run: npm test || true
