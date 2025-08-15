@@ -5,11 +5,41 @@
 
 export interface LogContext {
   requestId?: string;
+  correlationId?: string;
   userId?: string;
   orgId?: string;
   action?: string;
   resource?: string;
-  metadata?: Record<string, any>;
+  error?: string;
+  // Google integration fields
+  channelId?: string;
+  resourceId?: string;
+  state?: string;
+  provider?: string;
+  emailAddress?: string;
+  historyId?: string;
+  emailAccountId?: string;
+  calendarAccountId?: string;
+  accountId?: string;
+  topicName?: string;
+  expiration?: string | Date;
+  expiresAt?: string | Date;
+  latency?: number;
+  duration?: number;
+  force?: boolean;
+  hasData?: boolean;
+  attributes?: any;
+  notificationData?: any;
+  skipValidation?: boolean;
+  gmailSuccess?: boolean;
+  calendarSuccess?: boolean;
+  tokensValid?: boolean;
+  accountCount?: number;
+  connectedCount?: number;
+  scheduledCount?: number;
+  orgCount?: number;
+  // Allow any additional fields
+  [key: string]: any;
 }
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';

@@ -77,15 +77,17 @@ model OAuthAccount {
 }
 
 model EmailAccount {
-  id          String   @id @default(cuid())
-  org         Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId       String
-  provider    String
-  status      String   @default("connected")
-  historyId   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  threads     EmailThread[]
+  id              String    @id @default(cuid())
+  org             Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  orgId           String
+  provider        String
+  status          String    @default("connected")
+  historyId       String?
+  watchExpiration DateTime?
+  watchResourceId String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  threads         EmailThread[]
 }
 
 model EmailThread {
@@ -130,14 +132,18 @@ model EmailMessage {
 }
 
 model CalendarAccount {
-  id          String   @id @default(cuid())
-  org         Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId       String
-  provider    String
-  status      String   @default("connected")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  events      CalendarEvent[]
+  id                String    @id @default(cuid())
+  org               Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  orgId             String
+  provider          String
+  status            String    @default("connected")
+  channelId         String?
+  channelResourceId String?
+  channelExpiration DateTime?
+  webhookEndpoint   String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  events            CalendarEvent[]
 }
 
 model CalendarEvent {

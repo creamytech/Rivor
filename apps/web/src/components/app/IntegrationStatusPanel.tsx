@@ -2,7 +2,7 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Settings, CheckCircle, AlertCircle, RefreshCw, Unlink, XCircle } from "lucide-react";
+import { Settings, CheckCircle, AlertCircle, RefreshCw, Unlink, XCircle, Activity, Clock } from "lucide-react";
 import Link from "next/link";
 import { TokenHealth } from "@/server/oauth";
 import { signIn } from "next-auth/react";
@@ -13,11 +13,25 @@ interface IntegrationStatusPanelProps {
   onDisconnect?: (provider: string) => void;
 }
 
+function formatRelativeTime(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins} min ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+  
+  return date.toLocaleDateString();
+}
+
 export default function IntegrationStatusPanel({ 
   tokenHealth,
   onDisconnect 
 }: IntegrationStatusPanelProps) {
   const [reconnecting, setReconnecting] = useState<string | null>(null);
+  const [runningHealthCheck, setRunningHealthCheck] = useState<string | null>(null);
 
   const handleReconnect = async (provider: string) => {
     setReconnecting(provider);
@@ -26,6 +40,28 @@ export default function IntegrationStatusPanel({
     } catch (error) {
       console.error("Reconnect failed:", error);
       setReconnecting(null);
+    }
+  };
+
+  const handleHealthCheck = async (provider: string) => {
+    setRunningHealthCheck(provider);
+    try {
+      const response = await fetch('/api/integrations/health-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force: true })
+      });
+      
+      if (response.ok) {
+        // Refresh the page to show updated status
+        window.location.reload();
+      } else {
+        console.error('Health check failed');
+      }
+    } catch (error) {
+      console.error("Health check failed:", error);
+    } finally {
+      setRunningHealthCheck(null);
     }
   };
 
@@ -60,28 +96,51 @@ export default function IntegrationStatusPanel({
   };
 
   const getStatusIcon = (token: TokenHealth) => {
-    if (token.expired) {
+    // Check for token validation errors first
+    if (token.tokenValidation?.needsRefresh || token.expired) {
       return <XCircle className="h-4 w-4 text-red-500" />;
     }
-    if (token.connected) {
+    
+    // Check service health
+    const hasHealthyService = token.services?.gmail?.success || token.services?.calendar?.success;
+    const hasFailedService = (token.services?.gmail && !token.services.gmail.success) || 
+                            (token.services?.calendar && !token.services.calendar.success);
+    
+    if (token.connected && hasHealthyService) {
       return <CheckCircle className="h-4 w-4 text-green-500" />;
     }
-    return <AlertCircle className="h-4 w-4 text-orange-500" />;
+    
+    if (hasFailedService || !token.connected) {
+      return <AlertCircle className="h-4 w-4 text-orange-500" />;
+    }
+    
+    return <AlertCircle className="h-4 w-4 text-gray-500" />;
   };
 
   const getStatusText = (token: TokenHealth) => {
-    if (token.expired) {
-      return "Expired";
+    if (token.tokenValidation?.needsRefresh || token.expired) {
+      return "Needs Reconnection";
     }
-    if (token.connected) {
+    
+    const hasHealthyService = token.services?.gmail?.success || token.services?.calendar?.success;
+    
+    if (token.connected && hasHealthyService) {
       return "Connected";
     }
+    
+    if (token.connected && !hasHealthyService) {
+      return "Connected (No Recent Activity)";
+    }
+    
     return "Disconnected";
   };
 
   const getStatusVariant = (token: TokenHealth): "default" | "secondary" | "destructive" => {
-    if (token.expired) return "destructive";
-    if (token.connected) return "default";
+    if (token.tokenValidation?.needsRefresh || token.expired) return "destructive";
+    
+    const hasHealthyService = token.services?.gmail?.success || token.services?.calendar?.success;
+    if (token.connected && hasHealthyService) return "default";
+    
     return "secondary";
   };
 
@@ -128,14 +187,76 @@ export default function IntegrationStatusPanel({
                   >
                     {getStatusText(token)}
                   </Badge>
-                  <span className="text-xs text-gray-500">
-                    Last sync: {new Date(token.lastUpdated).toLocaleDateString()}
-                  </span>
+                  {token.lastProbeSuccess && (
+                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      Last checked: {formatRelativeTime(token.lastProbeSuccess)}
+                    </span>
+                  )}
                 </div>
+                
+                {/* Service Status */}
+                {(token.services?.gmail || token.services?.calendar) && (
+                  <div className="flex items-center gap-3 mt-2 text-xs">
+                    {token.services.gmail && (
+                      <div className="flex items-center gap-1">
+                        {token.services.gmail.success ? (
+                          <CheckCircle className="h-3 w-3 text-green-500" />
+                        ) : (
+                          <XCircle className="h-3 w-3 text-red-500" />
+                        )}
+                        <span className={token.services.gmail.success ? "text-green-700" : "text-red-700"}>
+                          Gmail
+                        </span>
+                      </div>
+                    )}
+                    {token.services.calendar && (
+                      <div className="flex items-center gap-1">
+                        {token.services.calendar.success ? (
+                          <CheckCircle className="h-3 w-3 text-green-500" />
+                        ) : (
+                          <XCircle className="h-3 w-3 text-red-500" />
+                        )}
+                        <span className={token.services.calendar.success ? "text-green-700" : "text-red-700"}>
+                          Calendar
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* Error Display */}
+                {token.lastProbeError && (
+                  <div className="mt-2 text-xs text-red-600 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded">
+                    {token.lastProbeError}
+                  </div>
+                )}
               </div>
               
               <div className="flex gap-2">
-                {token.expired && (
+                {/* Health Check Button */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleHealthCheck(token.provider)}
+                  disabled={runningHealthCheck === token.provider}
+                  title="Run health check now"
+                >
+                  {runningHealthCheck === token.provider ? (
+                    <>
+                      <Activity className="h-3 w-3 mr-1 animate-pulse" />
+                      Checking...
+                    </>
+                  ) : (
+                    <>
+                      <Activity className="h-3 w-3 mr-1" />
+                      Check Now
+                    </>
+                  )}
+                </Button>
+                
+                {/* Reconnect Button */}
+                {(token.expired || token.tokenValidation?.needsRefresh || !token.connected) && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -156,7 +277,8 @@ export default function IntegrationStatusPanel({
                   </Button>
                 )}
                 
-                {token.connected && !token.expired && onDisconnect && (
+                {/* Disconnect Button */}
+                {token.connected && !token.expired && !token.tokenValidation?.needsRefresh && onDisconnect && (
                   <Button
                     size="sm"
                     variant="ghost"

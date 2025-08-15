@@ -2,6 +2,7 @@ import { google } from 'googleapis';
 import { prisma } from './db';
 import { decryptForOrg, encryptForOrg } from './crypto';
 import { indexThread } from './indexer';
+import { logger } from '@/lib/logger';
 
 export interface GmailMessage {
   id: string;
@@ -217,27 +218,74 @@ export class GmailService {
     const gmail = await this.getGmail();
     
     try {
+      // Validate Pub/Sub topic configuration
+      const topicName = process.env.GOOGLE_PUBSUB_TOPIC;
+      if (!topicName) {
+        throw new Error('GOOGLE_PUBSUB_TOPIC environment variable not set');
+      }
+      
+      // Validate topic name format
+      if (!topicName.match(/^projects\/[^\/]+\/topics\/[^\/]+$/)) {
+        throw new Error(`Invalid topic format: ${topicName}. Expected: projects/<project>/topics/<topic-name>`);
+      }
+
+      logger.info('Setting up Gmail watch', {
+        orgId,
+        emailAccountId,
+        topicName,
+        action: 'gmail_watch_setup'
+      });
+
       // Set up Gmail push notifications
       const response = await gmail.users.watch({
         userId: 'me',
         requestBody: {
-          topicName: `projects/${process.env.GOOGLE_CLOUD_PROJECT_ID}/topics/gmail-notifications`,
+          topicName,
           labelIds: ['INBOX', 'SENT'],
         }
       });
 
-      // Store the historyId for incremental sync
+      // Store watch metadata
+      const updateData: any = {};
+      
       if (response.data.historyId) {
+        updateData.historyId = response.data.historyId;
+      }
+      
+      if (response.data.expiration) {
+        // Gmail watch expires in ~7 days, convert to timestamp
+        updateData.watchExpiration = new Date(parseInt(response.data.expiration));
+      }
+      
+      if (Object.keys(updateData).length > 0) {
         await prisma.emailAccount.update({
           where: { id: emailAccountId },
-          data: { historyId: response.data.historyId }
+          data: updateData
         });
       }
 
-      console.log(`Gmail watch setup for account ${emailAccountId}`);
+      logger.info('Gmail watch setup successful', {
+        orgId,
+        emailAccountId,
+        expiration: response.data.expiration || undefined,
+        historyId: response.data.historyId || undefined,
+        action: 'gmail_watch_success'
+      });
       
-    } catch (error) {
-      console.error('Gmail watch setup error:', error);
+    } catch (error: any) {
+      logger.error('Gmail watch setup failed', {
+        orgId,
+        emailAccountId,
+        error: error.message,
+        action: 'gmail_watch_failed'
+      });
+      
+      // Update account status on failure
+      await prisma.emailAccount.update({
+        where: { id: emailAccountId },
+        data: { status: 'watch_failed' }
+      });
+      
       throw error;
     }
   }

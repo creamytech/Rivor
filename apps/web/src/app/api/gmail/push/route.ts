@@ -2,13 +2,28 @@ import { NextRequest } from 'next/server';
 import { enqueueEmailSync } from '@/server/queue';
 import { prisma } from '@/server/db';
 import { GmailService } from '@/server/gmail';
+import { logger } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
+  const correlationId = `gmail-push-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const startTime = Date.now();
+  
   try {
+    logger.info('Gmail push notification received', {
+      correlationId,
+      action: 'gmail_push_received'
+    });
+
+    // Verify notification authenticity
     const token = process.env.GOOGLE_PUBSUB_VERIFICATION_TOKEN;
-    // Optional lightweight verification via header to avoid accidental hits
     const provided = req.headers.get('x-verification-token');
+    
     if (token && provided && token !== provided) {
+      logger.warn('Gmail push notification verification failed', {
+        correlationId,
+        providedToken: provided,
+        action: 'gmail_push_verification_failed'
+      });
       return new Response('Forbidden', { status: 403 });
     }
     
@@ -24,7 +39,11 @@ export async function POST(req: NextRequest) {
         const decoded = Buffer.from(dataB64, 'base64').toString();
         notificationData = JSON.parse(decoded);
       } catch (parseError) {
-        console.warn('[api/gmail/push] Failed to parse notification data:', parseError);
+        logger.warn('Gmail push notification data parsing failed', {
+          correlationId,
+          error: parseError instanceof Error ? parseError.message : 'Unknown error',
+          action: 'gmail_push_parse_failed'
+        });
       }
     }
     
@@ -32,42 +51,117 @@ export async function POST(req: NextRequest) {
     const emailAddress = notificationData.emailAddress || attributes.emailAddress;
     const historyId = notificationData.historyId || attributes.historyId;
     
+    logger.info('Gmail push notification data extracted', {
+      correlationId,
+      emailAddress,
+      historyId,
+      hasData: !!dataB64,
+      action: 'gmail_push_data_extracted'
+    });
+    
     if (!emailAddress) {
-      console.warn('[api/gmail/push] No email address in notification');
+      logger.warn('Gmail push notification missing email address', {
+        correlationId,
+        attributes,
+        notificationData,
+        action: 'gmail_push_missing_email'
+      });
       return new Response('OK'); // Return OK to prevent retries
     }
 
     // Find the email account for this Gmail address
     const emailAccount = await prisma.emailAccount.findFirst({
       where: {
-        provider: 'google',
-        id: { contains: emailAddress }
+        org: {
+          name: emailAddress // org.name is the user's email
+        },
+        provider: 'google'
+      },
+      include: {
+        org: true
       }
     });
 
     if (!emailAccount) {
-      console.warn(`[api/gmail/push] No account found for ${emailAddress}`);
+      logger.warn('Gmail push notification for unknown email account', {
+        correlationId,
+        emailAddress,
+        action: 'gmail_push_unknown_account'
+      });
       return new Response('OK');
     }
+
+    // Check for duplicate notifications by comparing historyId
+    if (historyId && emailAccount.historyId && historyId <= emailAccount.historyId) {
+      logger.info('Gmail push notification duplicate detected', {
+        correlationId,
+        emailAddress,
+        currentHistoryId: emailAccount.historyId,
+        notificationHistoryId: historyId,
+        action: 'gmail_push_duplicate'
+      });
+      return new Response('OK'); // Accept but don't process
+    }
+
+    logger.info('Gmail push notification processing', {
+      correlationId,
+      emailAddress,
+      historyId,
+      orgId: emailAccount.orgId,
+      accountId: emailAccount.id,
+      action: 'gmail_push_processing'
+    });
 
     // If we have historyId, do incremental sync, otherwise full sync
     if (historyId && emailAccount.historyId) {
       try {
         const gmailService = await GmailService.createFromAccount(emailAccount.orgId, emailAccount.id);
         await gmailService.handlePushNotification(emailAccount.orgId, emailAccount.id, historyId);
-      } catch (error) {
-        console.error('[api/gmail/push] Real-time sync failed, falling back to queued sync:', error);
+        
+        logger.info('Gmail push notification real-time sync successful', {
+          correlationId,
+          emailAddress,
+          historyId,
+          action: 'gmail_push_realtime_success'
+        });
+      } catch (error: any) {
+        logger.warn('Gmail push notification real-time sync failed, falling back to queued sync', {
+          correlationId,
+          emailAddress,
+          error: error.message,
+          action: 'gmail_push_realtime_fallback'
+        });
         await enqueueEmailSync(emailAccount.orgId, emailAccount.id);
       }
     } else {
       // Fall back to queued full sync
+      logger.info('Gmail push notification using queued sync', {
+        correlationId,
+        emailAddress,
+        reason: historyId ? 'no_stored_history' : 'no_history_id',
+        action: 'gmail_push_queued_sync'
+      });
       await enqueueEmailSync(emailAccount.orgId, emailAccount.id);
     }
     
+    const latency = Date.now() - startTime;
+    logger.info('Gmail push notification processed successfully', {
+      correlationId,
+      emailAddress,
+      latency,
+      action: 'gmail_push_success'
+    });
+    
     return new Response('OK');
-  } catch (err) {
-    console.warn('[api/gmail/push] error', err);
-    return new Response('OK');
+  } catch (err: any) {
+    const latency = Date.now() - startTime;
+    logger.error('Gmail push notification processing failed', {
+      correlationId,
+      error: err.message,
+      latency,
+      action: 'gmail_push_failed'
+    });
+    return new Response('OK'); // Return OK to prevent retries
   }
 }
 

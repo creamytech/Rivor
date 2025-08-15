@@ -5,6 +5,7 @@ const globalQueues = globalThis as unknown as {
   emailSummarizeQueue?: Queue;
   calendarSyncQueue?: Queue;
   webhooksRenewQueue?: Queue;
+  healthProbeQueue?: Queue;
   cryptoRotateQueue?: Queue;
   retentionPurgeQueue?: Queue;
   indexRebuildQueue?: Queue;
@@ -51,6 +52,36 @@ export function getWebhooksRenewQueue(): Queue {
     globalQueues.webhooksRenewQueue = new Queue("webhooks:renew", getConnection());
   }
   return globalQueues.webhooksRenewQueue;
+}
+
+export function getHealthProbeQueue(): Queue {
+  if (!globalQueues.healthProbeQueue) {
+    globalQueues.healthProbeQueue = new Queue("health:probe", getConnection());
+  }
+  return globalQueues.healthProbeQueue;
+}
+
+export async function enqueueWebhookRenewal(
+  provider: 'gmail' | 'calendar',
+  accountId: string,
+  orgId: string,
+  delayMs?: number
+) {
+  const queue = getWebhooksRenewQueue();
+  await queue.add(
+    `renew-${provider}-${accountId}`,
+    { provider, accountId, orgId },
+    {
+      delay: delayMs,
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 60000, // Start with 1 minute delay
+      },
+      removeOnComplete: 10,
+      removeOnFail: 5,
+    }
+  );
 }
 
 export function getCryptoRotateQueue(): Queue {
