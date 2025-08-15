@@ -120,17 +120,25 @@ export const authOptions: NextAuthOptions = {
           hasRefreshToken: !!account.refresh_token
         });
         try {
-          // Simple org creation - just use email as org name
+          // Create org with proper encryption key
           let org = await prisma.org.findFirst({ where: { name: user.email || 'Default' } });
           if (!org) {
             console.log('Creating new org for user:', user.email);
+            
+            // Generate proper DEK for encryption
+            const env = getEnv();
+            const kms = createKmsClient(env.KMS_PROVIDER, env.KMS_KEY_ID);
+            const dek = generateDek();
+            const encryptedDekBlob = await kms.encryptDek(dek);
+            
             org = await prisma.org.create({ 
               data: { 
                 name: user.email || 'Default',
-                encryptedDekBlob: Buffer.from('placeholder'), // Simplified for now
+                encryptedDekBlob: Buffer.from(encryptedDekBlob),
                 retentionDays: 365 
               } 
             });
+            console.log('Created org with proper encryption key');
           }
           (token as any).orgId = org.id;
           
@@ -158,12 +166,18 @@ export const authOptions: NextAuthOptions = {
                   }
                 });
 
+                // Encrypt OAuth tokens for secure storage
+                const accessTokenEnc = await encryptForOrg(org.id, account.access_token, 'oauth:access');
+                const refreshTokenEnc = account.refresh_token 
+                  ? await encryptForOrg(org.id, account.refresh_token, 'oauth:refresh')
+                  : Buffer.from('');
+
                 const accountData = {
                   userId: user.email || '',
                   provider: account.provider,
                   providerId: account.providerAccountId || '',
-                  accessToken: Buffer.from(account.access_token),
-                  refreshToken: account.refresh_token ? Buffer.from(account.refresh_token) : Buffer.from(''),
+                  accessToken: accessTokenEnc,
+                  refreshToken: refreshTokenEnc,
                   scope: account.scope || '',
                   expiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null
                 };

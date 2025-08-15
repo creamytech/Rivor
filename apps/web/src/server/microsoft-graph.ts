@@ -40,22 +40,23 @@ export class MicrosoftGraphService {
     // Get OAuth tokens for this account
     const emailAccount = await prisma.emailAccount.findUnique({
       where: { id: emailAccountId },
+      include: { org: true }
     });
 
     if (!emailAccount) {
       throw new Error(`Email account ${emailAccountId} not found`);
     }
 
-    // Find OAuth account
+    // Find OAuth account using org name (which is the user's email)
     const oauthAccount = await prisma.oAuthAccount.findFirst({
       where: { 
         provider: 'azure-ad',
-        userId: emailAccount.orgId // Assuming userId maps to orgId for now
+        userId: emailAccount.org.name // org.name is the user's email
       },
     });
 
     if (!oauthAccount) {
-      throw new Error(`OAuth account for Microsoft not found`);
+      throw new Error(`OAuth account for Microsoft not found for user ${emailAccount.org.name}`);
     }
 
     // Decrypt access token
