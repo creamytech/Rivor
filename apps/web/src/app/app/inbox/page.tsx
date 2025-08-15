@@ -27,7 +27,8 @@ import {
   RefreshCw,
   Clock,
   Paperclip,
-  CheckCircle
+  CheckCircle,
+  Mail
 } from "lucide-react";
 import AIDraftModal from "@/components/inbox/AIDraftModal";
 
