@@ -51,6 +51,8 @@ export default function InboxPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showAIDraft, setShowAIDraft] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<string>('');
   const indexById = useMemo(() => new Map(threads.map((t, i) => [t.id, i])), [threads]);
 
   useEffect(() => {
@@ -108,6 +110,45 @@ export default function InboxPage() {
     load();
     return () => { cancelled = true; };
   }, []);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    setSyncStatus('Starting email sync...');
+    
+    try {
+      const res = await fetch('/api/sync/email', { method: 'POST' });
+      const result = await res.json();
+      
+      if (result.success) {
+        setSyncStatus(`✅ ${result.message}`);
+        // Reload threads after a short delay
+        setTimeout(async () => {
+          try {
+            const threadsRes = await fetch('/api/inbox/threads');
+            if (threadsRes.ok) {
+              const json = await threadsRes.json();
+              const rows = (json.threads as any[]).map((t) => ({ 
+                id: t.id, 
+                subject: t.subject || t.participants || '(no subject)', 
+                date: new Date(t.updatedAt).toLocaleDateString() 
+              }));
+              setThreads(rows);
+              setSyncStatus(`✅ Sync complete! Found ${rows.length} threads.`);
+            }
+          } catch (error) {
+            console.error('Failed to reload threads:', error);
+          }
+        }, 3000);
+      } else {
+        setSyncStatus(`❌ ${result.message}`);
+      }
+    } catch (error) {
+      console.error('Sync error:', error);
+      setSyncStatus('❌ Failed to trigger sync');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const right = (
     <div className="p-3">
@@ -274,15 +315,35 @@ export default function InboxPage() {
                       <Bot className="h-4 w-4 text-[var(--rivor-teal)]" />
                       <span className="text-sm font-medium">AI Summary</span>
                     </div>
-                    <Button variant="ghost" size="sm">
-                      <RefreshCw className="h-4 w-4 mr-1" />
-                      Refresh
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleSync}
+                      disabled={syncing}
+                    >
+                      <RefreshCw className={`h-4 w-4 mr-1 ${syncing ? 'animate-spin' : ''}`} />
+                      {syncing ? 'Syncing...' : 'Sync Gmail'}
                     </Button>
                   </div>
-                  <p className="text-sm text-[var(--muted-foreground)]">
-                    Client interested in property viewing. Requesting weekend availability for 123 Main Street. 
-                    Follow-up needed on pricing and viewing schedule.
-                  </p>
+                  {syncStatus && (
+                    <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-950 rounded text-sm">
+                      {syncStatus}
+                    </div>
+                  )}
+                  {threads.length === 0 && !loading ? (
+                    <div className="text-center py-8">
+                      <div className="text-gray-500 dark:text-gray-400 mb-4">
+                        No email threads found. Click "Sync Gmail" to import your emails.
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[var(--muted-foreground)]">
+                      {threads.length > 0 ? 
+                        `Showing ${threads.length} email threads. Click "Sync Gmail" to refresh.` :
+                        'Client interested in property viewing. Requesting weekend availability for 123 Main Street. Follow-up needed on pricing and viewing schedule.'
+                      }
+                    </p>
+                  )}
                 </CardContent>
               </Card>
 
