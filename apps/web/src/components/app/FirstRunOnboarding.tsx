@@ -2,7 +2,7 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Mail, Calendar, ArrowRight, CheckCircle } from "lucide-react";
-import { signIn } from "next-auth/react";
+import { signIn, signOut } from "next-auth/react";
 import { useState } from "react";
 
 interface FirstRunOnboardingProps {
@@ -19,9 +19,24 @@ export default function FirstRunOnboarding({
   const handleConnect = async (provider: string) => {
     setConnecting(provider);
     try {
-      await signIn(provider, { callbackUrl: "/app" });
+      // Force re-authentication to ensure we get the full scopes
+      // by temporarily signing out and then signing back in
+      console.log(`Forcing re-authentication for ${provider} to upgrade scopes`);
+      
+      // Store the current provider in localStorage to handle the re-auth flow
+      localStorage.setItem('pendingOAuthUpgrade', provider);
+      
+      // Sign out first, then sign back in - this ensures NextAuth goes through 
+      // the full OAuth flow and triggers the JWT callback with new scopes
+      await signOut({ redirect: false });
+      
+      // Small delay to ensure signout completes
+      setTimeout(async () => {
+        await signIn(provider, { callbackUrl: "/app" });
+      }, 100);
     } catch (error) {
       console.error("Connection failed:", error);
+      localStorage.removeItem('pendingOAuthUpgrade');
       setConnecting(null);
     }
   };
