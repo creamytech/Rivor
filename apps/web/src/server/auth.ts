@@ -92,9 +92,20 @@ export const authOptions: NextAuthOptions = {
     },
     async redirect({ url, baseUrl }) {
       // Redirect to app after successful sign in
+      console.log('Redirect callback:', { url, baseUrl });
+      
+      // If the URL is relative or matches our domain, use it
       if (url.startsWith("/") || url.startsWith(baseUrl)) {
+        // If it's just the callback URL, redirect to app
+        if (url.includes('/api/auth/callback') || url === baseUrl || url === `${baseUrl}/`) {
+          console.log('Redirecting to /app');
+          return `${baseUrl}/app`;
+        }
         return url;
       }
+      
+      // Default to app
+      console.log('Default redirect to /app');
       return `${baseUrl}/app`;
     },
     async session({ session, token }) {
@@ -104,10 +115,12 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account }) {
       // On first sign in, create org and set orgId
       if (user && account) {
+        console.log('JWT callback - first sign in:', { email: user.email, provider: account.provider });
         try {
           // Simple org creation - just use email as org name
           let org = await prisma.org.findFirst({ where: { name: user.email || 'Default' } });
           if (!org) {
+            console.log('Creating new org for user:', user.email);
             org = await prisma.org.create({ 
               data: { 
                 name: user.email || 'Default',
@@ -117,12 +130,33 @@ export const authOptions: NextAuthOptions = {
             });
           }
           (token as any).orgId = org.id;
+          console.log('Set orgId:', org.id);
         } catch (error) {
           console.error('Error creating org:', error);
           // Set a default orgId even if db fails
           (token as any).orgId = 'default';
+          console.log('Using fallback orgId: default');
         }
       }
+      
+      // Always ensure we have an orgId
+      if (!(token as any).orgId && token.email) {
+        console.log('JWT callback - checking existing org for:', token.email);
+        try {
+          const org = await prisma.org.findFirst({ where: { name: token.email } });
+          if (org) {
+            (token as any).orgId = org.id;
+            console.log('Found existing orgId:', org.id);
+          } else {
+            (token as any).orgId = 'default';
+            console.log('No org found, using default');
+          }
+        } catch (error) {
+          console.error('Error finding org:', error);
+          (token as any).orgId = 'default';
+        }
+      }
+      
       return token;
     },
   },
