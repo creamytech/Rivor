@@ -41,9 +41,19 @@ export default async function DashboardPage() {
     userEmail ? checkTokenHealth(userEmail).catch(() => []) : []
   ]);
 
-  // Check integration status
-  const hasEmailIntegration = tokenHealth.some(t => t.connected && !t.expired);
-  const hasCalendarIntegration = tokenHealth.some(t => t.connected && !t.expired);
+  // Check integration status based on specific scopes
+  const hasEmailIntegration = tokenHealth.some(t => 
+    t.connected && !t.expired && (
+      t.scopes.includes('https://www.googleapis.com/auth/gmail.readonly') ||
+      t.scopes.includes('https://graph.microsoft.com/Mail.Read')
+    )
+  );
+  const hasCalendarIntegration = tokenHealth.some(t => 
+    t.connected && !t.expired && (
+      t.scopes.includes('https://www.googleapis.com/auth/calendar.readonly') ||
+      t.scopes.includes('https://graph.microsoft.com/Calendars.ReadWrite')
+    )
+  );
   const showOnboarding = !hasEmailIntegration && !hasCalendarIntegration;
 
   return (

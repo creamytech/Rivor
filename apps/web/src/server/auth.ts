@@ -143,7 +143,7 @@ export const authOptions: NextAuthOptions = {
               (token as any).user = userData;
               console.log('Synced user profile:', userData);
 
-              // Create OAuth account record for API access if we have tokens
+              // Create or update OAuth account record for API access if we have tokens
               if (account.access_token) {
                 const existingOAuthAccount = await prisma.oAuthAccount.findFirst({
                   where: {
@@ -152,19 +152,34 @@ export const authOptions: NextAuthOptions = {
                   }
                 });
 
+                const accountData = {
+                  userId: user.email || '',
+                  provider: account.provider,
+                  providerId: account.providerAccountId || '',
+                  accessToken: Buffer.from(account.access_token),
+                  refreshToken: account.refresh_token ? Buffer.from(account.refresh_token) : Buffer.from(''),
+                  scope: account.scope || '',
+                  expiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null
+                };
+
                 if (!existingOAuthAccount) {
                   await prisma.oAuthAccount.create({
-                    data: {
-                      userId: user.email || '',
-                      provider: account.provider,
-                      providerId: account.providerAccountId || '',
-                      accessToken: Buffer.from(account.access_token),
-                      refreshToken: account.refresh_token ? Buffer.from(account.refresh_token) : Buffer.from(''),
-                      scope: account.scope || '',
-                      expiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null
-                    }
+                    data: accountData
                   });
                   console.log('Created OAuth account for API access');
+                } else {
+                  // Update existing account with new tokens and scopes
+                  await prisma.oAuthAccount.update({
+                    where: { id: existingOAuthAccount.id },
+                    data: {
+                      accessToken: accountData.accessToken,
+                      refreshToken: accountData.refreshToken,
+                      scope: accountData.scope,
+                      expiresAt: accountData.expiresAt,
+                      updatedAt: new Date()
+                    }
+                  });
+                  console.log('Updated OAuth account with new tokens and scopes');
                 }
               }
             } catch (profileError) {
