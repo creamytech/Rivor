@@ -28,11 +28,11 @@ export async function GET(__req: NextRequest) {
     }
 
     // Get user to find correct userId
-    const user = await prisma.user.findUnique({
+    const userRecord = await prisma.user.findUnique({
       where: { email: userEmail }
     });
 
-    if (!user) {
+    if (!userRecord) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
@@ -42,7 +42,7 @@ export async function GET(__req: NextRequest) {
     // Get all OAuth accounts for this user using correct User.id
     const accounts = await prisma.oAuthAccount.findMany({
       where: {
-        userId: user.id // Use User.id instead of email
+        userId: userRecord.id // Use User.id instead of email
       },
       orderBy: {
         updatedAt: 'desc'
@@ -105,7 +105,7 @@ export async function GET(__req: NextRequest) {
     );
 
     // Get user and org information
-    const user = await prisma.user.findUnique({
+    const userWithOrg = await prisma.user.findUnique({
       where: { email: userEmail },
       include: {
         orgMembers: {
@@ -122,11 +122,11 @@ export async function GET(__req: NextRequest) {
         sessionValid: !!session
       },
       userRecord: {
-        found: !!user,
-        email: user?.email,
-        orgMemberships: user?.orgMembers?.length || 0,
-        primaryOrgId: user?.orgMembers?.[0]?.org?.id,
-        primaryOrgName: user?.orgMembers?.[0]?.org?.name
+        found: !!userWithOrg,
+        email: userWithOrg?.email,
+        orgMemberships: userWithOrg?.orgMembers?.length || 0,
+        primaryOrgId: userWithOrg?.orgMembers?.[0]?.org?.id,
+        primaryOrgName: userWithOrg?.orgMembers?.[0]?.org?.name
       },
       oauthAccounts: {
         total: accounts.length,
@@ -145,7 +145,7 @@ export async function GET(__req: NextRequest) {
         hasRequiredScopes: accountDetails.some(a => 
           a.provider === 'google' && a.hasRequiredScopes === true
         ),
-        sessionOrgMatches: orgId === user?.orgMembers?.[0]?.org?.id,
+        sessionOrgMatches: orgId === userWithOrg?.orgMembers?.[0]?.org?.id,
         userEmailMatches: accountDetails.some(a => a.userId === userEmail)
       }
     };
