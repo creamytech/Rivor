@@ -1,16 +1,33 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0f1f; /* Deep Blue */
-  --foreground: #e6f0ff; /* Light on dark */
-  --rivor-deep: #0a0f1f; /* Deep Blue */
-  --rivor-indigo: #3c49b8; /* Indigo */
-  --rivor-teal: #16a3a5; /* Teal */
-  --rivor-aqua: #5be7e7; /* Aqua */
+  /* Rivor Flow Gradient - Brand Colors */
+  --rivor-deep: #0a0f1f; /* Primary Deep Blue */
+  --rivor-indigo: #3c49b8; /* Primary Indigo */
+  --rivor-teal: #16a3a5; /* Primary Teal */
+  --rivor-aqua: #5be7e7; /* Accent Aqua */
+  
+  /* Dark Mode (Default) */
+  --background: #0a0f1f;
+  --foreground: #e6f0ff;
+  --surface: #0f1730;
   --muted: #0f1730;
   --muted-foreground: #a6b4d6;
   --border: #1e2a4a;
   --focus: #5be7e7;
+  
+  /* Glassmorphism */
+  --glass-bg: color-mix(in oklab, var(--surface) 80%, transparent);
+  --glass-border: color-mix(in oklab, var(--border) 60%, transparent);
+  
+  /* Spacing Scale (8pt grid) */
+  --spacing-xs: 0.25rem; /* 4px */
+  --spacing-sm: 0.5rem;  /* 8px */
+  --spacing-md: 1rem;    /* 16px */
+  --spacing-lg: 1.5rem;  /* 24px */
+  --spacing-xl: 2rem;    /* 32px */
+  --spacing-2xl: 3rem;   /* 48px */
+  --spacing-3xl: 4rem;   /* 64px */
 }
 
 @theme inline {
@@ -25,11 +42,17 @@
 
 @media (prefers-color-scheme: light) {
   :root {
+    /* Light Mode Palette */
     --background: #ffffff;
     --foreground: #0f1730;
+    --surface: #f4f7ff;
     --muted: #f4f7ff;
     --muted-foreground: #42557a;
     --border: #e5eaf6;
+    
+    /* Light Mode Glassmorphism */
+    --glass-bg: color-mix(in oklab, var(--surface) 90%, transparent);
+    --glass-border: color-mix(in oklab, var(--border) 80%, transparent);
   }
 }
 
@@ -37,6 +60,10 @@
 
 html, body {
   height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -53,9 +80,101 @@ body {
   border-radius: 6px;
 }
 
+/* Motion & Animation System - Brand Specification */
+
+/* Entrance Animations - fade-up + 6-8px rise, 250-350ms, ease-out */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 300ms ease-out;
+}
+
+.animate-fade-up-delay-1 { animation: fade-up 300ms ease-out 60ms both; }
+.animate-fade-up-delay-2 { animation: fade-up 300ms ease-out 120ms both; }
+.animate-fade-up-delay-3 { animation: fade-up 300ms ease-out 180ms both; }
+.animate-fade-up-delay-4 { animation: fade-up 300ms ease-out 240ms both; }
+.animate-fade-up-delay-5 { animation: fade-up 300ms ease-out 300ms both; }
+
+/* Hover Animations - 1-2% scale, soft shadow bloom, 150ms */
+.hover-lift {
+  transition: transform 150ms ease-out, box-shadow 150ms ease-out;
+}
+
+.hover-lift:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 32px color-mix(in oklab, var(--rivor-teal) 15%, transparent);
+}
+
+/* Flow Lines - continuous low-speed gradient motion */
+@keyframes flow-lines {
+  0% { 
+    background-position: 0% 0%;
+    opacity: 0.6;
+  }
+  50% { 
+    background-position: 100% 100%;
+    opacity: 0.8;
+  }
+  100% { 
+    background-position: 0% 0%;
+    opacity: 0.6;
+  }
+}
+
+.flow-line {
+  background: linear-gradient(45deg, transparent 40%, var(--rivor-teal) 50%, transparent 60%);
+  background-size: 200% 200%;
+  animation: flow-lines 3s ease-in-out infinite;
+}
+
+/* Parallax Helper */
+.parallax-light {
+  transition: transform 100ms ease-out;
+}
+
+/* Scroll-triggered animations */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 400ms ease-out;
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+  * { 
+    animation-duration: 0.001ms !important; 
+    animation-iteration-count: 1 !important; 
+    transition-duration: 0.001ms !important; 
+    scroll-behavior: auto !important; 
+  }
+  .animate-fade-up,
+  .animate-fade-up-delay-1,
+  .animate-fade-up-delay-2,
+  .animate-fade-up-delay-3,
+  .animate-fade-up-delay-4,
+  .animate-fade-up-delay-5 {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* Skeletons */
@@ -72,21 +191,89 @@ body {
   100% { background-position: 0 0; }
 }
 
-/* Utility tokens */
+/* Brand Gradient Utilities */
 .brand-gradient {
   background: linear-gradient(135deg, var(--rivor-indigo), var(--rivor-teal));
 }
+
+.flow-gradient {
+  background: linear-gradient(135deg, var(--rivor-deep), var(--rivor-indigo), var(--rivor-teal), var(--rivor-aqua));
+  background-size: 300% 300%;
+  animation: flow-shift 8s ease-in-out infinite;
+}
+
 .wave-gradient {
   background: radial-gradient(1200px 200px at 50% 0%, color-mix(in oklab, var(--rivor-aqua) 20%, transparent), transparent),
               linear-gradient(135deg, color-mix(in oklab, var(--rivor-indigo) 80%, transparent), color-mix(in oklab, var(--rivor-teal) 60%, transparent));
 }
 
-/* Typography scale */
-.text-display-2xl { font-size: 3.75rem; line-height: 1; letter-spacing: -0.02em; }
-.text-display-xl { font-size: 3rem; line-height: 1; letter-spacing: -0.02em; }
-.text-display-lg { font-size: 2.25rem; line-height: 2.5rem; letter-spacing: -0.02em; }
-.text-display-md { font-size: 1.875rem; line-height: 2.25rem; letter-spacing: -0.01em; }
-.text-display-sm { font-size: 1.5rem; line-height: 2rem; }
+.gradient-text {
+  background: linear-gradient(135deg, var(--rivor-indigo), var(--rivor-teal), var(--rivor-aqua));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 200%;
+  animation: gradient-shift 4s ease-in-out infinite;
+}
+
+@keyframes flow-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Typography Scale - Brand Specification */
+/* Headlines - Geometric sans, bold, wide tracking */
+.text-display-2xl { 
+  font-size: 3.75rem; 
+  line-height: 0.95; 
+  letter-spacing: -0.02em; 
+  font-weight: 700;
+}
+.text-display-xl { 
+  font-size: 3rem; 
+  line-height: 1; 
+  letter-spacing: -0.02em; 
+  font-weight: 700;
+}
+.text-display-lg { 
+  font-size: 2.25rem; 
+  line-height: 1.1; 
+  letter-spacing: -0.02em; 
+  font-weight: 600;
+}
+.text-display-md { 
+  font-size: 1.875rem; 
+  line-height: 1.2; 
+  letter-spacing: -0.01em; 
+  font-weight: 600;
+}
+.text-display-sm { 
+  font-size: 1.5rem; 
+  line-height: 1.3; 
+  font-weight: 600;
+}
+
+/* Body Text - Neutral sans, high legibility */
+.text-body-lg { 
+  font-size: 1.125rem; 
+  line-height: 1.6; 
+  font-weight: 400;
+}
+.text-body-md { 
+  font-size: 1rem; 
+  line-height: 1.5; 
+  font-weight: 400;
+}
+.text-body-sm { 
+  font-size: 0.875rem; 
+  line-height: 1.5; 
+  font-weight: 400;
+}
 
 /* Component spacing utilities */
 .spacing-component-xs { gap: 0.25rem; }
@@ -119,10 +306,35 @@ body {
   animation: river-flow 8s ease-in-out infinite;
 }
 
+/* Glass Card Style - Brand Specification */
 .card {
-  background: var(--muted);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 1rem; /* 16px - 2xl radius */
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 20px color-mix(in oklab, var(--rivor-deep) 8%, transparent);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 8px 32px color-mix(in oklab, var(--rivor-deep) 12%, transparent);
+}
+
+/* Glass Card Variants */
+.card-subtle {
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 1rem;
+  box-shadow: 0 2px 12px color-mix(in oklab, var(--rivor-deep) 4%, transparent);
+}
+
+.card-glow {
+  background: var(--glass-bg);
+  border: 1px solid var(--rivor-teal);
+  border-radius: 1rem;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 24px color-mix(in oklab, var(--rivor-teal) 20%, transparent);
 }
 
 .container {
@@ -343,7 +555,7 @@ body {
 .flow-in-delay-2 { animation-delay: 0.2s; }
 .flow-in-delay-3 { animation-delay: 0.3s; }
 
-/* Beautiful focus states */
+/* Enhanced Focus States & Button Interactions */
 .focus-flow:focus-visible {
   outline: none;
   box-shadow: 
@@ -352,4 +564,128 @@ body {
     0 4px 12px rgba(59, 130, 246, 0.2);
   transform: scale(1.02);
   transition: all 0.2s ease-out;
+}
+
+/* Enhanced Button States */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.6s ease-out;
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Tooltip System */
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]:before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  background: var(--foreground);
+  color: var(--background);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  z-index: 1000;
+}
+
+[data-tooltip]:after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-2px);
+  border: 4px solid transparent;
+  border-top-color: var(--foreground);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  z-index: 1000;
+}
+
+[data-tooltip]:hover:before,
+[data-tooltip]:hover:after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Link Hover Effects */
+.link-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: gap 0.2s ease-out;
+}
+
+.link-arrow:hover {
+  gap: 0.75rem;
+}
+
+.link-arrow::after {
+  content: '→';
+  transition: transform 0.2s ease-out;
+}
+
+.link-arrow:hover::after {
+  transform: translateX(2px);
+}
+
+/* Loading States */
+.loading-dots {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.loading-dots::after {
+  content: '';
+  animation: loading-dots 1.4s ease-in-out infinite both;
+}
+
+@keyframes loading-dots {
+  0%, 80%, 100% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+/* Smooth State Transitions */
+* {
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }

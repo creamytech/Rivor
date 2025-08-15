@@ -8,18 +8,77 @@ const ClientRoot = dynamic(() => import("@/components/providers/ClientRoot"), { 
 const geistSans = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
+  preload: true,
 });
 
 const geistMono = IBM_Plex_Mono({
   variable: "--font-plex-mono",
   subsets: ["latin"],
   weight: ["400"],
+  display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
-  title: "Rivor — Where Deals Flow Seamlessly",
-  description: "Rivor helps real estate teams turn inbox chaos into closed deals with AI-powered summaries, pipeline, calendar, and analytics.",
+  title: {
+    default: "Rivor — Where Deals Flow Seamlessly",
+    template: "%s | Rivor"
+  },
+  description: "Transform your real estate business with Rivor's AI-powered unified workspace. Get intelligent email summaries, automated pipeline management, and seamless calendar integration. Turn inbox chaos into closed deals.",
+  keywords: ["real estate CRM", "AI email management", "property pipeline", "real estate automation", "email summaries", "calendar integration", "deal tracking"],
+  authors: [{ name: "Rivor Team" }],
+  creator: "Rivor",
+  publisher: "Rivor",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   metadataBase: new URL("https://rivor.example.com"),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "Rivor — Where Deals Flow Seamlessly",
+    description: "Transform your real estate business with AI-powered email management, pipeline automation, and calendar integration.",
+    url: "https://rivor.example.com",
+    siteName: "Rivor",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Rivor - AI-Powered Real Estate Workspace",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Rivor — Where Deals Flow Seamlessly",
+    description: "Transform your real estate business with AI-powered workspace. Turn inbox chaos into closed deals.",
+    images: ["/og-image.png"],
+    creator: "@rivor",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon-16x16.png",
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({

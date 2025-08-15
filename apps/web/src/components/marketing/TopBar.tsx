@@ -6,6 +6,8 @@ import Logo from "@/components/branding/Logo";
 
 export default function MarketingTopBar() {
   const [solid, setSolid] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
   useEffect(() => {
     const onScroll = () => setSolid(window.scrollY > 8);
     onScroll();
@@ -13,23 +15,120 @@ export default function MarketingTopBar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const navigation = [
+    { name: "Features", href: "#features" },
+    { name: "How It Works", href: "#how-it-works" },
+    { name: "Pricing", href: "#pricing" },
+    { name: "Security", href: "/security" },
+  ];
+
+  const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href.startsWith('#')) {
+      e.preventDefault();
+      const element = document.querySelector(href);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+      setMobileMenuOpen(false);
+    }
+  };
+
   return (
-    <div className={`w-full sticky top-0 z-40 transition-colors ${solid ? "backdrop-blur bg-[color-mix(in_oklab,var(--background)95%,transparent)] border-b border-[var(--border)]" : "bg-transparent"}`}>
-      <div className="container h-14 flex items-center justify-between">
-        <Logo />
-        <nav className="hidden sm:flex items-center gap-6 text-sm">
-          <Link href="/pricing" className="hover:opacity-80">Pricing</Link>
-          <Link href="/demo" className="hover:opacity-80">Demo</Link>
-          <Link href="/security" className="hover:opacity-80">Security</Link>
-          <Link href="/docs" className="hover:opacity-80">Docs</Link>
-        </nav>
-        <div className="flex items-center gap-2">
-          <Link href="/auth/signin" className="px-3 py-1.5 rounded-md border border-[var(--border)] hover:bg-[var(--muted)]">Get Started</Link>
-          <Link href="/demo" className="px-3 py-1.5 rounded-md brand-gradient text-white">See Demo</Link>
+    <>
+      {/* Sticky Navigation with enhanced blur and active link highlighting */}
+      <div className={`w-full sticky top-0 z-50 transition-all duration-300 ${
+        solid 
+          ? "backdrop-blur-xl bg-background/80 border-b border-border shadow-lg" 
+          : "bg-transparent"
+      }`}>
+        <div className="container h-16 flex items-center justify-between">
+          <Logo />
+          
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-8">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={(e) => handleSmoothScroll(e, item.href)}
+                className="text-sm font-medium text-muted-foreground hover:text-foreground hover:text-rivor-teal transition-all duration-200 relative group"
+              >
+                {item.name}
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-rivor-teal group-hover:w-full transition-all duration-300"></span>
+              </Link>
+            ))}
+          </nav>
+
+          {/* Desktop CTAs */}
+          <div className="hidden md:flex items-center gap-3">
+            <Link 
+              href="/auth/signin" 
+              className="px-4 py-2 rounded-xl border border-border bg-surface/50 backdrop-blur hover:bg-muted transition-all duration-200 hover-lift text-sm font-medium"
+            >
+              Sign In
+            </Link>
+            <Link 
+              href="/auth/signin" 
+              className="px-4 py-2 rounded-xl brand-gradient text-white font-medium hover-lift transition-all duration-200 text-sm"
+            >
+              Get Started
+            </Link>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
+            aria-label="Toggle mobile menu"
+          >
+            <div className="w-6 h-6 flex flex-col justify-center items-center">
+              <span className={`bg-foreground block transition-all duration-300 ease-out h-0.5 w-6 rounded-sm ${
+                mobileMenuOpen ? 'rotate-45 translate-y-1' : '-translate-y-0.5'
+              }`}></span>
+              <span className={`bg-foreground block transition-all duration-300 ease-out h-0.5 w-6 rounded-sm my-0.5 ${
+                mobileMenuOpen ? 'opacity-0' : 'opacity-100'
+              }`}></span>
+              <span className={`bg-foreground block transition-all duration-300 ease-out h-0.5 w-6 rounded-sm ${
+                mobileMenuOpen ? '-rotate-45 -translate-y-1' : 'translate-y-0.5'
+              }`}></span>
+            </div>
+          </button>
         </div>
       </div>
-    </div>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-x-0 top-16 z-40 bg-background/95 backdrop-blur-xl border-b border-border animate-fade-up">
+          <div className="container py-6 space-y-4">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={(e) => handleSmoothScroll(e, item.href)}
+                className="block py-3 text-lg font-medium text-muted-foreground hover:text-rivor-teal transition-colors"
+              >
+                {item.name}
+              </Link>
+            ))}
+            <div className="pt-4 space-y-3">
+              <Link 
+                href="/auth/signin" 
+                className="block w-full text-center px-4 py-3 rounded-xl border border-border bg-surface hover:bg-muted transition-colors font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Sign In
+              </Link>
+              <Link 
+                href="/auth/signin" 
+                className="block w-full text-center px-4 py-3 rounded-xl brand-gradient text-white font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Get Started
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
-
-

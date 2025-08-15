@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from "react";
 import CommandPalette from "@/components/common/CommandPalette";
 import Toaster from "@/components/common/Toaster";
+import { AnalyticsProvider } from "./AnalyticsProvider";
 
 declare global {
   interface Window { __TOAST_BUS__?: EventTarget }
@@ -17,10 +18,10 @@ export default function ClientRoot() {
   }, [bus]);
 
   return (
-    <>
+    <AnalyticsProvider>
       <CommandPalette />
       <Toaster bus={bus} />
-    </>
+    </AnalyticsProvider>
   );
 }
 
