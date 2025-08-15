@@ -67,10 +67,36 @@ export default function SignInPage() {
   const handleSignIn = async (provider: string) => {
     setIsSigningIn(true);
     setSignInProvider(provider);
+    
+    // Track provider click
+    trackProviderClick(provider, correlationId);
+    
+    const startTime = Date.now();
+    
     try {
       await signIn(provider, { callbackUrl: '/app' });
+      
+      // Track successful provider redirect
+      authAnalytics.trackPerformance('provider_response', Date.now() - startTime, correlationId, {
+        provider,
+        success: true
+      });
     } catch (error) {
       console.error('Sign in error:', error);
+      
+      // Track failed provider interaction
+      trackAuthError(
+        error instanceof Error ? error.message : 'Sign in failed',
+        'oauth',
+        provider
+      );
+      
+      authAnalytics.trackPerformance('provider_response', Date.now() - startTime, correlationId, {
+        provider,
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      
       setIsSigningIn(false);
       setSignInProvider(null);
     }
