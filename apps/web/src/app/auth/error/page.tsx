@@ -42,10 +42,25 @@ export default function AuthErrorPage() {
   const handleRetry = async (provider: string) => {
     setIsRetrying(true);
     setRetryProvider(provider);
+    
+    // Track retry attempt
+    authAnalytics.trackInteraction('retry_clicked', provider, undefined, {
+      originalError: error,
+      errorDetails: getErrorDetails(error)
+    });
+    
     try {
       await signIn(provider, { callbackUrl: '/app' });
-    } catch (error) {
-      console.error('Retry sign in error:', error);
+    } catch (retryError) {
+      console.error('Retry sign in error:', retryError);
+      
+      // Track retry failure
+      trackAuthError(
+        retryError instanceof Error ? retryError.message : 'Retry failed',
+        'oauth',
+        provider
+      );
+      
       setIsRetrying(false);
       setRetryProvider(null);
     }
