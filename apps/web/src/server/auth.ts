@@ -10,7 +10,7 @@ import { logger } from "@/lib/logger";
 import { handleOAuthCallback, isDuplicateCallback, type OAuthCallbackData } from "./onboarding";
 import { validateAndLogStartupConfig } from "./env";
 
-const providers = [] as unknown[];
+const providers: unknown[] = [];
 
 // Microsoft OAuth (always enabled if configured)
 const REQUIRED_MICROSOFT_SCOPES = "openid email profile offline_access https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/Mail.Send https://graph.microsoft.com/Calendars.ReadWrite https://graph.microsoft.com/User.Read";
@@ -45,13 +45,48 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   );
 }
 
+// Debug logging for providers
+console.log('🔍 Provider configuration check:', {
+  googleClientId: !!process.env.GOOGLE_CLIENT_ID,
+  googleClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+  microsoftClientId: !!process.env.MICROSOFT_CLIENT_ID,
+  providersLength: providers.length,
+  timestamp: new Date().toISOString()
+});
+
 // Only Google and Microsoft providers are supported
 if (providers.length === 0) {
-  console.warn("No OAuth providers configured. Please set up Google or Microsoft OAuth credentials.");
+  console.error("🚨 No OAuth providers configured. Please set up Google or Microsoft OAuth credentials.");
+  console.error("Environment check:", {
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID?.substring(0, 10) + '...',
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET?.substring(0, 5) + '...',
+    NODE_ENV: process.env.NODE_ENV
+  });
+} else {
+  console.log('✅ OAuth providers loaded successfully:', providers.length);
 }
 
 // Validate startup configuration on module load
 validateAndLogStartupConfig();
+
+// Ensure we always have Google provider if credentials exist
+const finalProviders = providers.length > 0 ? providers : [
+  ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      authorization: {
+        params: {
+          access_type: "offline",
+          prompt: "consent",
+          scope: process.env.GOOGLE_OAUTH_SCOPES || REQUIRED_GOOGLE_SCOPES,
+        },
+      },
+    })
+  ] : [])
+];
+
+console.log('🚀 Final providers array length:', finalProviders.length);
 
 export const authOptions: NextAuthOptions = {
   pages: {
@@ -60,7 +95,7 @@ export const authOptions: NextAuthOptions = {
   },
   debug: process.env.NEXTAUTH_DEBUG === "true",
   secret: process.env.NEXTAUTH_SECRET,
-  providers,
+  providers: finalProviders,
   session: { 
     strategy: "jwt",
     maxAge: 24 * 60 * 60, // 24 hours
