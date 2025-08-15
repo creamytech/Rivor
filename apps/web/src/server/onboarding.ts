@@ -301,14 +301,21 @@ async function upsertOrganization(userId: string, userEmail: string): Promise<{ 
  * Creates or updates EmailAccount with idempotency
  */
 async function upsertEmailAccount(orgId: string, data: OAuthCallbackData) {
+  // First, find the actual User record to get the correct userId
+  const user = await prisma.user.findUnique({
+    where: { email: data.userEmail },
+  });
+
+  if (!user) {
+    throw new Error(`User with email ${data.userEmail} not found`);
+  }
+
   // Idempotency key: provider + external_account_id within org
-  const existingAccount = await prisma.emailAccount.findUnique({
+  const existingAccount = await prisma.emailAccount.findFirst({
     where: {
-      orgId_provider_externalAccountId: {
-        orgId,
-        provider: data.provider,
-        externalAccountId: data.externalAccountId,
-      },
+      orgId,
+      provider: data.provider,
+      externalAccountId: data.externalAccountId,
     },
   });
 
@@ -332,7 +339,7 @@ async function upsertEmailAccount(orgId: string, data: OAuthCallbackData) {
   return await prisma.emailAccount.create({
     data: {
       orgId,
-      userId: data.userId,
+      userId: user.id, // Use the actual User ID from database
       provider: data.provider,
       externalAccountId: data.externalAccountId,
       email: data.userEmail,
