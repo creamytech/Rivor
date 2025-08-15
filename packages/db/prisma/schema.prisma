@@ -276,6 +276,8 @@ model CalendarAccount {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   events            CalendarEvent[]
+  
+  @@unique([orgId, provider])
 }
 
 model CalendarEvent {
