@@ -4,6 +4,9 @@ import { probeAllGoogleServices, clearProbeCache } from '@/server/health-probes'
 import { checkTokenHealth } from '@/server/oauth';
 import { logger } from '@/lib/logger';
 
+// Force dynamic rendering - this route uses session/auth data
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   const correlationId = `manual-health-check-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   

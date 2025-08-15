@@ -3,6 +3,9 @@ import { enqueueEmailSync } from '@/server/queue';
 import { prisma } from '@/server/db';
 import { MicrosoftGraphService } from '@/server/microsoft-graph';
 
+// Force dynamic rendering - this route uses request URL/query params
+export const dynamic = 'force-dynamic';
+
 // Microsoft Graph validation: when creating a subscription, Graph sends a GET with validationToken.
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);

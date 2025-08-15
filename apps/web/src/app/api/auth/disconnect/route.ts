@@ -3,6 +3,9 @@ import { auth } from "@/server/auth";
 import { prisma } from "@/server/db";
 import { logger } from "@/lib/logger";
 
+// Force dynamic rendering - this route uses session/auth data
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();

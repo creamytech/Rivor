@@ -2,6 +2,9 @@ import { NextRequest } from 'next/server';
 import { auth } from '@/server/auth';
 import { AIService, ChatMessage } from '@/server/ai';
 
+// Force dynamic rendering - this route uses session/auth data
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();

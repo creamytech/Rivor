@@ -206,7 +206,6 @@ export async function checkTokenHealth(userEmail: string, skipValidation = false
               finalConnectedStatus: baseHealth.connected,
               action: 'validation_complete'
             });
-          }
         } catch (validationError) {
           logger.error('Token validation failed during health check', {
             correlationId,

@@ -3,6 +3,9 @@ import { auth } from "@/server/auth";
 import { prisma } from "@/server/db";
 import { checkTokenHealth } from "@/server/oauth";
 
+// Force dynamic rendering - this route uses session/auth data
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const session = await auth();

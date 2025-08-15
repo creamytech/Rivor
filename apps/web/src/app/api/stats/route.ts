@@ -4,6 +4,9 @@ import { getUnreadCount } from "@/server/email";
 import { getCalendarStats } from "@/server/calendar";
 import { getOverallPipelineStats } from "@/server/pipeline";
 
+// Force dynamic rendering - this route uses session/auth data
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const session = await auth();

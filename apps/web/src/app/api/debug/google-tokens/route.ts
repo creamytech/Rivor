@@ -4,6 +4,9 @@ import { prisma } from '@/server/db';
 import { decryptForOrg } from '@/server/crypto';
 import { logger } from '@/lib/logger';
 
+// Force dynamic rendering - this route uses session/auth data and encrypted tokens
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const session = await auth();

@@ -3,6 +3,9 @@ import { prisma } from '@/server/db';
 import { CalendarWebhookService } from '@/server/calendar-webhooks';
 import { logger } from '@/lib/logger';
 
+// Force dynamic rendering - this route uses request headers
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   const correlationId = `calendar-push-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const startTime = Date.now();
