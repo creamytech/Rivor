@@ -10,15 +10,64 @@ datasource db {
 }
 
 model User {
-  id          String       @id @default(cuid())
-  email       String       @unique
-  name        String?
-  image       String?
-  timezone    String       @default("America/New_York")
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  orgMembers  OrgMember[]
-  accounts    OAuthAccount[]
+  id            String       @id @default(cuid())
+  email         String       @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  timezone      String       @default("America/New_York")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  // NextAuth.js relations
+  accounts      Account[]
+  sessions      Session[]
+  
+  // Rivor relations
+  orgMembers    OrgMember[]
+  oauthAccounts OAuthAccount[]
+}
+
+// NextAuth.js required tables
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  createdAt  DateTime @default(now())
+
+  @@unique([identifier, token])
 }
 
 model Org {
@@ -56,6 +105,10 @@ model OrgMember {
   role      String   @default("member")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Relations for assigned items
+  assignedLeads Lead[] @relation("LeadAssignments")
+  assignedTasks Task[] @relation("TaskAssignments")
 
   @@unique([orgId, userId])
 }
@@ -203,6 +256,7 @@ model Lead {
   status               String          @default("active") // active, won, lost, archived
   priority             String          @default("medium") // low, medium, high
   source               String?         // email, manual, import, etc.
+  assignedTo           OrgMember?      @relation("LeadAssignments", fields: [assignedToId], references: [id])
   assignedToId         String?         // OrgMember ID
   sourceThreadId       String?         // Link to email thread if created from email
   expectedCloseDate    DateTime?
@@ -221,6 +275,7 @@ model Task {
   dueAt           DateTime?
   done            Boolean   @default(false)
   priority        String    @default("medium") // low, medium, high
+  assignedTo      OrgMember? @relation("TaskAssignments", fields: [assignedToId], references: [id])
   assignedToId    String?   // OrgMember ID
   linkThreadId    String?   // Link to email thread
   lead            Lead?     @relation("LeadTasks", fields: [linkLeadId], references: [id])

@@ -112,6 +112,17 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account, profile }) {
       // On sign in (including re-auth), create org and set orgId
       if (user && account) {
+        // Milestone C: OAuth callback logging with required format
+        const oauthCallbackLog = {
+          userId: user.email,
+          provider: account.provider,
+          hasRefreshToken: !!account.refresh_token,
+          expiresAt: account.expires_at ? new Date(account.expires_at * 1000).toISOString() : null
+        };
+        
+        console.log('OAuth callback:', oauthCallbackLog);
+        logger.info('OAuth callback successful', oauthCallbackLog);
+        
         console.log('JWT callback - sign in/re-auth:', { 
           email: user.email, 
           provider: account.provider,
