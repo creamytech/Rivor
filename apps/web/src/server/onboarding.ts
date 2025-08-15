@@ -72,6 +72,38 @@ export async function handleOAuthCallback(data: OAuthCallbackData): Promise<Onbo
         },
       });
 
+      // Step 1.5: Create NextAuth Account record for OAuth compatibility
+      await tx.account.upsert({
+        where: {
+          provider_providerAccountId: {
+            provider: data.provider,
+            providerAccountId: data.externalAccountId
+          }
+        },
+        update: {
+          access_token: data.account.access_token,
+          refresh_token: data.account.refresh_token,
+          expires_at: data.account.expires_at,
+          token_type: data.account.token_type,
+          scope: data.account.scope,
+          id_token: data.account.id_token,
+          session_state: data.account.session_state,
+        },
+        create: {
+          userId: user.id,
+          type: data.account.type || 'oauth',
+          provider: data.provider,
+          providerAccountId: data.externalAccountId,
+          access_token: data.account.access_token,
+          refresh_token: data.account.refresh_token,
+          expires_at: data.account.expires_at,
+          token_type: data.account.token_type,
+          scope: data.account.scope,
+          id_token: data.account.id_token,
+          session_state: data.account.session_state,
+        }
+      });
+
       // Step 2: Ensure default Organization
       let org = await tx.org.findFirst({
         where: { 

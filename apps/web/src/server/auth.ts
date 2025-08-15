@@ -1,7 +1,6 @@
 ﻿import { prisma } from "./db";
 import { enqueueEmailSync } from "./queue";
 import { type NextAuthOptions, getServerSession } from "next-auth";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import Google from "next-auth/providers/google";
 import AzureAD from "next-auth/providers/azure-ad";
 import { createKmsClient, generateDek } from "@rivor/crypto";
@@ -55,7 +54,6 @@ if (providers.length === 0) {
 validateAndLogStartupConfig();
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
   pages: {
     signIn: "/auth/signin",
     error: "/auth/error",
@@ -64,7 +62,7 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   providers,
   session: { 
-    strategy: "database",
+    strategy: "jwt",
     maxAge: 24 * 60 * 60, // 24 hours
     updateAge: 60 * 60,   // 1 hour - refresh session
   },
