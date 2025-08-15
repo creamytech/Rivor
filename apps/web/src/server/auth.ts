@@ -192,6 +192,53 @@ export const authOptions: NextAuthOptions = {
                   });
                   console.log('Updated OAuth account with new tokens and scopes');
                 }
+
+                // Create EmailAccount and CalendarAccount records for sync workers
+                const scopes = account.scope?.split(' ') || [];
+                const hasEmailScopes = account.provider === 'google' 
+                  ? scopes.includes('https://www.googleapis.com/auth/gmail.readonly')
+                  : scopes.includes('https://graph.microsoft.com/Mail.Read');
+                const hasCalendarScopes = account.provider === 'google'
+                  ? scopes.includes('https://www.googleapis.com/auth/calendar.readonly')
+                  : scopes.includes('https://graph.microsoft.com/Calendars.ReadWrite');
+
+                if (hasEmailScopes) {
+                  const existingEmailAccount = await prisma.emailAccount.findFirst({
+                    where: { orgId: org.id, provider: account.provider }
+                  });
+                  
+                  if (!existingEmailAccount) {
+                    const emailAccount = await prisma.emailAccount.create({
+                      data: {
+                        orgId: org.id,
+                        provider: account.provider,
+                        status: 'connected'
+                      }
+                    });
+                    console.log('Created EmailAccount for sync worker');
+                    
+                    // Enqueue initial email sync
+                    await enqueueEmailSync(org.id, emailAccount.id);
+                    console.log('Enqueued initial email sync');
+                  }
+                }
+
+                if (hasCalendarScopes) {
+                  const existingCalendarAccount = await prisma.calendarAccount.findFirst({
+                    where: { orgId: org.id, provider: account.provider }
+                  });
+                  
+                  if (!existingCalendarAccount) {
+                    await prisma.calendarAccount.create({
+                      data: {
+                        orgId: org.id,
+                        provider: account.provider,
+                        status: 'connected'
+                      }
+                    });
+                    console.log('Created CalendarAccount for sync worker');
+                  }
+                }
               }
             } catch (profileError) {
               console.error('Error syncing user profile:', profileError);
