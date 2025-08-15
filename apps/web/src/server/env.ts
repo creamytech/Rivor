@@ -29,6 +29,7 @@ export type Env = {
   ENCRYPTION_CACHE_TTL_SECONDS: number;
   EPHEMERAL_STORAGE_MODE: boolean;
   RETENTION_DAYS: number;
+  SHOW_DEMO_DATA: boolean;
 };
 
 export function getEnv(): Env {
@@ -64,7 +65,72 @@ export function getEnv(): Env {
     ENCRYPTION_CACHE_TTL_SECONDS: Number(env.ENCRYPTION_CACHE_TTL_SECONDS ?? 60),
     EPHEMERAL_STORAGE_MODE: String(env.EPHEMERAL_STORAGE_MODE ?? 'false') === 'true',
     RETENTION_DAYS: Number(env.RETENTION_DAYS ?? 90),
+    SHOW_DEMO_DATA: String(env.SHOW_DEMO_DATA ?? 'false') === 'true',
   };
+}
+
+/**
+ * Performs startup configuration validation and logging
+ */
+export function validateAndLogStartupConfig(): void {
+  const env = getEnv();
+  const missingVars: string[] = [];
+  const warnings: string[] = [];
+
+  // Critical variables check
+  if (!env.NEXTAUTH_URL) missingVars.push('NEXTAUTH_URL');
+  if (!env.NEXTAUTH_SECRET) missingVars.push('NEXTAUTH_SECRET');
+  if (!env.DATABASE_URL) missingVars.push('DATABASE_URL');
+
+  // Google OAuth check
+  if (!env.GOOGLE_CLIENT_ID && !env.MICROSOFT_CLIENT_ID) {
+    missingVars.push('GOOGLE_CLIENT_ID or MICROSOFT_CLIENT_ID');
+  }
+  if (!env.GOOGLE_CLIENT_SECRET && !env.MICROSOFT_CLIENT_SECRET) {
+    missingVars.push('GOOGLE_CLIENT_SECRET or MICROSOFT_CLIENT_SECRET');
+  }
+
+  // Google project check for Pub/Sub
+  if (env.GOOGLE_CLIENT_ID && !env.GOOGLE_PROJECT_ID) {
+    warnings.push('GOOGLE_PROJECT_ID missing - Pub/Sub notifications may not work');
+  }
+  if (env.GOOGLE_PROJECT_ID && !env.GOOGLE_PUBSUB_TOPIC) {
+    warnings.push('GOOGLE_PUBSUB_TOPIC missing - real-time sync disabled');
+  }
+  if (env.GOOGLE_PUBSUB_TOPIC && !env.GOOGLE_PUBSUB_VERIFICATION_TOKEN) {
+    warnings.push('GOOGLE_PUBSUB_VERIFICATION_TOKEN missing - push endpoint vulnerable');
+  }
+
+  // Log fatal misconfigurations
+  if (missingVars.length > 0) {
+    console.error('🔴 FATAL MISCONFIG - Missing required environment variables:');
+    missingVars.forEach(varName => console.error(`  - ${varName}`));
+    console.error('Application may not function correctly');
+  }
+
+  // Log warnings
+  if (warnings.length > 0) {
+    console.warn('⚠️  Configuration warnings:');
+    warnings.forEach(warning => console.warn(`  - ${warning}`));
+  }
+
+  // Extract DB hostname safely
+  let dbHost = 'unknown';
+  try {
+    if (env.DATABASE_URL) {
+      const dbUrl = new URL(env.DATABASE_URL);
+      dbHost = dbUrl.hostname;
+      // Also log the first 40 characters for verification
+      console.log(`📊 DB URL prefix: ${env.DATABASE_URL.slice(0, 40)}...`);
+    }
+  } catch (err) {
+    console.warn('Could not parse DATABASE_URL hostname');
+  }
+
+  // Log startup banner with masked DB host for security
+  const kmsStatus = env.KMS_PROVIDER && env.KMS_KEY_ID ? 'on' : 'off';
+  const maskedDbHost = dbHost.length > 4 ? dbHost.slice(0, 4) + '***' : '***';
+  console.log(`🚀 Rivor startup: DB host: ${maskedDbHost} | KMS: ${kmsStatus} | NEXTAUTH_URL: ${env.NEXTAUTH_URL} | Project: ${env.GOOGLE_PROJECT_ID || 'not set'} | Demo: ${env.SHOW_DEMO_DATA ? 'on' : 'off'}`);
 }
 
 

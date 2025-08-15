@@ -1,36 +1,36 @@
+"use client";
+import { useParams, useRouter } from 'next/navigation';
 import AppShell from "@/components/app/AppShell";
+import ThreadView from "@/components/inbox/ThreadView";
+import FlowRibbon from "@/components/river/FlowRibbon";
+import { ToastProvider } from "@/components/river/RiverToast";
+import TokenErrorBanner from "@/components/common/TokenErrorBanner";
 
-export default function ThreadPage() {
-  const right = (
-    <div className="p-3">
-      <div className="text-sm font-medium mb-2">AI Summary</div>
-      <ul className="text-sm list-disc pl-4 space-y-1">
-        <li>Key points</li>
-        <li>Tasks</li>
-        <li>Next steps</li>
-      </ul>
-    </div>
-  );
+export default function ThreadDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const threadId = params.threadId as string;
+
+  const handleBack = () => {
+    router.push('/app/inbox');
+  };
+
   return (
-    <AppShell rightDrawer={right}>
-      <div className="container py-4">
-        <div className="text-xs mb-2">Inbox / Thread</div>
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <div className="text-base font-medium">Thread Subject</div>
-            <div className="text-xs text-[var(--muted-foreground)]">Stage • Priority • Owner • Next Step</div>
+    <ToastProvider>
+      <div className="relative min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
+        <FlowRibbon />
+        <AppShell>
+          <div className="container py-6 space-y-6">
+            <TokenErrorBanner />
+            
+            <ThreadView
+              threadId={threadId}
+              onBack={handleBack}
+              className="min-h-[600px]"
+            />
           </div>
-          <div className="flex gap-2 text-sm">
-            <span className="px-2 py-1 rounded border border-[var(--border)]">Stage</span>
-            <span className="px-2 py-1 rounded border border-[var(--border)]">Priority</span>
-            <span className="px-2 py-1 rounded border border-[var(--border)]">Owner</span>
-            <span className="px-2 py-1 rounded border border-[var(--border)]">Next Step</span>
-          </div>
-        </div>
-        <div className="border border-[var(--border)] rounded p-3 min-h-80">Thread content…</div>
+        </AppShell>
       </div>
-    </AppShell>
+    </ToastProvider>
   );
 }
-
-

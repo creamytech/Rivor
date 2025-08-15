@@ -1,131 +1,103 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
-import { enqueueTokenEncryption } from '@/server/queue-jobs';
+import { retryFailedTokenEncryption } from '@/server/secure-tokens';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Retry failed token encryption endpoint
+ */
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-    if (!(session as any)?.orgId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { emailAccountId, originalTokens } = await req.json();
-
-    if (!emailAccountId) {
-      return NextResponse.json(
-        { error: 'emailAccountId is required' },
-        { status: 400 }
-      );
+    const orgId = (session as any).orgId;
+    if (!orgId) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
 
-    // Verify the email account belongs to the user's org
-    const emailAccount = await prisma.emailAccount.findFirst({
-              where: {
+    const { emailAccountId, tokenRef } = await req.json();
+
+    if (!emailAccountId && !tokenRef) {
+      return NextResponse.json({ 
+        error: 'emailAccountId or tokenRef required' 
+      }, { status: 400 });
+    }
+
+    // If emailAccountId is provided, find failed tokens for that account
+    if (emailAccountId) {
+      const emailAccount = await prisma.emailAccount.findFirst({
+        where: { 
           id: emailAccountId,
-          orgId: (session as any).orgId,
-        },
-      include: {
-        org: true,
-      },
-    });
-
-    if (!emailAccount) {
-      return NextResponse.json(
-        { error: 'EmailAccount not found' },
-        { status: 404 }
-      );
-    }
-
-    // Check if retry is needed
-    if (emailAccount.encryptionStatus === 'ok') {
-      return NextResponse.json(
-        { error: 'Email account encryption is already successful' },
-        { status: 400 }
-      );
-    }
-
-    // Get failed tokens from SecureToken table
-    const failedTokens = await prisma.secureToken.findMany({
-      where: {
-        orgId: (session as any).orgId,
-        provider: emailAccount.provider,
-        encryptionStatus: 'failed',
-      },
-    });
-
-    if (failedTokens.length === 0) {
-      return NextResponse.json(
-        { error: 'No failed tokens found to retry' },
-        { status: 400 }
-      );
-    }
-
-    // For security, we need the original tokens to be provided
-    // In a real implementation, you might get these from a secure OAuth re-flow
-    if (!originalTokens || (!originalTokens.accessToken && !originalTokens.refreshToken)) {
-      return NextResponse.json(
-        { error: 'Original tokens required for retry' },
-        { status: 400 }
-      );
-    }
-
-    // Enqueue token encryption retry jobs
-    const retryPromises = failedTokens.map(token => {
-      const originalToken = token.tokenType === 'oauth_access' 
-        ? originalTokens.accessToken
-        : originalTokens.refreshToken;
-
-      if (!originalToken) return Promise.resolve();
-
-      return enqueueTokenEncryption({
-        orgId: (session as any).orgId,
-        emailAccountId,
-        tokenRef: token.tokenRef,
-        originalToken,
-        provider: emailAccount.provider,
-        externalAccountId: emailAccount.externalAccountId,
+          orgId 
+        }
       });
-    });
 
-    await Promise.all(retryPromises);
+      if (!emailAccount) {
+        return NextResponse.json({ 
+          error: 'Email account not found' 
+        }, { status: 404 });
+      }
 
-    // Update EmailAccount status to pending
-    await prisma.emailAccount.update({
-      where: { id: emailAccountId },
-      data: {
-        encryptionStatus: 'pending',
-        kmsErrorCode: null,
-        kmsErrorAt: null,
-      },
-    });
+      // Find failed tokens for this account
+      const failedTokens = await prisma.secureToken.findMany({
+        where: {
+          orgId,
+          provider: emailAccount.provider,
+          encryptionStatus: 'failed'
+        }
+      });
 
-    logger.info('Token encryption retry initiated', {
-      orgId: (session as any).orgId,
-      emailAccountId,
-      provider: emailAccount.provider,
-      failedTokenCount: failedTokens.length,
-    });
+      if (failedTokens.length === 0) {
+        return NextResponse.json({
+          message: 'No failed tokens found for this account',
+          success: true
+        });
+      }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Token encryption retry jobs enqueued',
-      retryCount: failedTokens.length,
-    });
+      logger.info('Token encryption retry requested', {
+        orgId,
+        emailAccountId,
+        failedTokenCount: failedTokens.length,
+        action: 'token_retry_start'
+      });
+
+      // For now, we can't retry without the original tokens
+      // In a production system, you would:
+      // 1. Force OAuth re-authentication to get fresh tokens
+      // 2. Re-encrypt with the fresh tokens
+      // 3. Update the secure token records
+
+      return NextResponse.json({
+        error: 'Token retry requires OAuth re-authentication',
+        message: 'Please reconnect your account to refresh tokens',
+        requiresReconnect: true
+      }, { status: 400 });
+    }
+
+    // If tokenRef is provided, retry that specific token
+    if (tokenRef) {
+      // This would require the original token value, which we don't have
+      return NextResponse.json({
+        error: 'Direct token retry not supported',
+        message: 'Please reconnect your account to refresh tokens',
+        requiresReconnect: true
+      }, { status: 400 });
+    }
 
   } catch (error: any) {
-    logger.error('Token encryption retry failed', {
-      error: error?.message || error,
+    logger.error('Token retry API error', {
+      error: error.message,
+      action: 'token_retry_failed'
     });
-
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Token retry failed' },
       { status: 500 }
     );
   }

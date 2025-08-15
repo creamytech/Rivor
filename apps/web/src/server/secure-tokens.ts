@@ -46,11 +46,31 @@ export async function storeTokensSecurely(
       const tokenRef = generateTokenRef(orgId, provider, 'oauth_access');
       
       try {
-        const encryptedBlob = await encryptForOrg(
-          orgId, 
-          tokenData.accessToken, 
-          `oauth:access:${externalAccountId}`
-        );
+        let encryptedBlob: Uint8Array;
+        const env = getEnv();
+        
+        if (env.KMS_PROVIDER && env.KMS_KEY_ID) {
+          // Try KMS encryption first
+          try {
+            encryptedBlob = await encryptForOrg(
+              orgId, 
+              tokenData.accessToken, 
+              `oauth:access:${externalAccountId}`
+            );
+          } catch (kmsError) {
+            logger.warn('KMS encryption failed, falling back to AES-GCM', {
+              orgId,
+              provider,
+              error: (kmsError as any)?.message
+            });
+            
+            // Fallback to AES-GCM using NEXTAUTH_SECRET
+            encryptedBlob = await encryptWithFallback(tokenData.accessToken, env.NEXTAUTH_SECRET!);
+          }
+        } else {
+          // Use AES-GCM fallback directly
+          encryptedBlob = await encryptWithFallback(tokenData.accessToken, env.NEXTAUTH_SECRET!);
+        }
         
         const secureToken = await prisma.secureToken.create({
           data: {
@@ -116,11 +136,31 @@ export async function storeTokensSecurely(
       const tokenRef = generateTokenRef(orgId, provider, 'oauth_refresh');
       
       try {
-        const encryptedBlob = await encryptForOrg(
-          orgId, 
-          tokenData.refreshToken, 
-          `oauth:refresh:${externalAccountId}`
-        );
+        let encryptedBlob: Uint8Array;
+        const env = getEnv();
+        
+        if (env.KMS_PROVIDER && env.KMS_KEY_ID) {
+          // Try KMS encryption first
+          try {
+            encryptedBlob = await encryptForOrg(
+              orgId, 
+              tokenData.refreshToken, 
+              `oauth:refresh:${externalAccountId}`
+            );
+          } catch (kmsError) {
+            logger.warn('KMS encryption failed, falling back to AES-GCM', {
+              orgId,
+              provider,
+              error: (kmsError as any)?.message
+            });
+            
+            // Fallback to AES-GCM using NEXTAUTH_SECRET
+            encryptedBlob = await encryptWithFallback(tokenData.refreshToken, env.NEXTAUTH_SECRET!);
+          }
+        } else {
+          // Use AES-GCM fallback directly
+          encryptedBlob = await encryptWithFallback(tokenData.refreshToken, env.NEXTAUTH_SECRET!);
+        }
         
         const secureToken = await prisma.secureToken.create({
           data: {
@@ -340,4 +380,59 @@ export async function getTokenEncryptionStatus(orgId: string): Promise<{
     ...result,
     oldestFailure: oldestFailure?.kmsErrorAt || undefined,
   };
+}
+
+/**
+ * Fallback AES-GCM encryption using NEXTAUTH_SECRET
+ */
+async function encryptWithFallback(data: string, secret: string): Promise<Uint8Array> {
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret.slice(0, 32).padEnd(32, '0')),
+    { name: 'AES-GCM' },
+    false,
+    ['encrypt']
+  );
+  
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    keyMaterial,
+    encoder.encode(data)
+  );
+  
+  // Combine IV + encrypted data
+  const result = new Uint8Array(iv.length + encrypted.byteLength);
+  result.set(iv);
+  result.set(new Uint8Array(encrypted), iv.length);
+  
+  return result;
+}
+
+/**
+ * Fallback AES-GCM decryption using NEXTAUTH_SECRET
+ */
+async function decryptWithFallback(encryptedData: Uint8Array, secret: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret.slice(0, 32).padEnd(32, '0')),
+    { name: 'AES-GCM' },
+    false,
+    ['decrypt']
+  );
+  
+  const iv = encryptedData.slice(0, 12);
+  const encrypted = encryptedData.slice(12);
+  
+  const decrypted = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv },
+    keyMaterial,
+    encrypted
+  );
+  
+  return decoder.decode(decrypted);
 }

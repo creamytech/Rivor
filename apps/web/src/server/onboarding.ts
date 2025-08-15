@@ -10,6 +10,7 @@ export interface OnboardingResult {
   success: boolean;
   orgId: string;
   emailAccountId?: string;
+  calendarAccountId?: string;
   isFirstTimeUser: boolean;
   requiresTokenRetry: boolean;
   encryptionStatus: 'ok' | 'pending' | 'failed';
@@ -28,8 +29,9 @@ export interface OAuthCallbackData {
 }
 
 /**
- * Robust Google Account Onboarding
- * Always creates/maintains Organization and EmailAccount records regardless of KMS failures
+ * Robust OAuth Account Onboarding
+ * Always creates/maintains Organization, EmailAccount, and CalendarAccount records regardless of KMS failures
+ * Uses single transaction to ensure atomicity
  */
 export async function handleOAuthCallback(data: OAuthCallbackData): Promise<OnboardingResult> {
   const startTime = Date.now();
@@ -54,31 +56,156 @@ export async function handleOAuthCallback(data: OAuthCallbackData): Promise<Onbo
   };
 
   try {
-    // Step 1: Resolve user from session (already done by caller)
-    
-    // Step 2: Upsert Organization (create if first time)
-    const org = await upsertOrganization(data.userId, data.userEmail);
-    result.orgId = org.id;
-    result.isFirstTimeUser = org.isNew;
+    // Execute all provisioning in a single transaction for atomicity
+    const provisioningResult = await prisma.$transaction(async (tx) => {
+      // Step 1: Upsert User
+      const user = await tx.user.upsert({
+        where: { email: data.userEmail },
+        update: {
+          name: data.userName || undefined,
+          image: data.userImage || undefined,
+        },
+        create: {
+          email: data.userEmail,
+          name: data.userName || null,
+          image: data.userImage || null,
+        },
+      });
 
-    logger.info('Organization resolved', {
-      correlationId,
-      orgId: org.id,
-      isFirstTime: org.isNew,
+      // Step 2: Ensure default Organization
+      let org = await tx.org.findFirst({
+        where: { 
+          OR: [
+            { name: data.userEmail },
+            { ownerUserId: user.id }
+          ]
+        }
+      });
+
+      let isFirstTimeUser = false;
+      if (!org) {
+        // Create default org with proper encryption setup
+        let encryptedDekBlob: Uint8Array;
+        try {
+          const env = getEnv();
+          if (env.KMS_PROVIDER && env.KMS_KEY_ID) {
+            const kms = createKmsClient(env.KMS_PROVIDER, env.KMS_KEY_ID);
+            const dek = generateDek();
+            encryptedDekBlob = await kms.encryptDek(dek);
+          } else {
+            encryptedDekBlob = new Uint8Array(32);
+          }
+        } catch {
+          encryptedDekBlob = new Uint8Array(32);
+        }
+
+        const slug = data.userEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-');
+        org = await tx.org.create({
+          data: {
+            name: data.userEmail,
+            slug,
+            ownerUserId: user.id,
+            encryptedDekBlob: Buffer.from(encryptedDekBlob),
+            retentionDays: 365,
+          },
+        });
+        isFirstTimeUser = true;
+      }
+
+      // Step 3: Ensure OrgMember
+      const existingMember = await tx.orgMember.findFirst({
+        where: { orgId: org.id, userId: user.id }
+      });
+
+      if (!existingMember) {
+        await tx.orgMember.create({
+          data: {
+            orgId: org.id,
+            userId: user.id,
+            role: isFirstTimeUser ? 'owner' : 'member',
+          },
+        });
+      }
+
+      // Step 4: Upsert EmailAccount
+      const emailAccount = await tx.emailAccount.upsert({
+        where: {
+          userId_provider: {
+            userId: user.id,
+            provider: data.provider
+          }
+        },
+        update: {
+          email: data.userEmail,
+          displayName: data.userName || null,
+          tokenStatus: 'pending_encryption',
+          status: 'connected',
+          encryptionStatus: 'pending',
+          errorReason: null,
+          kmsErrorCode: null,
+          kmsErrorAt: null,
+        },
+        create: {
+          orgId: org.id,
+          userId: user.id,
+          provider: data.provider,
+          externalAccountId: data.externalAccountId,
+          email: data.userEmail,
+          displayName: data.userName || null,
+          status: 'connected',
+          syncStatus: 'idle',
+          encryptionStatus: 'pending',
+          tokenStatus: 'pending_encryption',
+        },
+      });
+
+      // Step 5: Create CalendarAccount if calendar scopes are present
+      let calendarAccount: any = null;
+      const hasCalendarScopes = data.account.scope?.includes('calendar') || 
+                                data.account.scope?.includes('Calendars');
+      
+      if (hasCalendarScopes) {
+        calendarAccount = await tx.calendarAccount.upsert({
+          where: {
+            orgId_provider: {
+              orgId: org.id,
+              provider: data.provider
+            }
+          },
+          update: {
+            status: 'connected'
+          },
+          create: {
+            orgId: org.id,
+            provider: data.provider,
+            status: 'connected'
+          }
+        });
+      }
+
+      return {
+        org,
+        user,
+        emailAccount,
+        calendarAccount,
+        isFirstTimeUser
+      };
     });
 
-    // Step 3: Create/Upsert EmailAccount with provider metadata
-    const emailAccount = await upsertEmailAccount(org.id, data);
-    result.emailAccountId = emailAccount.id;
+    result.orgId = provisioningResult.org.id;
+    result.emailAccountId = provisioningResult.emailAccount.id;
+    result.calendarAccountId = provisioningResult.calendarAccount?.id;
+    result.isFirstTimeUser = provisioningResult.isFirstTimeUser;
 
-    logger.info('EmailAccount created/updated', {
+    logger.info('OAuth provisioning completed', {
       correlationId,
-      emailAccountId: emailAccount.id,
-      status: emailAccount.status,
-      encryptionStatus: emailAccount.encryptionStatus,
+      orgId: result.orgId,
+      emailAccountId: result.emailAccountId,
+      calendarAccountId: result.calendarAccountId,
+      isFirstTime: result.isFirstTimeUser,
     });
 
-    // Step 4: Write tokens to secure store
+    // Step 6: Store tokens securely (never block on encryption failures)
     let tokenResults: SecureTokenInfo[] = [];
     let tokenEncryptionSuccessful = false;
 
@@ -92,23 +219,21 @@ export async function handleOAuthCallback(data: OAuthCallbackData): Promise<Onbo
         };
 
         tokenResults = await storeTokensSecurely(
-          org.id,
+          result.orgId,
           data.provider,
           tokenData,
           data.externalAccountId
         );
 
-        // Check if all tokens were encrypted successfully
         tokenEncryptionSuccessful = tokenResults.every(token => token.encryptionStatus === 'ok');
 
         if (tokenEncryptionSuccessful) {
-          // Update EmailAccount with successful encryption
           await prisma.emailAccount.update({
-            where: { id: emailAccount.id },
+            where: { id: result.emailAccountId! },
             data: {
               encryptionStatus: 'ok',
-              status: 'connected',
-              tokenRef: tokenResults.find(t => t.tokenRef)?.tokenRef, // Reference to access token
+              tokenStatus: 'encrypted',
+              tokenRef: tokenResults.find(t => t.tokenRef)?.tokenRef,
               kmsErrorCode: null,
               kmsErrorAt: null,
             },
@@ -117,17 +242,17 @@ export async function handleOAuthCallback(data: OAuthCallbackData): Promise<Onbo
           result.encryptionStatus = 'ok';
           logger.info('Token encryption successful', {
             correlationId,
-            emailAccountId: emailAccount.id,
+            emailAccountId: result.emailAccountId,
             tokenCount: tokenResults.length,
           });
 
         } else {
-          // Some tokens failed encryption
+          // Encryption failed but we still keep the account connected
           await prisma.emailAccount.update({
-            where: { id: emailAccount.id },
+            where: { id: result.emailAccountId! },
             data: {
               encryptionStatus: 'failed',
-              status: 'action_needed',
+              tokenStatus: 'failed',
               kmsErrorCode: tokenResults.find(t => t.encryptionStatus === 'failed')?.kmsErrorCode,
               kmsErrorAt: new Date(),
             },
@@ -135,23 +260,22 @@ export async function handleOAuthCallback(data: OAuthCallbackData): Promise<Onbo
 
           result.encryptionStatus = 'failed';
           result.requiresTokenRetry = true;
-          result.errors.push('Token encryption failed - KMS may be unavailable');
+          result.errors.push('Token encryption failed - account connected but requires reconnection for sync');
 
-          logger.warn('Token encryption partially failed', {
+          logger.warn('Token encryption failed but account provisioned', {
             correlationId,
-            emailAccountId: emailAccount.id,
-            successfulTokens: tokenResults.filter(t => t.encryptionStatus === 'ok').length,
+            emailAccountId: result.emailAccountId,
             failedTokens: tokenResults.filter(t => t.encryptionStatus === 'failed').length,
           });
         }
 
       } catch (tokenError) {
-        // Complete token storage failure
+        // Complete token storage failure - account still connected
         await prisma.emailAccount.update({
-          where: { id: emailAccount.id },
+          where: { id: result.emailAccountId! },
           data: {
             encryptionStatus: 'failed',
-            status: 'action_needed',
+            tokenStatus: 'failed',
             kmsErrorCode: getErrorCode(tokenError),
             kmsErrorAt: new Date(),
           },
@@ -159,41 +283,44 @@ export async function handleOAuthCallback(data: OAuthCallbackData): Promise<Onbo
 
         result.encryptionStatus = 'failed';
         result.requiresTokenRetry = true;
-        result.errors.push(`Token storage failed: ${(tokenError as any)?.message || tokenError}`);
+        result.errors.push(`Token storage failed but account provisioned: ${(tokenError as any)?.message || tokenError}`);
 
-        logger.error('Token storage completely failed', {
+        logger.error('Token storage failed but account provisioned', {
           correlationId,
-          emailAccountId: emailAccount.id,
+          emailAccountId: result.emailAccountId,
           error: (tokenError as any)?.message || tokenError,
         });
       }
     } else {
-      // No tokens to store
+      // No tokens provided - mark as pending encryption
       await prisma.emailAccount.update({
-        where: { id: emailAccount.id },
+        where: { id: result.emailAccountId! },
         data: {
-          status: 'action_needed',
-          encryptionStatus: 'ok', // No encryption needed
+          tokenStatus: 'pending_encryption',
+          encryptionStatus: 'pending',
         },
       });
 
-      result.errors.push('No tokens provided in OAuth callback');
-      logger.warn('No tokens to store', { correlationId, emailAccountId: emailAccount.id });
+      result.encryptionStatus = 'pending';
+      result.requiresTokenRetry = true;
+      result.errors.push('No tokens provided - reconnection required');
+      logger.warn('No tokens to store', { correlationId, emailAccountId: result.emailAccountId });
     }
 
-    // Step 5: Schedule initial sync if encryption was successful
+    // Step 7: Schedule initial sync if encryption was successful
     if (tokenEncryptionSuccessful) {
       try {
-        await scheduleInitialSync(org.id, emailAccount.id);
+        await scheduleInitialSync(result.orgId, result.emailAccountId!, result.calendarAccountId);
         logger.info('Initial sync scheduled', {
           correlationId,
-          emailAccountId: emailAccount.id,
+          emailAccountId: result.emailAccountId,
+          calendarAccountId: result.calendarAccountId,
         });
       } catch (syncError) {
         // Don't fail the whole flow if sync scheduling fails
         logger.warn('Failed to schedule initial sync', {
           correlationId,
-          emailAccountId: emailAccount.id,
+          emailAccountId: result.emailAccountId,
           error: (syncError as any)?.message || syncError,
         });
       }
@@ -215,6 +342,14 @@ export async function handleOAuthCallback(data: OAuthCallbackData): Promise<Onbo
                 result.encryptionStatus === 'failed' ? 'failed' : 'fallback',
       success: result.success,
       errors: result.errors,
+    });
+
+    console.log('✅ Provisioning done', {
+      orgId: result.orgId,
+      emailAccountId: result.emailAccountId,
+      encryptionStatus: result.encryptionStatus,
+      success: result.success,
+      duration
     });
 
     logger.info('OAuth callback completed', {
@@ -352,12 +487,26 @@ async function upsertEmailAccount(orgId: string, data: OAuthCallbackData) {
 }
 
 /**
- * Schedules initial email sync
+ * Schedules initial email and calendar backfill
  */
-async function scheduleInitialSync(orgId: string, emailAccountId: string): Promise<void> {
-  // Import the queue function dynamically to avoid circular dependencies
-  const { enqueueEmailSync } = await import("./queue");
-  await enqueueEmailSync(orgId, emailAccountId);
+async function scheduleInitialSync(orgId: string, emailAccountId: string, calendarAccountId?: string): Promise<void> {
+  // Import the queue functions dynamically to avoid circular dependencies
+  const { enqueueEmailBackfill, enqueueCalendarBackfill } = await import("./queue");
+  
+  // Schedule email backfill (last 90 days)
+  await enqueueEmailBackfill(orgId, emailAccountId, 90);
+  
+  // Schedule calendar backfill if calendar account exists
+  if (calendarAccountId) {
+    await enqueueCalendarBackfill(orgId, calendarAccountId, 90);
+  }
+  
+  logger.info('Initial backfill scheduled', {
+    orgId,
+    emailAccountId,
+    calendarAccountId,
+    action: 'backfill_scheduled'
+  });
 }
 
 /**

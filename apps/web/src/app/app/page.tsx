@@ -6,6 +6,8 @@ import { getPipelineStats, getOverallPipelineStats } from "@/server/pipeline";
 import { checkTokenHealth } from "@/server/oauth";
 import AppShell from "@/components/app/AppShell";
 import DashboardContent from "@/components/app/DashboardContent";
+import FlowRibbon from "@/components/river/FlowRibbon";
+import { ToastProvider } from "@/components/river/RiverToast";
 import { logger } from "@/lib/logger";
 
 export default async function DashboardPage() {
@@ -66,20 +68,25 @@ export default async function DashboardPage() {
   });
 
   return (
-    <AppShell>
-      <DashboardContent 
-        userName={userName}
-        showOnboarding={showOnboarding}
-        hasEmailIntegration={hasEmailIntegration}
-        hasCalendarIntegration={hasCalendarIntegration}
-        unreadCount={unreadCount}
-        recentThreads={recentThreads}
-        upcomingEvents={upcomingEvents}
-        calendarStats={calendarStats}
-        pipelineStats={pipelineStats}
-        totalActiveLeads={overallStats.activeLeads}
-        tokenHealth={tokenHealth}
-      />
-    </AppShell>
+    <ToastProvider>
+      <div className="relative min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
+        <FlowRibbon />
+        <AppShell>
+          <DashboardContent 
+            userName={userName}
+            showOnboarding={showOnboarding}
+            hasEmailIntegration={hasEmailIntegration}
+            hasCalendarIntegration={hasCalendarIntegration}
+            unreadCount={unreadCount}
+            recentThreads={recentThreads}
+            upcomingEvents={upcomingEvents}
+            calendarStats={calendarStats}
+            pipelineStats={pipelineStats}
+            totalActiveLeads={overallStats.activeLeads}
+            tokenHealth={tokenHealth}
+          />
+        </AppShell>
+      </div>
+    </ToastProvider>
   );
 }

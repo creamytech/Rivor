@@ -1,541 +1,422 @@
-import AppShell from "@/components/app/AppShell";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle, AlertCircle, RefreshCw, ExternalLink, Shield, Mail, Calendar, User, Plus, Download } from "lucide-react";
-import { auth } from "@/server/auth";
-import { redirect } from "next/navigation";
-import { checkTokenHealth } from "@/server/oauth";
-import ConnectedAccountsPanel from "@/components/app/ConnectedAccountsPanel";
+"use client";
+import { useState } from 'react';
+import AppShell from '@/components/app/AppShell';
+import SettingsLayout, { settingsTabs } from '@/components/settings/SettingsLayout';
+import IntegrationsSettings from '@/components/settings/IntegrationsSettings';
+import OrganizationSettings from '@/components/settings/OrganizationSettings';
+import AuditLogSettings from '@/components/settings/AuditLogSettings';
+import FlowRibbon from '@/components/river/FlowRibbon';
+import { ToastProvider } from '@/components/river/RiverToast';
+import TokenErrorBanner from '@/components/common/TokenErrorBanner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { 
+  User, 
+  Building2, 
+  Shield, 
+  Bell, 
+  Palette, 
+  Download,
+  Save,
+  Moon,
+  Sun,
+  Monitor
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export default async function SettingsPage() {
-  const session = await auth();
-  if (!session) {
-    redirect("/auth/signin");
-  }
+// Profile Settings Component
+function ProfileSettings() {
+  const [profile, setProfile] = useState({
+    name: 'John Smith',
+    email: 'john@company.com',
+    title: 'Sales Manager',
+    timezone: 'America/New_York',
+    language: 'en'
+  });
 
-  const userEmail = session.user?.email;
-  const tokenHealth = userEmail ? await checkTokenHealth(userEmail).catch(() => []) : [];
   return (
-    <AppShell>
-      <div className="container py-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">Settings</h1>
-          <p className="text-[var(--muted-foreground)]">Manage your account and organization settings</p>
-        </div>
-        
-        <Tabs defaultValue="integrations" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="organization">Organization</TabsTrigger>
-            <TabsTrigger value="team">Team</TabsTrigger>
-            <TabsTrigger value="integrations">Integrations</TabsTrigger>
-            <TabsTrigger value="security">Security</TabsTrigger>
-            <TabsTrigger value="billing">Billing</TabsTrigger>
-            <TabsTrigger value="audit">Audit Log</TabsTrigger>
-            <TabsTrigger value="help">Help</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="profile">
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Settings</CardTitle>
-                <CardDescription>Update your personal information and preferences</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-4 mb-6">
-                  {session.user?.image && (
-                    <img 
-                      src={session.user.image} 
-                      alt="Profile"
-                      className="w-16 h-16 rounded-full border border-gray-200 dark:border-gray-700"
-                    />
-                  )}
-                  <div>
-                    <h3 className="font-semibold text-lg">{session.user?.name || 'User'}</h3>
-                    <p className="text-gray-600 dark:text-gray-400">{session.user?.email}</p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Full Name</label>
-                    <Input 
-                      placeholder="Enter your full name" 
-                      defaultValue={session.user?.name || ''}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Email</label>
-                    <Input 
-                      value={session.user?.email || ''} 
-                      disabled 
-                      className="bg-gray-50 dark:bg-gray-900"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Timezone</label>
-                    <Select defaultValue="america/new_york">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select timezone" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="america/new_york">America/New_York</SelectItem>
-                        <SelectItem value="america/los_angeles">America/Los_Angeles</SelectItem>
-                        <SelectItem value="europe/london">Europe/London</SelectItem>
-                        <SelectItem value="europe/paris">Europe/Paris</SelectItem>
-                        <SelectItem value="asia/tokyo">Asia/Tokyo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Connected Accounts</label>
-                    <div className="flex gap-2">
-                      {tokenHealth.map(account => (
-                        <Badge key={account.provider} variant="outline" className="capitalize">
-                          {account.provider === 'azure-ad' ? 'Microsoft' : account.provider}
-                        </Badge>
-                      ))}
-                      {tokenHealth.length === 0 && (
-                        <span className="text-sm text-gray-500">No accounts connected</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <Button variant="brand">Save Changes</Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="integrations">
-            <ConnectedAccountsPanel 
-              tokenHealth={tokenHealth}
-              userEmail={userEmail || ''}
-              userName={session.user?.name || ''}
-            />
-          </TabsContent>
-
-          <TabsContent value="security">
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5" />
-                    Two-Factor Authentication
-                  </CardTitle>
-                  <CardDescription>
-                    Add an extra layer of security to your account
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                      </div>
-                      <div>
-                        <div className="font-medium">Authenticator App</div>
-                        <div className="text-sm text-[var(--muted-foreground)]">
-                          TOTP enabled • Last used 2 hours ago
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Badge variant="status">Enabled</Badge>
-                      <Button variant="outline" size="sm">Configure</Button>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div className="text-sm font-medium">Backup Codes</div>
-                    <div className="text-sm text-[var(--muted-foreground)]">
-                      8 unused backup codes remaining
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">View Codes</Button>
-                      <Button variant="outline" size="sm">Generate New</Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Active Sessions
-                  </CardTitle>
-                  <CardDescription>
-                    Manage your active login sessions and devices
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {[
-                    {
-                      device: "Chrome on Windows",
-                      location: "New York, US",
-                      ip: "192.168.1.100",
-                      lastActive: "Current session",
-                      isCurrent: true
-                    },
-                    {
-                      device: "Safari on iPhone",
-                      location: "New York, US", 
-                      ip: "203.0.113.42",
-                      lastActive: "2 hours ago",
-                      isCurrent: false
-                    },
-                    {
-                      device: "Chrome on MacBook",
-                      location: "Boston, US",
-                      ip: "198.51.100.10", 
-                      lastActive: "1 day ago",
-                      isCurrent: false
-                    }
-                  ].map((session, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border border-[var(--border)] rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          💻
-                        </div>
-                        <div>
-                          <div className="font-medium">{session.device}</div>
-                          <div className="text-sm text-[var(--muted-foreground)]">
-                            {session.location} • {session.ip}
-                          </div>
-                          <div className="text-xs text-[var(--muted-foreground)]">
-                            {session.lastActive}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {session.isCurrent ? (
-                          <Badge variant="status">Current</Badge>
-                        ) : (
-                          <Button variant="ghost" size="sm" className="text-red-600">
-                            Revoke
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  
-                  <Button variant="outline" className="w-full">
-                    Revoke All Other Sessions
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5" />
-                    Data Encryption
-                  </CardTitle>
-                  <CardDescription>
-                    Manage encryption keys and data protection settings
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-sm font-medium">KMS Provider</div>
-                        <div className="text-xs text-[var(--muted-foreground)]">AWS KMS</div>
-                      </div>
-                      <Badge variant="status">Active</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-sm font-medium">DEK Version</div>
-                        <div className="text-xs text-[var(--muted-foreground)]">Last rotated 30 days ago</div>
-                      </div>
-                      <Button variant="outline" size="sm">Rotate Key</Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Data Retention</CardTitle>
-                  <CardDescription>Configure how long data is stored</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Retention Period</label>
-                    <Select defaultValue="90">
-                      <SelectTrigger className="w-48">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="30">30 days</SelectItem>
-                        <SelectItem value="90">90 days</SelectItem>
-                        <SelectItem value="365">1 year</SelectItem>
-                        <SelectItem value="custom">Custom</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-[var(--muted-foreground)]">
-                      Next purge scheduled for March 15, 2024
-                    </p>
-                  </div>
-                  <Button variant="outline" asChild>
-                    <a href="/app/audit-log" className="inline-flex items-center gap-2">
-                      View Audit Log
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="organization">
-            <Card>
-              <CardHeader>
-                <CardTitle>Organization Settings</CardTitle>
-                <CardDescription>Manage your organization details</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Organization Name</label>
-                  <Input placeholder="Enter organization name" />
-                </div>
-                <Button variant="brand">Save Changes</Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="team">
-            <Card>
-              <CardHeader>
-                <CardTitle>Team Management</CardTitle>
-                <CardDescription>Manage team members, roles, and invitations</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-[var(--muted-foreground)]">
-                  Members list, roles, invites, and SSO configuration will be available here.
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="billing" className="space-y-6">
-            {/* Current Plan */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Current Plan</CardTitle>
-                <CardDescription>Your subscription details and usage</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
-                  <div>
-                    <div className="font-semibold text-lg">Professional Plan</div>
-                    <div className="text-sm text-[var(--muted-foreground)]">
-                      $49/month • Billed monthly
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <Badge variant="secondary" className="bg-green-100 text-green-700">
-                      Active
-                    </Badge>
-                    <div className="text-xs text-[var(--muted-foreground)] mt-1">
-                      Renews Feb 15, 2024
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium">Users</div>
-                    <div className="text-2xl font-bold">3 <span className="text-sm font-normal text-[var(--muted-foreground)]">/ 10</span></div>
-                    <div className="w-full bg-[var(--muted)] rounded-full h-2">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{width: '30%'}}></div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium">Email Storage</div>
-                    <div className="text-2xl font-bold">2.1 <span className="text-sm font-normal text-[var(--muted-foreground)]">/ 100 GB</span></div>
-                    <div className="w-full bg-[var(--muted)] rounded-full h-2">
-                      <div className="bg-green-500 h-2 rounded-full" style={{width: '2.1%'}}></div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium">AI Requests</div>
-                    <div className="text-2xl font-bold">847 <span className="text-sm font-normal text-[var(--muted-foreground)]">/ 5,000</span></div>
-                    <div className="w-full bg-[var(--muted)] rounded-full h-2">
-                      <div className="bg-purple-500 h-2 rounded-full" style={{width: '17%'}}></div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button variant="outline">Change Plan</Button>
-                  <Button variant="outline">Add Users</Button>
-                  <Button variant="ghost" className="text-red-600">Cancel Subscription</Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Payment Method */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Payment Method</CardTitle>
-                <CardDescription>Manage your payment information</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-                      💳
-                    </div>
-                    <div>
-                      <div className="font-medium">•••• •••• •••• 4242</div>
-                      <div className="text-sm text-[var(--muted-foreground)]">Expires 12/25</div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">Edit</Button>
-                    <Button variant="ghost" size="sm">Remove</Button>
-                  </div>
-                </div>
-                
-                <Button variant="outline">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Payment Method
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Billing History */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Billing History</CardTitle>
-                <CardDescription>Download invoices and view payment history</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[
-                    { date: "Jan 15, 2024", amount: "$49.00", status: "Paid", invoice: "INV-2024-001" },
-                    { date: "Dec 15, 2023", amount: "$49.00", status: "Paid", invoice: "INV-2023-012" },
-                    { date: "Nov 15, 2023", amount: "$49.00", status: "Paid", invoice: "INV-2023-011" },
-                    { date: "Oct 15, 2023", amount: "$49.00", status: "Paid", invoice: "INV-2023-010" }
-                  ].map((invoice, index) => (
-                    <div key={index} className="flex items-center justify-between py-3 border-b border-[var(--border)] last:border-b-0">
-                      <div className="flex items-center gap-4">
-                        <div>
-                          <div className="font-medium">{invoice.invoice}</div>
-                          <div className="text-sm text-[var(--muted-foreground)]">{invoice.date}</div>
-                        </div>
-                        <Badge 
-                          variant="secondary" 
-                          className={invoice.status === "Paid" ? "bg-green-100 text-green-700" : ""}
-                        >
-                          {invoice.status}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="font-medium">{invoice.amount}</span>
-                        <Button variant="ghost" size="sm">
-                          <Download className="h-4 w-4 mr-1" />
-                          PDF
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="pt-4">
-                  <Button variant="outline">View All Invoices</Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Usage Analytics */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Usage Analytics</CardTitle>
-                <CardDescription>Track your feature usage over time</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium">This Month</div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-sm">Emails Processed</span>
-                        <span className="text-sm font-medium">1,247</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm">AI Requests</span>
-                        <span className="text-sm font-medium">847</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm">Leads Created</span>
-                        <span className="text-sm font-medium">23</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm">Contacts Added</span>
-                        <span className="text-sm font-medium">45</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium">Last 30 Days</div>
-                    <div className="h-24 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg flex items-center justify-center text-sm text-[var(--muted-foreground)]">
-                      Usage Chart Placeholder
-                    </div>
-                  </div>
-                </div>
-                
-                <Button variant="outline">
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Detailed Analytics
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="audit">
-            <Card>
-              <CardHeader>
-                <CardTitle>Audit Log</CardTitle>
-                <CardDescription>View security and activity logs</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="outline" asChild>
-                  <a href="/app/audit-log" className="inline-flex items-center gap-2">
-                    View Full Audit Log
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="help">
-            <Card>
-              <CardHeader>
-                <CardTitle>Help & Support</CardTitle>
-                <CardDescription>Get help and access documentation</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-[var(--muted-foreground)]">
-                  Documentation links, support contact, and help resources.
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+    <div className="p-6">
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          Profile Settings
+        </h3>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          Update your personal information and preferences.
+        </p>
       </div>
-    </AppShell>
+
+      <div className="max-w-lg space-y-6">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-azure-500 rounded-full flex items-center justify-center text-white text-xl font-semibold">
+            {profile.name.split(' ').map(n => n[0]).join('')}
+          </div>
+          <div>
+            <Button variant="outline" size="sm">
+              Change Photo
+            </Button>
+            <p className="text-xs text-slate-500 mt-1">
+              JPG, PNG or GIF. Max size of 2MB.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 block">
+              Full Name
+            </label>
+            <Input
+              value={profile.name}
+              onChange={(e) => setProfile(prev => ({ ...prev, name: e.target.value }))}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 block">
+              Email Address
+            </label>
+            <Input
+              type="email"
+              value={profile.email}
+              onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 block">
+              Job Title
+            </label>
+            <Input
+              value={profile.title}
+              onChange={(e) => setProfile(prev => ({ ...prev, title: e.target.value }))}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 block">
+              Timezone
+            </label>
+            <select
+              value={profile.timezone}
+              onChange={(e) => setProfile(prev => ({ ...prev, timezone: e.target.value }))}
+              className={cn(
+                "w-full rounded-md border border-slate-300 dark:border-slate-600",
+                "bg-white dark:bg-slate-800 px-3 py-2 text-sm",
+                "focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              )}
+            >
+              <option value="America/New_York">Eastern Time</option>
+              <option value="America/Chicago">Central Time</option>
+              <option value="America/Denver">Mountain Time</option>
+              <option value="America/Los_Angeles">Pacific Time</option>
+              <option value="Europe/London">London</option>
+              <option value="Europe/Paris">Paris</option>
+            </select>
+          </div>
+
+          <div className="pt-4">
+            <Button className="bg-gradient-to-r from-teal-500 to-azure-500 hover:from-teal-600 hover:to-azure-600 text-white">
+              <Save className="h-4 w-4 mr-2" />
+              Save Changes
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
+// Security Settings Component
+function SecuritySettings() {
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          Security Settings
+        </h3>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          Manage your account security and authentication methods.
+        </p>
+      </div>
 
+      <div className="space-y-6">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+          <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">
+            Password
+          </h4>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Change your password to keep your account secure.
+          </p>
+          <Button variant="outline">
+            Change Password
+          </Button>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+          <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">
+            Two-Factor Authentication
+          </h4>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Add an extra layer of security to your account.
+          </p>
+          <Button className="bg-gradient-to-r from-teal-500 to-azure-500 hover:from-teal-600 hover:to-azure-600 text-white">
+            Enable 2FA
+          </Button>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+          <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">
+            Active Sessions
+          </h4>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Manage devices that are currently signed in to your account.
+          </p>
+          <Button variant="outline">
+            View Sessions
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Notifications Settings Component
+function NotificationsSettings() {
+  const [notifications, setNotifications] = useState({
+    emailDigest: true,
+    newLeads: true,
+    taskReminders: true,
+    meetingReminders: true,
+    systemUpdates: false,
+    marketingEmails: false
+  });
+
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          Notification Preferences
+        </h3>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          Choose what notifications you want to receive.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        {Object.entries(notifications).map(([key, value]) => (
+          <div key={key} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+            <div>
+              <h4 className="font-medium text-slate-900 dark:text-slate-100">
+                {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+              </h4>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Get notified about this activity
+              </p>
+            </div>
+            <Button
+              variant={value ? "default" : "outline"}
+              size="sm"
+              onClick={() => setNotifications(prev => ({ ...prev, [key]: !value }))}
+            >
+              {value ? "On" : "Off"}
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      <div className="pt-6">
+        <Button className="bg-gradient-to-r from-teal-500 to-azure-500 hover:from-teal-600 hover:to-azure-600 text-white">
+          <Save className="h-4 w-4 mr-2" />
+          Save Preferences
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// Appearance Settings Component
+function AppearanceSettings() {
+  const [theme, setTheme] = useState('system');
+
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          Appearance
+        </h3>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          Customize the look and feel of your Rivor experience.
+        </p>
+      </div>
+
+      <div className="space-y-6">
+        <div>
+          <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-3">
+            Theme
+          </h4>
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { id: 'light', label: 'Light', icon: <Sun className="h-4 w-4" /> },
+              { id: 'dark', label: 'Dark', icon: <Moon className="h-4 w-4" /> },
+              { id: 'system', label: 'System', icon: <Monitor className="h-4 w-4" /> }
+            ].map((option) => (
+              <button
+                key={option.id}
+                onClick={() => setTheme(option.id)}
+                className={cn(
+                  'p-3 rounded-lg border-2 transition-colors text-center',
+                  theme === option.id
+                    ? 'border-teal-500 bg-teal-50 dark:bg-teal-950'
+                    : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                )}
+              >
+                <div className="flex flex-col items-center gap-2">
+                  {option.icon}
+                  <span className="text-sm font-medium">{option.label}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-3">
+            Motion Preferences
+          </h4>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+              <div>
+                <div className="font-medium text-slate-900 dark:text-slate-100">Animations</div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">Enable smooth transitions and animations</div>
+              </div>
+              <Button variant="default" size="sm">
+                On
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Data & Privacy Settings Component
+function DataPrivacySettings() {
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          Data & Privacy
+        </h3>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          Control your data and privacy settings.
+        </p>
+      </div>
+
+      <div className="space-y-6">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+          <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">
+            Export Your Data
+          </h4>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Download a copy of all your data stored in Rivor.
+          </p>
+          <Button variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            Request Export
+          </Button>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+          <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">
+            Data Retention
+          </h4>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Control how long your data is stored in Rivor.
+          </p>
+          <select className={cn(
+            "rounded-md border border-slate-300 dark:border-slate-600",
+            "bg-white dark:bg-slate-800 px-3 py-2 text-sm",
+            "focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          )}>
+            <option value="1year">1 Year</option>
+            <option value="2years">2 Years</option>
+            <option value="3years">3 Years</option>
+            <option value="indefinite">Indefinite</option>
+          </select>
+        </div>
+
+        <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl p-6">
+          <h4 className="font-medium text-red-900 dark:text-red-100 mb-2">
+            Delete Account
+          </h4>
+          <p className="text-sm text-red-700 dark:text-red-300 mb-4">
+            Permanently delete your account and all associated data. This action cannot be undone.
+          </p>
+          <Button variant="outline" className="text-red-600 border-red-300 hover:bg-red-50">
+            Delete Account
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function SettingsPage() {
+  const [activeTab, setActiveTab] = useState('profile');
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'profile':
+        return <ProfileSettings />;
+      case 'organization':
+        return <OrganizationSettings />;
+      case 'integrations':
+        return <IntegrationsSettings />;
+      case 'security':
+        return <SecuritySettings />;
+      case 'notifications':
+        return <NotificationsSettings />;
+      case 'appearance':
+        return <AppearanceSettings />;
+      case 'audit':
+        return <AuditLogSettings />;
+      case 'data':
+        return <DataPrivacySettings />;
+      default:
+        return <ProfileSettings />;
+    }
+  };
+
+  return (
+    <ToastProvider>
+      <div className="relative min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
+        <FlowRibbon />
+        <AppShell>
+          <div className="container py-6 space-y-6">
+            <TokenErrorBanner />
+            
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+                  Settings
+                </h1>
+                <p className="text-slate-600 dark:text-slate-400">
+                  Manage your account, organization, and application preferences.
+                </p>
+              </div>
+              
+              <SettingsLayout
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                tabs={settingsTabs}
+              >
+                {renderTabContent()}
+              </SettingsLayout>
+            </div>
+          </div>
+        </AppShell>
+      </div>
+    </ToastProvider>
+  );
+}

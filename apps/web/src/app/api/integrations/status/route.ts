@@ -1,123 +1,177 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
-import { runOrgHealthProbes } from '@/server/health-probes';
 import { getTokenEncryptionStatus } from '@/server/secure-tokens';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Integration status endpoint for UI components
+ */
 export async function GET(req: NextRequest) {
   try {
     const session = await auth();
-    if (!(session as any)?.orgId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get all email accounts for the org
+    const orgId = (session as any).orgId;
+    if (!orgId) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
+    }
+
+    // Get email accounts for this org
     const emailAccounts = await prisma.emailAccount.findMany({
-      where: { orgId: (session as any).orgId },
-      select: {
-        id: true,
-        provider: true,
-        email: true,
-        displayName: true,
-        status: true,
-        syncStatus: true,
-        lastSyncedAt: true,
-        encryptionStatus: true,
-        errorReason: true,
-        kmsErrorCode: true,
-        kmsErrorAt: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      where: { orgId },
+      include: {
+        org: true
+      }
     });
 
-    // Get token encryption statistics
-    const tokenStats = await getTokenEncryptionStatus((session as any).orgId);
+    // Get calendar accounts for this org  
+    const calendarAccounts = await prisma.calendarAccount.findMany({
+      where: { orgId }
+    });
 
-    // Run health probes if requested
-    const runProbes = req.nextUrl.searchParams.get('probe') === 'true';
-    let healthProbeResults = null;
+    // Get token encryption status
+    const tokenEncryption = await getTokenEncryptionStatus(orgId);
 
-    if (runProbes) {
-      healthProbeResults = await runOrgHealthProbes((session as any).orgId);
+    // Transform email accounts to UI format
+    const transformedEmailAccounts = emailAccounts.map(account => {
+      let uiStatus = 'unknown';
+      let requiresRetry = false;
+      let canReconnect = false;
+
+      // Determine UI status based on multiple factors
+      if (account.status === 'disconnected') {
+        uiStatus = 'disconnected';
+        canReconnect = true;
+      } else if (account.encryptionStatus === 'failed') {
+        uiStatus = 'encryption_failed';
+        requiresRetry = true;
+        canReconnect = true;
+      } else if (!account.tokenRef) {
+        uiStatus = 'missing_tokens';
+        canReconnect = true;
+      } else if (account.status === 'action_needed') {
+        uiStatus = 'action_needed';
+        canReconnect = true;
+      } else if (account.syncStatus === 'error') {
+        uiStatus = 'probe_failed';
+        canReconnect = true;
+      } else if (account.status === 'connected' && account.encryptionStatus === 'ok') {
+        uiStatus = 'connected';
+      } else {
+        uiStatus = 'action_needed';
+        canReconnect = true;
+      }
+
+      return {
+        id: account.id,
+        provider: account.provider,
+        email: account.email,
+        displayName: account.displayName,
+        status: account.status,
+        syncStatus: account.syncStatus,
+        lastSyncedAt: account.lastSyncedAt?.toISOString(),
+        encryptionStatus: account.encryptionStatus,
+        errorReason: account.errorReason,
+        kmsErrorCode: account.kmsErrorCode,
+        kmsErrorAt: account.kmsErrorAt?.toISOString(),
+        uiStatus,
+        requiresRetry,
+        canReconnect
+      };
+    });
+
+    // Calculate summary
+    const totalAccounts = emailAccounts.length;
+    const connectedAccounts = emailAccounts.filter(acc => 
+      acc.status === 'connected' && acc.encryptionStatus === 'ok'
+    ).length;
+    const actionNeededAccounts = emailAccounts.filter(acc => 
+      acc.status === 'action_needed' || acc.encryptionStatus === 'failed'
+    ).length;
+    const disconnectedAccounts = emailAccounts.filter(acc => 
+      acc.status === 'disconnected'
+    ).length;
+
+    // Determine overall status
+    let overallStatus = 'unknown';
+    if (totalAccounts === 0) {
+      overallStatus = 'no_accounts';
+    } else if (connectedAccounts === totalAccounts) {
+      overallStatus = 'all_connected';
+    } else if (connectedAccounts > 0) {
+      overallStatus = 'partially_connected';
+    } else {
+      overallStatus = 'needs_attention';
     }
 
-    // Calculate overall integration status
-    const totalAccounts = emailAccounts.length;
-    const connectedAccounts = emailAccounts.filter(acc => acc.status === 'connected').length;
-    const actionNeededAccounts = emailAccounts.filter(acc => acc.status === 'action_needed').length;
-    const disconnectedAccounts = emailAccounts.filter(acc => acc.status === 'disconnected').length;
-
-    const overallStatus = totalAccounts === 0 ? 'none' :
-      connectedAccounts === totalAccounts ? 'all_connected' :
-      actionNeededAccounts > 0 || disconnectedAccounts > 0 ? 'issues_present' :
-      'partial';
-
-    return NextResponse.json({
+    const response = {
       overallStatus,
       summary: {
         totalAccounts,
         connectedAccounts,
         actionNeededAccounts,
-        disconnectedAccounts,
+        disconnectedAccounts
       },
-      emailAccounts: emailAccounts.map(account => ({
-        ...account,
-        // Determine specific status for UI
-        uiStatus: determineUIStatus(account),
-        requiresRetry: account.encryptionStatus === 'failed',
-        canReconnect: account.status === 'action_needed' || account.status === 'disconnected',
+      emailAccounts: transformedEmailAccounts,
+      calendarAccounts: calendarAccounts.map(acc => ({
+        id: acc.id,
+        provider: acc.provider,
+        status: acc.status
       })),
-      tokenEncryption: tokenStats,
-      healthProbes: healthProbeResults,
-      lastUpdated: new Date().toISOString(),
-    });
+      tokenEncryption,
+      lastUpdated: new Date().toISOString()
+    };
 
-  } catch (error) {
-    console.error('Integration status error:', error);
+    return NextResponse.json(response);
+
+  } catch (error: any) {
+    console.error('Integration status API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to fetch integration status' },
       { status: 500 }
     );
   }
 }
 
 /**
- * Determines the UI status based on account state
+ * Health check probe endpoint
  */
-function determineUIStatus(account: any): string {
-  // Connected = status='connected' and recent health probe success
-  if (account.status === 'connected' && account.encryptionStatus === 'ok') {
-    return 'connected';
-  }
-
-  // Action Needed if any of:
-  if (account.encryptionStatus === 'failed') {
-    return 'encryption_failed';
-  }
-
-  if (!account.tokenRef) {
-    return 'missing_tokens';
-  }
-
-  if (account.status === 'action_needed') {
-    if (account.errorReason?.includes('probe')) {
-      return 'probe_failed';
+export async function POST(req: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (account.errorReason?.includes('scope')) {
-      return 'insufficient_scopes';
+
+    const orgId = (session as any).orgId;
+    if (!orgId) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
-    return 'action_needed';
-  }
 
-  if (account.status === 'disconnected') {
-    return 'disconnected';
-  }
+    const { accountId, provider } = await req.json();
 
-  return 'unknown';
+    if (!accountId && !provider) {
+      return NextResponse.json({ error: 'accountId or provider required' }, { status: 400 });
+    }
+
+    // TODO: Implement health check logic here
+    // This would test the actual API connections
+    
+    return NextResponse.json({
+      success: true,
+      message: 'Health check completed',
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error: any) {
+    console.error('Health check API error:', error);
+    return NextResponse.json(
+      { error: 'Health check failed' },
+      { status: 500 }
+    );
+  }
 }

@@ -44,31 +44,162 @@ export class GmailService {
       throw new Error(`Email account ${emailAccountId} not found`);
     }
 
-    // Find OAuth account using org name (which is the user's email)
-    const oauthAccount = await prisma.oAuthAccount.findFirst({
-      where: { 
-        provider: 'google',
-        userId: emailAccount.org.name // org.name is the user's email
-      },
-    });
-
-    if (!oauthAccount) {
-      throw new Error(`OAuth account for Google not found for user ${emailAccount.org.name}`);
+    if (!emailAccount.tokenRef) {
+      throw new Error(`No token reference found for email account ${emailAccountId}`);
     }
 
-    // Decrypt tokens
-    const accessTokenBytes = await decryptForOrg(orgId, oauthAccount.accessToken, 'oauth:access');
+    // Get all secure tokens for this account
+    const secureTokens = await prisma.secureToken.findMany({
+      where: {
+        orgId,
+        provider: 'google',
+        encryptionStatus: 'ok'
+      }
+    });
+
+    if (secureTokens.length === 0) {
+      throw new Error(`No encrypted tokens found for Google account ${emailAccountId}`);
+    }
+
+    // Decrypt access token
+    const accessTokenRecord = secureTokens.find(t => t.tokenType === 'oauth_access');
+    if (!accessTokenRecord?.encryptedTokenBlob) {
+      throw new Error(`Access token not found for Google account ${emailAccountId}`);
+    }
+
+    const accessTokenBytes = await decryptForOrg(
+      orgId, 
+      accessTokenRecord.encryptedTokenBlob, 
+      `oauth:access:${emailAccount.externalAccountId}`
+    );
     const accessToken = new TextDecoder().decode(accessTokenBytes);
     
-    const refreshToken = oauthAccount.refreshToken.length > 0 
-      ? new TextDecoder().decode(await decryptForOrg(orgId, oauthAccount.refreshToken, 'oauth:refresh'))
-      : undefined;
+    // Decrypt refresh token if available
+    let refreshToken: string | undefined;
+    const refreshTokenRecord = secureTokens.find(t => t.tokenType === 'oauth_refresh');
+    if (refreshTokenRecord?.encryptedTokenBlob) {
+      const refreshTokenBytes = await decryptForOrg(
+        orgId, 
+        refreshTokenRecord.encryptedTokenBlob, 
+        `oauth:refresh:${emailAccount.externalAccountId}`
+      );
+      refreshToken = new TextDecoder().decode(refreshTokenBytes);
+    }
 
     return new GmailService(accessToken, refreshToken);
   }
 
   async getGmail() {
     return google.gmail({ version: 'v1', auth: this.oauth2Client });
+  }
+
+  async performInitialBackfill(orgId: string, emailAccountId: string, cutoffDate: Date): Promise<void> {
+    const gmail = await this.getGmail();
+    
+    try {
+      let pageToken: string | undefined;
+      let processedCount = 0;
+      let totalThreads = 0;
+
+      logger.info('Starting Gmail initial backfill', {
+        orgId,
+        emailAccountId,
+        cutoffDate: cutoffDate.toISOString(),
+        action: 'gmail_backfill_start'
+      });
+
+      // First, sync threads from the specified date range
+      do {
+        const response = await gmail.users.threads.list({
+          userId: 'me',
+          maxResults: 50,
+          pageToken,
+          q: `after:${Math.floor(cutoffDate.getTime() / 1000)}`, // Gmail query for date filter
+        });
+
+        const threads = response.data.threads || [];
+        totalThreads += threads.length;
+        
+        for (const thread of threads) {
+          if (thread.id) {
+            await this.processThread(orgId, emailAccountId, thread.id);
+            processedCount++;
+
+            // Log progress every 10 threads
+            if (processedCount % 10 === 0) {
+              logger.info('Gmail backfill progress', {
+                orgId,
+                emailAccountId,
+                processedThreads: processedCount,
+                action: 'gmail_backfill_progress'
+              });
+            }
+          }
+        }
+
+        pageToken = response.data.nextPageToken || undefined;
+        
+        // Limit to prevent overwhelming the system
+        if (processedCount >= 500) break;
+        
+      } while (pageToken);
+
+      logger.info('Gmail initial backfill completed', {
+        orgId,
+        emailAccountId,
+        totalThreads,
+        processedCount,
+        action: 'gmail_backfill_complete'
+      });
+
+    } catch (error: any) {
+      logger.error('Gmail initial backfill failed', {
+        orgId,
+        emailAccountId,
+        error: error.message,
+        action: 'gmail_backfill_failed'
+      });
+      
+      // Update account status if authentication failed
+      if (error?.code === 401) {
+        await prisma.emailAccount.update({
+          where: { id: emailAccountId },
+          data: { status: 'action_needed' }
+        });
+      }
+      
+      throw error;
+    }
+  }
+
+  private async processThread(orgId: string, emailAccountId: string, threadId: string): Promise<void> {
+    const gmail = await this.getGmail();
+    
+    try {
+      const response = await gmail.users.threads.get({
+        userId: 'me',
+        id: threadId,
+        format: 'full',
+      });
+
+      const thread = response.data;
+      if (!thread?.messages) return;
+
+      // Process each message in the thread
+      for (const message of thread.messages) {
+        if (message.id) {
+          await this.processMessage(orgId, emailAccountId, message.id);
+        }
+      }
+
+    } catch (error) {
+      logger.warn(`Error processing thread ${threadId}`, {
+        orgId,
+        emailAccountId,
+        threadId,
+        error: (error as any)?.message || error
+      });
+    }
   }
 
   async syncMessages(orgId: string, emailAccountId: string, historyId?: string): Promise<void> {
@@ -241,28 +372,41 @@ export class GmailService {
         userId: 'me',
         requestBody: {
           topicName,
-          labelIds: ['INBOX', 'SENT'],
+          labelIds: ['INBOX', 'SENT'], // Watch both inbox and sent items
+          labelFilterAction: 'include'
         }
       });
 
-      // Store watch metadata
-      const updateData: any = {};
+      // Store watch metadata - this is crucial for push notifications
+      const updateData: any = {
+        status: 'connected' // Ensure account is marked as fully connected
+      };
       
       if (response.data.historyId) {
         updateData.historyId = response.data.historyId;
+        logger.info('Gmail watch history ID stored', {
+          orgId,
+          emailAccountId,
+          historyId: response.data.historyId,
+          action: 'gmail_watch_history_stored'
+        });
       }
       
       if (response.data.expiration) {
         // Gmail watch expires in ~7 days, convert to timestamp
         updateData.watchExpiration = new Date(parseInt(response.data.expiration));
-      }
-      
-      if (Object.keys(updateData).length > 0) {
-        await prisma.emailAccount.update({
-          where: { id: emailAccountId },
-          data: updateData
+        logger.info('Gmail watch expiration set', {
+          orgId,
+          emailAccountId,
+          expiration: updateData.watchExpiration.toISOString(),
+          action: 'gmail_watch_expiration_set'
         });
       }
+      
+      await prisma.emailAccount.update({
+        where: { id: emailAccountId },
+        data: updateData
+      });
 
       logger.info('Gmail watch setup successful', {
         orgId,

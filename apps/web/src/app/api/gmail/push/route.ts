@@ -19,12 +19,20 @@ export async function POST(req: NextRequest) {
 
     // Verify notification authenticity
     const token = process.env.GOOGLE_PUBSUB_VERIFICATION_TOKEN;
-    const provided = req.headers.get('x-verification-token');
+    const provided = req.headers.get('x-goog-verification-token') || req.headers.get('x-verification-token');
     
-    if (token && provided && token !== provided) {
+    if (!token) {
+      logger.warn('Gmail push verification token not configured', {
+        correlationId,
+        action: 'gmail_push_no_token'
+      });
+      return new Response('Server misconfigured', { status: 500 });
+    }
+    
+    if (provided !== token) {
       logger.warn('Gmail push notification verification failed', {
         correlationId,
-        providedToken: provided,
+        providedToken: provided?.slice(0, 10) + '...' || 'none',
         action: 'gmail_push_verification_failed'
       });
       return new Response('Forbidden', { status: 403 });
@@ -75,9 +83,7 @@ export async function POST(req: NextRequest) {
     // Find the email account for this Gmail address
     const emailAccount = await prisma.emailAccount.findFirst({
       where: {
-        org: {
-          name: emailAddress // org.name is the user's email
-        },
+        email: emailAddress, // Direct email match
         provider: 'google'
       },
       include: {
@@ -95,7 +101,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Check for duplicate notifications by comparing historyId
-    if (historyId && emailAccount.historyId && historyId <= emailAccount.historyId) {
+    const currentHistoryId = emailAccount.historyId ? parseInt(emailAccount.historyId) : 0;
+    const newHistoryId = historyId ? parseInt(historyId) : 0;
+    
+    if (newHistoryId > 0 && currentHistoryId > 0 && newHistoryId <= currentHistoryId) {
       logger.info('Gmail push notification duplicate detected', {
         correlationId,
         emailAddress,
@@ -115,6 +124,24 @@ export async function POST(req: NextRequest) {
       action: 'gmail_push_processing'
     });
 
+    // Update last push received timestamp and log for monitoring
+    await prisma.emailAccount.update({
+      where: { id: emailAccount.id },
+      data: { lastPushReceivedAt: new Date() }
+    });
+
+    // Log push notification for health monitoring
+    await prisma.pushNotificationLog.create({
+      data: {
+        emailAccountId: emailAccount.id,
+        orgId: emailAccount.orgId,
+        provider: 'google',
+        historyId,
+        latencyMs: Date.now() - startTime,
+        success: true
+      }
+    });
+    
     // If we have historyId, do incremental sync, otherwise full sync
     if (historyId && emailAccount.historyId) {
       try {
@@ -128,12 +155,30 @@ export async function POST(req: NextRequest) {
           action: 'gmail_push_realtime_success'
         });
       } catch (error: any) {
-        logger.warn('Gmail push notification real-time sync failed, falling back to queued sync', {
-          correlationId,
-          emailAddress,
-          error: error.message,
-          action: 'gmail_push_realtime_fallback'
-        });
+        // Check if it's an authentication error
+        if (error.message?.includes('401') || error.message?.includes('unauthorized')) {
+          logger.error('Gmail push notification authentication failed', {
+            correlationId,
+            emailAddress,
+            error: error.message,
+            action: 'gmail_push_auth_failed'
+          });
+          
+          // Update account status
+          await prisma.emailAccount.update({
+            where: { id: emailAccount.id },
+            data: { status: 'action_needed' }
+          });
+        } else {
+          logger.warn('Gmail push notification real-time sync failed, falling back to queued sync', {
+            correlationId,
+            emailAddress,
+            error: error.message,
+            action: 'gmail_push_realtime_fallback'
+          });
+        }
+        
+        // Always fall back to queued sync on any error
         await enqueueEmailSync(emailAccount.orgId, emailAccount.id);
       }
     } else {
@@ -164,6 +209,37 @@ export async function POST(req: NextRequest) {
       latency,
       action: 'gmail_push_failed'
     });
+
+    // Try to log failed push notification if we have account info
+    try {
+      const body = await req.json().catch(() => null) as any;
+      const message = body?.message;
+      const attributes = message?.attributes ?? {};
+      const emailAddress = attributes.emailAddress;
+      
+      if (emailAddress) {
+        const emailAccount = await prisma.emailAccount.findFirst({
+          where: { email: emailAddress, provider: 'google' }
+        });
+        
+        if (emailAccount) {
+          await prisma.pushNotificationLog.create({
+            data: {
+              emailAccountId: emailAccount.id,
+              orgId: emailAccount.orgId,
+              provider: 'google',
+              latencyMs: latency,
+              success: false,
+              errorMessage: err.message
+            }
+          });
+        }
+      }
+    } catch (logError) {
+      // Don't fail if logging fails
+      console.warn('Failed to log push notification error:', logError);
+    }
+
     return new Response('OK'); // Return OK to prevent retries
   }
 }

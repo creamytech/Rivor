@@ -8,6 +8,7 @@ import { getEnv } from "./env";
 import { encryptForOrg } from "./crypto";
 import { logger } from "@/lib/logger";
 import { handleOAuthCallback, isDuplicateCallback, type OAuthCallbackData } from "./onboarding";
+import { validateAndLogStartupConfig } from "./env";
 
 const providers = [] as any[];
 
@@ -48,6 +49,9 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 if (providers.length === 0) {
   console.warn("No OAuth providers configured. Please set up Google or Microsoft OAuth credentials.");
 }
+
+// Validate startup configuration on module load
+validateAndLogStartupConfig();
 
 export const authOptions: NextAuthOptions = {
   pages: {
@@ -93,6 +97,14 @@ export const authOptions: NextAuthOptions = {
   },
   events: {
     async signIn({ user, account, profile }) {
+      console.log('🔐 OAuth callback reached', {
+        provider: account?.provider,
+        userEmail: user.email,
+        hasAccessToken: !!account?.access_token,
+        hasRefreshToken: !!account?.refresh_token,
+        timestamp: new Date().toISOString()
+      });
+
       // Log successful sign in
       if (user.email && account?.provider) {
         logger.authEvent('signin', user.email, account.provider, true);
@@ -108,9 +120,23 @@ export const authOptions: NextAuthOptions = {
         });
       }
     },
+    
+    async linkAccount({ user, account, profile }) {
+      console.log('🔗 OAuth linkAccount event', {
+        provider: account.provider,
+        userEmail: user.email,
+        timestamp: new Date().toISOString()
+      });
+    },
   },
   callbacks: {
     async signIn({ user, account, profile }) {
+      console.log('🚀 OAuth signIn callback start', {
+        provider: account?.provider,
+        userEmail: user.email,
+        timestamp: new Date().toISOString()
+      });
+      
       // Always allow sign in - we'll handle org creation in jwt callback
       return true;
     },

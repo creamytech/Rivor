@@ -2,8 +2,10 @@ import { Queue } from "bullmq";
 
 const globalQueues = globalThis as unknown as {
   emailSyncQueue?: Queue;
+  emailBackfillQueue?: Queue;
   emailSummarizeQueue?: Queue;
   calendarSyncQueue?: Queue;
+  calendarBackfillQueue?: Queue;
   webhooksRenewQueue?: Queue;
   healthProbeQueue?: Queue;
   cryptoRotateQueue?: Queue;
@@ -30,6 +32,66 @@ export async function enqueueEmailSync(orgId: string, emailAccountId: string) {
     await queue.add("sync", { orgId, emailAccountId }, { attempts: 3, backoff: { type: "exponential", delay: 1000 } });
   } catch (err) {
     console.warn("[queue] enqueueEmailSync failed", err);
+  }
+}
+
+// Queue for initial email backfill jobs
+export function getEmailBackfillQueue(): Queue {
+  if (!globalQueues.emailBackfillQueue) {
+    const url = process.env.REDIS_URL || 'redis://localhost:6379';
+    globalQueues.emailBackfillQueue = new Queue('email:backfill', { connection: { url } });
+  }
+  return globalQueues.emailBackfillQueue;
+}
+
+export async function enqueueEmailBackfill(orgId: string, emailAccountId: string, daysPastToSync = 90) {
+  try {
+    const queue = getEmailBackfillQueue();
+    const idempotencyKey = `${orgId}-${emailAccountId}-backfill`;
+    
+    await queue.add("backfill", 
+      { orgId, emailAccountId, daysPastToSync }, 
+      { 
+        jobId: idempotencyKey, // Prevents duplicate backfill jobs
+        attempts: 2, 
+        backoff: { type: "exponential", delay: 5000 },
+        removeOnComplete: 10,
+        removeOnFail: 5
+      }
+    );
+    console.log(`[queue] enqueued email backfill for account ${emailAccountId}`);
+  } catch (err) {
+    console.warn("[queue] enqueueEmailBackfill failed", err);
+  }
+}
+
+// Queue for calendar backfill jobs
+export function getCalendarBackfillQueue(): Queue {
+  if (!globalQueues.calendarBackfillQueue) {
+    const url = process.env.REDIS_URL || 'redis://localhost:6379';
+    globalQueues.calendarBackfillQueue = new Queue('calendar:backfill', { connection: { url } });
+  }
+  return globalQueues.calendarBackfillQueue;
+}
+
+export async function enqueueCalendarBackfill(orgId: string, calendarAccountId: string, daysFutureToSync = 90) {
+  try {
+    const queue = getCalendarBackfillQueue();
+    const idempotencyKey = `${orgId}-${calendarAccountId}-backfill`;
+    
+    await queue.add("backfill", 
+      { orgId, calendarAccountId, daysFutureToSync }, 
+      { 
+        jobId: idempotencyKey, // Prevents duplicate backfill jobs
+        attempts: 2, 
+        backoff: { type: "exponential", delay: 5000 },
+        removeOnComplete: 10,
+        removeOnFail: 5
+      }
+    );
+    console.log(`[queue] enqueued calendar backfill for account ${calendarAccountId}`);
+  } catch (err) {
+    console.warn("[queue] enqueueCalendarBackfill failed", err);
   }
 }
 

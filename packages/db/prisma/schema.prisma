@@ -118,6 +118,7 @@ model Org {
   subscriptions        Subscription[]
   audits               AuditLog[]
   secureTokens         SecureToken[]       @relation("OrgSecureTokens")
+  pushNotificationLogs PushNotificationLog[]
 }
 
 model OrgMember {
@@ -178,17 +179,20 @@ model EmailAccount {
   kmsErrorCode          String?
   kmsErrorAt            DateTime?
   
-  // Token reference (not raw tokens)
+  // Token management
   tokenRef              String?           // Reference to secure store entry
+  tokenStatus           String            @default("pending_encryption") // pending_encryption, encrypted, failed
   
-  // Legacy fields for backward compatibility
+  // Gmail watch and push notification tracking
   historyId             String?
   watchExpiration       DateTime?
   watchResourceId       String?
+  lastPushReceivedAt    DateTime?
   
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
   threads               EmailThread[]
+  pushNotificationLogs  PushNotificationLog[]
 
   @@unique([userId, provider])
   @@unique([orgId, provider, externalAccountId])
@@ -419,4 +423,21 @@ model AuditLog {
   success    Boolean
   traceId    String?
   createdAt  DateTime @default(now())
+}
+
+model PushNotificationLog {
+  id              String       @id @default(cuid())
+  emailAccount    EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+  emailAccountId  String
+  org             Org          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  orgId           String
+  provider        String
+  historyId       String?
+  processedAt     DateTime     @default(now())
+  latencyMs       Int?
+  success         Boolean      @default(true)
+  errorMessage    String?
+
+  @@index([emailAccountId, processedAt(sort: Desc)])
+  @@index([orgId, processedAt(sort: Desc)])
 }

@@ -8,6 +8,10 @@ import CalendarSnapshotWidget from "@/components/app/CalendarSnapshotWidget";
 import PipelineGlanceWidget from "@/components/app/PipelineGlanceWidget";
 import FirstRunOnboarding from "@/components/app/FirstRunOnboarding";
 import IntegrationStatusPanel from "@/components/app/IntegrationStatusPanel";
+import HeroFlowCard from "@/components/app/HeroFlowCard";
+import BackfillProgressCard from "@/components/app/BackfillProgressCard";
+import TokenErrorBanner from "@/components/common/TokenErrorBanner";
+import FlowCard from "@/components/river/FlowCard";
 
 interface DashboardContentProps {
   userName: string;
@@ -44,16 +48,23 @@ export default function DashboardContent({
   };
 
   return (
-    <div className="container py-6">
-      {/* Header */}
-      <div className="mb-8 flow-in">
-        <h1 className="text-3xl font-bold mb-2 flow-gradient bg-clip-text text-transparent">
-          {getGreeting()}, {userName}! 👋
-        </h1>
-        <p className="text-[var(--muted-foreground)]">
-          Here's what's flowing in your business today.
-        </p>
-      </div>
+    <div className="container py-6 space-y-8">
+      {/* Token Error Banner */}
+      <TokenErrorBanner />
+      
+      {/* Hero Section */}
+      <section>
+        <div className="mb-6">
+          <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+            {getGreeting()}, {userName}! 👋
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400 text-lg">
+            Here's what's flowing through your workflow today.
+          </p>
+        </div>
+        
+        <HeroFlowCard />
+      </section>
 
       {/* Show onboarding for new users, otherwise show widgets */}
       {showOnboarding ? (
