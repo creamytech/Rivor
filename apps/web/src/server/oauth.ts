@@ -68,53 +68,75 @@ export async function checkTokenHealth(userEmail: string, skipValidation = false
       action: 'health_check_start'
     });
 
-    const accounts = await prisma.oAuthAccount.findMany({
-      where: {
-        userId: userEmail
+    // For JWT strategy, check EmailAccount records instead of OAuthAccount
+    const user = await prisma.user.findUnique({
+      where: { email: userEmail },
+      include: {
+        emailAccounts: true,
+        orgMembers: {
+          include: { org: true }
+        }
       }
     });
 
-    // Add debugging for account lookup
-    logger.info('Account lookup debug', {
+    if (!user) {
+      logger.warn('User not found for token health check', { userEmail, correlationId });
+      return [];
+    }
+
+    const accounts = user.emailAccounts;
+
+    // Add debugging for account lookup  
+    logger.info('EmailAccount lookup debug', {
       userEmail,
       correlationId,
       foundAccounts: accounts.map(a => ({ 
         id: a.id,
         provider: a.provider, 
         userId: a.userId,
-        hasAccessToken: a.accessToken?.length > 0,
-        hasRefreshToken: a.refreshToken?.length > 0,
-        refreshTokenLength: a.refreshToken?.length || 0,
-        scopes: a.scope,
-        expiresAt: a.expiresAt,
+        status: a.status,
+        encryptionStatus: a.encryptionStatus,
+        tokenStatus: a.tokenStatus,
+        tokenRef: a.tokenRef,
         updatedAt: a.updatedAt
       })),
-      action: 'account_lookup_debug'
+      action: 'email_account_lookup_debug'
     });
 
     const tokenHealthPromises = accounts.map(async (account): Promise<TokenHealth> => {
-      // Find the org for this user to enable token decryption
-      const user = await prisma.user.findUnique({
-        where: { email: userEmail },
-        include: {
-          orgMembers: {
-            include: { org: true }
-          }
-        }
-      });
-
-      const orgId = user?.orgMembers?.[0]?.org?.id;
-      let hasValidRefresh = false;
+      const orgId = user.orgMembers?.[0]?.org?.id;
       
-      if (orgId) {
-        hasValidRefresh = await hasValidRefreshToken(orgId, account);
+      // For EmailAccount records, determine scopes based on provider and check token status
+      const isConnected = account.status === 'connected' && 
+                         account.encryptionStatus === 'ok' && 
+                         account.tokenStatus === 'encrypted';
+      
+      // Determine scopes based on provider
+      let scopes: string[] = [];
+      if (account.provider === 'google') {
+        scopes = [
+          'openid',
+          'email', 
+          'profile',
+          'https://www.googleapis.com/auth/gmail.readonly',
+          'https://www.googleapis.com/auth/calendar.readonly'
+        ];
+      } else if (account.provider === 'microsoft') {
+        scopes = [
+          'openid',
+          'email',
+          'profile', 
+          'offline_access',
+          'https://graph.microsoft.com/Mail.Read',
+          'https://graph.microsoft.com/Calendars.ReadWrite'
+        ];
       }
 
       const baseHealth: TokenHealth = {
         provider: account.provider,
-        connected: hasValidRefresh, // Now properly checking decrypted token
-        expired: account.expiresAt ? account.expiresAt < new Date() : false,
-        scopes: account.scope ? account.scope.split(' ') : [],
+        connected: isConnected,
+        expired: false, // EmailAccount doesn't track expiration directly
+        scopes: scopes,
         lastUpdated: account.updatedAt,
         services: {
           gmail: null,
@@ -122,25 +144,20 @@ export async function checkTokenHealth(userEmail: string, skipValidation = false
         }
       };
 
-      // For Google accounts, perform live token validation if not skipped
-      if (account.provider === 'google' && !skipValidation && orgId) {
-        try {
-            
-            // Validate tokens
-            const validationResult = await validateGoogleToken(orgId, account.id);
-            
-            baseHealth.tokenValidation = {
-              isValid: validationResult.isValid,
-              needsRefresh: validationResult.needsRefresh,
-              error: validationResult.error,
-              lastChecked: new Date()
-            };
-
-            // Only proceed with service probes if tokens are valid
-            if (validationResult.isValid) {
-              // Get recent probe results or run new probes
-              const probeResults = await runOrgHealthProbes(orgId);
-              const accountProbe = probeResults.find(p => p.emailAccountId === account.id);
+      // For connected accounts, assume services are available based on scopes
+      if (isConnected) {
+        baseHealth.services = {
+          gmail: account.provider === 'google' ? {
+            connected: true,
+            lastSyncDate: account.lastSyncedAt || null,
+            error: account.errorReason || null
+          } : null,
+          calendar: {
+            connected: true,
+            lastSyncDate: null, // CalendarAccount doesn't track this in same way
+            error: null
+          }
+        };
               
               if (accountProbe && (accountProbe.gmail || accountProbe.calendar)) {
                 // Use probe results

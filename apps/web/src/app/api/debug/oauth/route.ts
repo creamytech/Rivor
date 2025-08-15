@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/server/auth";
 import { prisma } from "@/server/db";
-import { checkTokenHealth } from "@/server/oauth";
+import { checkTokenHealth } from "@/server/oauth-fixed";
 
 // Force dynamic rendering - this route uses session/auth data
 export const dynamic = 'force-dynamic';

@@ -3,7 +3,7 @@ import { auth } from "@/server/auth";
 import { listThreads, getUnreadCount } from "@/server/email";
 import { getUpcomingEvents, getCalendarStats } from "@/server/calendar";
 import { getPipelineStats, getOverallPipelineStats } from "@/server/pipeline";
-import { checkTokenHealth } from "@/server/oauth";
+import { checkTokenHealth } from "@/server/oauth-fixed";
 import AppShell from "@/components/app/AppShell";
 import DashboardContent from "@/components/app/DashboardContent";
 import FlowRibbon from "@/components/river/FlowRibbon";
