@@ -1,6 +1,7 @@
 import { prisma } from "./db";
 import { validateGoogleToken, validateAllGoogleTokens } from "./token-validation";
 import { probeAllGoogleServices, getCachedProbeResults } from "./health-probes";
+import { decryptForOrg } from "./crypto";
 import { logger } from "@/lib/logger";
 
 export interface ProbeResult {
@@ -34,6 +35,28 @@ export interface TokenHealth {
 /**
  * Check the health of OAuth tokens for a user with live validation
  */
+/**
+ * Helper function to check if account has valid refresh token by decrypting it
+ */
+async function hasValidRefreshToken(orgId: string, account: any): Promise<boolean> {
+  if (!account.refreshToken || account.refreshToken.length === 0) {
+    return false;
+  }
+  
+  try {
+    const refreshTokenBytes = await decryptForOrg(orgId, account.refreshToken, 'oauth:refresh');
+    const refreshToken = new TextDecoder().decode(refreshTokenBytes);
+    return refreshToken.length > 0;
+  } catch (error) {
+    logger.warn('Failed to decrypt refresh token', {
+      accountId: account.id,
+      provider: account.provider,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    return false;
+  }
+}
+
 export async function checkTokenHealth(userEmail: string, skipValidation = false): Promise<TokenHealth[]> {
   const correlationId = `health-check-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   
@@ -51,10 +74,45 @@ export async function checkTokenHealth(userEmail: string, skipValidation = false
       }
     });
 
+    // Add debugging for account lookup
+    logger.info('Account lookup debug', {
+      userEmail,
+      correlationId,
+      foundAccounts: accounts.map(a => ({ 
+        id: a.id,
+        provider: a.provider, 
+        userId: a.userId,
+        hasAccessToken: a.accessToken?.length > 0,
+        hasRefreshToken: a.refreshToken?.length > 0,
+        refreshTokenLength: a.refreshToken?.length || 0,
+        scopes: a.scope,
+        expiresAt: a.expiresAt,
+        updatedAt: a.updatedAt
+      })),
+      action: 'account_lookup_debug'
+    });
+
     const tokenHealthPromises = accounts.map(async (account): Promise<TokenHealth> => {
+      // Find the org for this user to enable token decryption
+      const user = await prisma.user.findUnique({
+        where: { email: userEmail },
+        include: {
+          orgMembers: {
+            include: { org: true }
+          }
+        }
+      });
+
+      const orgId = user?.orgMembers?.[0]?.org?.id;
+      let hasValidRefresh = false;
+      
+      if (orgId) {
+        hasValidRefresh = await hasValidRefreshToken(orgId, account);
+      }
+
       const baseHealth: TokenHealth = {
         provider: account.provider,
-        connected: !!account.refreshToken && account.refreshToken.length > 0,
+        connected: hasValidRefresh, // Now properly checking decrypted token
         expired: account.expiresAt ? account.expiresAt < new Date() : false,
         scopes: account.scope ? account.scope.split(' ') : [],
         lastUpdated: account.updatedAt,
@@ -65,20 +123,8 @@ export async function checkTokenHealth(userEmail: string, skipValidation = false
       };
 
       // For Google accounts, perform live token validation if not skipped
-      if (account.provider === 'google' && !skipValidation) {
+      if (account.provider === 'google' && !skipValidation && orgId) {
         try {
-          // Find the org for this user
-          const user = await prisma.user.findUnique({
-            where: { email: userEmail },
-            include: {
-              orgMembers: {
-                include: { org: true }
-              }
-            }
-          });
-
-          if (user?.orgMembers?.[0]?.org) {
-            const orgId = user.orgMembers[0].org.id;
             
             // Validate tokens
             const validationResult = await validateGoogleToken(orgId, account.id);
@@ -135,16 +181,31 @@ export async function checkTokenHealth(userEmail: string, skipValidation = false
               }
             }
 
-            // Update connected status based on validation AND successful probe
+            // Update connected status based on validation AND probe results
             const hasRecentSuccessfulProbe = baseHealth.lastProbeSuccess && 
               (Date.now() - baseHealth.lastProbeSuccess.getTime()) < (10 * 60 * 1000); // 10 minutes
             
-            baseHealth.connected = validationResult.isValid && 
-              (hasRecentSuccessfulProbe || !baseHealth.services.gmail && !baseHealth.services.calendar);
+            // More accurate connection status:
+            // 1. Must have valid refresh token (checked earlier)
+            // 2. Token validation must pass
+            // 3. Must have either successful recent probe OR no service results yet
+            baseHealth.connected = hasValidRefresh && 
+              validationResult.isValid && 
+              (hasRecentSuccessfulProbe || (!baseHealth.services.gmail && !baseHealth.services.calendar));
             
             if (!validationResult.isValid && validationResult.error) {
               baseHealth.lastProbeError = validationResult.error;
             }
+
+            logger.info('Google token validation completed', {
+              correlationId,
+              accountId: account.id,
+              hasValidRefresh,
+              tokenValid: validationResult.isValid,
+              hasRecentProbe: hasRecentSuccessfulProbe,
+              finalConnectedStatus: baseHealth.connected,
+              action: 'validation_complete'
+            });
           }
         } catch (validationError) {
           logger.error('Token validation failed during health check', {
