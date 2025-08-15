@@ -64,7 +64,7 @@ async function processJob(job: Job) {
     await prisma.emailAccount.update({
       where: { id: emailAccountId },
       data: { 
-        status: 'error',
+        status: 'action_needed',
         updatedAt: new Date()
       }
     }).catch(() => {}); // Ignore update errors

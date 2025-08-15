@@ -94,7 +94,7 @@ export default function DashboardContent({
 
           {/* Integration Status Panel */}
           <div className="max-w-2xl flow-in flow-in-delay-3">
-            <IntegrationStatusPanel tokenHealth={tokenHealth} />
+            <IntegrationStatusPanel />
           </div>
         </div>
       )}

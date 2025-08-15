@@ -111,7 +111,7 @@ export class GmailService {
       if ((error as any)?.code === 401) {
         await prisma.emailAccount.update({
           where: { id: emailAccountId },
-          data: { status: 'auth_failed' }
+          data: { status: 'action_needed' }
         });
       }
       
@@ -283,7 +283,7 @@ export class GmailService {
       // Update account status on failure
       await prisma.emailAccount.update({
         where: { id: emailAccountId },
-        data: { status: 'watch_failed' }
+        data: { status: 'action_needed' }
       });
       
       throw error;

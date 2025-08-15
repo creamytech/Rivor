@@ -1,404 +1,327 @@
-import { google } from 'googleapis';
-import { prisma } from './db';
-import { createGoogleOAuthClient } from './token-validation';
-import { logger } from '@/lib/logger';
+import { prisma } from "./db";
+import { getTokensSecurely } from "./secure-tokens";
+import { logger } from "@/lib/logger";
+import { logHealthProbe } from "./monitoring";
 
-export interface ProbeResult {
+export interface HealthProbeResult {
+  emailAccountId: string;
   provider: string;
-  service: 'gmail' | 'calendar';
-  success: boolean;
-  timestamp: Date;
-  error?: string;
-  latency?: number;
-  correlationId: string;
-}
-
-export interface ProbeCache {
-  result: ProbeResult;
-  cacheKey: string;
-  ttl: number; // seconds
-}
-
-// Redis-like cache for probe results (10 minute TTL)
-const probeCache = new Map<string, { result: ProbeResult; expires: number }>();
-const PROBE_CACHE_TTL = 10 * 60 * 1000; // 10 minutes in milliseconds
-
-/**
- * Get cached probe result if still valid
- */
-function getCachedProbe(cacheKey: string): ProbeResult | null {
-  const cached = probeCache.get(cacheKey);
-  if (cached && Date.now() < cached.expires) {
-    return cached.result;
-  }
-  
-  // Remove expired cache entry
-  if (cached) {
-    probeCache.delete(cacheKey);
-  }
-  
-  return null;
+  gmail?: {
+    status: 'ok' | 'fail';
+    reason?: string;
+  };
+  calendar?: {
+    status: 'ok' | 'fail';
+    reason?: string;
+  };
+  overallStatus: 'connected' | 'action_needed' | 'disconnected';
+  probeAt: Date;
 }
 
 /**
- * Cache probe result
+ * Runs health probes for email accounts to check token validity and permissions
  */
-function cacheProbeResult(cacheKey: string, result: ProbeResult): void {
-  probeCache.set(cacheKey, {
-    result,
-    expires: Date.now() + PROBE_CACHE_TTL
-  });
-}
-
-/**
- * Probe Gmail health using users.getProfile (lightweight)
- */
-export async function probeGmailHealth(orgId: string, force = false): Promise<ProbeResult> {
-  const correlationId = `gmail-probe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  const cacheKey = `gmail:${orgId}`;
-  
-  // Return cached result unless forced
-  if (!force) {
-    const cached = getCachedProbe(cacheKey);
-    if (cached) {
-      logger.debug('Returning cached Gmail probe result', {
-        orgId,
-        correlationId,
-        cachedAt: cached.timestamp,
-        action: 'probe_cache_hit'
-      });
-      return cached;
-    }
-  }
-
-  const startTime = Date.now();
-  
-  try {
-    logger.info('Starting Gmail health probe', {
-      orgId,
-      correlationId,
-      force,
-      action: 'gmail_probe_start'
-    });
-
-    // Find Google OAuth account for this org
-    const org = await prisma.org.findUnique({ where: { id: orgId } });
-    if (!org) {
-      throw new Error('Organization not found');
-    }
-
-    const oauthAccount = await prisma.oAuthAccount.findFirst({
-      where: {
-        provider: 'google',
-        userId: org.name // org.name is the user's email
-      }
-    });
-
-    if (!oauthAccount) {
-      throw new Error('No Google OAuth account found');
-    }
-
-    // Check if account has Gmail scopes
-    const scopes = oauthAccount.scope?.split(' ') || [];
-    const hasGmailScope = scopes.includes('https://www.googleapis.com/auth/gmail.readonly');
-    
-    if (!hasGmailScope) {
-      throw new Error('Missing Gmail scope: gmail.readonly');
-    }
-
-    // Create OAuth client with automatic token refresh
-    const auth = await createGoogleOAuthClient(orgId, oauthAccount.id);
-    const gmail = google.gmail({ version: 'v1', auth });
-
-    // Perform lightweight probe - users.getProfile
-    await gmail.users.getProfile({ userId: 'me' });
-
-    const latency = Date.now() - startTime;
-    const result: ProbeResult = {
-      provider: 'google',
-      service: 'gmail',
-      success: true,
-      timestamp: new Date(),
-      latency,
-      correlationId
-    };
-
-    // Cache the successful result
-    cacheProbeResult(cacheKey, result);
-
-    logger.info('Gmail health probe successful', {
-      orgId,
-      correlationId,
-      latency,
-      action: 'gmail_probe_success'
-    });
-
-    return result;
-  } catch (error: any) {
-    const latency = Date.now() - startTime;
-    const result: ProbeResult = {
-      provider: 'google',
-      service: 'gmail',
-      success: false,
-      timestamp: new Date(),
-      error: error.message || 'Unknown error',
-      latency,
-      correlationId
-    };
-
-    // Cache failed results for shorter duration (2 minutes)
-    const failureCacheKey = `${cacheKey}:failed`;
-    probeCache.set(failureCacheKey, {
-      result,
-      expires: Date.now() + (2 * 60 * 1000) // 2 minutes
-    });
-
-    logger.error('Gmail health probe failed', {
-      orgId,
-      correlationId,
-      error: error.message,
-      latency,
-      action: 'gmail_probe_failed'
-    });
-
-    return result;
-  }
-}
-
-/**
- * Probe Calendar health using calendarList.list (lightweight)
- */
-export async function probeCalendarHealth(orgId: string, force = false): Promise<ProbeResult> {
-  const correlationId = `calendar-probe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  const cacheKey = `calendar:${orgId}`;
-  
-  // Return cached result unless forced
-  if (!force) {
-    const cached = getCachedProbe(cacheKey);
-    if (cached) {
-      logger.debug('Returning cached Calendar probe result', {
-        orgId,
-        correlationId,
-        cachedAt: cached.timestamp,
-        action: 'probe_cache_hit'
-      });
-      return cached;
-    }
-  }
-
-  const startTime = Date.now();
-  
-  try {
-    logger.info('Starting Calendar health probe', {
-      orgId,
-      correlationId,
-      force,
-      action: 'calendar_probe_start'
-    });
-
-    // Find Google OAuth account for this org
-    const org = await prisma.org.findUnique({ where: { id: orgId } });
-    if (!org) {
-      throw new Error('Organization not found');
-    }
-
-    const oauthAccount = await prisma.oAuthAccount.findFirst({
-      where: {
-        provider: 'google',
-        userId: org.name // org.name is the user's email
-      }
-    });
-
-    if (!oauthAccount) {
-      throw new Error('No Google OAuth account found');
-    }
-
-    // Check if account has Calendar scopes
-    const scopes = oauthAccount.scope?.split(' ') || [];
-    const hasCalendarScope = scopes.includes('https://www.googleapis.com/auth/calendar.readonly');
-    
-    if (!hasCalendarScope) {
-      throw new Error('Missing Calendar scope: calendar.readonly');
-    }
-
-    // Create OAuth client with automatic token refresh
-    const auth = await createGoogleOAuthClient(orgId, oauthAccount.id);
-    const calendar = google.calendar({ version: 'v3', auth });
-
-    // Perform lightweight probe - calendarList.list
-    await calendar.calendarList.list({ maxResults: 1 });
-
-    const latency = Date.now() - startTime;
-    const result: ProbeResult = {
-      provider: 'google',
-      service: 'calendar',
-      success: true,
-      timestamp: new Date(),
-      latency,
-      correlationId
-    };
-
-    // Cache the successful result
-    cacheProbeResult(cacheKey, result);
-
-    logger.info('Calendar health probe successful', {
-      orgId,
-      correlationId,
-      latency,
-      action: 'calendar_probe_success'
-    });
-
-    return result;
-  } catch (error: any) {
-    const latency = Date.now() - startTime;
-    const result: ProbeResult = {
-      provider: 'google',
-      service: 'calendar',
-      success: false,
-      timestamp: new Date(),
-      error: error.message || 'Unknown error',
-      latency,
-      correlationId
-    };
-
-    // Cache failed results for shorter duration (2 minutes)
-    const failureCacheKey = `${cacheKey}:failed`;
-    probeCache.set(failureCacheKey, {
-      result,
-      expires: Date.now() + (2 * 60 * 1000) // 2 minutes
-    });
-
-    logger.error('Calendar health probe failed', {
-      orgId,
-      correlationId,
-      error: error.message,
-      latency,
-      action: 'calendar_probe_failed'
-    });
-
-    return result;
-  }
-}
-
-/**
- * Probe both Gmail and Calendar health in parallel
- */
-export async function probeAllGoogleServices(orgId: string, force = false): Promise<{
-  gmail: ProbeResult;
-  calendar: ProbeResult;
-}> {
-  const correlationId = `all-probes-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  
-  logger.info('Starting comprehensive Google services health probe', {
-    orgId,
-    correlationId,
-    force,
-    action: 'all_probes_start'
-  });
+export async function runHealthProbe(emailAccountId: string): Promise<HealthProbeResult> {
+  const probeAt = new Date();
+  const result: HealthProbeResult = {
+    emailAccountId,
+    provider: '',
+    overallStatus: 'disconnected',
+    probeAt,
+  };
 
   try {
-    // Run probes in parallel for better performance
-    const [gmailResult, calendarResult] = await Promise.all([
-      probeGmailHealth(orgId, force),
-      probeCalendarHealth(orgId, force)
-    ]);
-
-    logger.info('Comprehensive Google services health probe completed', {
-      orgId,
-      correlationId,
-      gmailSuccess: gmailResult.success,
-      calendarSuccess: calendarResult.success,
-      action: 'all_probes_complete'
-    });
-
-    return {
-      gmail: gmailResult,
-      calendar: calendarResult
-    };
-  } catch (error: any) {
-    logger.error('Comprehensive Google services health probe failed', {
-      orgId,
-      correlationId,
-      error: error.message,
-      action: 'all_probes_failed'
-    });
-
-    // Return failed results for both services
-    const now = new Date();
-    return {
-      gmail: {
-        provider: 'google',
-        service: 'gmail',
-        success: false,
-        timestamp: now,
-        error: error.message,
-        correlationId
+    // Get email account
+    const emailAccount = await prisma.emailAccount.findUnique({
+      where: { id: emailAccountId },
+      select: {
+        id: true,
+        orgId: true,
+        provider: true,
+        status: true,
+        encryptionStatus: true,
+        tokenRef: true,
+        historyId: true,
+        createdAt: true,
+        updatedAt: true,
       },
-      calendar: {
-        provider: 'google',
-        service: 'calendar',
-        success: false,
-        timestamp: now,
-        error: error.message,
-        correlationId
-      }
-    };
-  }
-}
+    });
 
-/**
- * Get cached probe results for display
- */
-export function getCachedProbeResults(orgId: string): {
-  gmail: ProbeResult | null;
-  calendar: ProbeResult | null;
-} {
-  return {
-    gmail: getCachedProbe(`gmail:${orgId}`),
-    calendar: getCachedProbe(`calendar:${orgId}`)
-  };
-}
-
-/**
- * Clear probe cache for an organization (useful after token refresh)
- */
-export function clearProbeCache(orgId: string): void {
-  probeCache.delete(`gmail:${orgId}`);
-  probeCache.delete(`calendar:${orgId}`);
-  probeCache.delete(`gmail:${orgId}:failed`);
-  probeCache.delete(`calendar:${orgId}:failed`);
-  
-  logger.info('Cleared probe cache', {
-    orgId,
-    action: 'probe_cache_cleared'
-  });
-}
-
-/**
- * Get probe cache statistics
- */
-export function getProbeCacheStats(): {
-  totalEntries: number;
-  expiredEntries: number;
-  activeEntries: number;
-} {
-  const now = Date.now();
-  let totalEntries = 0;
-  let expiredEntries = 0;
-  let activeEntries = 0;
-
-  for (const [key, cached] of probeCache.entries()) {
-    totalEntries++;
-    if (now >= cached.expires) {
-      expiredEntries++;
-    } else {
-      activeEntries++;
+    if (!emailAccount) {
+      throw new Error('EmailAccount not found');
     }
+
+    result.provider = emailAccount.provider;
+
+    // Check encryption status first
+    if (emailAccount.encryptionStatus !== 'ok' || !emailAccount.tokenRef) {
+      result.overallStatus = 'action_needed';
+      result.gmail = { status: 'fail', reason: 'Token encryption failed or missing' };
+      return result;
+    }
+
+    // Get tokens
+    const tokens = await getTokensSecurely([emailAccount.tokenRef]);
+    if (!tokens.accessToken) {
+      result.overallStatus = 'action_needed';
+      result.gmail = { status: 'fail', reason: 'Access token not available' };
+      return result;
+    }
+
+    // Check token expiration
+    if (tokens.expiresAt && tokens.expiresAt < new Date()) {
+      result.overallStatus = 'action_needed';
+      result.gmail = { status: 'fail', reason: 'Access token expired' };
+      return result;
+    }
+
+    // Run provider-specific probes
+    if (emailAccount.provider === 'google') {
+      await runGoogleHealthProbes(tokens.accessToken, result);
+    } else if (emailAccount.provider === 'microsoft') {
+      await runMicrosoftHealthProbes(tokens.accessToken, result);
+    }
+
+    // Determine overall status
+    const gmailOk = result.gmail?.status === 'ok';
+    const calendarOk = result.calendar?.status === 'ok' || !result.calendar; // Calendar is optional
+
+    if (gmailOk && calendarOk) {
+      result.overallStatus = 'connected';
+    } else {
+      result.overallStatus = 'action_needed';
+    }
+
+    // Update EmailAccount status based on probe results
+    await prisma.emailAccount.update({
+      where: { id: emailAccountId },
+      data: {
+        status: result.overallStatus,
+        errorReason: result.overallStatus === 'action_needed' 
+          ? `Health probe failed: ${result.gmail?.reason || result.calendar?.reason}`
+          : null,
+      },
+    });
+
+    // Use structured logging for health probe results
+    logHealthProbe({
+      emailAccountId,
+      gmail: result.gmail?.status || 'fail',
+      calendar: result.calendar?.status,
+      reason: result.gmail?.reason || result.calendar?.reason,
+      duration: Date.now() - probeAt.getTime(),
+    });
+
+    logger.info('Health probe completed', {
+      emailAccountId,
+      provider: result.provider,
+      overallStatus: result.overallStatus,
+    });
+
+    return result;
+
+  } catch (error: any) {
+    result.overallStatus = 'disconnected';
+    result.gmail = { status: 'fail', reason: error?.message || 'Health probe failed' };
+
+    logger.error('Health probe failed', {
+      emailAccountId,
+      error: error?.message || error,
+    });
+
+    // Update EmailAccount with error
+    try {
+      await prisma.emailAccount.update({
+        where: { id: emailAccountId },
+        data: {
+          status: 'disconnected',
+          errorReason: `Health probe error: ${error?.message || error}`,
+        },
+      });
+    } catch (updateError: any) {
+      logger.error('Failed to update EmailAccount after probe failure', {
+        emailAccountId,
+        updateError: updateError?.message || updateError,
+      });
+    }
+
+    return result;
+  }
+}
+
+/**
+ * Runs Google-specific health probes
+ */
+async function runGoogleHealthProbes(accessToken: string, result: HealthProbeResult): Promise<void> {
+  // Gmail API probe - lightweight profile check
+  try {
+    const gmailResponse = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/profile', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json',
+      },
+    });
+
+    if (gmailResponse.ok) {
+      result.gmail = { status: 'ok' };
+    } else if (gmailResponse.status === 401) {
+      result.gmail = { status: 'fail', reason: 'Invalid or expired token' };
+    } else if (gmailResponse.status === 403) {
+      result.gmail = { status: 'fail', reason: 'Insufficient Gmail permissions' };
+    } else {
+      result.gmail = { status: 'fail', reason: `Gmail API error: ${gmailResponse.status}` };
+    }
+  } catch (error: any) {
+    result.gmail = { status: 'fail', reason: `Gmail probe error: ${error?.message || error}` };
   }
 
-  return {
-    totalEntries,
-    expiredEntries,
-    activeEntries
-  };
+  // Calendar API probe - list calendars
+  try {
+    const calendarResponse = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json',
+      },
+    });
+
+    if (calendarResponse.ok) {
+      result.calendar = { status: 'ok' };
+    } else if (calendarResponse.status === 401) {
+      result.calendar = { status: 'fail', reason: 'Invalid or expired token' };
+    } else if (calendarResponse.status === 403) {
+      result.calendar = { status: 'fail', reason: 'Insufficient Calendar permissions' };
+    } else {
+      result.calendar = { status: 'fail', reason: `Calendar API error: ${calendarResponse.status}` };
+    }
+  } catch (error: any) {
+    result.calendar = { status: 'fail', reason: `Calendar probe error: ${error?.message || error}` };
+  }
+}
+
+/**
+ * Runs Microsoft-specific health probes
+ */
+async function runMicrosoftHealthProbes(accessToken: string, result: HealthProbeResult): Promise<void> {
+  // Microsoft Graph Mail probe
+  try {
+    const mailResponse = await fetch('https://graph.microsoft.com/v1.0/me', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json',
+      },
+    });
+
+    if (mailResponse.ok) {
+      result.gmail = { status: 'ok' }; // Using gmail field for email probe
+    } else if (mailResponse.status === 401) {
+      result.gmail = { status: 'fail', reason: 'Invalid or expired token' };
+    } else if (mailResponse.status === 403) {
+      result.gmail = { status: 'fail', reason: 'Insufficient Mail permissions' };
+    } else {
+      result.gmail = { status: 'fail', reason: `Mail API error: ${mailResponse.status}` };
+    }
+  } catch (error: any) {
+    result.gmail = { status: 'fail', reason: `Mail probe error: ${error?.message || error}` };
+  }
+
+  // Microsoft Graph Calendar probe
+  try {
+    const calendarResponse = await fetch('https://graph.microsoft.com/v1.0/me/calendars', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json',
+      },
+    });
+
+    if (calendarResponse.ok) {
+      result.calendar = { status: 'ok' };
+    } else if (calendarResponse.status === 401) {
+      result.calendar = { status: 'fail', reason: 'Invalid or expired token' };
+    } else if (calendarResponse.status === 403) {
+      result.calendar = { status: 'fail', reason: 'Insufficient Calendar permissions' };
+    } else {
+      result.calendar = { status: 'fail', reason: `Calendar API error: ${calendarResponse.status}` };
+    }
+  } catch (error: any) {
+    result.calendar = { status: 'fail', reason: `Calendar probe error: ${error?.message || error}` };
+  }
+}
+
+/**
+ * Runs health probes for all email accounts in an organization
+ */
+export async function runOrgHealthProbes(orgId: string): Promise<HealthProbeResult[]> {
+  const emailAccounts = await prisma.emailAccount.findMany({
+    where: { orgId },
+    select: { id: true },
+  });
+
+  const results = await Promise.allSettled(
+    emailAccounts.map(account => runHealthProbe(account.id))
+  );
+
+  const successfulResults = results
+    .filter((result): result is PromiseFulfilledResult<HealthProbeResult> => 
+      result.status === 'fulfilled'
+    )
+    .map(result => result.value);
+
+  const failedResults = results
+    .filter((result): result is PromiseRejectedResult => 
+      result.status === 'rejected'
+    );
+
+  if (failedResults.length > 0) {
+    logger.warn('Some health probes failed', {
+      orgId,
+      failedCount: failedResults.length,
+      totalCount: emailAccounts.length,
+    });
+  }
+
+  return successfulResults;
+}
+
+/**
+ * Schedules periodic health probes for all accounts
+ */
+export async function scheduleHealthProbes(): Promise<void> {
+  try {
+    const { getHealthProbeQueue } = await import("./queue");
+    const queue = getHealthProbeQueue();
+
+    // Get all active email accounts
+    const emailAccounts = await prisma.emailAccount.findMany({
+      where: {
+        status: { in: ['connected', 'action_needed'] },
+        encryptionStatus: 'ok',
+      },
+      select: { id: true, orgId: true, provider: true },
+    });
+
+    // Schedule health probes with staggered timing
+    for (let i = 0; i < emailAccounts.length; i++) {
+      const account = emailAccounts[i];
+      const delay = i * 1000; // Stagger by 1 second each
+
+      await queue.add(
+        'health-probe',
+        { emailAccountId: account.id },
+        {
+          delay,
+          attempts: 2,
+          backoff: { type: 'exponential', delay: 5000 },
+          removeOnComplete: 5,
+          removeOnFail: 3,
+        }
+      );
+    }
+
+    logger.info('Scheduled health probes', {
+      accountCount: emailAccounts.length,
+    });
+
+  } catch (error: any) {
+    logger.error('Failed to schedule health probes', { error: error?.message || error });
+  }
 }

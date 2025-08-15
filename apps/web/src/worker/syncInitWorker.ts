@@ -1,5 +1,5 @@
 import { Worker, Job } from 'bullmq';
-import { runHealthProbe } from '../server/health-probes';
+import { processInitialSyncJob, type StartInitialSyncJobData } from '../server/queue-jobs';
 import { logger } from '@/lib/logger';
 
 function getConnection() {
@@ -8,71 +8,72 @@ function getConnection() {
   return { url };
 }
 
-interface HealthProbeJobData {
-  emailAccountId: string;
-}
-
-// Worker for health probe jobs
+// Worker for initial sync jobs
 const worker = new Worker(
-  'health:probe',
-  async (job: Job<HealthProbeJobData>) => {
-    const { emailAccountId } = job.data;
-    await runHealthProbe(emailAccountId);
+  'sync:init',
+  async (job: Job<StartInitialSyncJobData>) => {
+    await processInitialSyncJob(job);
   },
   {
     connection: getConnection(),
-    concurrency: 5, // Process up to 5 health probes simultaneously
+    concurrency: 2, // Process up to 2 sync init jobs simultaneously
   }
 );
 
 worker.on('ready', () => {
-  logger.info('Health probe worker ready', {
-    queueName: 'health:probe',
-    worker: 'healthProbeWorker'
+  logger.info('Sync init worker ready', {
+    queueName: 'sync:init',
+    worker: 'syncInitWorker'
   });
 });
 
 worker.on('active', (job: Job) => {
-  logger.info('Health probe job started', {
+  logger.info('Sync init job started', {
     jobId: job.id,
+    orgId: job.data.orgId,
     emailAccountId: job.data.emailAccountId,
+    provider: job.data.provider,
   });
 });
 
 worker.on('completed', (job: Job) => {
-  logger.info('Health probe job completed', {
+  logger.info('Sync init job completed', {
     jobId: job.id,
+    orgId: job.data.orgId,
     emailAccountId: job.data.emailAccountId,
+    provider: job.data.provider,
     duration: Date.now() - job.timestamp,
   });
 });
 
 worker.on('failed', (job: Job | undefined, err: Error) => {
-  logger.error('Health probe job failed', {
+  logger.error('Sync init job failed', {
     jobId: job?.id,
+    orgId: job?.data?.orgId,
     emailAccountId: job?.data?.emailAccountId,
+    provider: job?.data?.provider,
     error: err.message,
     failedReason: job?.failedReason,
   });
 });
 
 worker.on('stalled', (jobId: string) => {
-  logger.warn('Health probe job stalled', { jobId });
+  logger.warn('Sync init job stalled', { jobId });
 });
 
 worker.on('error', (err: Error) => {
-  logger.error('Health probe worker error', { error: err.message });
+  logger.error('Sync init worker error', { error: err.message });
 });
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-  logger.info('Shutting down health probe worker...');
+  logger.info('Shutting down sync init worker...');
   await worker.close();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
-  logger.info('Shutting down health probe worker...');
+  logger.info('Shutting down sync init worker...');
   await worker.close();
   process.exit(0);
 });

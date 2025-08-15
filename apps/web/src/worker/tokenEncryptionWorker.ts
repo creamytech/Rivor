@@ -1,5 +1,5 @@
 import { Worker, Job } from 'bullmq';
-import { runHealthProbe } from '../server/health-probes';
+import { processTokenEncryptionJob, type EncryptTokenJobData } from '../server/queue-jobs';
 import { logger } from '@/lib/logger';
 
 function getConnection() {
@@ -8,48 +8,46 @@ function getConnection() {
   return { url };
 }
 
-interface HealthProbeJobData {
-  emailAccountId: string;
-}
-
-// Worker for health probe jobs
+// Worker for token encryption jobs
 const worker = new Worker(
-  'health:probe',
-  async (job: Job<HealthProbeJobData>) => {
-    const { emailAccountId } = job.data;
-    await runHealthProbe(emailAccountId);
+  'token:encrypt',
+  async (job: Job<EncryptTokenJobData>) => {
+    await processTokenEncryptionJob(job);
   },
   {
     connection: getConnection(),
-    concurrency: 5, // Process up to 5 health probes simultaneously
+    concurrency: 3, // Process up to 3 token encryption jobs simultaneously
   }
 );
 
 worker.on('ready', () => {
-  logger.info('Health probe worker ready', {
-    queueName: 'health:probe',
-    worker: 'healthProbeWorker'
+  logger.info('Token encryption worker ready', {
+    queueName: 'token:encrypt',
+    worker: 'tokenEncryptionWorker'
   });
 });
 
 worker.on('active', (job: Job) => {
-  logger.info('Health probe job started', {
+  logger.info('Token encryption job started', {
     jobId: job.id,
+    orgId: job.data.orgId,
     emailAccountId: job.data.emailAccountId,
   });
 });
 
 worker.on('completed', (job: Job) => {
-  logger.info('Health probe job completed', {
+  logger.info('Token encryption job completed', {
     jobId: job.id,
+    orgId: job.data.orgId,
     emailAccountId: job.data.emailAccountId,
     duration: Date.now() - job.timestamp,
   });
 });
 
 worker.on('failed', (job: Job | undefined, err: Error) => {
-  logger.error('Health probe job failed', {
+  logger.error('Token encryption job failed', {
     jobId: job?.id,
+    orgId: job?.data?.orgId,
     emailAccountId: job?.data?.emailAccountId,
     error: err.message,
     failedReason: job?.failedReason,
@@ -57,22 +55,22 @@ worker.on('failed', (job: Job | undefined, err: Error) => {
 });
 
 worker.on('stalled', (jobId: string) => {
-  logger.warn('Health probe job stalled', { jobId });
+  logger.warn('Token encryption job stalled', { jobId });
 });
 
 worker.on('error', (err: Error) => {
-  logger.error('Health probe worker error', { error: err.message });
+  logger.error('Token encryption worker error', { error: err.message });
 });
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-  logger.info('Shutting down health probe worker...');
+  logger.info('Shutting down token encryption worker...');
   await worker.close();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
-  logger.info('Shutting down health probe worker...');
+  logger.info('Shutting down token encryption worker...');
   await worker.close();
   process.exit(0);
 });

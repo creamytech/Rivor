@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
-import { probeAllGoogleServices, clearProbeCache } from '@/server/health-probes';
-import { checkTokenHealth } from '@/server/oauth';
+import { runOrgHealthProbes } from '@/server/health-probes';
 import { logger } from '@/lib/logger';
 
 // Force dynamic rendering - this route uses session/auth data
@@ -45,19 +44,11 @@ export async function POST(req: NextRequest) {
       // Body parsing failed, use defaults
     }
 
-    // Clear cache if force refresh requested
-    if (force) {
-      clearProbeCache(orgId);
-    }
-
     // Run comprehensive health check
     const startTime = Date.now();
     
-    // Run Google service probes
-    const probeResults = await probeAllGoogleServices(orgId, force);
-    
-    // Get updated token health with fresh probe results
-    const tokenHealth = await checkTokenHealth(userEmail, false);
+    // Run health probes for all accounts in the org
+    const probeResults = await runOrgHealthProbes(orgId);
     
     const latency = Date.now() - startTime;
 
@@ -68,12 +59,11 @@ export async function POST(req: NextRequest) {
       correlationId,
       results: {
         probes: probeResults,
-        tokenHealth: tokenHealth.filter(t => t.provider === 'google'),
         summary: {
-          gmailHealthy: probeResults.gmail.success,
-          calendarHealthy: probeResults.calendar.success,
-          tokensValid: tokenHealth.some(t => t.provider === 'google' && t.connected),
-          overallHealthy: probeResults.gmail.success || probeResults.calendar.success
+          totalAccounts: probeResults.length,
+          healthyAccounts: probeResults.filter(r => r.overallStatus === 'connected').length,
+          accountsNeedingAttention: probeResults.filter(r => r.overallStatus === 'action_needed').length,
+          overallHealthy: probeResults.some(r => r.overallStatus === 'connected')
         }
       }
     };
@@ -83,9 +73,9 @@ export async function POST(req: NextRequest) {
       orgId,
       correlationId,
       latency,
-      gmailSuccess: probeResults.gmail.success,
-      calendarSuccess: probeResults.calendar.success,
-      tokensValid: response.results.summary.tokensValid,
+      totalAccounts: response.results.summary.totalAccounts,
+      healthyAccounts: response.results.summary.healthyAccounts,
+      overallHealthy: response.results.summary.overallHealthy,
       action: 'manual_health_check_complete'
     });
 
@@ -129,23 +119,25 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Get current token health (using cached probe results)
-    const tokenHealth = await checkTokenHealth(userEmail, true); // Skip validation for GET
-    
-    const googleHealth = tokenHealth.find(t => t.provider === 'google');
-    
-    const response = {
-      timestamp: new Date().toISOString(),
-      status: googleHealth ? (googleHealth.connected ? 'healthy' : 'unhealthy') : 'not_configured',
-      provider: 'google',
-      services: googleHealth?.services || { gmail: null, calendar: null },
-      lastProbeSuccess: googleHealth?.lastProbeSuccess,
-      lastProbeError: googleHealth?.lastProbeError,
-      scopes: googleHealth?.scopes || [],
-      tokenValidation: googleHealth?.tokenValidation
-    };
+    // Get integration status
+    const response = await fetch(`${req.nextUrl.origin}/api/integrations/status`, {
+      headers: {
+        'Cookie': req.headers.get('Cookie') || '',
+      },
+    });
 
-    return NextResponse.json(response);
+    if (!response.ok) {
+      throw new Error('Failed to get integration status');
+    }
+
+    const integrationStatus = await response.json();
+    
+    return NextResponse.json({
+      timestamp: new Date().toISOString(),
+      status: integrationStatus.overallStatus,
+      accounts: integrationStatus.emailAccounts,
+      summary: integrationStatus.summary
+    });
   } catch (error: any) {
     return NextResponse.json(
       {

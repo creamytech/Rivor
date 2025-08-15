@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
         await prisma.emailAccount.update({
           where: { id: emailAccount.id },
           data: { 
-            status: 'error',
+            status: 'action_needed',
             updatedAt: new Date()
           }
         }).catch(() => {}); // Ignore update errors

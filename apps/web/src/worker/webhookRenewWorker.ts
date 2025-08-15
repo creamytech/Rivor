@@ -94,7 +94,7 @@ async function renewGmailWatch(orgId: string, emailAccountId: string, correlatio
     // Update account status on renewal failure
     await prisma.emailAccount.update({
       where: { id: emailAccountId },
-      data: { status: 'watch_renewal_failed' }
+      data: { status: 'action_needed' }
     });
 
     throw new Error(`Gmail watch renewal failed: ${error.message}`);

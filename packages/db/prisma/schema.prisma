@@ -9,15 +9,35 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Enums for robust account management
+enum ConnectionStatus {
+  connected
+  action_needed
+  disconnected
+}
+
+enum SyncStatus {
+  idle
+  scheduled
+  running
+  error
+}
+
+enum EncryptionStatus {
+  ok
+  pending
+  failed
+}
+
 model User {
-  id            String       @id @default(cuid())
-  email         String       @unique
+  id            String         @id @default(cuid())
+  email         String         @unique
   emailVerified DateTime?
   name          String?
   image         String?
-  timezone      String       @default("America/New_York")
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  timezone      String         @default("America/New_York")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   
   // NextAuth.js relations
   accounts      Account[]
@@ -26,6 +46,7 @@ model User {
   // Rivor relations
   orgMembers    OrgMember[]
   oauthAccounts OAuthAccount[]
+  emailAccounts EmailAccount[] @relation("UserEmailAccounts")
 }
 
 // NextAuth.js required tables
@@ -73,6 +94,8 @@ model VerificationToken {
 model Org {
   id                   String              @id @default(cuid())
   name                 String
+  slug                 String?             // Organization slug for URL-friendly identification
+  ownerUserId          String?             // FK to User who owns this org
   brandName            String              @default("Rivor")
   encryptedDekBlob     Bytes
   dekVersion           Int                 @default(1)
@@ -94,6 +117,7 @@ model Org {
   stripeCustomers      StripeCustomer[]
   subscriptions        Subscription[]
   audits               AuditLog[]
+  secureTokens         SecureToken[]       @relation("OrgSecureTokens")
 }
 
 model OrgMember {
@@ -130,17 +154,68 @@ model OAuthAccount {
 }
 
 model EmailAccount {
-  id              String    @id @default(cuid())
-  org             Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId           String
-  provider        String
-  status          String    @default("connected")
-  historyId       String?
-  watchExpiration DateTime?
-  watchResourceId String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  threads         EmailThread[]
+  id                    String            @id @default(cuid())
+  org                   Org               @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  orgId                 String
+  user                  User              @relation("UserEmailAccounts", fields: [userId], references: [id], onDelete: Cascade)
+  userId                String
+  provider              String            // "google", "microsoft"
+  externalAccountId     String            // Google user ID (sub) or Microsoft user ID
+  email                 String            // User's email address from provider
+  displayName           String?           // Display name from provider
+  
+  // Connection state
+  status                ConnectionStatus  @default(connected)
+  
+  // Sync state  
+  syncStatus            SyncStatus        @default(idle)
+  lastSyncedAt          DateTime?
+  errorReason           String?
+  
+  // Encryption state
+  encryptionStatus      EncryptionStatus  @default(pending)
+  keyVersion            Int?
+  kmsErrorCode          String?
+  kmsErrorAt            DateTime?
+  
+  // Token reference (not raw tokens)
+  tokenRef              String?           // Reference to secure store entry
+  
+  // Legacy fields for backward compatibility
+  historyId             String?
+  watchExpiration       DateTime?
+  watchResourceId       String?
+  
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  threads               EmailThread[]
+
+  @@unique([userId, provider])
+  @@unique([orgId, provider, externalAccountId])
+}
+
+// Secure token storage with KMS encryption
+model SecureToken {
+  id                    String            @id @default(cuid())
+  tokenRef              String            @unique  // Reference key for lookups
+  org                   Org               @relation("OrgSecureTokens", fields: [orgId], references: [id], onDelete: Cascade)
+  orgId                 String
+  provider              String            // "google", "microsoft"
+  tokenType             String            // "oauth_access", "oauth_refresh"
+  encryptedTokenBlob    Bytes?            // KMS-encrypted token data
+  encryptionStatus      EncryptionStatus  @default(pending)
+  keyVersion            Int?
+  kmsErrorCode          String?
+  kmsErrorAt            DateTime?
+  expiresAt             DateTime?         // Token expiration
+  retryCount            Int               @default(0)
+  lastRetryAt           DateTime?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  @@index([tokenRef])
+  @@index([orgId, provider])
+  @@index([encryptionStatus])
 }
 
 model EmailThread {

@@ -2,14 +2,48 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Settings, CheckCircle, AlertCircle, RefreshCw, Unlink, XCircle, Activity, Clock } from "lucide-react";
+import { Settings, CheckCircle, AlertCircle, RefreshCw, Unlink, XCircle, Activity, Clock, Shield, Key } from "lucide-react";
 import Link from "next/link";
-import { TokenHealth } from "@/server/oauth";
 import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+interface EmailAccount {
+  id: string;
+  provider: string;
+  email: string;
+  displayName?: string;
+  status: 'connected' | 'action_needed' | 'disconnected';
+  syncStatus: 'idle' | 'scheduled' | 'running' | 'error';
+  lastSyncedAt?: string;
+  encryptionStatus: 'ok' | 'pending' | 'failed';
+  errorReason?: string;
+  kmsErrorCode?: string;
+  kmsErrorAt?: string;
+  uiStatus: string;
+  requiresRetry: boolean;
+  canReconnect: boolean;
+}
+
+interface IntegrationStatus {
+  overallStatus: string;
+  summary: {
+    totalAccounts: number;
+    connectedAccounts: number;
+    actionNeededAccounts: number;
+    disconnectedAccounts: number;
+  };
+  emailAccounts: EmailAccount[];
+  tokenEncryption: {
+    totalTokens: number;
+    okTokens: number;
+    pendingTokens: number;
+    failedTokens: number;
+    oldestFailure?: string;
+  };
+  lastUpdated: string;
+}
 
 interface IntegrationStatusPanelProps {
-  tokenHealth: TokenHealth[];
   onDisconnect?: (provider: string) => void;
 }
 
@@ -27,11 +61,34 @@ function formatRelativeTime(date: Date): string {
 }
 
 export default function IntegrationStatusPanel({ 
-  tokenHealth,
   onDisconnect 
 }: IntegrationStatusPanelProps) {
+  const [status, setStatus] = useState<IntegrationStatus | null>(null);
+  const [loading, setLoading] = useState(true);
   const [reconnecting, setReconnecting] = useState<string | null>(null);
   const [runningHealthCheck, setRunningHealthCheck] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState<string | null>(null);
+
+  // Load integration status
+  useEffect(() => {
+    fetchStatus();
+  }, []);
+
+  const fetchStatus = async () => {
+    try {
+      const response = await fetch('/api/integrations/status');
+      if (response.ok) {
+        const data = await response.json();
+        setStatus(data);
+      } else {
+        console.error('Failed to fetch integration status');
+      }
+    } catch (error) {
+      console.error('Error fetching integration status:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleReconnect = async (provider: string) => {
     setReconnecting(provider);
@@ -46,15 +103,10 @@ export default function IntegrationStatusPanel({
   const handleHealthCheck = async (provider: string) => {
     setRunningHealthCheck(provider);
     try {
-      const response = await fetch('/api/integrations/health-check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ force: true })
-      });
-      
+      const response = await fetch('/api/integrations/status?probe=true');
       if (response.ok) {
-        // Refresh the page to show updated status
-        window.location.reload();
+        const data = await response.json();
+        setStatus(data);
       } else {
         console.error('Health check failed');
       }
@@ -62,6 +114,22 @@ export default function IntegrationStatusPanel({
       console.error("Health check failed:", error);
     } finally {
       setRunningHealthCheck(null);
+    }
+  };
+
+  const handleRetryEncryption = async (emailAccountId: string) => {
+    setRetrying(emailAccountId);
+    try {
+      // In a real implementation, you'd need to handle OAuth re-flow
+      // For now, we'll just trigger a reconnection
+      const account = status?.emailAccounts.find(acc => acc.id === emailAccountId);
+      if (account) {
+        await handleReconnect(account.provider);
+      }
+    } catch (error) {
+      console.error("Retry failed:", error);
+    } finally {
+      setRetrying(null);
     }
   };
 
@@ -95,54 +163,77 @@ export default function IntegrationStatusPanel({
     }
   };
 
-  const getStatusIcon = (token: TokenHealth) => {
-    // Check for token validation errors first
-    if (token.tokenValidation?.needsRefresh || token.expired) {
-      return <XCircle className="h-4 w-4 text-red-500" />;
+  const getStatusIcon = (account: EmailAccount) => {
+    switch (account.uiStatus) {
+      case 'connected':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'encryption_failed':
+        return <Shield className="h-4 w-4 text-red-500" />;
+      case 'missing_tokens':
+        return <Key className="h-4 w-4 text-orange-500" />;
+      case 'probe_failed':
+      case 'insufficient_scopes':
+      case 'action_needed':
+        return <AlertCircle className="h-4 w-4 text-orange-500" />;
+      case 'disconnected':
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return <AlertCircle className="h-4 w-4 text-gray-500" />;
     }
-    
-    // Check service health
-    const hasHealthyService = token.services?.gmail?.success || token.services?.calendar?.success;
-    const hasFailedService = (token.services?.gmail && !token.services.gmail.success) || 
-                            (token.services?.calendar && !token.services.calendar.success);
-    
-    if (token.connected && hasHealthyService) {
-      return <CheckCircle className="h-4 w-4 text-green-500" />;
-    }
-    
-    if (hasFailedService || !token.connected) {
-      return <AlertCircle className="h-4 w-4 text-orange-500" />;
-    }
-    
-    return <AlertCircle className="h-4 w-4 text-gray-500" />;
   };
 
-  const getStatusText = (token: TokenHealth) => {
-    if (token.tokenValidation?.needsRefresh || token.expired) {
-      return "Needs Reconnection";
+  const getStatusText = (account: EmailAccount) => {
+    switch (account.uiStatus) {
+      case 'connected':
+        return "Connected";
+      case 'encryption_failed':
+        return "Encryption Failed";
+      case 'missing_tokens':
+        return "Missing Tokens";
+      case 'probe_failed':
+        return "Health Check Failed";
+      case 'insufficient_scopes':
+        return "Insufficient Permissions";
+      case 'action_needed':
+        return "Action Needed";
+      case 'disconnected':
+        return "Disconnected";
+      default:
+        return "Unknown Status";
     }
-    
-    const hasHealthyService = token.services?.gmail?.success || token.services?.calendar?.success;
-    
-    if (token.connected && hasHealthyService) {
-      return "Connected";
-    }
-    
-    if (token.connected && !hasHealthyService) {
-      return "Connected (No Recent Activity)";
-    }
-    
-    return "Disconnected";
   };
 
-  const getStatusVariant = (token: TokenHealth): "default" | "secondary" | "destructive" => {
-    if (token.tokenValidation?.needsRefresh || token.expired) return "destructive";
-    
-    const hasHealthyService = token.services?.gmail?.success || token.services?.calendar?.success;
-    if (token.connected && hasHealthyService) return "default";
-    
-    return "secondary";
+  const getStatusVariant = (account: EmailAccount): "default" | "secondary" | "destructive" => {
+    switch (account.uiStatus) {
+      case 'connected':
+        return "default";
+      case 'encryption_failed':
+      case 'disconnected':
+        return "destructive";
+      default:
+        return "secondary";
+    }
   };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            <CardTitle>Integrations</CardTitle>
+          </div>
+          <CardDescription>Loading integration status...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="animate-pulse space-y-4">
+            <div className="h-16 bg-gray-200 rounded-lg"></div>
+            <div className="h-16 bg-gray-200 rounded-lg"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -151,6 +242,11 @@ export default function IntegrationStatusPanel({
           <div className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
             <CardTitle>Integrations</CardTitle>
+            {status && status.summary.totalAccounts > 0 && (
+              <Badge variant={status.overallStatus === 'all_connected' ? 'default' : 'secondary'}>
+                {status.summary.connectedAccounts}/{status.summary.totalAccounts}
+              </Badge>
+            )}
           </div>
           <Button variant="ghost" size="sm" asChild>
             <Link href="/app/settings" className="flex items-center gap-1">
@@ -160,75 +256,81 @@ export default function IntegrationStatusPanel({
         </div>
         <CardDescription>
           Email and calendar connections
+          {status?.tokenEncryption && status.tokenEncryption.failedTokens > 0 && (
+            <span className="ml-2 text-red-600">
+              • {status.tokenEncryption.failedTokens} token encryption failed
+            </span>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {tokenHealth.map((token) => (
+          {status?.emailAccounts.map((account) => (
             <div 
-              key={token.provider}
+              key={account.id}
               className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700"
             >
               <div className="flex-shrink-0">
-                {getProviderIcon(token.provider)}
+                {getProviderIcon(account.provider)}
               </div>
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">
-                    {getProviderDisplayName(token.provider)}
+                    {getProviderDisplayName(account.provider)}
                   </span>
-                  {getStatusIcon(token)}
+                  {getStatusIcon(account)}
                 </div>
+                
+                <div className="text-xs text-gray-600 truncate">
+                  {account.displayName || account.email}
+                </div>
+                
                 <div className="flex items-center gap-2 mt-1">
                   <Badge 
-                    variant={getStatusVariant(token)}
+                    variant={getStatusVariant(account)}
                     className="text-xs"
                   >
-                    {getStatusText(token)}
+                    {getStatusText(account)}
                   </Badge>
-                  {token.lastProbeSuccess && (
+                  
+                  {/* Sync Status */}
+                  {account.syncStatus !== 'idle' && (
+                    <Badge variant="outline" className="text-xs">
+                      {account.syncStatus === 'running' ? (
+                        <>
+                          <Activity className="h-3 w-3 mr-1 animate-pulse" />
+                          Syncing
+                        </>
+                      ) : (
+                        account.syncStatus
+                      )}
+                    </Badge>
+                  )}
+                  
+                  {account.lastSyncedAt && (
                     <span className="text-xs text-gray-500 flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      Last checked: {formatRelativeTime(token.lastProbeSuccess)}
+                      Last sync: {formatRelativeTime(new Date(account.lastSyncedAt))}
                     </span>
                   )}
                 </div>
                 
-                {/* Service Status */}
-                {(token.services?.gmail || token.services?.calendar) && (
-                  <div className="flex items-center gap-3 mt-2 text-xs">
-                    {token.services.gmail && (
-                      <div className="flex items-center gap-1">
-                        {token.services.gmail.success ? (
-                          <CheckCircle className="h-3 w-3 text-green-500" />
-                        ) : (
-                          <XCircle className="h-3 w-3 text-red-500" />
-                        )}
-                        <span className={token.services.gmail.success ? "text-green-700" : "text-red-700"}>
-                          Gmail
-                        </span>
-                      </div>
-                    )}
-                    {token.services.calendar && (
-                      <div className="flex items-center gap-1">
-                        {token.services.calendar.success ? (
-                          <CheckCircle className="h-3 w-3 text-green-500" />
-                        ) : (
-                          <XCircle className="h-3 w-3 text-red-500" />
-                        )}
-                        <span className={token.services.calendar.success ? "text-green-700" : "text-red-700"}>
-                          Calendar
-                        </span>
-                      </div>
-                    )}
+                {/* Encryption Status */}
+                {account.encryptionStatus !== 'ok' && (
+                  <div className="flex items-center gap-1 mt-1 text-xs">
+                    <Shield className="h-3 w-3 text-orange-500" />
+                    <span className="text-orange-600">
+                      Encryption {account.encryptionStatus}
+                      {account.kmsErrorCode && ` (${account.kmsErrorCode})`}
+                    </span>
                   </div>
                 )}
                 
                 {/* Error Display */}
-                {token.lastProbeError && (
+                {account.errorReason && (
                   <div className="mt-2 text-xs text-red-600 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded">
-                    {token.lastProbeError}
+                    {account.errorReason}
                   </div>
                 )}
               </div>
@@ -238,11 +340,11 @@ export default function IntegrationStatusPanel({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleHealthCheck(token.provider)}
-                  disabled={runningHealthCheck === token.provider}
+                  onClick={() => handleHealthCheck(account.provider)}
+                  disabled={runningHealthCheck === account.provider}
                   title="Run health check now"
                 >
-                  {runningHealthCheck === token.provider ? (
+                  {runningHealthCheck === account.provider ? (
                     <>
                       <Activity className="h-3 w-3 mr-1 animate-pulse" />
                       Checking...
@@ -250,20 +352,43 @@ export default function IntegrationStatusPanel({
                   ) : (
                     <>
                       <Activity className="h-3 w-3 mr-1" />
-                      Check Now
+                      Check
                     </>
                   )}
                 </Button>
                 
-                {/* Reconnect Button */}
-                {(token.expired || token.tokenValidation?.needsRefresh || !token.connected) && (
+                {/* Retry Encryption Button */}
+                {account.requiresRetry && (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleReconnect(token.provider)}
-                    disabled={reconnecting === token.provider}
+                    onClick={() => handleRetryEncryption(account.id)}
+                    disabled={retrying === account.id}
+                    title="Retry token encryption"
                   >
-                    {reconnecting === token.provider ? (
+                    {retrying === account.id ? (
+                      <>
+                        <Key className="h-3 w-3 mr-1 animate-pulse" />
+                        Retrying...
+                      </>
+                    ) : (
+                      <>
+                        <Key className="h-3 w-3 mr-1" />
+                        Retry
+                      </>
+                    )}
+                  </Button>
+                )}
+                
+                {/* Reconnect Button */}
+                {account.canReconnect && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleReconnect(account.provider)}
+                    disabled={reconnecting === account.provider}
+                  >
+                    {reconnecting === account.provider ? (
                       <>
                         <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
                         Connecting...
@@ -278,11 +403,11 @@ export default function IntegrationStatusPanel({
                 )}
                 
                 {/* Disconnect Button */}
-                {token.connected && !token.expired && !token.tokenValidation?.needsRefresh && onDisconnect && (
+                {account.status === 'connected' && onDisconnect && (
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => onDisconnect(token.provider)}
+                    onClick={() => onDisconnect(account.provider)}
                   >
                     <Unlink className="h-3 w-3 mr-1" />
                     Disconnect
@@ -292,7 +417,7 @@ export default function IntegrationStatusPanel({
             </div>
           ))}
           
-          {tokenHealth.length === 0 && (
+          {(!status || status.emailAccounts.length === 0) && (
             <div className="text-center py-4 text-sm text-gray-500">
               No integrations connected yet
             </div>

@@ -1,6 +1,6 @@
 import { prisma } from "./db";
 import { validateGoogleToken, validateAllGoogleTokens } from "./token-validation";
-import { probeAllGoogleServices, getCachedProbeResults } from "./health-probes";
+import { runOrgHealthProbes } from "./health-probes";
 import { decryptForOrg } from "./crypto";
 import { logger } from "@/lib/logger";
 
@@ -138,46 +138,56 @@ export async function checkTokenHealth(userEmail: string, skipValidation = false
 
             // Only proceed with service probes if tokens are valid
             if (validationResult.isValid) {
-              // Get cached probe results or run new probes
-              const cachedProbes = getCachedProbeResults(orgId);
+              // Get recent probe results or run new probes
+              const probeResults = await runOrgHealthProbes(orgId);
+              const accountProbe = probeResults.find(p => p.emailAccountId === account.id);
               
-              if (cachedProbes.gmail || cachedProbes.calendar) {
-                // Use cached results
+              if (accountProbe && (accountProbe.gmail || accountProbe.calendar)) {
+                // Use probe results
                 baseHealth.services = {
-                  gmail: cachedProbes.gmail,
-                  calendar: cachedProbes.calendar
+                  gmail: accountProbe.gmail ? { 
+                    service: 'gmail' as const,
+                    success: accountProbe.gmail.status === 'ok',
+                    timestamp: accountProbe.probeAt,
+                    error: accountProbe.gmail.reason 
+                  } : null,
+                  calendar: accountProbe.calendar ? { 
+                    service: 'calendar' as const,
+                    success: accountProbe.calendar.status === 'ok',
+                    timestamp: accountProbe.probeAt,
+                    error: accountProbe.calendar.reason 
+                  } : null
                 };
                 
                 // Update overall status based on successful probes
                 const hasSuccessfulProbe = 
-                  (cachedProbes.gmail?.success) || 
-                  (cachedProbes.calendar?.success);
+                  (accountProbe.gmail?.status === 'ok') || 
+                  (accountProbe.calendar?.status === 'ok');
                 
                 if (hasSuccessfulProbe) {
-                  baseHealth.lastProbeSuccess = new Date(Math.max(
-                    cachedProbes.gmail?.timestamp?.getTime() || 0,
-                    cachedProbes.calendar?.timestamp?.getTime() || 0
-                  ));
+                  baseHealth.lastProbeSuccess = accountProbe.probeAt;
+                } else {
+                  baseHealth.lastProbeError = 
+                    accountProbe.gmail?.reason || 
+                    accountProbe.calendar?.reason ||
+                    'Health probe failed';
                 }
               } else {
-                // No cached results - run fresh probes
-                try {
-                  const probeResults = await probeAllGoogleServices(orgId, false);
-                  baseHealth.services = probeResults;
-                  
-                  const hasSuccessfulProbe = probeResults.gmail.success || probeResults.calendar.success;
-                  if (hasSuccessfulProbe) {
-                    baseHealth.lastProbeSuccess = new Date();
-                  } else {
-                    baseHealth.lastProbeError = probeResults.gmail.error || probeResults.calendar.error;
+                // No probe results available - services status unknown
+                baseHealth.services = {
+                  gmail: { 
+                    service: 'gmail' as const,
+                    success: false, 
+                    timestamp: new Date(),
+                    error: 'No recent health probe data' 
+                  },
+                  calendar: { 
+                    service: 'calendar' as const,
+                    success: false, 
+                    timestamp: new Date(),
+                    error: 'No recent health probe data' 
                   }
-                } catch (probeError) {
-                  logger.warn('Service probes failed during health check', {
-                    correlationId,
-                    orgId,
-                    error: probeError instanceof Error ? probeError.message : 'Unknown error'
-                  });
-                }
+                };
               }
             }
 

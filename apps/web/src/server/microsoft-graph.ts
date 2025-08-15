@@ -117,7 +117,7 @@ export class MicrosoftGraphService {
       if ((error as any)?.code === 401 || (error as any)?.status === 401) {
         await prisma.emailAccount.update({
           where: { id: emailAccountId },
-          data: { status: 'auth_failed' }
+          data: { status: 'action_needed' }
         });
       }
       

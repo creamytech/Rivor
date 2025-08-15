@@ -7,6 +7,7 @@ import { createKmsClient, generateDek } from "@rivor/crypto";
 import { getEnv } from "./env";
 import { encryptForOrg } from "./crypto";
 import { logger } from "@/lib/logger";
+import { handleOAuthCallback, isDuplicateCallback, type OAuthCallbackData } from "./onboarding";
 
 const providers = [] as any[];
 
@@ -164,211 +165,86 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async jwt({ token, user, account, profile }) {
-      // On sign in (including re-auth), create org and set orgId
+      // On sign in (including re-auth), use robust onboarding flow
       if (user && account) {
-        // Check if this is a first-time user
-        let isFirstTimeUser = false;
-        
-        // Milestone C: OAuth callback logging with required format
-        const oauthCallbackLog = {
-          userId: user.email || undefined,
-          provider: account.provider,
-          hasRefreshToken: !!account.refresh_token,
-          expiresAt: account.expires_at ? new Date(account.expires_at * 1000).toISOString() : undefined,
-          isFirstTime: false // Will be updated below
-        };
-        
-        console.log('OAuth callback:', oauthCallbackLog);
-        logger.info('OAuth callback successful', oauthCallbackLog);
-        
-        console.log('JWT callback - sign in/re-auth:', { 
-          email: user.email, 
-          provider: account.provider,
-          scopes: account.scope,
-          hasAccessToken: !!account.access_token,
-          hasRefreshToken: !!account.refresh_token
-        });
         try {
-          // Create org with proper encryption key
-          let org = await prisma.org.findFirst({ where: { name: user.email || 'Default' } });
-          if (!org) {
-            isFirstTimeUser = true;
-            console.log('Creating new org for first-time user:', user.email);
-            
-            // Generate proper DEK for encryption with fallback
-            let encryptedDekBlob: Uint8Array;
-            try {
-              const env = getEnv();
-              if (env.KMS_PROVIDER && env.KMS_KEY_ID) {
-                const kms = createKmsClient(env.KMS_PROVIDER, env.KMS_KEY_ID);
-                const dek = generateDek();
-                encryptedDekBlob = await kms.encryptDek(dek);
-              } else {
-                // Fallback for development/local without KMS
-                encryptedDekBlob = new Uint8Array(32); // Simple fallback
-                console.warn('Using fallback encryption - configure KMS for production');
-              }
-            } catch (encryptError) {
-              console.warn('KMS encryption failed, using fallback:', encryptError);
-              encryptedDekBlob = new Uint8Array(32); // Simple fallback
-            }
-            
-            org = await prisma.org.create({ 
-              data: { 
-                name: user.email || 'Default',
-                encryptedDekBlob: Buffer.from(encryptedDekBlob),
-                retentionDays: 365 
-              } 
+          // Check for duplicate callback (idempotency)
+          const externalAccountId = account.providerAccountId || (profile as any)?.sub || (profile as any)?.id || 'unknown';
+          const isDuplicate = await isDuplicateCallback(
+            user.email || user.id,
+            account.provider,
+            externalAccountId
+          );
+
+          if (isDuplicate) {
+            logger.info('Duplicate OAuth callback detected, skipping onboarding', {
+              userId: user.email || '',
+              provider: account.provider,
+              externalAccountId,
             });
-            console.log('Created org with proper encryption key for first-time user');
-            
-            // Update the log with first-time user flag
-            oauthCallbackLog.isFirstTime = true;
-            logger.info('First-time user detected', oauthCallbackLog);
-          }
-          (token as any).orgId = org.id;
-          (token as any).isFirstTime = isFirstTimeUser;
-          
-          // Sync user profile data from OAuth provider
-          if (profile) {
-            try {
-              const userData = {
-                email: user.email || '',
-                name: user.name || profile.name || '',
-                image: user.image || (profile as any).picture || (profile as any).avatar_url || '',
+          } else {
+            // Prepare onboarding data
+            const onboardingData: OAuthCallbackData = {
+              userId: user.email || user.id,
+              userEmail: user.email || '',
+              userName: user.name || profile?.name || '',
+              userImage: user.image || (profile as any)?.picture || '',
+              provider: account.provider,
+              externalAccountId,
+              account,
+              profile,
+            };
+
+            // Execute robust onboarding
+            const result = await handleOAuthCallback(onboardingData);
+
+            // Store results in token
+            (token as any).orgId = result.orgId;
+            (token as any).isFirstTime = result.isFirstTimeUser;
+            (token as any).requiresTokenRetry = result.requiresTokenRetry;
+
+            // Store user data for session access
+            (token as any).user = {
+              email: onboardingData.userEmail,
+              name: onboardingData.userName,
+              image: onboardingData.userImage,
+              provider: account.provider,
+              providerId: externalAccountId,
+            };
+
+            if (!result.success) {
+              logger.error('Onboarding failed but continuing with auth', {
+                userId: user.email || '',
                 provider: account.provider,
-                providerId: account.providerAccountId || ''
-              };
-
-              // Store user data in the token for session access
-              (token as any).user = userData;
-              console.log('Synced user profile:', userData);
-
-              // Create or update OAuth account record for API access if we have tokens
-              if (account.access_token) {
-                const existingOAuthAccount = await prisma.oAuthAccount.findFirst({
-                  where: {
-                    userId: user.email || '',
-                    provider: account.provider
-                  }
-                });
-
-                // Encrypt OAuth tokens for secure storage
-                const accessTokenEnc = await encryptForOrg(org.id, account.access_token, 'oauth:access');
-                const refreshTokenEnc = account.refresh_token 
-                  ? await encryptForOrg(org.id, account.refresh_token, 'oauth:refresh')
-                  : Buffer.from('');
-
-                const accountData = {
-                  userId: user.email || '',
-                  provider: account.provider,
-                  providerId: account.providerAccountId || '',
-                  accessToken: accessTokenEnc,
-                  refreshToken: refreshTokenEnc,
-                  scope: account.scope || '',
-                  expiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null
-                };
-
-                if (!existingOAuthAccount) {
-                  await prisma.oAuthAccount.create({
-                    data: accountData
-                  });
-                  console.log('Created OAuth account for API access');
-                } else {
-                  // Update existing account with new tokens and scopes
-                  console.log('Updating existing OAuth account:', {
-                    oldScopes: existingOAuthAccount.scope,
-                    newScopes: accountData.scope,
-                    provider: account.provider
-                  });
-                  await prisma.oAuthAccount.update({
-                    where: { id: existingOAuthAccount.id },
-                    data: {
-                      accessToken: accountData.accessToken,
-                      refreshToken: accountData.refreshToken,
-                      scope: accountData.scope,
-                      expiresAt: accountData.expiresAt,
-                      updatedAt: new Date()
-                    }
-                  });
-                  console.log('Updated OAuth account with new tokens and scopes');
-                }
-
-                // Create EmailAccount and CalendarAccount records for sync workers
-                const scopes = account.scope?.split(' ') || [];
-                const hasEmailScopes = account.provider === 'google' 
-                  ? scopes.includes('https://www.googleapis.com/auth/gmail.readonly')
-                  : scopes.includes('https://graph.microsoft.com/Mail.Read');
-                const hasCalendarScopes = account.provider === 'google'
-                  ? scopes.includes('https://www.googleapis.com/auth/calendar.readonly')
-                  : scopes.includes('https://graph.microsoft.com/Calendars.ReadWrite');
-
-                if (hasEmailScopes) {
-                  try {
-                    const existingEmailAccount = await prisma.emailAccount.findFirst({
-                      where: { orgId: org.id, provider: account.provider }
-                    });
-                    
-                    if (!existingEmailAccount) {
-                      const emailAccount = await prisma.emailAccount.create({
-                        data: {
-                          orgId: org.id,
-                          provider: account.provider,
-                          status: 'connected'
-                        }
-                      });
-                      console.log('Created EmailAccount for sync worker', {
-                        emailAccountId: emailAccount.id,
-                        orgId: org.id,
-                        provider: account.provider
-                      });
-                      
-                      // Enqueue initial email sync with error handling
-                      try {
-                        await enqueueEmailSync(org.id, emailAccount.id);
-                        console.log('Enqueued initial email sync');
-                      } catch (queueError) {
-                        console.warn('Failed to enqueue email sync (Redis might not be available):', queueError);
-                      }
-                    } else {
-                      console.log('EmailAccount already exists', {
-                        emailAccountId: existingEmailAccount.id,
-                        status: existingEmailAccount.status
-                      });
-                    }
-                  } catch (emailAccountError) {
-                    console.error('Failed to create EmailAccount:', emailAccountError);
-                  }
-                }
-
-                if (hasCalendarScopes) {
-                  const existingCalendarAccount = await prisma.calendarAccount.findFirst({
-                    where: { orgId: org.id, provider: account.provider }
-                  });
-                  
-                  if (!existingCalendarAccount) {
-                    await prisma.calendarAccount.create({
-                      data: {
-                        orgId: org.id,
-                        provider: account.provider,
-                        status: 'connected'
-                      }
-                    });
-                    console.log('Created CalendarAccount for sync worker');
-                  }
-                }
-              }
-            } catch (profileError) {
-              console.error('Error syncing user profile:', profileError);
+                errors: result.errors,
+              });
             }
           }
 
-          console.log('Set orgId:', org.id);
-        } catch (error) {
-          console.error('Error creating org:', error);
-          // Set a default orgId even if db fails
+          // Always find and set orgId if not set
+          if (!(token as any).orgId) {
+            const org = await prisma.org.findFirst({ 
+              where: { name: user.email || 'default' } 
+            });
+            (token as any).orgId = org?.id || 'default';
+          }
+
+        } catch (error: any) {
+          logger.error('OAuth callback processing failed', {
+            userId: user.email || '',
+            provider: account.provider,
+            error: error?.message || error,
+          });
+          
+          // Fallback behavior - continue auth but set defaults
           (token as any).orgId = 'default';
-          console.log('Using fallback orgId: default');
+          (token as any).user = {
+            email: user.email || '',
+            name: user.name || '',
+            image: user.image || '',
+            provider: account.provider,
+            providerId: account.providerAccountId || '',
+          };
         }
       }
       
