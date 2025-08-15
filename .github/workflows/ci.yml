@@ -32,7 +32,7 @@ jobs:
         with:
           node-version: 20
       - name: Install deps (npm)
-        run: npm install --legacy-peer-deps
+        run: npm install --legacy-peer-deps && npm --prefix packages/db install && npm --prefix apps/web install --legacy-peer-deps
       - name: Generate Prisma Client
         working-directory: packages/db
         run: npx prisma generate
