@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { AlertTriangle, RefreshCw, Home, Mail, Shield, Users } from "lucide-react";
 import Logo from "@/components/branding/Logo";
-import { authAnalytics, trackProviderClick, trackAuthError } from "@/lib/auth-analytics";
 
 type Providers = Record<string, { id: string; name: string }>;
 
@@ -17,12 +16,6 @@ export default function AuthErrorPage() {
   const [retryProvider, setRetryProvider] = useState<string | null>(null);
 
   useEffect(() => {
-    // Track error page view with error context
-    authAnalytics.trackPageView('error', undefined, {
-      errorCode: error,
-      errorDetails: getErrorDetails(error)
-    });
-
     let cancelled = false;
     (async () => {
       try {
@@ -37,30 +30,16 @@ export default function AuthErrorPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [error]);
+  }, []);
 
   const handleRetry = async (provider: string) => {
     setIsRetrying(true);
     setRetryProvider(provider);
     
-    // Track retry attempt
-    authAnalytics.trackInteraction('retry_clicked', provider, undefined, {
-      originalError: error,
-      errorDetails: getErrorDetails(error)
-    });
-    
     try {
       await signIn(provider, { callbackUrl: '/app' });
     } catch (retryError) {
       console.error('Retry sign in error:', retryError);
-      
-      // Track retry failure
-      trackAuthError(
-        retryError instanceof Error ? retryError.message : 'Retry failed',
-        'oauth',
-        provider
-      );
-      
       setIsRetrying(false);
       setRetryProvider(null);
     }
@@ -123,33 +102,17 @@ export default function AuthErrorPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Background with calm gradient */}
       <div className="absolute inset-0 wave-gradient" />
-      
-      {/* Floating background elements */}
       <div className="absolute top-20 left-20 w-64 h-64 bg-white/5 rounded-full animate-float" />
       <div className="absolute bottom-32 right-32 w-32 h-32 bg-white/5 rounded-full animate-float-delay" />
       
-      {/* Reduced motion background for accessibility */}
-      <style jsx>{`
-        @media (prefers-reduced-motion: reduce) {
-          .wave-gradient {
-            background: linear-gradient(135deg, var(--rivor-deep), var(--rivor-indigo));
-          }
-        }
-      `}</style>
-
-      {/* Centered error card container */}
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <div>
-          {/* Main error card */}
           <div className="card p-8 space-y-6 animate-fade-up">
-            {/* Rivor wordmark */}
             <div className="text-center">
               <Logo className="mx-auto mb-6 h-10" />
             </div>
 
-            {/* Error icon and title */}
             <div className="text-center space-y-4">
               <div className="w-16 h-16 mx-auto rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
                 <AlertTriangle className="w-8 h-8 text-red-500" />
@@ -165,7 +128,6 @@ export default function AuthErrorPage() {
               </div>
             </div>
 
-            {/* Action buttons */}
             {errorDetails.canRetry && (
               <div className="space-y-3">
                 {loading && (
@@ -228,7 +190,6 @@ export default function AuthErrorPage() {
               </div>
             )}
 
-            {/* Additional help actions */}
             <div className="border-t border-border pt-6 space-y-3">
               <a
                 href="/"
@@ -259,7 +220,6 @@ export default function AuthErrorPage() {
             </div>
           </div>
 
-          {/* Footer security badges */}
           <div className="mt-8 text-center animate-fade-up-delay-5">
             <div className="flex items-center justify-center space-x-6 text-xs text-muted-foreground">
               <div className="flex items-center space-x-2">
