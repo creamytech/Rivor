@@ -38,8 +38,8 @@ export async function POST(req: NextRequest) {
 
     logger.info('OAuth account disconnected', {
       userId: userEmail,
-      provider,
-      action: 'oauth_disconnect'
+      action: 'oauth_disconnect',
+      metadata: { provider }
     });
 
     return NextResponse.json({ 
@@ -48,8 +48,13 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    logger.error('OAuth disconnect error', error as Error, { 
-      action: 'oauth_disconnect_error' 
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error('OAuth disconnect error', { 
+      action: 'oauth_disconnect_error',
+      metadata: { 
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined
+      }
     });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
