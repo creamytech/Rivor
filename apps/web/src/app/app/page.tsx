@@ -17,7 +17,7 @@ export default async function DashboardPage() {
     redirect("/auth/signin");
   }
 
-  const orgId = (session as unknown).orgId;
+  const orgId = (session as { orgId?: string }).orgId;
   const userName = session.user?.name || session.user?.email?.split('@')[0] || 'there';
   const userEmail = session.user?.email;
 

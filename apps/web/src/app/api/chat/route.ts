@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as unknown).orgId;
+    const orgId = (session as { orgId?: string }).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }

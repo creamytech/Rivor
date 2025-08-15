@@ -12,7 +12,7 @@ export async function POST(_req: NextRequest) {
       return new Response('Unauthorized', { status: 401 });
     }
     
-    const orgId = (session as unknown).orgId as string | undefined;
+    const orgId = (session as { orgId?: string }).orgId;
     if (!orgId) {
       return new Response('Forbidden', { status: 403 });
     }
