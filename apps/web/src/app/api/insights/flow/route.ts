@@ -20,35 +20,70 @@ export async function GET(_req: NextRequest) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
 
-    // Check connection status
-    const emailAccounts = await prisma.emailAccount.findMany({
-      where: { orgId },
-      select: {
-        status: true,
-        encryptionStatus: true,
-        tokenStatus: true
+    // Check connection status with schema compatibility
+    let emailAccounts;
+    let connectionStatus: 'connected' | 'partial' | 'none' = 'none';
+    
+    try {
+      // Try modern schema first
+      emailAccounts = await prisma.emailAccount.findMany({
+        where: { orgId },
+        select: {
+          status: true,
+          encryptionStatus: true,
+          tokenStatus: true
+        }
+      });
+      
+      // Modern schema logic
+      if (emailAccounts.length > 0) {
+        const connectedAccounts = emailAccounts.filter(acc => 
+          acc.status === 'connected' && 
+          (acc as any).encryptionStatus === 'ok' && 
+          (acc as any).tokenStatus === 'encrypted'
+        ).length;
+        
+        if (connectedAccounts === emailAccounts.length) {
+          connectionStatus = 'connected';
+        } else if (connectedAccounts > 0) {
+          connectionStatus = 'partial';
+        }
       }
-    });
+    } catch (error) {
+      // Fallback to basic schema
+      try {
+        emailAccounts = await prisma.emailAccount.findMany({
+          where: { orgId },
+          select: {
+            status: true
+          }
+        });
+        
+        // Basic schema logic - just check if any accounts are connected
+        if (emailAccounts.length > 0) {
+          const connectedAccounts = emailAccounts.filter(acc => 
+            acc.status === 'connected'
+          ).length;
+          
+          if (connectedAccounts === emailAccounts.length) {
+            connectionStatus = 'connected';
+          } else if (connectedAccounts > 0) {
+            connectionStatus = 'partial';
+          }
+        }
+      } catch (basicError) {
+        console.error('Failed to fetch email accounts:', basicError);
+        emailAccounts = [];
+      }
+    }
 
     const calendarAccounts = await prisma.calendarAccount.findMany({
       where: { orgId }
     });
 
-    // Determine connection status
-    let connectionStatus: 'connected' | 'partial' | 'none' = 'none';
-    
-    if (emailAccounts.length > 0 || calendarAccounts.length > 0) {
-      const connectedAccounts = emailAccounts.filter(acc => 
-        acc.status === 'connected' && 
-        acc.encryptionStatus === 'ok' && 
-        acc.tokenStatus === 'encrypted'
-      ).length;
-      
-      if (connectedAccounts === emailAccounts.length) {
-        connectionStatus = 'connected';
-      } else if (connectedAccounts > 0) {
-        connectionStatus = 'partial';
-      }
+    // Override connection status if we have accounts but no modern fields
+    if (emailAccounts.length > 0 && connectionStatus === 'none') {
+      connectionStatus = 'partial'; // Show as partial since we can't verify full status
     }
 
     // Get today's data
