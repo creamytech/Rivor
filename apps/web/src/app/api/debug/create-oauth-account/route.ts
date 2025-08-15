@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     // Check if OAuthAccount already exists
     const existingOAuth = await prisma.oAuthAccount.findFirst({
       where: {
-        userId: session.user.email,
+        userId: user.id, // Use User.id instead of email
         provider: emailAccount.provider
       }
     });
@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
         message: "OAuthAccount already exists",
         provider: emailAccount.provider,
         userEmail: session.user.email,
+        userId: user.id,
         oauthAccountId: existingOAuth.id,
         timestamp: new Date().toISOString()
       });
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
     // Background workers will need to be updated to handle this differently
     const oauthAccount = await prisma.oAuthAccount.create({
       data: {
-        userId: session.user.email,
+        userId: user.id, // Use User.id instead of email
         provider: emailAccount.provider,
         providerId: (session.user as any).providerId || session.user.email,
         // Store placeholder encrypted tokens - real tokens are in JWT
