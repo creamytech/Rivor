@@ -46,12 +46,12 @@ export default function DashboardContent({
   return (
     <div className="container py-6">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">
+      <div className="mb-8 flow-in">
+        <h1 className="text-3xl font-bold mb-2 flow-gradient bg-clip-text text-transparent">
           {getGreeting()}, {userName}! 👋
         </h1>
         <p className="text-[var(--muted-foreground)]">
-          Here's what's happening with your business today.
+          Here's what's flowing in your business today.
         </p>
       </div>
 
@@ -68,26 +68,32 @@ export default function DashboardContent({
           {/* Main Widgets Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Inbox Summary */}
-            <InboxSummaryWidget 
-              unreadCount={unreadCount}
-              recentThreads={recentThreads}
-            />
+            <div className="flow-in flow-in-delay-1">
+              <InboxSummaryWidget 
+                unreadCount={unreadCount}
+                recentThreads={recentThreads}
+              />
+            </div>
 
             {/* Calendar Snapshot */}
-            <CalendarSnapshotWidget 
-              upcomingEvents={upcomingEvents}
-              todayCount={calendarStats.todayCount}
-            />
+            <div className="flow-in flow-in-delay-2">
+              <CalendarSnapshotWidget 
+                upcomingEvents={upcomingEvents}
+                todayCount={calendarStats.todayCount}
+              />
+            </div>
 
             {/* Pipeline Glance */}
-            <PipelineGlanceWidget 
-              pipelineStats={pipelineStats}
-              totalActiveLeads={totalActiveLeads}
-            />
+            <div className="flow-in flow-in-delay-3">
+              <PipelineGlanceWidget 
+                pipelineStats={pipelineStats}
+                totalActiveLeads={totalActiveLeads}
+              />
+            </div>
           </div>
 
           {/* Integration Status Panel */}
-          <div className="max-w-2xl">
+          <div className="max-w-2xl flow-in flow-in-delay-3">
             <IntegrationStatusPanel tokenHealth={tokenHealth} />
           </div>
         </div>

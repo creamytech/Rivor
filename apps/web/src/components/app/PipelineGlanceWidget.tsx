@@ -26,7 +26,7 @@ export default function PipelineGlanceWidget({
         <CardHeader>
           <div className="flex items-center gap-2">
             <Briefcase className="h-5 w-5" />
-            <CardTitle>Pipeline Glance</CardTitle>
+            <CardTitle>Deal Flow</CardTitle>
           </div>
           <CardDescription>Deals by stage</CardDescription>
         </CardHeader>
@@ -50,7 +50,7 @@ export default function PipelineGlanceWidget({
         <CardHeader>
           <div className="flex items-center gap-2">
             <Briefcase className="h-5 w-5" />
-            <CardTitle>Pipeline Glance</CardTitle>
+            <CardTitle>Deal Flow</CardTitle>
           </div>
           <CardDescription>Deals by stage</CardDescription>
         </CardHeader>
@@ -74,7 +74,7 @@ export default function PipelineGlanceWidget({
         <CardHeader>
           <div className="flex items-center gap-2">
             <Briefcase className="h-5 w-5" />
-            <CardTitle>Pipeline Glance</CardTitle>
+            <CardTitle>Deal Flow</CardTitle>
           </div>
           <CardDescription>Deals by stage</CardDescription>
         </CardHeader>
@@ -110,7 +110,7 @@ export default function PipelineGlanceWidget({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Briefcase className="h-5 w-5" />
-            <CardTitle>Pipeline Glance</CardTitle>
+            <CardTitle>Deal Flow</CardTitle>
           </div>
           <Button variant="ghost" size="sm" asChild>
             <Link href="/app/pipeline" className="flex items-center gap-1">

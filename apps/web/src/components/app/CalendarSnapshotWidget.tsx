@@ -26,7 +26,7 @@ export default function CalendarSnapshotWidget({
         <CardHeader>
           <div className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            <CardTitle>Calendar Snapshot</CardTitle>
+            <CardTitle>Upcoming Flow</CardTitle>
           </div>
           <CardDescription>Upcoming events</CardDescription>
         </CardHeader>
@@ -50,7 +50,7 @@ export default function CalendarSnapshotWidget({
         <CardHeader>
           <div className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            <CardTitle>Calendar Snapshot</CardTitle>
+            <CardTitle>Upcoming Flow</CardTitle>
           </div>
           <CardDescription>Upcoming events</CardDescription>
         </CardHeader>
@@ -74,7 +74,7 @@ export default function CalendarSnapshotWidget({
         <CardHeader>
           <div className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            <CardTitle>Calendar Snapshot</CardTitle>
+            <CardTitle>Upcoming Flow</CardTitle>
           </div>
           <CardDescription>Upcoming events</CardDescription>
         </CardHeader>
@@ -120,7 +120,7 @@ export default function CalendarSnapshotWidget({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            <CardTitle>Calendar Snapshot</CardTitle>
+            <CardTitle>Upcoming Flow</CardTitle>
           </div>
           <Button variant="ghost" size="sm" asChild>
             <Link href="/app/calendar" className="flex items-center gap-1">

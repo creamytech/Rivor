@@ -90,31 +90,32 @@ export default function InboxSummaryWidget({
   }
 
   return (
-    <Card>
+    <Card className="card-flow">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
-            <CardTitle>Inbox Summary</CardTitle>
+            <Mail className="h-5 w-5 text-blue-500" />
+            <CardTitle>Email Stream</CardTitle>
           </div>
-          <Button variant="ghost" size="sm" asChild>
+          <Button variant="ghost" size="sm" asChild className="ripple-effect focus-flow">
             <Link href="/app/inbox" className="flex items-center gap-1">
-              View All
+              View Stream
               <ExternalLink className="h-3 w-3" />
             </Link>
           </Button>
         </div>
         <CardDescription>
-          {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
+          {unreadCount > 0 ? `${unreadCount} flowing in` : 'Stream is clear'}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {recentThreads.slice(0, 5).map((thread) => (
+          {recentThreads.slice(0, 5).map((thread, index) => (
             <Link 
               key={thread.id} 
               href={`/app/inbox/${thread.id}`}
-              className="block p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border border-transparent hover:border-gray-200 dark:hover:border-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2"
+              className={`cascade-item block p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border border-transparent hover:border-gray-200 dark:hover:border-gray-700 focus-flow`}
+              style={{ animationDelay: `${(index + 1) * 0.1}s` }}
               aria-label={`Open email thread: ${thread.subject}`}
             >
               <div className="flex items-start justify-between">

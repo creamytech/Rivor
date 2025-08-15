@@ -186,3 +186,170 @@ body {
 .animate-shake {
   animation: shake 0.5s ease-in-out;
 }
+
+/* River-themed animations */
+@keyframes river-flow {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 100% 0%;
+  }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@keyframes flow-in {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.95);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translateX(-5px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes cascade {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  20% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Flow gradient backgrounds */
+.flow-gradient {
+  background: linear-gradient(
+    90deg,
+    var(--primary) 0%,
+    var(--rivor-teal) 35%,
+    var(--primary) 70%,
+    var(--rivor-teal) 100%
+  );
+  background-size: 200% 100%;
+  animation: river-flow 3s ease-in-out infinite alternate;
+}
+
+/* Ripple effect for interactive elements */
+.ripple-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple-effect::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.ripple-effect:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Flowing loading states */
+.loading-flow {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 25%,
+    var(--muted-foreground/20) 50%,
+    var(--muted) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Card hover effects with flow */
+.card-flow {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.card-flow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--rivor-teal), transparent);
+  transition: left 0.5s ease-in-out;
+}
+
+.card-flow:hover::before {
+  left: 100%;
+}
+
+.card-flow:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Staggered animations for lists */
+.cascade-item {
+  opacity: 0;
+  animation: cascade 0.6s ease-out forwards;
+}
+
+.cascade-item:nth-child(1) { animation-delay: 0.1s; }
+.cascade-item:nth-child(2) { animation-delay: 0.2s; }
+.cascade-item:nth-child(3) { animation-delay: 0.3s; }
+.cascade-item:nth-child(4) { animation-delay: 0.4s; }
+.cascade-item:nth-child(5) { animation-delay: 0.5s; }
+
+/* Flow-in animation for widgets */
+.flow-in {
+  animation: flow-in 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.flow-in-delay-1 { animation-delay: 0.1s; }
+.flow-in-delay-2 { animation-delay: 0.2s; }
+.flow-in-delay-3 { animation-delay: 0.3s; }
+
+/* Beautiful focus states */
+.focus-flow:focus-visible {
+  outline: none;
+  box-shadow: 
+    0 0 0 3px var(--background),
+    0 0 0 5px var(--rivor-teal),
+    0 4px 12px rgba(59, 130, 246, 0.2);
+  transform: scale(1.02);
+  transition: all 0.2s ease-out;
+}
