@@ -31,13 +31,15 @@ export function HeroSection() {
     const { clientX, clientY } = e;
     const { innerWidth, innerHeight } = window;
     
-    const x = (clientX / innerWidth - 0.5) * 20;
-    const y = (clientY / innerHeight - 0.5) * 20;
+    const x = (clientX / innerWidth - 0.5) * 12;
+    const y = (clientY / innerHeight - 0.5) * 12;
 
     cards?.forEach((card, index) => {
       const element = card as HTMLElement;
-      const multiplier = (index + 1) * 0.5;
-      element.style.transform = `translate(${x * multiplier}px, ${y * multiplier}px)`;
+      const multiplier = (index + 1) * 0.3;
+      // Use CSS custom properties to avoid conflicting with other transforms
+      element.style.setProperty('--parallax-x', `${x * multiplier}px`);
+      element.style.setProperty('--parallax-y', `${y * multiplier}px`);
     });
   };
 
@@ -101,19 +103,19 @@ export function HeroSection() {
         </div>
 
         {/* Right: Animated Hero Visual */}
-        <div className="relative h-[400px] md:h-[500px] lg:h-[600px]">
+        <div className="relative h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden">
           {/* Background flow lines */}
           <div className="absolute inset-0 overflow-hidden rounded-2xl">
-            <div className="flow-line absolute top-16 left-8 w-32 h-0.5 rotate-12"></div>
-            <div className="flow-line absolute top-32 right-12 w-24 h-0.5 -rotate-12"></div>
-            <div className="flow-line absolute bottom-24 left-16 w-40 h-0.5 rotate-6"></div>
+            <div className="flow-line absolute top-16 left-4 md:left-8 w-24 md:w-32 h-0.5 rotate-12"></div>
+            <div className="flow-line absolute top-32 right-8 md:right-12 w-16 md:w-24 h-0.5 -rotate-12"></div>
+            <div className="flow-line absolute bottom-24 left-8 md:left-16 w-32 md:w-40 h-0.5 rotate-6"></div>
           </div>
 
           {/* Floating cards representing email, calendar, pipeline */}
-          <div className="parallax-card card absolute top-8 left-8 p-4 w-48 transform hover-lift">
-            <div className="flex items-center gap-3 mb-2">
+          <div className="parallax-card card absolute top-8 left-2 md:left-8 p-3 md:p-4 w-40 md:w-48 hover-lift opacity-0 animate-fade-up">
+            <div className="flex items-center gap-2 md:gap-3 mb-2">
               <div className="w-3 h-3 rounded-full bg-rivor-aqua"></div>
-              <div className="text-sm font-medium">Inbox AI</div>
+              <div className="text-xs md:text-sm font-medium">Inbox AI</div>
             </div>
             <div className="text-xs text-muted-foreground">
               📧 New lead inquiry from Sarah Johnson
@@ -121,10 +123,10 @@ export function HeroSection() {
             <div className="text-xs text-rivor-teal mt-1">Priority: High</div>
           </div>
 
-          <div className="parallax-card card absolute top-24 right-4 p-4 w-44 transform hover-lift animate-fade-up-delay-1">
-            <div className="flex items-center gap-3 mb-2">
+          <div className="parallax-card card absolute top-20 md:top-24 right-2 md:right-4 p-3 md:p-4 w-36 md:w-44 hover-lift opacity-0 animate-fade-up-delay-1">
+            <div className="flex items-center gap-2 md:gap-3 mb-2">
               <div className="w-3 h-3 rounded-full bg-rivor-indigo"></div>
-              <div className="text-sm font-medium">Calendar</div>
+              <div className="text-xs md:text-sm font-medium">Calendar</div>
             </div>
             <div className="text-xs text-muted-foreground">
               📅 Property showing at 2:00 PM
@@ -132,10 +134,10 @@ export function HeroSection() {
             <div className="text-xs text-rivor-teal mt-1">In 30 minutes</div>
           </div>
 
-          <div className="parallax-card card absolute bottom-16 left-12 p-4 w-52 transform hover-lift animate-fade-up-delay-2">
-            <div className="flex items-center gap-3 mb-2">
+          <div className="parallax-card card absolute bottom-12 md:bottom-16 left-4 md:left-12 p-3 md:p-4 w-44 md:w-52 hover-lift opacity-0 animate-fade-up-delay-2">
+            <div className="flex items-center gap-2 md:gap-3 mb-2">
               <div className="w-3 h-3 rounded-full bg-rivor-teal"></div>
-              <div className="text-sm font-medium">Pipeline</div>
+              <div className="text-xs md:text-sm font-medium">Pipeline</div>
             </div>
             <div className="text-xs text-muted-foreground">
               🏠 123 Oak St → Under Contract

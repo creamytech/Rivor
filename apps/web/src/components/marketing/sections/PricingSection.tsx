@@ -108,9 +108,11 @@ export function PricingSection() {
           {plans.map((plan, index) => (
             <div
               key={plan.name}
-              className={`card p-8 relative animate-fade-up-delay-${index + 1} ${
-                plan.popular ? "card-glow ring-2 ring-rivor-teal/50" : ""
-              } hover-lift`}
+              className={`card p-8 relative ${
+                index === 0 ? "animate-fade-up-delay-1" : 
+                index === 1 ? "animate-fade-up-delay-2" : 
+                "animate-fade-up-delay-3"
+              } ${plan.popular ? "card-glow ring-2 ring-rivor-teal/50" : ""} hover-lift`}
             >
               {/* Popular Badge */}
               {plan.popular && (

@@ -27,7 +27,14 @@ export function SocialProofSection() {
           {logoPlaceholders.map((logo, index) => (
             <div
               key={logo.name}
-              className={`${logo.width} h-12 rounded-lg bg-muted border border-border flex items-center justify-center animate-fade-up-delay-${Math.min(index + 1, 5)} hover:bg-surface transition-all duration-150 cursor-pointer grayscale hover:grayscale-0`}
+              className={`${logo.width} h-12 rounded-lg bg-muted border border-border flex items-center justify-center ${
+                index === 0 ? "animate-fade-up-delay-1" :
+                index === 1 ? "animate-fade-up-delay-2" :
+                index === 2 ? "animate-fade-up-delay-3" :
+                index === 3 ? "animate-fade-up-delay-4" :
+                index === 4 ? "animate-fade-up-delay-5" :
+                "animate-fade-up-delay-5"
+              } hover:bg-surface transition-all duration-150 cursor-pointer grayscale hover:grayscale-0`}
               onMouseEnter={() => setHoveredLogo(index)}
               onMouseLeave={() => setHoveredLogo(null)}
               style={{ 
