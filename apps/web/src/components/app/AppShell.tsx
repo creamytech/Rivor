@@ -48,11 +48,6 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               <Link key={item.href} href={item.href} className={`flex items-center gap-3 px-4 py-2 text-sm hover:bg-[var(--background)] transition-colors rounded-md mx-2 ${active ? "bg-[var(--background)] text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}`}>
                 <span aria-hidden>{item.icon}</span>
                 <span>{item.label}</span>
-                {item.badge && (
-                  <span className="ml-auto text-xs px-1.5 py-0.5 bg-[var(--rivor-teal)] text-white rounded-full">
-                    {item.badge}
-                  </span>
-                )}
               </Link>
             );
           })}

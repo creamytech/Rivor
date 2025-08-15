@@ -128,7 +128,7 @@ export async function getRecentLeads(orgId: string, limit = 10): Promise<UiLead[
       stage: lead.stage?.name,
       status: lead.status,
       priority: lead.priority,
-      expectedCloseDate: lead.expectedCloseDate,
+      expectedCloseDate: lead.expectedCloseDate || undefined,
       contactName,
       createdAt: lead.createdAt
     });
