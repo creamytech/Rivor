@@ -144,7 +144,7 @@ export const authOptions: NextAuthOptions = {
               const userData = {
                 email: user.email || '',
                 name: user.name || profile.name || '',
-                image: user.image || profile.picture || profile.avatar_url || '',
+                image: user.image || (profile as any).picture || (profile as any).avatar_url || '',
                 provider: account.provider,
                 providerId: account.providerAccountId || ''
               };
@@ -167,6 +167,7 @@ export const authOptions: NextAuthOptions = {
                     data: {
                       userId: user.email || '',
                       provider: account.provider,
+                      providerId: account.providerAccountId || '',
                       accessToken: Buffer.from(account.access_token),
                       refreshToken: account.refresh_token ? Buffer.from(account.refresh_token) : Buffer.from(''),
                       scope: account.scope || '',
