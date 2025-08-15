@@ -110,9 +110,16 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       (session as any).orgId = token.orgId;
+      (session as any).user = token.user || {
+        email: session.user?.email || '',
+        name: session.user?.name || '',
+        image: session.user?.image || '',
+        provider: 'unknown',
+        providerId: ''
+      };
       return session;
     },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, profile }) {
       // On first sign in, create org and set orgId
       if (user && account) {
         console.log('JWT callback - first sign in:', { email: user.email, provider: account.provider });
@@ -130,6 +137,50 @@ export const authOptions: NextAuthOptions = {
             });
           }
           (token as any).orgId = org.id;
+          
+          // Sync user profile data from OAuth provider
+          if (profile) {
+            try {
+              const userData = {
+                email: user.email || '',
+                name: user.name || profile.name || '',
+                image: user.image || profile.picture || profile.avatar_url || '',
+                provider: account.provider,
+                providerId: account.providerAccountId || ''
+              };
+
+              // Store user data in the token for session access
+              (token as any).user = userData;
+              console.log('Synced user profile:', userData);
+
+              // Create OAuth account record for API access if we have tokens
+              if (account.access_token) {
+                const existingOAuthAccount = await prisma.oAuthAccount.findFirst({
+                  where: {
+                    userId: user.email || '',
+                    provider: account.provider
+                  }
+                });
+
+                if (!existingOAuthAccount) {
+                  await prisma.oAuthAccount.create({
+                    data: {
+                      userId: user.email || '',
+                      provider: account.provider,
+                      accessToken: Buffer.from(account.access_token),
+                      refreshToken: account.refresh_token ? Buffer.from(account.refresh_token) : Buffer.from(''),
+                      scope: account.scope || '',
+                      expiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null
+                    }
+                  });
+                  console.log('Created OAuth account for API access');
+                }
+              }
+            } catch (profileError) {
+              console.error('Error syncing user profile:', profileError);
+            }
+          }
+
           console.log('Set orgId:', org.id);
         } catch (error) {
           console.error('Error creating org:', error);

@@ -266,8 +266,12 @@ export default function InboxPage() {
               {/* Thread Header */}
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                  <h1 className="text-lg font-semibold">Thread Subject</h1>
-                  <div className="text-sm text-[var(--muted-foreground)]">3 participants • 5 messages</div>
+                  <h1 className="text-lg font-semibold">
+                    {threads.find(t => t.id === selectedId)?.subject || 'Email Thread'}
+                  </h1>
+                  <div className="text-sm text-[var(--muted-foreground)]">
+                    {threads.find(t => t.id === selectedId)?.participants || 'Loading participants...'}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button variant="ghost" size="icon">
@@ -340,7 +344,7 @@ export default function InboxPage() {
                     <p className="text-sm text-[var(--muted-foreground)]">
                       {threads.length > 0 ? 
                         `Showing ${threads.length} email threads. Click "Sync Gmail" to refresh.` :
-                        'Client interested in property viewing. Requesting weekend availability for 123 Main Street. Follow-up needed on pricing and viewing schedule.'
+                        'No email content available. Sync your Gmail to see AI-powered summaries.'
                       }
                     </p>
                   )}
@@ -349,26 +353,25 @@ export default function InboxPage() {
 
               {/* Messages */}
               <div className="space-y-3">
-                <Card>
-                  <CardContent className="pt-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-medium">
-                          JS
-                        </div>
-                        <div>
-                          <div className="font-medium">John Smith</div>
-                          <div className="text-xs text-[var(--muted-foreground)]">john@example.com</div>
-                        </div>
+                {selectedId ? (
+                  <Card>
+                    <CardContent className="pt-4">
+                      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                        <Mail className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p className="text-sm">Message content will appear here</p>
+                        <p className="text-xs mt-2">Real email messages from your synced account</p>
                       </div>
-                      <div className="text-xs text-[var(--muted-foreground)]">2 hours ago</div>
-                    </div>
-                    <div className="prose prose-sm max-w-none">
-                      <p>Hi there! I'm very interested in the 123 Main Street property. Could we schedule a viewing this weekend?</p>
-                      <p>I'm available Saturday morning or Sunday afternoon. Looking forward to hearing from you!</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card>
+                    <CardContent className="pt-4">
+                      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                        <p className="text-sm">Select a thread to view messages</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
 
               {/* Quick Reply */}
