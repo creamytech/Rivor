@@ -27,10 +27,22 @@ export async function GET(__req: NextRequest) {
       );
     }
 
-    // Get all OAuth accounts for this user
+    // Get user to find correct userId
+    const user = await prisma.user.findUnique({
+      where: { email: userEmail }
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get all OAuth accounts for this user using correct User.id
     const accounts = await prisma.oAuthAccount.findMany({
       where: {
-        userId: userEmail
+        userId: user.id // Use User.id instead of email
       },
       orderBy: {
         updatedAt: 'desc'

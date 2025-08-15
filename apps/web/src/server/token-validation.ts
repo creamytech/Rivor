@@ -283,9 +283,18 @@ export async function createGoogleOAuthClient(orgId: string, oauthAccountId: str
  * Validate tokens for all Google accounts for a user
  */
 export async function validateAllGoogleTokens(userEmail: string): Promise<Record<string, TokenValidationResult>> {
+  // Get user to find correct userId
+  const user = await prisma.user.findUnique({
+    where: { email: userEmail }
+  });
+
+  if (!user) {
+    return {};
+  }
+
   const accounts = await prisma.oAuthAccount.findMany({
     where: {
-      userId: userEmail,
+      userId: user.id, // Use User.id instead of email
       provider: 'google'
     }
   });
