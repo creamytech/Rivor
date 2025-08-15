@@ -15,9 +15,18 @@ export async function GET(__request: NextRequest) {
 
     const userEmail = session.user.email;
 
-    // Check OAuth accounts
+    // Get user to find correct userId
+    const user = await prisma.user.findUnique({
+      where: { email: userEmail }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Check OAuth accounts using correct User.id
     const oauthAccounts = await prisma.oAuthAccount.findMany({
-      where: { userId: userEmail },
+      where: { userId: user.id }, // Use User.id instead of email
       select: {
         id: true,
         provider: true,
