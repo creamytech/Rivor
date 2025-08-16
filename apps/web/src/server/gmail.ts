@@ -323,7 +323,7 @@ export class GmailService {
         });
       }
 
-      // Create message
+      // Create message using current schema
       await prisma.emailMessage.create({
         data: {
           orgId,
@@ -334,6 +334,8 @@ export class GmailService {
           fromEnc,
           toEnc,
           sentAt: new Date(message.internalDate ? parseInt(message.internalDate) : Date.now()),
+          subjectIndex: subject.toLowerCase(),
+          participantsIndex: `${from} ${to}`.toLowerCase(),
         }
       });
 
