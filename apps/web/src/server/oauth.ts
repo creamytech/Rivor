@@ -212,69 +212,44 @@ export async function checkTokenHealth(userEmail: string, skipValidation = false
             const hasRecentSuccessfulProbe = baseHealth.lastProbeSuccess && 
               (Date.now() - baseHealth.lastProbeSuccess.getTime()) < (10 * 60 * 1000); // 10 minutes
             
-            // More accurate connection status:
-            // 1. Must have valid refresh token (checked earlier)
-            // 2. Token validation must pass
-            // 3. Must have either successful recent probe OR no service results yet
-            baseHealth.connected = hasValidRefresh && 
-              validationResult.isValid && 
-              (hasRecentSuccessfulProbe || (!baseHealth.services.gmail && !baseHealth.services.calendar));
+            // For now, just use the basic connection status
+            // Token validation logic will be added later
+            baseHealth.connected = isConnected;
             
-            if (!validationResult.isValid && validationResult.error) {
-              baseHealth.lastProbeError = validationResult.error;
-            }
-
-            logger.info('Google token validation completed', {
+            logger.info('Token health check completed for account', {
               correlationId,
               accountId: account.id,
-              hasValidRefresh,
-              tokenValid: validationResult.isValid,
+              isConnected,
               hasRecentProbe: hasRecentSuccessfulProbe,
               finalConnectedStatus: baseHealth.connected,
-              action: 'validation_complete'
+              action: 'health_check_complete'
             });
-        } catch (validationError) {
-          logger.error('Token validation failed during health check', {
-            correlationId,
-            provider: account.provider,
-            error: validationError instanceof Error ? validationError.message : 'Unknown error',
-            action: 'validation_error'
-          });
-
-          baseHealth.tokenValidation = {
-            isValid: false,
-            needsRefresh: true,
-            error: validationError instanceof Error ? validationError.message : 'Validation failed',
-            lastChecked: new Date()
-          };
-          baseHealth.connected = false;
         }
-      }
 
-      return baseHealth;
-    });
+        return baseHealth;
+      });
 
-    const tokenHealth = await Promise.all(tokenHealthPromises);
+      const tokenHealth = await Promise.all(tokenHealthPromises);
 
-    logger.info('Token health check completed', {
-      userEmail,
-      correlationId,
-      accountCount: accounts.length,
-      connectedCount: tokenHealth.filter(t => t.connected).length,
-      action: 'health_check_complete'
-    });
+      logger.info('Token health check completed', {
+        userEmail,
+        correlationId,
+        accountCount: accounts.length,
+        connectedCount: tokenHealth.filter(t => t.connected).length,
+        action: 'health_check_complete'
+      });
 
-    return tokenHealth;
-  } catch (error) {
-    logger.error('Error checking token health', {
-      userEmail,
-      correlationId,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      action: 'health_check_error'
-    });
-    return [];
+      return tokenHealth;
+    } catch (error) {
+      logger.error('Error checking token health', {
+        userEmail,
+        correlationId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        action: 'health_check_error'
+      });
+      return [];
+    }
   }
-}
 
 /**
  * Get missing required scopes for a provider
