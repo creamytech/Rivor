@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 /**
  * Get inbox threads with pagination and filtering
  */
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
@@ -27,28 +27,24 @@ export async function GET(_req: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Build where clause based on filter
-    const whereClause: unknown = {
+    const whereClause: any = {
       orgId,
       messages: {
         some: {} // Only threads with messages
       }
     };
 
+    // Note: Current schema doesn't support these filters yet
+    // They will be added when we implement the full email features
     switch (filter) {
       case 'unread':
-        whereClause.unread = true;
+        // whereClause.unread = true; // Not implemented yet
         break;
       case 'starred':
-        whereClause.starred = true;
+        // whereClause.starred = true; // Not implemented yet
         break;
       case 'attachments':
-        whereClause.messages = {
-          some: {
-            attachments: {
-              some: {}
-            }
-          }
-        };
+        // whereClause.messages = { some: { attachments: { some: {} } } }; // Not implemented yet
         break;
     }
 
@@ -61,12 +57,9 @@ export async function GET(_req: NextRequest) {
           take: 1, // Get latest message for preview
           select: {
             id: true,
-            subject: true,
-            snippet: true,
-            fromEmail: true,
-            fromName: true,
-            sentAt: true,
-            hasAttachments: true
+            subjectIndex: true,
+            participantsIndex: true,
+            sentAt: true
           }
         },
         _count: {
@@ -89,19 +82,24 @@ export async function GET(_req: NextRequest) {
     const threadsFormatted = threads.map(thread => {
       const latestMessage = thread.messages[0];
       
+      // Parse participants from participantsIndex
+      const participants = latestMessage?.participantsIndex 
+        ? latestMessage.participantsIndex.split(',').map(p => p.trim()).map(email => ({
+            name: email.split('@')[0], // Use email prefix as name
+            email: email
+          }))
+        : [{ name: 'Unknown', email: 'unknown@example.com' }];
+      
       return {
         id: thread.id,
-        subject: latestMessage?.subject || thread.subject || '(No subject)',
-        snippet: latestMessage?.snippet || '',
-        participants: [{
-          name: latestMessage?.fromName || null,
-          email: latestMessage?.fromEmail || 'unknown@example.com'
-        }],
+        subject: latestMessage?.subjectIndex || thread.subjectIndex || '(No subject)',
+        snippet: 'Email content not available in current schema', // Placeholder
+        participants: participants,
         messageCount: thread._count.messages,
-        unread: thread.unread,
-        starred: thread.starred,
-        hasAttachments: latestMessage?.hasAttachments || false,
-        labels: thread.labels || [],
+        unread: false, // Not implemented yet
+        starred: false, // Not implemented yet
+        hasAttachments: false, // Not implemented yet
+        labels: [], // Not implemented yet
         lastMessageAt: latestMessage?.sentAt?.toISOString() || thread.updatedAt.toISOString(),
         updatedAt: thread.updatedAt.toISOString()
       };
