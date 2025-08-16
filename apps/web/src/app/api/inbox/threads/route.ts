@@ -60,7 +60,9 @@ export async function GET(req: NextRequest) {
             subjectIndex: true,
             participantsIndex: true,
             sentAt: true,
-            snippet: true // Added snippet to select
+            htmlBody: true,
+            textBody: true,
+            snippet: true
           }
         },
         _count: {
@@ -85,7 +87,7 @@ export async function GET(req: NextRequest) {
       
       // Parse participants from participantsIndex
       const participants = latestMessage?.participantsIndex 
-        ? latestMessage.participantsIndex.split(',').map(p => p.trim()).map(email => ({
+        ? latestMessage.participantsIndex.split(',').map((p: string) => p.trim()).map((email: string) => ({
             name: email.split('@')[0], // Use email prefix as name
             email: email
           }))
@@ -96,13 +98,13 @@ export async function GET(req: NextRequest) {
       if (latestMessage?.snippet) {
         snippet = latestMessage.snippet;
       } else if (latestMessage?.participantsIndex) {
-        const emails = latestMessage.participantsIndex.split(',').map(p => p.trim());
+        const emails = latestMessage.participantsIndex.split(',').map((p: string) => p.trim());
         snippet = `From: ${emails[0] || 'Unknown'} | To: ${emails.slice(1).join(', ') || 'Unknown'}`;
       }
       
       return {
         id: thread.id,
-        subject: latestMessage?.subjectIndex || thread.subjectIndex || '(No subject)',
+        subject: latestMessage?.subjectIndex || thread.subjectIndex || 'Email from ' + (participants[0]?.name || participants[0]?.email || 'Unknown'),
         snippet: snippet,
         participants: participants,
         messageCount: thread._count.messages,
