@@ -65,6 +65,7 @@ export async function POST(__request: NextRequest) {
         update: {},
         create: {
           id: `test-thread-${emailAccount.id}`,
+          orgId: orgId, // Add the required orgId field
           accountId: emailAccount.id,
           externalThreadId: 'test-thread-123',
           subject: 'Test Email Thread',
@@ -81,6 +82,7 @@ export async function POST(__request: NextRequest) {
         update: {},
         create: {
           id: `test-message-${emailAccount.id}`,
+          orgId: orgId, // Add the required orgId field
           threadId: dummyThread.id,
           externalMessageId: 'test-message-123',
           from: 'test@example.com',
