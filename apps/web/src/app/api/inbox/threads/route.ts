@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
     const url = new URL(req.url);
     const page = parseInt(url.searchParams.get('page') || '1');
-    const limit = parseInt(url.searchParams.get('limit') || '20');
+    const limit = parseInt(url.searchParams.get('limit') || '50'); // Increased default limit
     const filter = url.searchParams.get('filter') || 'all';
     const offset = (page - 1) * limit;
 
@@ -93,21 +93,30 @@ export async function GET(req: NextRequest) {
 
     // Transform to UI format
     const threadsFormatted = (threads as any[]).map((thread: any) => {
-      // Parse participants from participantsIndex
+      // Parse participants from participantsIndex - handle space-separated format
       let participants = [{ name: 'Unknown', email: 'unknown@example.com' }];
       
       if (thread.participantsIndex) {
-        participants = thread.participantsIndex.split(',').map((p: string) => p.trim()).map((email: string) => ({
-          name: email.split('@')[0] || 'Unknown', // Use email prefix as name
-          email: email
-        }));
+        // Split by spaces and filter out empty strings, then extract emails
+        const parts = thread.participantsIndex.split(/\s+/).filter((p: string) => p.trim());
+        const emails = parts.filter((part: string) => part.includes('@'));
+        
+        if (emails.length > 0) {
+          participants = emails.map((email: string) => ({
+            name: email.split('@')[0] || 'Unknown',
+            email: email.trim()
+          }));
+        }
       }
       
       // Create a better snippet from the thread data
       let snippet = 'Email content available';
       if (thread.participantsIndex) {
-        const emails = thread.participantsIndex.split(',').map((p: string) => p.trim());
-        snippet = `From: ${emails[0] || 'Unknown'} | To: ${emails.slice(1).join(', ') || 'Unknown'}`;
+        const parts = thread.participantsIndex.split(/\s+/).filter((p: string) => p.trim());
+        const emails = parts.filter((part: string) => part.includes('@'));
+        if (emails.length > 0) {
+          snippet = `From: ${emails[0] || 'Unknown'} | To: ${emails.slice(1).join(', ') || 'Unknown'}`;
+        }
       }
       
       return {
