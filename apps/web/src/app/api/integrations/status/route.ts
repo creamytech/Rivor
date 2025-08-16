@@ -1,66 +1,79 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
-import { getTokenEncryptionStatus } from '@/server/secure-tokens';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * Integration status endpoint for UI components
- */
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as unknown).orgId;
+    const orgId = (session as { orgId?: string }).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
 
-    // Get email accounts for this org
+    const url = new URL(req.url);
+    const probe = url.searchParams.get('probe') === 'true';
+
+    // Get email accounts with detailed status
     const emailAccounts = await prisma.emailAccount.findMany({
       where: { orgId },
-      include: {
-        org: true
+      select: {
+        id: true,
+        provider: true,
+        email: true,
+        displayName: true,
+        status: true,
+        syncStatus: true,
+        lastSyncedAt: true,
+        errorReason: true,
+        encryptionStatus: true,
+        kmsErrorCode: true,
+        kmsErrorAt: true,
+        tokenStatus: true
       }
     });
 
-    // Get calendar accounts for this org  
-    const calendarAccounts = await prisma.calendarAccount.findMany({
-      where: { orgId }
+    // Get secure tokens for encryption status
+    const secureTokens = await prisma.secureToken.findMany({
+      where: { orgId },
+      select: {
+        encryptionStatus: true,
+        kmsErrorCode: true,
+        kmsErrorAt: true,
+        createdAt: true
+      }
     });
 
-    // Get token encryption status
-    const tokenEncryption = await getTokenEncryptionStatus(orgId);
-
-    // Transform email accounts to UI format
-    const transformedEmailAccounts = emailAccounts.map(account => {
-      let uiStatus = 'unknown';
+    // Transform email accounts with UI status
+    const transformedAccounts = emailAccounts.map(account => {
+      let uiStatus = 'connected';
       let requiresRetry = false;
-      let canReconnect = false;
+      let canReconnect = true;
 
-      // Determine UI status based on multiple factors
+      // Determine UI status based on account health
       if (account.status === 'disconnected') {
         uiStatus = 'disconnected';
         canReconnect = true;
       } else if (account.encryptionStatus === 'failed') {
         uiStatus = 'encryption_failed';
         requiresRetry = true;
-        canReconnect = true;
-      } else if (!account.tokenRef) {
+        canReconnect = false;
+      } else if (account.tokenStatus === 'failed') {
         uiStatus = 'missing_tokens';
+        requiresRetry = true;
         canReconnect = true;
       } else if (account.status === 'action_needed') {
         uiStatus = 'action_needed';
         canReconnect = true;
-      } else if (account.syncStatus === 'error') {
-        uiStatus = 'probe_failed';
-        canReconnect = true;
       } else if (account.status === 'connected' && account.encryptionStatus === 'ok') {
         uiStatus = 'connected';
+        canReconnect = false;
       } else {
         uiStatus = 'action_needed';
         canReconnect = true;
@@ -74,8 +87,8 @@ export async function GET(_req: NextRequest) {
         status: account.status,
         syncStatus: account.syncStatus,
         lastSyncedAt: account.lastSyncedAt?.toISOString(),
-        encryptionStatus: account.encryptionStatus,
         errorReason: account.errorReason,
+        encryptionStatus: account.encryptionStatus,
         kmsErrorCode: account.kmsErrorCode,
         kmsErrorAt: account.kmsErrorAt?.toISOString(),
         uiStatus,
@@ -84,52 +97,51 @@ export async function GET(_req: NextRequest) {
       };
     });
 
-    // Calculate summary
-    const totalAccounts = emailAccounts.length;
-    const connectedAccounts = emailAccounts.filter(acc => 
-      acc.status === 'connected' && acc.encryptionStatus === 'ok'
-    ).length;
-    const actionNeededAccounts = emailAccounts.filter(acc => 
-      acc.status === 'action_needed' || acc.encryptionStatus === 'failed'
-    ).length;
-    const disconnectedAccounts = emailAccounts.filter(acc => 
-      acc.status === 'disconnected'
-    ).length;
+    // Calculate summary statistics
+    const summary = {
+      totalAccounts: emailAccounts.length,
+      connectedAccounts: emailAccounts.filter(acc => acc.status === 'connected').length,
+      actionNeededAccounts: emailAccounts.filter(acc => acc.status === 'action_needed').length,
+      disconnectedAccounts: emailAccounts.filter(acc => acc.status === 'disconnected').length
+    };
 
     // Determine overall status
-    let overallStatus = 'unknown';
-    if (totalAccounts === 0) {
-      overallStatus = 'no_accounts';
-    } else if (connectedAccounts === totalAccounts) {
-      overallStatus = 'all_connected';
-    } else if (connectedAccounts > 0) {
-      overallStatus = 'partially_connected';
-    } else {
-      overallStatus = 'needs_attention';
+    let overallStatus = 'all_connected';
+    if (summary.disconnectedAccounts > 0) {
+      overallStatus = 'some_disconnected';
+    } else if (summary.actionNeededAccounts > 0) {
+      overallStatus = 'action_needed';
     }
 
-    const response = {
+    // Token encryption status
+    const tokenEncryption = {
+      totalTokens: secureTokens.length,
+      okTokens: secureTokens.filter(token => token.encryptionStatus === 'ok').length,
+      pendingTokens: secureTokens.filter(token => token.encryptionStatus === 'pending').length,
+      failedTokens: secureTokens.filter(token => token.encryptionStatus === 'failed').length,
+      oldestFailure: secureTokens
+        .filter(token => token.encryptionStatus === 'failed' && token.kmsErrorAt)
+        .sort((a, b) => new Date(a.kmsErrorAt!).getTime() - new Date(b.kmsErrorAt!).getTime())[0]?.kmsErrorAt
+    };
+
+    const status = {
       overallStatus,
-      summary: {
-        totalAccounts,
-        connectedAccounts,
-        actionNeededAccounts,
-        disconnectedAccounts
-      },
-      emailAccounts: transformedEmailAccounts,
-      calendarAccounts: calendarAccounts.map(acc => ({
-        id: acc.id,
-        provider: acc.provider,
-        status: acc.status
-      })),
+      summary,
+      emailAccounts: transformedAccounts,
       tokenEncryption,
       lastUpdated: new Date().toISOString()
     };
 
-    return NextResponse.json(response);
+    logger.info('Integration status fetched', { 
+      orgId, 
+      summary,
+      probe 
+    });
 
-  } catch (error: unknown) {
-    console.error('Integration status API error:', error);
+    return NextResponse.json(status);
+
+  } catch (error) {
+    logger.error('Failed to fetch integration status', { error });
     return NextResponse.json(
       { error: 'Failed to fetch integration status' },
       { status: 500 }

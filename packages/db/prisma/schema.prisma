@@ -1,5 +1,3 @@
-// prisma schema for rivor core models
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,7 +7,407 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Enums for robust account management
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  timezone      String         @default("America/New_York")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  accounts      Account[]
+  emailAccounts EmailAccount[] @relation("UserEmailAccounts")
+  oauthAccounts OAuthAccount[]
+  orgMembers    OrgMember[]
+  sessions      Session[]
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  createdAt  DateTime @default(now())
+
+  @@unique([identifier, token])
+}
+
+model Org {
+  id                   String                @id @default(cuid())
+  name                 String
+  slug                 String?
+  ownerUserId          String?
+  brandName            String                @default("Rivor")
+  encryptedDekBlob     Bytes
+  dekVersion           Int                   @default(1)
+  ephemeralMode        Boolean               @default(false)
+  retentionDays        Int                   @default(90)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  audits               AuditLog[]
+  calendarAccounts     CalendarAccount[]
+  calendarEvents       CalendarEvent[]
+  contacts             Contact[]
+  emailAccounts        EmailAccount[]
+  messages             EmailMessage[]
+  threads              EmailThread[]
+  leads                Lead[]
+  members              OrgMember[]
+  pipelineStages       PipelineStage[]
+  pushNotificationLogs PushNotificationLog[]
+  secureTokens         SecureToken[]         @relation("OrgSecureTokens")
+  stripeCustomers      StripeCustomer[]
+  subscriptions        Subscription[]
+  tasks                Task[]
+  webhookSubscriptions WebhookSubscription[]
+}
+
+model OrgMember {
+  id            String   @id @default(cuid())
+  orgId         String
+  userId        String
+  role          String   @default("member")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  assignedLeads Lead[]   @relation("LeadAssignments")
+  org           Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedTasks Task[]   @relation("TaskAssignments")
+
+  @@unique([orgId, userId])
+}
+
+model OAuthAccount {
+  id           String    @id @default(cuid())
+  userId       String
+  provider     String
+  providerId   String
+  accessToken  Bytes
+  refreshToken Bytes
+  scope        String?
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerId])
+}
+
+model EmailAccount {
+  id                   String                @id @default(cuid())
+  orgId                String
+  userId               String
+  provider             String
+  externalAccountId    String
+  email                String
+  displayName          String?
+  status               ConnectionStatus      @default(connected)
+  syncStatus           SyncStatus            @default(idle)
+  lastSyncedAt         DateTime?
+  errorReason          String?
+  encryptionStatus     EncryptionStatus      @default(pending)
+  keyVersion           Int?
+  kmsErrorCode         String?
+  kmsErrorAt           DateTime?
+  tokenRef             String?
+  tokenStatus          String                @default("pending_encryption")
+  historyId            String?
+  watchExpiration      DateTime?
+  watchResourceId      String?
+  lastPushReceivedAt   DateTime?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  org                  Org                   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user                 User                  @relation("UserEmailAccounts", fields: [userId], references: [id], onDelete: Cascade)
+  threads              EmailThread[]
+  pushNotificationLogs PushNotificationLog[]
+
+  @@unique([userId, provider])
+  @@unique([orgId, provider, externalAccountId])
+}
+
+model SecureToken {
+  id                 String           @id @default(cuid())
+  tokenRef           String           @unique
+  orgId              String
+  provider           String
+  tokenType          String
+  encryptedTokenBlob Bytes?
+  encryptionStatus   EncryptionStatus @default(pending)
+  keyVersion         Int?
+  kmsErrorCode       String?
+  kmsErrorAt         DateTime?
+  expiresAt          DateTime?
+  retryCount         Int              @default(0)
+  lastRetryAt        DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  org                Org              @relation("OrgSecureTokens", fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([tokenRef])
+  @@index([orgId, provider])
+  @@index([encryptionStatus])
+}
+
+model EmailThread {
+  id                String         @id @default(cuid())
+  orgId             String
+  accountId         String
+  subjectEnc        Bytes?
+  participantsEnc   Bytes?
+  subjectIndex      String?
+  participantsIndex String?
+  summaryEnc        Bytes?
+  summaryAt         DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  labels            String[]       @default([])
+  starred           Boolean        @default(false)
+  unread            Boolean        @default(true)
+  messages          EmailMessage[]
+  account           EmailAccount   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  org               Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+model EmailMessage {
+  id                 String      @id @default(cuid())
+  threadId           String
+  orgId              String
+  messageId          String
+  sentAt             DateTime
+  fromEnc            Bytes?
+  toEnc              Bytes?
+  ccEnc              Bytes?
+  bccEnc             Bytes?
+  subjectEnc         Bytes?
+  snippetEnc         Bytes?
+  bodyRefEnc         Bytes?
+  attachmentsMetaEnc Bytes?
+  subjectIndex       String?
+  participantsIndex  String?
+  htmlBody           String?
+  textBody           String?
+  snippet            String?
+  attachments        Json?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  org                Org         @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  thread             EmailThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, messageId])
+}
+
+model CalendarAccount {
+  id                String          @id @default(cuid())
+  orgId             String
+  provider          String
+  status            String          @default("connected")
+  channelId         String?
+  channelResourceId String?
+  channelExpiration DateTime?
+  webhookEndpoint   String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  org               Org             @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  events            CalendarEvent[]
+
+  @@unique([orgId, provider])
+}
+
+model CalendarEvent {
+  id            String          @id @default(cuid())
+  orgId         String
+  accountId     String
+  start         DateTime
+  end           DateTime
+  titleEnc      Bytes?
+  locationEnc   Bytes?
+  notesEnc      Bytes?
+  attendeesEnc  Bytes?
+  titleIndex    String?
+  locationIndex String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  account       CalendarAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  org           Org             @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+model Contact {
+  id           String    @id @default(cuid())
+  orgId        String
+  nameEnc      Bytes?
+  emailEnc     Bytes?
+  phoneEnc     Bytes?
+  companyEnc   Bytes?
+  titleEnc     Bytes?
+  addressEnc   Bytes?
+  notesEnc     Bytes?
+  nameIndex    String?
+  emailIndex   String?
+  companyIndex String?
+  source       String?
+  tags         String[]
+  lastActivity DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  org          Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  leads        Lead[]
+
+  @@unique([orgId, emailIndex])
+}
+
+model Lead {
+  id                 String         @id @default(cuid())
+  orgId              String
+  contactId          String?
+  stageId            String?
+  title              String?
+  dealValueEnc       Bytes?
+  probabilityPercent Int?
+  notesEnc           Bytes?
+  status             String         @default("active")
+  priority           String         @default("medium")
+  source             String?
+  assignedToId       String?
+  sourceThreadId     String?
+  expectedCloseDate  DateTime?
+  actualCloseDate    DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  assignedTo         OrgMember?     @relation("LeadAssignments", fields: [assignedToId], references: [id])
+  contact            Contact?       @relation(fields: [contactId], references: [id])
+  org                Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  stage              PipelineStage? @relation(fields: [stageId], references: [id])
+  tasks              Task[]         @relation("LeadTasks")
+}
+
+model Task {
+  id           String     @id @default(cuid())
+  orgId        String
+  title        String
+  description  String?
+  dueAt        DateTime?
+  done         Boolean    @default(false)
+  priority     String     @default("medium")
+  assignedToId String?
+  linkThreadId String?
+  linkLeadId   String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  assignedTo   OrgMember? @relation("TaskAssignments", fields: [assignedToId], references: [id])
+  lead         Lead?      @relation("LeadTasks", fields: [linkLeadId], references: [id])
+  org          Org        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+model PipelineStage {
+  id        String   @id @default(cuid())
+  orgId     String
+  name      String
+  order     Int
+  color     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  leads     Lead[]
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, order])
+}
+
+model WebhookSubscription {
+  id        String   @id @default(cuid())
+  orgId     String
+  provider  String
+  secret    Bytes
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+model StripeCustomer {
+  id            String         @id @default(cuid())
+  orgId         String
+  customerId    String         @unique
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  org           Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id               String         @id @default(cuid())
+  orgId            String
+  stripeCustomerId String
+  status           String
+  priceId          String
+  seats            Int            @default(1)
+  trialEndsAt      DateTime?
+  currentPeriodEnd DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  org              Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  stripe           StripeCustomer @relation(fields: [stripeCustomerId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  orgId     String
+  actorId   String?
+  action    String
+  purpose   String?
+  resource  String?
+  success   Boolean
+  traceId   String?
+  createdAt DateTime @default(now())
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+model PushNotificationLog {
+  id             String       @id @default(cuid())
+  emailAccountId String
+  orgId          String
+  provider       String
+  historyId      String?
+  processedAt    DateTime     @default(now())
+  latencyMs      Int?
+  success        Boolean      @default(true)
+  errorMessage   String?
+  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+  org            Org          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([emailAccountId, processedAt(sort: Desc)])
+  @@index([orgId, processedAt(sort: Desc)])
+}
+
 enum ConnectionStatus {
   connected
   action_needed
@@ -27,419 +425,4 @@ enum EncryptionStatus {
   ok
   pending
   failed
-}
-
-model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  emailVerified DateTime?
-  name          String?
-  image         String?
-  timezone      String         @default("America/New_York")
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  
-  // NextAuth.js relations
-  accounts      Account[]
-  sessions      Session[]
-  
-  // Rivor relations
-  orgMembers    OrgMember[]
-  oauthAccounts OAuthAccount[]
-  emailAccounts EmailAccount[] @relation("UserEmailAccounts")
-}
-
-// NextAuth.js required tables
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-  createdAt  DateTime @default(now())
-
-  @@unique([identifier, token])
-}
-
-model Org {
-  id                   String              @id @default(cuid())
-  name                 String
-  slug                 String?             // Organization slug for URL-friendly identification
-  ownerUserId          String?             // FK to User who owns this org
-  brandName            String              @default("Rivor")
-  encryptedDekBlob     Bytes
-  dekVersion           Int                 @default(1)
-  ephemeralMode        Boolean             @default(false)
-  retentionDays        Int                 @default(90)
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
-  members              OrgMember[]
-  emailAccounts        EmailAccount[]
-  calendarAccounts     CalendarAccount[]
-  contacts             Contact[]
-  leads                Lead[]
-  pipelineStages       PipelineStage[]
-  threads              EmailThread[]
-  messages             EmailMessage[]
-  calendarEvents       CalendarEvent[]
-  tasks                Task[]
-  webhookSubscriptions WebhookSubscription[]
-  stripeCustomers      StripeCustomer[]
-  subscriptions        Subscription[]
-  audits               AuditLog[]
-  secureTokens         SecureToken[]       @relation("OrgSecureTokens")
-  pushNotificationLogs PushNotificationLog[]
-}
-
-model OrgMember {
-  id        String   @id @default(cuid())
-  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId     String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  role      String   @default("member")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations for assigned items
-  assignedLeads Lead[] @relation("LeadAssignments")
-  assignedTasks Task[] @relation("TaskAssignments")
-
-  @@unique([orgId, userId])
-}
-
-model OAuthAccount {
-  id            String   @id @default(cuid())
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId        String
-  provider      String
-  providerId    String
-  accessToken   Bytes
-  refreshToken  Bytes
-  scope         String?
-  expiresAt     DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@unique([provider, providerId])
-}
-
-model EmailAccount {
-  id                    String            @id @default(cuid())
-  org                   Org               @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId                 String
-  user                  User              @relation("UserEmailAccounts", fields: [userId], references: [id], onDelete: Cascade)
-  userId                String
-  provider              String            // "google", "microsoft"
-  externalAccountId     String            // Google user ID (sub) or Microsoft user ID
-  email                 String            // User's email address from provider
-  displayName           String?           // Display name from provider
-  
-  // Connection state
-  status                ConnectionStatus  @default(connected)
-  
-  // Sync state  
-  syncStatus            SyncStatus        @default(idle)
-  lastSyncedAt          DateTime?
-  errorReason           String?
-  
-  // Encryption state
-  encryptionStatus      EncryptionStatus  @default(pending)
-  keyVersion            Int?
-  kmsErrorCode          String?
-  kmsErrorAt            DateTime?
-  
-  // Token management
-  tokenRef              String?           // Reference to secure store entry
-  tokenStatus           String            @default("pending_encryption") // pending_encryption, encrypted, failed
-  
-  // Gmail watch and push notification tracking
-  historyId             String?
-  watchExpiration       DateTime?
-  watchResourceId       String?
-  lastPushReceivedAt    DateTime?
-  
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
-  threads               EmailThread[]
-  pushNotificationLogs  PushNotificationLog[]
-
-  @@unique([userId, provider])
-  @@unique([orgId, provider, externalAccountId])
-}
-
-// Secure token storage with KMS encryption
-model SecureToken {
-  id                    String            @id @default(cuid())
-  tokenRef              String            @unique  // Reference key for lookups
-  org                   Org               @relation("OrgSecureTokens", fields: [orgId], references: [id], onDelete: Cascade)
-  orgId                 String
-  provider              String            // "google", "microsoft"
-  tokenType             String            // "oauth_access", "oauth_refresh"
-  encryptedTokenBlob    Bytes?            // KMS-encrypted token data
-  encryptionStatus      EncryptionStatus  @default(pending)
-  keyVersion            Int?
-  kmsErrorCode          String?
-  kmsErrorAt            DateTime?
-  expiresAt             DateTime?         // Token expiration
-  retryCount            Int               @default(0)
-  lastRetryAt           DateTime?
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
-
-  @@index([tokenRef])
-  @@index([orgId, provider])
-  @@index([encryptionStatus])
-}
-
-model EmailThread {
-  id                 String        @id @default(cuid())
-  org                Org           @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId              String
-  account            EmailAccount  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  accountId          String
-  subjectEnc         Bytes?
-  participantsEnc    Bytes?
-  subjectIndex       String?       @db.Text
-  participantsIndex  String?       @db.Text
-  summaryEnc         Bytes?
-  summaryAt          DateTime?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-  messages           EmailMessage[]
-}
-
-model EmailMessage {
-  id                 String       @id @default(cuid())
-  thread             EmailThread  @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  threadId           String
-  org                Org          @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId              String
-  messageId          String       // External message ID from provider
-  sentAt             DateTime
-  fromEnc            Bytes?
-  toEnc              Bytes?
-  ccEnc              Bytes?
-  bccEnc             Bytes?
-  subjectEnc         Bytes?
-  snippetEnc         Bytes?
-  bodyRefEnc         Bytes?
-  attachmentsMetaEnc Bytes?
-  subjectIndex       String?      @db.Text
-  participantsIndex  String?      @db.Text
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
-
-  @@unique([orgId, messageId])
-}
-
-model CalendarAccount {
-  id                String    @id @default(cuid())
-  org               Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId             String
-  provider          String
-  status            String    @default("connected")
-  channelId         String?
-  channelResourceId String?
-  channelExpiration DateTime?
-  webhookEndpoint   String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  events            CalendarEvent[]
-  
-  @@unique([orgId, provider])
-}
-
-model CalendarEvent {
-  id             String          @id @default(cuid())
-  org            Org             @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId          String
-  account        CalendarAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  accountId      String
-  start          DateTime
-  end            DateTime
-  titleEnc       Bytes?
-  locationEnc    Bytes?
-  notesEnc       Bytes?
-  attendeesEnc   Bytes?
-  titleIndex     String?         @db.Text
-  locationIndex  String?         @db.Text
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-}
-
-model Contact {
-  id              String     @id @default(cuid())
-  org             Org        @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId           String
-  nameEnc         Bytes?
-  emailEnc        Bytes?
-  phoneEnc        Bytes?
-  companyEnc      Bytes?
-  titleEnc        Bytes?
-  addressEnc      Bytes?
-  notesEnc        Bytes?
-  nameIndex       String?    @db.Text
-  emailIndex      String?    @db.Text
-  companyIndex    String?    @db.Text
-  source          String?    // email, manual, import, etc.
-  tags            String[]   // Array of tag strings
-  lastActivity    DateTime?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  leads           Lead[]
-
-  @@unique([orgId, emailIndex])
-}
-
-model Lead {
-  id                   String          @id @default(cuid())
-  org                  Org             @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId                String
-  contact              Contact?        @relation(fields: [contactId], references: [id])
-  contactId            String?
-  stage                PipelineStage?  @relation(fields: [stageId], references: [id])
-  stageId              String?
-  title                String?         // Deal title/name
-  dealValueEnc         Bytes?          // Deal amount
-  probabilityPercent   Int?            // Win probability 0-100
-  notesEnc             Bytes?
-  status               String          @default("active") // active, won, lost, archived
-  priority             String          @default("medium") // low, medium, high
-  source               String?         // email, manual, import, etc.
-  assignedTo           OrgMember?      @relation("LeadAssignments", fields: [assignedToId], references: [id])
-  assignedToId         String?         // OrgMember ID
-  sourceThreadId       String?         // Link to email thread if created from email
-  expectedCloseDate    DateTime?
-  actualCloseDate      DateTime?
-  createdAt            DateTime        @default(now())
-  updatedAt            DateTime        @updatedAt
-  tasks                Task[]          @relation("LeadTasks")
-}
-
-model Task {
-  id              String    @id @default(cuid())
-  org             Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId           String
-  title           String
-  description     String?
-  dueAt           DateTime?
-  done            Boolean   @default(false)
-  priority        String    @default("medium") // low, medium, high
-  assignedTo      OrgMember? @relation("TaskAssignments", fields: [assignedToId], references: [id])
-  assignedToId    String?   // OrgMember ID
-  linkThreadId    String?   // Link to email thread
-  lead            Lead?     @relation("LeadTasks", fields: [linkLeadId], references: [id])
-  linkLeadId      String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-}
-
-model PipelineStage {
-  id        String   @id @default(cuid())
-  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId     String
-  name      String
-  order     Int
-  color     String?  // Hex color for UI
-  leads     Lead[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([orgId, order])
-}
-
-model WebhookSubscription {
-  id        String   @id @default(cuid())
-  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId     String
-  provider  String
-  secret    Bytes
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model StripeCustomer {
-  id            String   @id @default(cuid())
-  org           Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId         String
-  customerId    String   @unique
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  subscriptions Subscription[]
-}
-
-model Subscription {
-  id                String         @id @default(cuid())
-  org               Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId             String
-  stripe            StripeCustomer @relation(fields: [stripeCustomerId], references: [id], onDelete: Cascade)
-  stripeCustomerId  String
-  status            String
-  priceId           String
-  seats             Int            @default(1)
-  trialEndsAt       DateTime?
-  currentPeriodEnd  DateTime?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-}
-
-model AuditLog {
-  id         String   @id @default(cuid())
-  org        Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId      String
-  actorId    String?
-  action     String   // decrypt_attempt, export, retention_change, admin_action
-  purpose    String?
-  resource   String?
-  success    Boolean
-  traceId    String?
-  createdAt  DateTime @default(now())
-}
-
-model PushNotificationLog {
-  id              String       @id @default(cuid())
-  emailAccount    EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
-  emailAccountId  String
-  org             Org          @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId           String
-  provider        String
-  historyId       String?
-  processedAt     DateTime     @default(now())
-  latencyMs       Int?
-  success         Boolean      @default(true)
-  errorMessage    String?
-
-  @@index([emailAccountId, processedAt(sort: Desc)])
-  @@index([orgId, processedAt(sort: Desc)])
 }

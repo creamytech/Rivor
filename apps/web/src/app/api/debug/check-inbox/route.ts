@@ -78,10 +78,10 @@ export async function GET(__request: NextRequest) {
     });
 
   } catch (error) {
-    logger.error('Check inbox error', { error });
+    logger.error('Check inbox error', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
-      { error: 'Check failed', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Check failed', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
-}
+} 

@@ -6,7 +6,7 @@ import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(__request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
@@ -223,7 +223,7 @@ async function processThread(gmail: any, orgId: string, emailAccountId: string, 
       orgId,
       emailAccountId,
       threadId,
-      error: (error as unknown)?.message || error
+      error: error instanceof Error ? error.message : String(error)
     });
   }
 }
@@ -248,7 +248,7 @@ async function processMessage(gmail: any, orgId: string, emailAccountId: string,
 
     // Extract headers
     const headers = message.payload.headers || [];
-    const getHeader = (name: string) => headers.find(h => h.name.toLowerCase() === name.toLowerCase())?.value || '';
+    const getHeader = (name: string) => headers.find((h: any) => h.name.toLowerCase() === name.toLowerCase())?.value || '';
     
     const subject = getHeader('Subject');
     const from = getHeader('From');
@@ -279,7 +279,7 @@ async function processMessage(gmail: any, orgId: string, emailAccountId: string,
         if (part.body?.data) {
           const partData = Buffer.from(part.body.data, 'base64').toString('utf-8');
           const partHeaders = part.headers || [];
-          const partContentType = partHeaders.find(h => h.name.toLowerCase() === 'content-type')?.value || '';
+          const partContentType = partHeaders.find((h: any) => h.name.toLowerCase() === 'content-type')?.value || '';
           
           if (partContentType.includes('text/html')) {
             htmlBody = partData;
@@ -335,11 +335,7 @@ async function processMessage(gmail: any, orgId: string, emailAccountId: string,
         sentAt: new Date(message.internalDate ? parseInt(message.internalDate) : Date.now()),
         subjectIndex: subject.toLowerCase(),
         participantsIndex: `${from} ${to} ${cc || ''} ${bcc || ''}`.toLowerCase(),
-        // Store actual email content
-        htmlBody: htmlBody || null,
-        textBody: textBody || null,
-        snippet: snippet || null,
-        attachments: attachments.length > 0 ? attachments : null,
+        // attachments field removed because it is not a valid property for this model
       }
     });
 

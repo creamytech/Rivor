@@ -17,11 +17,13 @@ import {
   RefreshCw,
   Clock,
   User,
-  Paperclip
+  Paperclip,
+  Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import AdvancedSearchModal from './AdvancedSearchModal';
 
 interface EmailThread {
   id: string;
@@ -51,6 +53,12 @@ export default function ThreadList({ className }: ThreadListProps) {
   const [currentFilter, setCurrentFilter] = useState('all');
   const [selectedThreads, setSelectedThreads] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [savedSearches, setSavedSearches] = useState<Array<{
+    id: string;
+    name: string;
+    filters: any;
+  }>>([]);
 
   const filters = [
     { id: 'all', label: 'All', count: threads.length },
@@ -97,6 +105,48 @@ export default function ThreadList({ className }: ThreadListProps) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAdvancedSearch = async (filters: any) => {
+    setLoading(true);
+    try {
+      const queryParams = new URLSearchParams();
+      
+      if (filters.query) queryParams.append('q', filters.query);
+      if (filters.from) queryParams.append('from', filters.from);
+      if (filters.to) queryParams.append('to', filters.to);
+      if (filters.subject) queryParams.append('subject', filters.subject);
+      if (filters.hasAttachments) queryParams.append('hasAttachments', 'true');
+      if (filters.isUnread) queryParams.append('unread', 'true');
+      if (filters.isStarred) queryParams.append('starred', 'true');
+      if (filters.dateFrom) queryParams.append('dateFrom', filters.dateFrom);
+      if (filters.dateTo) queryParams.append('dateTo', filters.dateTo);
+      if (filters.labels.length > 0) queryParams.append('labels', filters.labels.join(','));
+
+      const response = await fetch(`/api/inbox/search?${queryParams.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        setThreads(data.threads || []);
+      }
+    } catch (error) {
+      console.error('Advanced search failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveSearch = (name: string, filters: any) => {
+    const newSearch = {
+      id: Date.now().toString(),
+      name,
+      filters
+    };
+    setSavedSearches(prev => [...prev, newSearch]);
+    
+    // Save to localStorage
+    const saved = JSON.parse(localStorage.getItem('savedSearches') || '[]');
+    saved.push(newSearch);
+    localStorage.setItem('savedSearches', JSON.stringify(saved));
   };
 
   const handleThreadAction = async (threadId: string, action: 'star' | 'unstar' | 'archive' | 'delete') => {
@@ -231,6 +281,14 @@ export default function ThreadList({ className }: ThreadListProps) {
               size="sm"
             >
               Search
+            </Button>
+            <Button 
+              onClick={() => setShowAdvancedSearch(true)}
+              variant="outline"
+              size="sm"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Advanced
             </Button>
           </div>
 
@@ -400,6 +458,15 @@ export default function ThreadList({ className }: ThreadListProps) {
           )}
         </div>
       </div>
+
+      {/* Advanced Search Modal */}
+      <AdvancedSearchModal
+        open={showAdvancedSearch}
+        onOpenChange={setShowAdvancedSearch}
+        onSearch={handleAdvancedSearch}
+        savedSearches={savedSearches}
+        onSaveSearch={handleSaveSearch}
+      />
     </FlowCard>
   );
 }

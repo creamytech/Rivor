@@ -5,7 +5,7 @@ import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(__request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
@@ -55,7 +55,7 @@ export async function POST(__request: NextRequest) {
         updatedCount++;
         logger.info('Updated message with content', { messageId: message.id });
       } catch (error) {
-        logger.error('Failed to update message', { messageId: message.id, error });
+        logger.error('Failed to update message', { messageId: message.id, error: error instanceof Error ? error.message : String(error) });
       }
     }
 
@@ -67,7 +67,7 @@ export async function POST(__request: NextRequest) {
     });
 
   } catch (error) {
-    logger.error('Add content error', { error });
+    logger.error('Add content error', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Add content failed', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

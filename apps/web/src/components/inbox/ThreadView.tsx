@@ -5,6 +5,7 @@ import FlowCard from '@/components/river/FlowCard';
 import StatusBadge from '@/components/river/StatusBadge';
 import SkeletonFlow from '@/components/river/SkeletonFlow';
 import CreateLeadModal from '@/components/pipeline/CreateLeadModal';
+import CreateEventModal from '@/components/inbox/CreateEventModal';
 import ComposeModal from '@/components/inbox/ComposeModal';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/river/RiverToast';
@@ -22,7 +23,8 @@ import {
   User,
   Mail,
   Paperclip,
-  UserPlus
+  UserPlus,
+  Calendar
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DOMPurify from 'isomorphic-dompurify';
@@ -83,7 +85,8 @@ export default function ThreadView({ threadId, onBack, className }: ThreadViewPr
   const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
   const [showingCompose, setShowingCompose] = useState(false);
   const [showCreateLead, setShowCreateLead] = useState(false);
-  const [replyTo, setReplyTo] = useState<{ to: string; subject: string; threadId?: string } | null>(null);
+  const [showCreateEvent, setShowCreateEvent] = useState(false);
+  const [replyTo, setReplyTo] = useState<{ to: string; subject: string; threadId?: string; body?: string } | null>(null);
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -187,11 +190,19 @@ export default function ThreadView({ threadId, onBack, className }: ThreadViewPr
     setShowCreateLead(true);
   };
 
-  const handleLeadCreated = (lead: unknown) => {
+  const handleLeadCreated = (lead: any) => {
     addToast({
       type: 'success',
       title: 'Lead Created',
       description: `"${lead.title}" has been created from this email thread.`
+    });
+  };
+
+  const handleEventCreated = (event: any) => {
+    addToast({
+      type: 'success',
+      title: 'Event Created',
+      description: `"${event.title}" has been added to your calendar.`
     });
   };
 
@@ -280,6 +291,14 @@ export default function ThreadView({ threadId, onBack, className }: ThreadViewPr
             >
               <UserPlus className="h-4 w-4 mr-2" />
               Create Lead
+            </Button>
+            <Button
+              onClick={() => setShowCreateEvent(true)}
+              variant="outline"
+              size="sm"
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              Create Event
             </Button>
             <Button
               onClick={() => handleThreadAction('delete')}
@@ -426,7 +445,14 @@ export default function ThreadView({ threadId, onBack, className }: ThreadViewPr
                                       {formatFileSize(attachment.size)}
                                     </span>
                                   </div>
-                                  <Button size="sm" variant="outline">
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => {
+                                      // Download attachment
+                                      window.open(`/api/inbox/${thread.id}/attachments/${attachment.id}`, '_blank');
+                                    }}
+                                  >
                                     <Download className="h-3 w-3 mr-1" />
                                     Download
                                   </Button>
@@ -475,7 +501,30 @@ export default function ThreadView({ threadId, onBack, className }: ThreadViewPr
                             <ReplyAll className="h-4 w-4 mr-2" />
                             Reply All
                           </Button>
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              // For forward, we'll create a new email with the original content
+                              const forwardSubject = `Fwd: ${message.subject}`;
+                              const forwardBody = `
+${message.from.name || message.from.email} wrote:
+
+${message.textBody}
+
+---
+Original message from: ${message.from.name || message.from.email}
+Date: ${formatDateTime(message.sentAt)}
+                              `.trim();
+                              
+                              setReplyTo({
+                                to: '',
+                                subject: forwardSubject,
+                                body: forwardBody
+                              });
+                              setShowingCompose(true);
+                            }}
+                          >
                             <Forward className="h-4 w-4 mr-2" />
                             Forward
                           </Button>
@@ -503,6 +552,21 @@ export default function ThreadView({ threadId, onBack, className }: ThreadViewPr
             company: '' // Could be extracted from email signature or domain
           }}
           onLeadCreated={handleLeadCreated}
+        />
+      )}
+
+      {/* Create Event Modal */}
+      {thread && (
+        <CreateEventModal
+          open={showCreateEvent}
+          onOpenChange={setShowCreateEvent}
+          threadData={{
+            threadId: thread.id,
+            subject: thread.subject,
+            participants: thread.participants,
+            lastMessageAt: thread.messages[thread.messages.length - 1]?.sentAt || ''
+          }}
+          onEventCreated={handleEventCreated}
         />
       )}
 

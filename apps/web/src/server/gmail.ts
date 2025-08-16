@@ -11,14 +11,18 @@ export interface GmailMessage {
   snippet: string;
   payload: {
     headers: Array<{ name: string; value: string }>;
-    body?: { data?: string };
-    parts?: Array<{ body?: { data?: string } }>;
+    body?: { data?: string; size?: number };
+    parts?: Array<{ 
+      body?: { data?: string; size?: number }; 
+      headers?: Array<{ name: string; value: string }>;
+      filename?: string;
+    }>;
   };
   internalDate: string;
 }
 
 export class GmailService {
-  private oauth2Client: unknown;
+  private oauth2Client: import('google-auth-library').OAuth2Client;
 
   constructor(accessToken: string, refreshToken?: string) {
     this.oauth2Client = new google.auth.OAuth2(
@@ -37,7 +41,7 @@ export class GmailService {
     // Get OAuth tokens for this account
     const emailAccount = await prisma.emailAccount.findUnique({
       where: { id: emailAccountId },
-      include: { org: true }
+      include: { org: true },
     });
 
     if (!emailAccount) {
@@ -156,12 +160,12 @@ export class GmailService {
       logger.error('Gmail initial backfill failed', {
         orgId,
         emailAccountId,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         action: 'gmail_backfill_failed'
       });
       
       // Update account status if authentication failed
-      if (error?.code === 401) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 401) {
         await prisma.emailAccount.update({
           where: { id: emailAccountId },
           data: { status: 'action_needed' }
@@ -197,7 +201,7 @@ export class GmailService {
         orgId,
         emailAccountId,
         threadId,
-        error: (error as unknown)?.message || error
+        error: error instanceof Error ? error.message : String(error)
       });
     }
   }
@@ -239,7 +243,7 @@ export class GmailService {
       console.error('Gmail sync error:', error);
       
       // Update account status if authentication failed
-      if ((error as unknown)?.code === 401) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 401) {
         await prisma.emailAccount.update({
           where: { id: emailAccountId },
           data: { status: 'action_needed' }
@@ -302,8 +306,8 @@ export class GmailService {
         for (const part of message.payload.parts) {
           if (part.body?.data) {
             const partData = Buffer.from(part.body.data, 'base64').toString('utf-8');
-            const partHeaders = part.headers || [];
-            const partContentType = partHeaders.find(h => h.name.toLowerCase() === 'content-type')?.value || '';
+                         const partHeaders = part.headers || [];
+             const partContentType = partHeaders.find((h: { name: string; value: string }) => h.name.toLowerCase() === 'content-type')?.value || '';
             
             if (partContentType.includes('text/html')) {
               htmlBody = partData;
@@ -360,22 +364,17 @@ export class GmailService {
         });
       }
 
-      // Create message with enhanced content
-      await prisma.emailMessage.create({
-        data: {
-          orgId,
-          threadId: thread.id,
-          messageId: message.id,
-          sentAt: new Date(message.internalDate ? parseInt(message.internalDate) : Date.now()),
-          subjectIndex: subject.toLowerCase(),
-          participantsIndex: `${from} ${to} ${cc || ''} ${bcc || ''}`.toLowerCase(),
-          // Store actual email content
-          htmlBody: htmlBody || null,
-          textBody: textBody || null,
-          snippet: snippet || null,
-          attachments: attachments.length > 0 ? attachments : null,
-        }
-      });
+             // Create message with enhanced content
+       await prisma.emailMessage.create({
+         data: {
+           orgId,
+           threadId: thread.id,
+           messageId: message.id,
+           sentAt: new Date(message.internalDate ? parseInt(message.internalDate) : Date.now()),
+           subjectIndex: subject.toLowerCase(),
+           participantsIndex: `${from} ${to} ${cc || ''} ${bcc || ''}`.toLowerCase(),
+         }
+       });
 
       // Log the message details for debugging
       console.log(`Processed message: ${subject}`, {
@@ -427,36 +426,36 @@ export class GmailService {
         }
       });
 
-      // Store watch metadata - this is crucial for push notifications
-      const updateData: unknown = {
-        status: 'connected' // Ensure account is marked as fully connected
-      };
-      
-      if (response.data.historyId) {
-        updateData.historyId = response.data.historyId;
-        logger.info('Gmail watch history ID stored', {
-          orgId,
-          emailAccountId,
-          historyId: response.data.historyId,
-          action: 'gmail_watch_history_stored'
-        });
-      }
-      
-      if (response.data.expiration) {
-        // Gmail watch expires in ~7 days, convert to timestamp
-        updateData.watchExpiration = new Date(parseInt(response.data.expiration));
-        logger.info('Gmail watch expiration set', {
-          orgId,
-          emailAccountId,
-          expiration: updateData.watchExpiration.toISOString(),
-          action: 'gmail_watch_expiration_set'
-        });
-      }
-      
-      await prisma.emailAccount.update({
-        where: { id: emailAccountId },
-        data: updateData
-      });
+             // Store watch metadata - this is crucial for push notifications
+       const updateData: any = {
+         status: 'connected' // Ensure account is marked as fully connected
+       };
+       
+       if (response.data.historyId) {
+         updateData.historyId = response.data.historyId;
+         logger.info('Gmail watch history ID stored', {
+           orgId,
+           emailAccountId,
+           historyId: response.data.historyId,
+           action: 'gmail_watch_history_stored'
+         });
+       }
+       
+       if (response.data.expiration) {
+         // Gmail watch expires in ~7 days, convert to timestamp
+         updateData.watchExpiration = new Date(parseInt(response.data.expiration));
+         logger.info('Gmail watch expiration set', {
+           orgId,
+           emailAccountId,
+           expiration: updateData.watchExpiration.toISOString(),
+           action: 'gmail_watch_expiration_set'
+         });
+       }
+       
+       await prisma.emailAccount.update({
+         where: { id: emailAccountId },
+         data: updateData
+       });
 
       logger.info('Gmail watch setup successful', {
         orgId,
@@ -466,13 +465,13 @@ export class GmailService {
         action: 'gmail_watch_success'
       });
       
-    } catch (error: unknown) {
-      logger.error('Gmail watch setup failed', {
-        orgId,
-        emailAccountId,
-        error: error.message,
-        action: 'gmail_watch_failed'
-      });
+         } catch (error: unknown) {
+       logger.error('Gmail watch setup failed', {
+         orgId,
+         emailAccountId,
+         error: error instanceof Error ? error.message : String(error),
+         action: 'gmail_watch_failed'
+       });
       
       // Update account status on failure
       await prisma.emailAccount.update({

@@ -14,13 +14,14 @@ interface ComposeModalProps {
     to: string;
     subject: string;
     threadId?: string;
+    body?: string;
   };
 }
 
 export default function ComposeModal({ open, onOpenChange, replyTo }: ComposeModalProps) {
   const [to, setTo] = useState(replyTo?.to || '');
   const [subject, setSubject] = useState(replyTo?.subject ? `Re: ${replyTo.subject}` : '');
-  const [body, setBody] = useState('');
+  const [body, setBody] = useState(replyTo?.body || '');
   const [sending, setSending] = useState(false);
   const { addToast } = useToast();
 

@@ -108,10 +108,10 @@ export async function GET(req: NextRequest) {
         snippet: snippet,
         participants: participants,
         messageCount: thread._count.messages,
-        unread: thread.unread || false,
-        starred: thread.starred || false,
+        unread: false, // Property not available on thread
+        starred: false, // Property not available on thread
         hasAttachments: false, // Not implemented yet
-        labels: thread.labels || [],
+        labels: [], // Property not available on thread
         lastMessageAt: latestMessage?.sentAt?.toISOString() || thread.updatedAt.toISOString(),
         updatedAt: thread.updatedAt.toISOString()
       };
@@ -128,7 +128,9 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (error) {
-    logger.error('Failed to fetch threads', { error });
+    logger.error('Failed to fetch threads', { 
+      error: error instanceof Error ? error.message : String(error) 
+    });
     return NextResponse.json(
       { error: 'Failed to fetch threads', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

@@ -1,93 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
-import { mixWithDemoData, demoCalendarEvents } from '@/lib/demo-data';
+import { logger } from '@/lib/logger';
+import { GoogleCalendarService } from '@/server/calendar';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * Get calendar events
- */
-export async function GET(_req: NextRequest) {
-  try {
-    const session = await auth();
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const orgId = (session as unknown).orgId;
-    if (!orgId) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
-    }
-
-    const url = new URL(req.url);
-    const startParam = url.searchParams.get('start');
-    const endParam = url.searchParams.get('end');
-
-    const start = startParam ? new Date(startParam) : new Date();
-    const end = endParam ? new Date(endParam) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
-
-    // Get events from database
-    const events = await prisma.calendarEvent.findMany({
-      where: {
-        orgId,
-        start: {
-          gte: start,
-          lte: end
-        }
-      },
-      orderBy: { start: 'asc' }
-    });
-
-    // Transform to UI format
-    const eventsFormatted = events.map(event => ({
-      id: event.id,
-      title: event.title,
-      description: event.description,
-      start: event.start,
-      end: event.end,
-      location: event.location,
-      attendees: event.attendees ? JSON.parse(event.attendees) : [],
-      isVideoCall: event.isVideoCall,
-      isAllDay: event.isAllDay,
-      color: event.color
-    }));
-
-    // Mix with demo data if enabled
-    const demoEventsInRange = demoCalendarEvents.filter(event => {
-      const eventStart = new Date(event.start);
-      return eventStart >= start && eventStart <= end;
-    }).map(event => ({
-      id: event.id,
-      title: event.title,
-      start: event.start,
-      end: event.end,
-      attendees: event.attendees,
-      isVideoCall: false,
-      isAllDay: false
-    }));
-
-    const finalEvents = mixWithDemoData(eventsFormatted, demoEventsInRange);
-
-    const response = {
-      events: finalEvents,
-      total: finalEvents.length
-    };
-
-    return NextResponse.json(response);
-
-  } catch (error: unknown) {
-    console.error('Calendar events API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch events' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * Create calendar event
- */
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
@@ -95,12 +13,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as unknown).orgId;
+    const orgId = (session as { orgId?: string }).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
 
-    const body = await req.json();
     const {
       title,
       description,
@@ -108,60 +25,179 @@ export async function POST(req: NextRequest) {
       end,
       location,
       attendees,
-      isVideoCall,
-      isAllDay
-    } = body;
+      isAllDay,
+      threadId
+    } = await req.json();
 
+    // Validate required fields
     if (!title || !start || !end) {
-      return NextResponse.json(
-        { error: 'Title, start, and end are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Create event in database
-    const event = await prisma.calendarEvent.create({
+    // Get calendar account
+    const calendarAccount = await prisma.calendarAccount.findFirst({
+      where: { orgId, provider: 'google' }
+    });
+
+    if (!calendarAccount) {
+      return NextResponse.json({ error: 'No calendar account found' }, { status: 400 });
+    }
+
+    // Create calendar service
+    const calendarService = await GoogleCalendarService.createFromAccount(orgId, calendarAccount.id);
+    const calendar = await calendarService.getCalendar();
+
+    // Prepare event data
+    const eventData: any = {
+      summary: title,
+      description: description || '',
+      start: {
+        dateTime: isAllDay ? undefined : start,
+        date: isAllDay ? start.split('T')[0] : undefined,
+        timeZone: 'UTC'
+      },
+      end: {
+        dateTime: isAllDay ? undefined : end,
+        date: isAllDay ? end.split('T')[0] : undefined,
+        timeZone: 'UTC'
+      }
+    };
+
+    // Add location if provided
+    if (location) {
+      eventData.location = location;
+    }
+
+    // Add attendees if provided
+    if (attendees && attendees.length > 0) {
+      eventData.attendees = attendees.map((email: string) => ({ email }));
+    }
+
+    // Add thread link if provided
+    if (threadId) {
+      const threadUrl = `${process.env.NEXTAUTH_URL}/app/inbox/${threadId}`;
+      eventData.description = `${eventData.description}\n\nRelated email thread: ${threadUrl}`;
+    }
+
+    // Create event in Google Calendar
+    const event = await calendar.events.insert({
+      calendarId: 'primary',
+      requestBody: eventData,
+      sendUpdates: 'all'
+    });
+
+    // Save event to database
+    const savedEvent = await prisma.calendarEvent.create({
       data: {
-        orgId,
-        title,
-        description: description || null,
-        start: new Date(start),
-        end: new Date(end),
-        location: location || null,
-        attendees: attendees ? JSON.stringify(attendees) : null,
-        isVideoCall: isVideoCall || false,
+        eventId: event.data.id!,
+        title: event.data.summary || title,
+        description: event.data.description || description || '',
+        startTime: new Date(event.data.start?.dateTime || event.data.start?.date!),
+        endTime: new Date(event.data.end?.dateTime || event.data.end?.date!),
+        location: event.data.location || location || '',
         isAllDay: isAllDay || false,
-        color: '#14b8a6', // Default teal color
-        status: 'confirmed'
+        threadId: threadId || null,
+        calendarAccountId: calendarAccount.id,
+        orgId
       }
     });
 
-    // TODO: Sync with Google Calendar if calendar integration is available
-    // This would require:
-    // 1. Getting calendar account for this org
-    // 2. Using Google Calendar API to create event
-    // 3. Storing the external event ID for future updates/deletions
+    logger.info('Calendar event created', { 
+      eventId: event.data.id,
+      title,
+      orgId 
+    });
 
-    // Transform to UI format
-    const eventFormatted = {
+    return NextResponse.json({
+      success: true,
+      event: {
+        id: savedEvent.id,
+        eventId: event.data.id,
+        title: event.data.summary,
+        description: event.data.description,
+        start: event.data.start,
+        end: event.data.end,
+        location: event.data.location,
+        attendees: event.data.attendees,
+        htmlLink: event.data.htmlLink
+      }
+    });
+
+  } catch (error) {
+    logger.error('Failed to create calendar event', { error });
+    return NextResponse.json(
+      { error: 'Failed to create calendar event' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const orgId = (session as { orgId?: string }).orgId;
+    if (!orgId) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
+    }
+
+    const url = new URL(req.url);
+    const startDate = url.searchParams.get('start');
+    const endDate = url.searchParams.get('end');
+    const limit = parseInt(url.searchParams.get('limit') || '50');
+
+    // Get calendar account
+    const calendarAccount = await prisma.calendarAccount.findFirst({
+      where: { orgId, provider: 'google' }
+    });
+
+    if (!calendarAccount) {
+      return NextResponse.json({ error: 'No calendar account found' }, { status: 400 });
+    }
+
+    // Create calendar service
+    const calendarService = await GoogleCalendarService.createFromAccount(orgId, calendarAccount.id);
+    const calendar = await calendarService.getCalendar();
+
+    // Prepare query parameters
+    const params: any = {
+      calendarId: 'primary',
+      maxResults: limit,
+      singleEvents: true,
+      orderBy: 'startTime'
+    };
+
+    if (startDate) {
+      params.timeMin = startDate;
+    }
+    if (endDate) {
+      params.timeMax = endDate;
+    }
+
+    // Get events from Google Calendar
+    const response = await calendar.events.list(params);
+
+    const events = response.data.items?.map(event => ({
       id: event.id,
-      title: event.title,
+      title: event.summary,
       description: event.description,
       start: event.start,
       end: event.end,
       location: event.location,
-      attendees: event.attendees ? JSON.parse(event.attendees) : [],
-      isVideoCall: event.isVideoCall,
-      isAllDay: event.isAllDay,
-      color: event.color
-    };
+      attendees: event.attendees,
+      htmlLink: event.htmlLink,
+      isAllDay: !event.start?.dateTime
+    })) || [];
 
-    return NextResponse.json(eventFormatted);
+    return NextResponse.json({ events });
 
-  } catch (error: unknown) {
-    console.error('Calendar event creation API error:', error);
+  } catch (error) {
+    logger.error('Failed to fetch calendar events', { error });
     return NextResponse.json(
-      { error: 'Failed to create event' },
+      { error: 'Failed to fetch calendar events' },
       { status: 500 }
     );
   }

@@ -19,18 +19,24 @@ export async function GET(req: NextRequest) {
 
     const url = new URL(req.url);
     const query = url.searchParams.get('q') || '';
+    const from = url.searchParams.get('from') || '';
+    const to = url.searchParams.get('to') || '';
+    const subject = url.searchParams.get('subject') || '';
+    const hasAttachments = url.searchParams.get('hasAttachments') === 'true';
+    const unread = url.searchParams.get('unread') === 'true';
+    const starred = url.searchParams.get('starred') === 'true';
+    const dateFrom = url.searchParams.get('dateFrom') || '';
+    const dateTo = url.searchParams.get('dateTo') || '';
+    const labels = url.searchParams.get('labels')?.split(',') || [];
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
 
-    if (!query.trim()) {
-      return NextResponse.json({ threads: [], pagination: { page, limit, total: 0, totalPages: 0 } });
-    }
-
-    // Search in threads and messages
-    const threads = await prisma.emailThread.findMany({
-      where: {
-        orgId,
+    // Build search conditions
+    const searchConditions: any[] = [];
+    
+    if (query.trim()) {
+      searchConditions.push({
         OR: [
           {
             subjectIndex: {
@@ -66,6 +72,88 @@ export async function GET(req: NextRequest) {
             }
           }
         ]
+      });
+    }
+
+    if (from) {
+      searchConditions.push({
+        participantsIndex: {
+          contains: from.toLowerCase()
+        }
+      });
+    }
+
+    if (to) {
+      searchConditions.push({
+        participantsIndex: {
+          contains: to.toLowerCase()
+        }
+      });
+    }
+
+    if (subject) {
+      searchConditions.push({
+        subjectIndex: {
+          contains: subject.toLowerCase()
+        }
+      });
+    }
+
+    if (unread) {
+      searchConditions.push({
+        unread: true
+      });
+    }
+
+    if (starred) {
+      searchConditions.push({
+        starred: true
+      });
+    }
+
+    if (dateFrom) {
+      searchConditions.push({
+        updatedAt: {
+          gte: new Date(dateFrom)
+        }
+      });
+    }
+
+    if (dateTo) {
+      searchConditions.push({
+        updatedAt: {
+          lte: new Date(dateTo)
+        }
+      });
+    }
+
+    if (labels.length > 0) {
+      searchConditions.push({
+        labels: {
+          hasSome: labels
+        }
+      });
+    }
+
+    // If no search conditions, return empty result
+    if (searchConditions.length === 0 && !hasAttachments) {
+      return NextResponse.json({ threads: [], pagination: { page, limit, total: 0, totalPages: 0 } });
+    }
+
+    // Search in threads and messages
+    const threads = await prisma.emailThread.findMany({
+      where: {
+        orgId,
+        ...(searchConditions.length > 0 && { AND: searchConditions }),
+        ...(hasAttachments && {
+          messages: {
+            some: {
+              attachments: {
+                some: {}
+              }
+            }
+          }
+        })
       },
       include: {
         messages: {
@@ -93,41 +181,16 @@ export async function GET(req: NextRequest) {
     const totalCount = await prisma.emailThread.count({
       where: {
         orgId,
-        OR: [
-          {
-            subjectIndex: {
-              contains: query.toLowerCase()
-            }
-          },
-          {
-            participantsIndex: {
-              contains: query.toLowerCase()
-            }
-          },
-          {
-            messages: {
-              some: {
-                OR: [
-                  {
-                    subjectIndex: {
-                      contains: query.toLowerCase()
-                    }
-                  },
-                  {
-                    participantsIndex: {
-                      contains: query.toLowerCase()
-                    }
-                  },
-                  {
-                    textBody: {
-                      contains: query
-                    }
-                  }
-                ]
+        ...(searchConditions.length > 0 && { AND: searchConditions }),
+        ...(hasAttachments && {
+          messages: {
+            some: {
+              attachments: {
+                some: {}
               }
             }
           }
-        ]
+        })
       }
     });
 

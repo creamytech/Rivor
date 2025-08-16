@@ -1,3 +1,4 @@
+import { google } from 'googleapis';
 import { prisma } from './db';
 import { decryptForOrg } from './crypto';
 
@@ -118,4 +119,81 @@ export async function getCalendarStats(orgId: string) {
     todayCount,
     upcomingCount
   };
+}
+
+export class GoogleCalendarService {
+  private oauth2Client: import('google-auth-library').OAuth2Client;
+
+  constructor(accessToken: string, refreshToken?: string) {
+    this.oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/auth/callback/google'
+    );
+
+    this.oauth2Client.setCredentials({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+  }
+
+  static async createFromAccount(orgId: string, calendarAccountId: string): Promise<GoogleCalendarService> {
+    // Get OAuth tokens for this account
+    const calendarAccount = await prisma.calendarAccount.findUnique({
+      where: { id: calendarAccountId },
+      include: { org: true },
+    });
+
+    if (!calendarAccount) {
+      throw new Error(`Calendar account ${calendarAccountId} not found`);
+    }
+
+    if (!calendarAccount.tokenRef) {
+      throw new Error(`No token reference found for calendar account ${calendarAccountId}`);
+    }
+
+    // Get all secure tokens for this account
+    const secureTokens = await prisma.secureToken.findMany({
+      where: {
+        orgId,
+        provider: 'google',
+        encryptionStatus: 'ok'
+      }
+    });
+
+    if (secureTokens.length === 0) {
+      throw new Error(`No encrypted tokens found for Google calendar account ${calendarAccountId}`);
+    }
+
+    // Decrypt access token
+    const accessTokenRecord = secureTokens.find(t => t.tokenType === 'oauth_access');
+    if (!accessTokenRecord?.encryptedTokenBlob) {
+      throw new Error(`Access token not found for Google calendar account ${calendarAccountId}`);
+    }
+
+    const accessTokenBytes = await decryptForOrg(
+      orgId, 
+      accessTokenRecord.encryptedTokenBlob, 
+      `oauth:access:${calendarAccount.externalAccountId}`
+    );
+    const accessToken = new TextDecoder().decode(accessTokenBytes);
+    
+    // Decrypt refresh token if available
+    let refreshToken: string | undefined;
+    const refreshTokenRecord = secureTokens.find(t => t.tokenType === 'oauth_refresh');
+    if (refreshTokenRecord?.encryptedTokenBlob) {
+      const refreshTokenBytes = await decryptForOrg(
+        orgId, 
+        refreshTokenRecord.encryptedTokenBlob, 
+        `oauth:refresh:${calendarAccount.externalAccountId}`
+      );
+      refreshToken = new TextDecoder().decode(refreshTokenBytes);
+    }
+
+    return new GoogleCalendarService(accessToken, refreshToken);
+  }
+
+  async getCalendar() {
+    return google.calendar({ version: 'v3', auth: this.oauth2Client });
+  }
 }
