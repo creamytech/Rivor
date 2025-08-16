@@ -57,7 +57,7 @@ export async function POST(__request: NextRequest) {
     });
 
     try {
-      // Create some dummy email data for testing
+      // Create some dummy email data for testing using correct schema
       const dummyThread = await prisma.emailThread.upsert({
         where: {
           id: `test-thread-${emailAccount.id}`
@@ -65,13 +65,10 @@ export async function POST(__request: NextRequest) {
         update: {},
         create: {
           id: `test-thread-${emailAccount.id}`,
-          orgId: orgId, // Add the required orgId field
+          orgId: orgId,
           accountId: emailAccount.id,
-          externalThreadId: 'test-thread-123',
-          subject: 'Test Email Thread',
-          snippet: 'This is a test email thread for debugging purposes.',
-          lastMessageDate: new Date(),
-          messageCount: 1
+          subjectIndex: 'Test Email Thread',
+          participantsIndex: 'test@example.com'
         }
       });
 
@@ -82,16 +79,12 @@ export async function POST(__request: NextRequest) {
         update: {},
         create: {
           id: `test-message-${emailAccount.id}`,
-          orgId: orgId, // Add the required orgId field
+          orgId: orgId,
           threadId: dummyThread.id,
-          externalMessageId: 'test-message-123',
-          from: 'test@example.com',
-          to: userEmail,
-          subject: 'Test Email',
-          snippet: 'This is a test email for debugging purposes.',
-          receivedAt: new Date(),
-          isRead: false,
-          isStarred: false
+          messageId: 'test-message-123',
+          sentAt: new Date(),
+          subjectIndex: 'Test Email',
+          participantsIndex: 'test@example.com'
         }
       });
 
