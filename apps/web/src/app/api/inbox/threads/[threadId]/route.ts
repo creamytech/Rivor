@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
+import { getThreadWithMessages } from '@/server/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,53 +48,32 @@ export async function GET(req: NextRequest, { params }: { params: { threadId: st
       return NextResponse.json(demoThread);
     }
 
-    const thread = await prisma.emailThread.findFirst({
-      where: {
-        id: threadId,
-        orgId
-      },
-      include: {
-        messages: {
-          orderBy: { sentAt: 'asc' }
-        }
-      }
-    });
+    // Use the email service to get properly decrypted content
+    const { thread: emailThread, messages } = await getThreadWithMessages(orgId, threadId);
 
-    if (!thread) {
+    if (!emailThread) {
       return NextResponse.json({ error: 'Thread not found' }, { status: 404 });
     }
 
     // Transform to UI format
     const threadFormatted = {
-      id: thread.id,
-      subject: thread.subjectIndex || '(No subject)',
+      id: emailThread.id,
+      subject: emailThread.subject,
       labels: [], // Not implemented in current schema
       starred: false, // Not implemented in current schema
       unread: false, // Not implemented in current schema
-      participants: thread.messages.reduce((acc: Array<{name: string, email: string}>, message) => {
-        // Parse participants from participantsIndex
-        const participants = message.participantsIndex ? message.participantsIndex.split(',').map(p => p.trim()) : [];
-        
-        participants.forEach(email => {
-          if (!acc.find(p => p.email === email)) {
-            acc.push({
-              name: email.split('@')[0], // Use email prefix as name
-              email: email
-            });
-          }
-        });
-        
-        return acc;
-      }, []),
-      messages: thread.messages.map(message => {
+      participants: emailThread.participants.split(',').map(p => p.trim()).map(email => ({
+        name: email.split('@')[0], // Use email prefix as name
+        email: email
+      })),
+      messages: messages.map(message => {
         // Parse participants for better display
-        const participants = message.participantsIndex ? message.participantsIndex.split(',').map(p => p.trim()) : [];
-        const fromEmail = participants[0] || 'unknown@example.com';
-        const toEmails = participants.slice(1);
+        const fromEmail = message.from || 'unknown@example.com';
+        const toEmails = message.to ? message.to.split(',').map(p => p.trim()) : [];
         
         return {
           id: message.id,
-          subject: message.subjectIndex || '(No subject)',
+          subject: message.subject,
           from: {
             name: fromEmail.split('@')[0],
             email: fromEmail
@@ -102,13 +82,19 @@ export async function GET(req: NextRequest, { params }: { params: { threadId: st
             name: email.split('@')[0],
             email: email.trim()
           })),
-          cc: [], // Not implemented in current schema
-          bcc: [], // Not implemented in current schema
-          htmlBody: 'No HTML content available', // Not implemented in current schema
-          textBody: 'No text content available', // Not implemented in current schema
+          cc: message.cc ? message.cc.split(',').map(p => p.trim()).map(email => ({
+            name: email.split('@')[0],
+            email: email.trim()
+          })) : [],
+          bcc: message.bcc ? message.bcc.split(',').map(p => p.trim()).map(email => ({
+            name: email.split('@')[0],
+            email: email.trim()
+          })) : [],
+          htmlBody: message.body || 'No HTML content available',
+          textBody: message.body || 'No text content available',
           attachments: [], // Not implemented in current schema
           sentAt: message.sentAt.toISOString(),
-          receivedAt: message.createdAt.toISOString()
+          receivedAt: message.sentAt.toISOString()
         };
       })
     };
