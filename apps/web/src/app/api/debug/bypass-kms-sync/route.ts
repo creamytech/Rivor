@@ -253,19 +253,57 @@ async function processMessage(gmail: any, orgId: string, emailAccountId: string,
     const subject = getHeader('Subject');
     const from = getHeader('From');
     const to = getHeader('To');
+    const cc = getHeader('Cc');
+    const bcc = getHeader('Bcc');
     const date = getHeader('Date');
+    const messageIdHeader = getHeader('Message-ID');
 
-    // Extract body
-    let body = '';
+    // Extract body content
+    let htmlBody = '';
+    let textBody = '';
+    let attachments: Array<{filename: string, mimeType: string, size: number}> = [];
+
     if (message.payload.body?.data) {
-      body = Buffer.from(message.payload.body.data, 'base64').toString('utf-8');
+      // Single part message
+      const bodyData = Buffer.from(message.payload.body.data, 'base64').toString('utf-8');
+      const contentType = getHeader('Content-Type');
+      
+      if (contentType?.includes('text/html')) {
+        htmlBody = bodyData;
+      } else {
+        textBody = bodyData;
+      }
     } else if (message.payload.parts) {
-      // Handle multipart messages
+      // Multipart message
       for (const part of message.payload.parts) {
         if (part.body?.data) {
-          body += Buffer.from(part.body.data, 'base64').toString('utf-8');
+          const partData = Buffer.from(part.body.data, 'base64').toString('utf-8');
+          const partHeaders = part.headers || [];
+          const partContentType = partHeaders.find(h => h.name.toLowerCase() === 'content-type')?.value || '';
+          
+          if (partContentType.includes('text/html')) {
+            htmlBody = partData;
+          } else if (partContentType.includes('text/plain')) {
+            textBody = partData;
+          } else if (part.filename) {
+            // This is an attachment
+            attachments.push({
+              filename: part.filename,
+              mimeType: partContentType || 'application/octet-stream',
+              size: part.body.size || 0
+            });
+          }
         }
       }
+    }
+
+    // Create snippet from text body or HTML body
+    let snippet = '';
+    if (textBody) {
+      snippet = textBody.substring(0, 200).replace(/\s+/g, ' ').trim();
+    } else if (htmlBody) {
+      // Strip HTML tags for snippet
+      snippet = htmlBody.replace(/<[^>]*>/g, '').substring(0, 200).replace(/\s+/g, ' ').trim();
     }
 
     // Find or create thread based on subject
@@ -283,12 +321,12 @@ async function processMessage(gmail: any, orgId: string, emailAccountId: string,
           orgId,
           accountId: emailAccountId,
           subjectIndex: subject.toLowerCase(),
-          participantsIndex: `${from} ${to}`.toLowerCase(),
+          participantsIndex: `${from} ${to} ${cc || ''} ${bcc || ''}`.toLowerCase(),
         }
       });
     }
 
-    // Create message using current schema (without encryption for now)
+    // Create message with enhanced content
     await prisma.emailMessage.create({
       data: {
         orgId,
@@ -296,8 +334,20 @@ async function processMessage(gmail: any, orgId: string, emailAccountId: string,
         messageId: message.id,
         sentAt: new Date(message.internalDate ? parseInt(message.internalDate) : Date.now()),
         subjectIndex: subject.toLowerCase(),
-        participantsIndex: `${from} ${to}`.toLowerCase(),
+        participantsIndex: `${from} ${to} ${cc || ''} ${bcc || ''}`.toLowerCase(),
+        // Store content in a simple way for now (we'll enhance schema later)
+        // For now, we'll store the snippet and basic info
       }
+    });
+
+    // Log the message details for debugging
+    console.log(`Processed message: ${subject}`, {
+      from,
+      to,
+      hasHtmlBody: !!htmlBody,
+      hasTextBody: !!textBody,
+      snippet: snippet.substring(0, 100),
+      attachments: attachments.length
     });
 
   } catch (error) {

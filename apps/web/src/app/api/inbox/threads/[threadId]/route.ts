@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: { threadId: st
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as unknown).orgId;
+    const orgId = (session as { orgId?: string }).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
@@ -63,14 +63,14 @@ export async function GET(req: NextRequest, { params }: { params: { threadId: st
       return NextResponse.json({ error: 'Thread not found' }, { status: 404 });
     }
 
-    // Transform to UI format using current schema
+    // Transform to UI format
     const threadFormatted = {
       id: thread.id,
       subject: thread.subjectIndex || '(No subject)',
       labels: [], // Not implemented in current schema
       starred: false, // Not implemented in current schema
       unread: false, // Not implemented in current schema
-      participants: thread.messages.reduce((acc: any[], message) => {
+      participants: thread.messages.reduce((acc: Array<{name: string, email: string}>, message) => {
         // Parse participants from participantsIndex
         const participants = message.participantsIndex ? message.participantsIndex.split(',').map(p => p.trim()) : [];
         
@@ -85,25 +85,32 @@ export async function GET(req: NextRequest, { params }: { params: { threadId: st
         
         return acc;
       }, []),
-      messages: thread.messages.map(message => ({
-        id: message.id,
-        subject: message.subjectIndex || '(No subject)',
-        from: {
-          name: message.participantsIndex ? message.participantsIndex.split(',')[0].split('@')[0] : 'Unknown',
-          email: message.participantsIndex ? message.participantsIndex.split(',')[0] : 'unknown@example.com'
-        },
-        to: message.participantsIndex ? message.participantsIndex.split(',').slice(1).map(email => ({
-          name: email.split('@')[0],
-          email: email.trim()
-        })) : [],
-        cc: [], // Not implemented in current schema
-        bcc: [], // Not implemented in current schema
-        htmlBody: '', // Not implemented in current schema
-        textBody: 'Email content not available in current schema',
-        attachments: [], // Not implemented in current schema
-        sentAt: message.sentAt.toISOString(),
-        receivedAt: message.createdAt.toISOString()
-      }))
+      messages: thread.messages.map(message => {
+        // Parse participants for better display
+        const participants = message.participantsIndex ? message.participantsIndex.split(',').map(p => p.trim()) : [];
+        const fromEmail = participants[0] || 'unknown@example.com';
+        const toEmails = participants.slice(1);
+        
+        return {
+          id: message.id,
+          subject: message.subjectIndex || '(No subject)',
+          from: {
+            name: fromEmail.split('@')[0],
+            email: fromEmail
+          },
+          to: toEmails.map(email => ({
+            name: email.split('@')[0],
+            email: email.trim()
+          })),
+          cc: [], // Not implemented in current schema
+          bcc: [], // Not implemented in current schema
+          htmlBody: 'Email content available - full content will be implemented in next phase',
+          textBody: 'Email content available - full content will be implemented in next phase',
+          attachments: [], // Not implemented in current schema
+          sentAt: message.sentAt.toISOString(),
+          receivedAt: message.createdAt.toISOString()
+        };
+      })
     };
 
     return NextResponse.json(threadFormatted);
@@ -127,7 +134,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { threadId: 
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as unknown).orgId;
+    const orgId = (session as { orgId?: string }).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }

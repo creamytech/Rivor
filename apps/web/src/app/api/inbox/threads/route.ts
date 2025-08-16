@@ -90,10 +90,17 @@ export async function GET(req: NextRequest) {
           }))
         : [{ name: 'Unknown', email: 'unknown@example.com' }];
       
+      // Create a better snippet from the message data
+      let snippet = 'Email content available';
+      if (latestMessage?.participantsIndex) {
+        const emails = latestMessage.participantsIndex.split(',').map(p => p.trim());
+        snippet = `From: ${emails[0] || 'Unknown'} | To: ${emails.slice(1).join(', ') || 'Unknown'}`;
+      }
+      
       return {
         id: thread.id,
         subject: latestMessage?.subjectIndex || thread.subjectIndex || '(No subject)',
-        snippet: 'Email content not available in current schema', // Placeholder
+        snippet: snippet,
         participants: participants,
         messageCount: thread._count.messages,
         unread: false, // Not implemented yet
