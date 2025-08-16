@@ -29,90 +29,88 @@ export async function GET(req: NextRequest) {
       // Removed messages requirement to show all threads
     };
 
-    // Note: Current schema doesn't support these filters yet
-    // They will be added when we implement the full email features
+    // Apply filters based on thread properties
     switch (filter) {
       case 'unread':
-        // whereClause.unread = true; // Not implemented yet
+        whereClause.unread = true;
         break;
       case 'starred':
-        // whereClause.starred = true; // Not implemented yet
+        whereClause.starred = true;
         break;
       case 'attachments':
         // whereClause.messages = { some: { attachments: { some: {} } } }; // Not implemented yet
         break;
     }
 
-    // Get threads with message data (simplified)
-    const threads = await prisma.emailThread.findMany({
-      where: whereClause,
-      include: {
-        messages: {
-          orderBy: { sentAt: 'desc' },
-          take: 1, // Get latest message for preview
-          select: {
-            id: true,
-            subjectIndex: true,
-            participantsIndex: true,
-            sentAt: true
-          }
-        },
-        _count: {
-          select: {
-            messages: true
-          }
-        }
-      },
-      orderBy: { updatedAt: 'desc' },
-      skip: offset,
-      take: limit
-    });
+    // Get threads with proper sorting by latest message date
+    const threads = await prisma.$queryRaw`
+      SELECT 
+        et.id,
+        et."orgId",
+        et."accountId",
+        et."subjectEnc",
+        et."participantsEnc",
+        et."subjectIndex",
+        et."participantsIndex",
+        et."createdAt",
+        et."updatedAt",
+        et.labels,
+        et.starred,
+        et.unread,
+        MAX(em."sentAt") as latest_message_date,
+        COUNT(em.id) as message_count
+      FROM "EmailThread" et
+      LEFT JOIN "EmailMessage" em ON et.id = em."threadId"
+      WHERE et."orgId" = ${orgId}
+      ${filter === 'unread' ? 'AND et.unread = true' : ''}
+      ${filter === 'starred' ? 'AND et.starred = true' : ''}
+      GROUP BY et.id, et."orgId", et."accountId", et."subjectEnc", et."participantsEnc", 
+               et."subjectIndex", et."participantsIndex", et."createdAt", et."updatedAt", 
+               et.labels, et.starred, et.unread
+      ORDER BY latest_message_date DESC NULLS LAST
+      LIMIT ${limit} OFFSET ${offset}
+    `;
 
     // Get total count for pagination
-    const totalCount = await prisma.emailThread.count({
-      where: whereClause
-    });
+    const totalCountResult = await prisma.$queryRaw`
+      SELECT COUNT(DISTINCT et.id) as total
+      FROM "EmailThread" et
+      WHERE et."orgId" = ${orgId}
+      ${filter === 'unread' ? 'AND et.unread = true' : ''}
+      ${filter === 'starred' ? 'AND et.starred = true' : ''}
+    `;
+    const totalCount = Number((totalCountResult as any)[0]?.total || 0);
 
     // Transform to UI format
-    const threadsFormatted = threads.map(thread => {
-      const latestMessage = thread.messages[0];
-      
-      // Parse participants from participantsIndex (try message first, then thread)
+    const threadsFormatted = (threads as any[]).map((thread: any) => {
+      // Parse participants from participantsIndex
       let participants = [{ name: 'Unknown', email: 'unknown@example.com' }];
       
-      if (latestMessage?.participantsIndex) {
-        participants = latestMessage.participantsIndex.split(',').map((p: string) => p.trim()).map((email: string) => ({
-          name: email.split('@')[0] || 'Unknown', // Use email prefix as name
-          email: email
-        }));
-      } else if (thread.participantsIndex) {
+      if (thread.participantsIndex) {
         participants = thread.participantsIndex.split(',').map((p: string) => p.trim()).map((email: string) => ({
           name: email.split('@')[0] || 'Unknown', // Use email prefix as name
           email: email
         }));
       }
       
-      // Create a better snippet from the message data
+      // Create a better snippet from the thread data
       let snippet = 'Email content available';
-      if (latestMessage?.participantsIndex) {
-        const emails = latestMessage.participantsIndex.split(',').map((p: string) => p.trim());
-        snippet = `From: ${emails[0] || 'Unknown'} | To: ${emails.slice(1).join(', ') || 'Unknown'}`;
-      } else if (thread.participantsIndex) {
+      if (thread.participantsIndex) {
         const emails = thread.participantsIndex.split(',').map((p: string) => p.trim());
         snippet = `From: ${emails[0] || 'Unknown'} | To: ${emails.slice(1).join(', ') || 'Unknown'}`;
       }
       
       return {
         id: thread.id,
-        subject: latestMessage?.subjectIndex || thread.subjectIndex || 'Email from ' + (participants[0]?.name || participants[0]?.email || 'Unknown'),
+        subject: thread.subjectIndex || 'Email from ' + (participants[0]?.name || participants[0]?.email || 'Unknown'),
         snippet: snippet,
         participants: participants,
-        messageCount: thread._count.messages,
-        unread: false, // Property not available on thread
-        starred: false, // Property not available on thread
+        messageCount: Number(thread.message_count) || 0,
+        unread: thread.unread || false,
+        starred: thread.starred || false,
         hasAttachments: false, // Not implemented yet
-        labels: [], // Property not available on thread
-        lastMessageAt: latestMessage?.sentAt?.toISOString() || thread.updatedAt.toISOString(),
+        labels: thread.labels || [],
+        lastMessageAt: thread.latest_message_date?.toISOString() || thread.updatedAt.toISOString(),
         updatedAt: thread.updatedAt.toISOString()
       };
     });

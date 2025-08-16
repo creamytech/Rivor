@@ -129,9 +129,7 @@ export async function getThreadWithMessages(orgId: string, threadId: string): Pr
       bccEnc: true, 
       subjectEnc: true, 
       snippetEnc: true,
-      bodyRefEnc: true,
-      htmlBodyEnc: true,
-      textBodyEnc: true
+      bodyRefEnc: true
     },
   });
   

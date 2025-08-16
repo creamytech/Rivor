@@ -334,11 +334,9 @@ export class GmailService {
         snippet = htmlBody.replace(/<[^>]*>/g, '').substring(0, 200).replace(/\s+/g, ' ').trim();
       }
 
-      // Encrypt sensitive data - store HTML and text separately for rich formatting
+      // Encrypt sensitive data - prioritize HTML content for rich formatting
       const subjectEnc = await encryptForOrg(orgId, subject, 'email:subject');
-      const htmlBodyEnc = await encryptForOrg(orgId, htmlBody, 'email:htmlBody');
-      const textBodyEnc = await encryptForOrg(orgId, textBody, 'email:textBody');
-      const bodyEnc = await encryptForOrg(orgId, htmlBody || textBody, 'email:body'); // Keep for backward compatibility
+      const bodyEnc = await encryptForOrg(orgId, htmlBody || textBody, 'email:body');
       const fromEnc = await encryptForOrg(orgId, from, 'email:from');
       const toEnc = await encryptForOrg(orgId, to, 'email:to');
       const ccEnc = await encryptForOrg(orgId, cc, 'email:cc');
@@ -354,20 +352,26 @@ export class GmailService {
         }
       });
 
-      if (!thread) {
-        const participantsEnc = await encryptForOrg(orgId, `${from}, ${to}`, 'email:participants');
-        
-        thread = await prisma.emailThread.create({
-          data: {
-            orgId,
-            accountId: emailAccountId,
-            subjectEnc,
-            participantsEnc,
-            subjectIndex: subject.toLowerCase(),
-            participantsIndex: `${from} ${to} ${cc || ''} ${bcc || ''}`.toLowerCase(),
-          }
-        });
-      }
+             if (!thread) {
+         const participantsEnc = await encryptForOrg(orgId, `${from}, ${to}`, 'email:participants');
+         
+         thread = await prisma.emailThread.create({
+           data: {
+             orgId,
+             accountId: emailAccountId,
+             subjectEnc,
+             participantsEnc,
+             subjectIndex: subject.toLowerCase(),
+             participantsIndex: `${from} ${to} ${cc || ''} ${bcc || ''}`.toLowerCase(),
+           }
+         });
+       } else {
+         // Update thread's updatedAt when new message is added
+         await prisma.emailThread.update({
+           where: { id: thread.id },
+           data: { updatedAt: new Date() }
+         });
+       }
 
              // Create message with all encrypted content
        await prisma.emailMessage.create({
@@ -378,8 +382,6 @@ export class GmailService {
            sentAt: new Date(message.internalDate ? parseInt(message.internalDate) : Date.now()),
            subjectEnc,
            bodyRefEnc: bodyEnc,
-           htmlBodyEnc,
-           textBodyEnc,
            fromEnc,
            toEnc,
            ccEnc,
