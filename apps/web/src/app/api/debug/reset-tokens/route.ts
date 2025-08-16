@@ -37,7 +37,9 @@ export async function POST(__request: NextRequest) {
         encryptionStatus: 'pending',
         tokenRef: null,
         kmsErrorCode: null,
-        kmsErrorAt: null
+        kmsErrorAt: null,
+        syncStatus: 'idle',
+        errorReason: null
       }
     });
 
@@ -49,12 +51,28 @@ export async function POST(__request: NextRequest) {
       }
     });
 
+    // Clear any existing email/calendar data for this org
+    const deletedMessages = await prisma.emailMessage.deleteMany({
+      where: { orgId }
+    });
+
+    const deletedThreads = await prisma.emailThread.deleteMany({
+      where: { orgId }
+    });
+
+    const deletedEvents = await prisma.calendarEvent.deleteMany({
+      where: { orgId }
+    });
+
     return NextResponse.json({
       success: true,
-      message: 'Tokens reset successfully. Please re-authenticate with Google.',
+      message: 'Tokens and data reset successfully. Please re-authenticate with Google.',
       deletedTokens: deletedTokens.count,
       updatedEmailAccounts: updatedAccounts.count,
       updatedCalendarAccounts: updatedCalendarAccounts.count,
+      deletedMessages: deletedMessages.count,
+      deletedThreads: deletedThreads.count,
+      deletedEvents: deletedEvents.count,
       nextSteps: [
         'Sign out of the application',
         'Sign back in with Google',
