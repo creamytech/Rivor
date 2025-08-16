@@ -335,8 +335,11 @@ async function processMessage(gmail: any, orgId: string, emailAccountId: string,
         sentAt: new Date(message.internalDate ? parseInt(message.internalDate) : Date.now()),
         subjectIndex: subject.toLowerCase(),
         participantsIndex: `${from} ${to} ${cc || ''} ${bcc || ''}`.toLowerCase(),
-        // Store content in a simple way for now (we'll enhance schema later)
-        // For now, we'll store the snippet and basic info
+        // Store actual email content
+        htmlBody: htmlBody || null,
+        textBody: textBody || null,
+        snippet: snippet || null,
+        attachments: attachments.length > 0 ? attachments : null,
       }
     });
 

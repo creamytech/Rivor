@@ -59,7 +59,8 @@ export async function GET(req: NextRequest) {
             id: true,
             subjectIndex: true,
             participantsIndex: true,
-            sentAt: true
+            sentAt: true,
+            snippet: true // Added snippet to select
           }
         },
         _count: {
@@ -92,7 +93,9 @@ export async function GET(req: NextRequest) {
       
       // Create a better snippet from the message data
       let snippet = 'Email content available';
-      if (latestMessage?.participantsIndex) {
+      if (latestMessage?.snippet) {
+        snippet = latestMessage.snippet;
+      } else if (latestMessage?.participantsIndex) {
         const emails = latestMessage.participantsIndex.split(',').map(p => p.trim());
         snippet = `From: ${emails[0] || 'Unknown'} | To: ${emails.slice(1).join(', ') || 'Unknown'}`;
       }

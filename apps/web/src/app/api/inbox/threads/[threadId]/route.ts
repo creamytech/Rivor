@@ -104,9 +104,9 @@ export async function GET(req: NextRequest, { params }: { params: { threadId: st
           })),
           cc: [], // Not implemented in current schema
           bcc: [], // Not implemented in current schema
-          htmlBody: 'Email content available - full content will be implemented in next phase',
-          textBody: 'Email content available - full content will be implemented in next phase',
-          attachments: [], // Not implemented in current schema
+          htmlBody: message.htmlBody || 'No HTML content available',
+          textBody: message.textBody || 'No text content available',
+          attachments: message.attachments ? (message.attachments as any[]) : [],
           sentAt: message.sentAt.toISOString(),
           receivedAt: message.createdAt.toISOString()
         };
