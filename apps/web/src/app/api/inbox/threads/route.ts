@@ -83,13 +83,20 @@ export async function GET(req: NextRequest) {
     const threadsFormatted = threads.map(thread => {
       const latestMessage = thread.messages[0];
       
-      // Parse participants from participantsIndex
-      const participants = latestMessage?.participantsIndex 
-        ? latestMessage.participantsIndex.split(',').map((p: string) => p.trim()).map((email: string) => ({
-            name: email.split('@')[0], // Use email prefix as name
-            email: email
-          }))
-        : [{ name: 'Unknown', email: 'unknown@example.com' }];
+      // Parse participants from participantsIndex (try message first, then thread)
+      let participants = [{ name: 'Unknown', email: 'unknown@example.com' }];
+      
+      if (latestMessage?.participantsIndex) {
+        participants = latestMessage.participantsIndex.split(',').map((p: string) => p.trim()).map((email: string) => ({
+          name: email.split('@')[0], // Use email prefix as name
+          email: email
+        }));
+      } else if (thread.participantsIndex) {
+        participants = thread.participantsIndex.split(',').map((p: string) => p.trim()).map((email: string) => ({
+          name: email.split('@')[0], // Use email prefix as name
+          email: email
+        }));
+      }
       
       // Create a better snippet from the message data
       let snippet = 'Email content available';
@@ -97,6 +104,9 @@ export async function GET(req: NextRequest) {
         snippet = latestMessage.snippet;
       } else if (latestMessage?.participantsIndex) {
         const emails = latestMessage.participantsIndex.split(',').map((p: string) => p.trim());
+        snippet = `From: ${emails[0] || 'Unknown'} | To: ${emails.slice(1).join(', ') || 'Unknown'}`;
+      } else if (thread.participantsIndex) {
+        const emails = thread.participantsIndex.split(',').map((p: string) => p.trim());
         snippet = `From: ${emails[0] || 'Unknown'} | To: ${emails.slice(1).join(', ') || 'Unknown'}`;
       }
       
