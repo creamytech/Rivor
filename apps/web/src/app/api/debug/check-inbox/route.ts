@@ -21,23 +21,14 @@ export async function GET(__request: NextRequest) {
 
     logger.info('Checking inbox data', { userEmail, orgId });
 
-    // Check threads
+    // Check threads (simplified - no new fields)
     const threads = await prisma.emailThread.findMany({
       where: { orgId },
-      include: {
-        messages: {
-          orderBy: { sentAt: 'desc' },
-          take: 1,
-          select: {
-            id: true,
-            subjectIndex: true,
-            participantsIndex: true,
-            sentAt: true,
-            htmlBody: true,
-            textBody: true,
-            snippet: true
-          }
-        },
+      select: {
+        id: true,
+        subjectIndex: true,
+        participantsIndex: true,
+        updatedAt: true,
         _count: {
           select: {
             messages: true
@@ -48,21 +39,18 @@ export async function GET(__request: NextRequest) {
       take: 10
     });
 
-    // Check messages directly
+    // Check messages directly (simplified - no new fields)
     const messages = await prisma.emailMessage.findMany({
       where: { orgId },
-      orderBy: { sentAt: 'desc' },
-      take: 10,
       select: {
         id: true,
         threadId: true,
         subjectIndex: true,
         participantsIndex: true,
-        htmlBody: true,
-        textBody: true,
-        snippet: true,
         sentAt: true
-      }
+      },
+      orderBy: { sentAt: 'desc' },
+      take: 10
     });
 
     return NextResponse.json({
@@ -77,23 +65,13 @@ export async function GET(__request: NextRequest) {
           subjectIndex: t.subjectIndex,
           participantsIndex: t.participantsIndex,
           messageCount: t._count.messages,
-          latestMessage: t.messages[0] ? {
-            id: t.messages[0].id,
-            subjectIndex: t.messages[0].subjectIndex,
-            participantsIndex: t.messages[0].participantsIndex,
-            hasHtmlBody: !!t.messages[0].htmlBody,
-            hasTextBody: !!t.messages[0].textBody,
-            hasSnippet: !!t.messages[0].snippet
-          } : null
+          updatedAt: t.updatedAt
         })),
         messages: messages.map(m => ({
           id: m.id,
           threadId: m.threadId,
           subjectIndex: m.subjectIndex,
           participantsIndex: m.participantsIndex,
-          hasHtmlBody: !!m.htmlBody,
-          hasTextBody: !!m.textBody,
-          hasSnippet: !!m.snippet,
           sentAt: m.sentAt
         }))
       }
@@ -102,7 +80,7 @@ export async function GET(__request: NextRequest) {
   } catch (error) {
     logger.error('Check inbox error', { error });
     return NextResponse.json(
-      { error: 'Check failed' },
+      { error: 'Check failed', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
-import { mixWithDemoData, demoEmails } from '@/lib/demo-data';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * Get inbox threads with pagination and filtering
- */
 export async function GET(req: NextRequest) {
   try {
     const session = await auth();
@@ -15,7 +12,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as unknown).orgId;
+    const orgId = (session as { orgId?: string }).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
@@ -46,7 +43,7 @@ export async function GET(req: NextRequest) {
         break;
     }
 
-    // Get threads with message data
+    // Get threads with message data (simplified)
     const threads = await prisma.emailThread.findMany({
       where: whereClause,
       include: {
@@ -57,10 +54,7 @@ export async function GET(req: NextRequest) {
             id: true,
             subjectIndex: true,
             participantsIndex: true,
-            sentAt: true,
-            htmlBody: true,
-            textBody: true,
-            snippet: true
+            sentAt: true
           }
         },
         _count: {
@@ -88,21 +82,19 @@ export async function GET(req: NextRequest) {
       
       if (latestMessage?.participantsIndex) {
         participants = latestMessage.participantsIndex.split(',').map((p: string) => p.trim()).map((email: string) => ({
-          name: email.split('@')[0], // Use email prefix as name
+          name: email.split('@')[0] || 'Unknown', // Use email prefix as name
           email: email
         }));
       } else if (thread.participantsIndex) {
         participants = thread.participantsIndex.split(',').map((p: string) => p.trim()).map((email: string) => ({
-          name: email.split('@')[0], // Use email prefix as name
+          name: email.split('@')[0] || 'Unknown', // Use email prefix as name
           email: email
         }));
       }
       
       // Create a better snippet from the message data
       let snippet = 'Email content available';
-      if (latestMessage?.snippet) {
-        snippet = latestMessage.snippet;
-      } else if (latestMessage?.participantsIndex) {
+      if (latestMessage?.participantsIndex) {
         const emails = latestMessage.participantsIndex.split(',').map((p: string) => p.trim());
         snippet = `From: ${emails[0] || 'Unknown'} | To: ${emails.slice(1).join(', ') || 'Unknown'}`;
       } else if (thread.participantsIndex) {
@@ -125,37 +117,20 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    // Mix with demo data if enabled
-    const finalThreads = mixWithDemoData(threadsFormatted, demoEmails.map(email => ({
-      id: email.id,
-      subject: email.subject,
-      snippet: email.snippet,
-      participants: [{ name: null, email: email.from }],
-      messageCount: 1,
-      unread: email.unread,
-      starred: false,
-      hasAttachments: false,
-      labels: email.labels,
-      lastMessageAt: email.createdAt,
-      updatedAt: email.createdAt
-    })));
-
-    const response = {
-      threads: finalThreads,
+    return NextResponse.json({
+      threads: threadsFormatted,
       pagination: {
         page,
         limit,
-        total: totalCount + (finalThreads.length - threadsFormatted.length), // Include demo data in count
-        pages: Math.ceil((totalCount + (finalThreads.length - threadsFormatted.length)) / limit)
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit)
       }
-    };
+    });
 
-    return NextResponse.json(response);
-
-  } catch (error: unknown) {
-    console.error('Inbox threads API error:', error);
+  } catch (error) {
+    logger.error('Failed to fetch threads', { error });
     return NextResponse.json(
-      { error: 'Failed to fetch threads' },
+      { error: 'Failed to fetch threads', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
