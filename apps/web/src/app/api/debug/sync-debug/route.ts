@@ -2,15 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
 import { logger } from '@/lib/logger';
+import { GmailService } from '@/server/gmail';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(__request: NextRequest) {
-  const steps = [];
-  
   try {
-    steps.push('1. Starting sync debug endpoint');
-    
     const session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -23,168 +20,96 @@ export async function POST(__request: NextRequest) {
       return NextResponse.json({ error: "Organization not found" }, { status: 400 });
     }
 
-    steps.push('2. Authentication successful');
+    logger.info('Starting sync debug', { userEmail, orgId });
 
-    // Get user to find correct userId
-    const user = await prisma.user.findUnique({
-      where: { email: userEmail }
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    steps.push('3. User found');
-
-    // Get EmailAccount for this user
+    // Get email account
     const emailAccount = await prisma.emailAccount.findFirst({
-      where: {
-        orgId,
-        userId: user.id,
-        provider: 'google'
-      }
+      where: { orgId, provider: 'google' }
     });
 
     if (!emailAccount) {
-      return NextResponse.json({ error: "EmailAccount not found" }, { status: 404 });
+      return NextResponse.json({ error: "No Google email account found" }, { status: 400 });
     }
 
-    steps.push('4. EmailAccount found');
+    // Test Gmail API connection
+    const gmailService = await GmailService.createFromAccount(orgId, emailAccount.id);
+    const gmail = await gmailService.getGmail();
 
-    logger.info('Starting detailed sync debug', {
-      userEmail,
-      orgId,
-      emailAccountId: emailAccount.id
+    // Test getting messages list
+    const messagesResponse = await gmail.users.messages.list({
+      userId: 'me',
+      maxResults: 5, // Just get 5 messages for testing
+      q: 'in:inbox OR in:sent',
     });
 
-    // Update sync status to running
-    await prisma.emailAccount.update({
-      where: { id: emailAccount.id },
-      data: {
-        syncStatus: 'running',
-        lastSyncedAt: new Date()
+    const messages = messagesResponse.data.messages || [];
+    
+    logger.info('Found messages in Gmail', { 
+      messageCount: messages.length,
+      firstMessageId: messages[0]?.id 
+    });
+
+    // Test processing one message
+    let processedMessage = null;
+    if (messages.length > 0) {
+      const firstMessageId = messages[0].id;
+      
+      // Get full message
+      const messageResponse = await gmail.users.messages.get({
+        userId: 'me',
+        id: firstMessageId,
+        format: 'full',
+      });
+
+      const message = messageResponse.data;
+      
+      // Extract basic info
+      const headers = message.payload?.headers || [];
+      const getHeader = (name: string) => headers.find(h => h.name.toLowerCase() === name.toLowerCase())?.value || '';
+      
+      processedMessage = {
+        id: message.id,
+        subject: getHeader('Subject'),
+        from: getHeader('From'),
+        to: getHeader('To'),
+        hasPayload: !!message.payload,
+        hasBody: !!message.payload?.body,
+        hasParts: !!message.payload?.parts,
+        bodySize: message.payload?.body?.data ? Buffer.from(message.payload.body.data, 'base64').toString('utf-8').length : 0,
+        partsCount: message.payload?.parts?.length || 0
+      };
+    }
+
+    // Check existing messages in database
+    const existingMessages = await prisma.emailMessage.findMany({
+      where: { orgId },
+      select: { id: true, messageId: true, subjectIndex: true, sentAt: true },
+      take: 5
+    });
+
+    return NextResponse.json({
+      success: true,
+      debug: {
+        orgId,
+        userEmail,
+        emailAccountId: emailAccount.id,
+        gmailMessagesFound: messages.length,
+        processedMessage,
+        existingMessagesInDb: existingMessages.length,
+        existingMessages: existingMessages.map(m => ({
+          id: m.id,
+          messageId: m.messageId,
+          subjectIndex: m.subjectIndex,
+          sentAt: m.sentAt
+        }))
       }
     });
 
-    steps.push('5. Sync status updated to running');
-
-    try {
-      // Step 1: Create thread
-      steps.push('6. Creating email thread...');
-      
-      const dummyThread = await prisma.emailThread.upsert({
-        where: {
-          id: `test-thread-${emailAccount.id}`
-        },
-        update: {},
-        create: {
-          id: `test-thread-${emailAccount.id}`,
-          orgId: orgId,
-          accountId: emailAccount.id,
-          subjectIndex: 'Test Email Thread',
-          participantsIndex: 'test@example.com'
-        }
-      });
-
-      steps.push('7. Email thread created successfully');
-
-      // Step 2: Create message
-      steps.push('8. Creating email message...');
-      
-      const dummyMessage = await prisma.emailMessage.upsert({
-        where: {
-          id: `test-message-${emailAccount.id}`
-        },
-        update: {},
-        create: {
-          id: `test-message-${emailAccount.id}`,
-          orgId: orgId,
-          threadId: dummyThread.id,
-          messageId: 'test-message-123',
-          sentAt: new Date(),
-          subjectIndex: 'Test Email',
-          participantsIndex: 'test@example.com'
-        }
-      });
-
-      steps.push('9. Email message created successfully');
-
-      // Update sync status to idle (completed)
-      await prisma.emailAccount.update({
-        where: { id: emailAccount.id },
-        data: {
-          syncStatus: 'idle',
-          lastSyncedAt: new Date()
-        }
-      });
-
-      steps.push('10. Sync status updated to idle');
-
-      // Count synced messages
-      const messageCount = await prisma.emailMessage.count({
-        where: {
-          thread: {
-            accountId: emailAccount.id
-          }
-        }
-      });
-
-      const threadCount = await prisma.emailThread.count({
-        where: { accountId: emailAccount.id }
-      });
-
-      steps.push('11. Counts retrieved successfully');
-
-      return NextResponse.json({
-        success: true,
-        message: 'Detailed sync debug completed successfully',
-        emailAccountId: emailAccount.id,
-        orgId,
-        syncStatus: 'idle',
-        syncedMessages: messageCount,
-        syncedThreads: threadCount,
-        testData: {
-          threadId: dummyThread.id,
-          messageId: dummyMessage.id
-        },
-        steps: steps,
-        timestamp: new Date().toISOString()
-      });
-
-    } catch (syncError: any) {
-      steps.push(`ERROR: ${syncError.message}`);
-      
-      // Update sync status to error
-      await prisma.emailAccount.update({
-        where: { id: emailAccount.id },
-        data: {
-          syncStatus: 'error',
-          errorReason: syncError.message
-        }
-      });
-
-      return NextResponse.json({
-        error: "Sync failed during execution",
-        details: syncError.message,
-        steps: steps,
-        timestamp: new Date().toISOString()
-      }, { status: 500 });
-    }
-
-  } catch (error: any) {
-    steps.push(`FATAL ERROR: ${error.message}`);
-    
-    logger.error('Failed to perform detailed sync debug', { 
-      error: error.message, 
-      stack: error.stack,
-      steps: steps 
-    });
-    
-    return NextResponse.json({ 
-      error: "Failed to perform detailed sync debug", 
-      details: error.message,
-      steps: steps,
-      timestamp: new Date().toISOString()
-    }, { status: 500 });
+  } catch (error) {
+    logger.error('Sync debug error', { error });
+    return NextResponse.json(
+      { error: 'Sync debug failed', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
   }
 }
