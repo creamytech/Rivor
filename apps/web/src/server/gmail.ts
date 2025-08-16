@@ -277,25 +277,62 @@ export class GmailService {
       const subject = getHeader('Subject');
       const from = getHeader('From');
       const to = getHeader('To');
+      const cc = getHeader('Cc');
+      const bcc = getHeader('Bcc');
       const date = getHeader('Date');
       const messageIdHeader = getHeader('Message-ID');
 
-      // Extract body
-      let body = '';
+      // Extract body content
+      let htmlBody = '';
+      let textBody = '';
+      let attachments: Array<{filename: string, mimeType: string, size: number}> = [];
+
       if (message.payload.body?.data) {
-        body = Buffer.from(message.payload.body.data, 'base64').toString('utf-8');
+        // Single part message
+        const bodyData = Buffer.from(message.payload.body.data, 'base64').toString('utf-8');
+        const contentType = getHeader('Content-Type');
+        
+        if (contentType?.includes('text/html')) {
+          htmlBody = bodyData;
+        } else {
+          textBody = bodyData;
+        }
       } else if (message.payload.parts) {
-        // Handle multipart messages
+        // Multipart message
         for (const part of message.payload.parts) {
           if (part.body?.data) {
-            body += Buffer.from(part.body.data, 'base64').toString('utf-8');
+            const partData = Buffer.from(part.body.data, 'base64').toString('utf-8');
+            const partHeaders = part.headers || [];
+            const partContentType = partHeaders.find(h => h.name.toLowerCase() === 'content-type')?.value || '';
+            
+            if (partContentType.includes('text/html')) {
+              htmlBody = partData;
+            } else if (partContentType.includes('text/plain')) {
+              textBody = partData;
+            } else if (part.filename) {
+              // This is an attachment
+              attachments.push({
+                filename: part.filename,
+                mimeType: partContentType || 'application/octet-stream',
+                size: part.body.size || 0
+              });
+            }
           }
         }
       }
 
+      // Create snippet from text body or HTML body
+      let snippet = '';
+      if (textBody) {
+        snippet = textBody.substring(0, 200).replace(/\s+/g, ' ').trim();
+      } else if (htmlBody) {
+        // Strip HTML tags for snippet
+        snippet = htmlBody.replace(/<[^>]*>/g, '').substring(0, 200).replace(/\s+/g, ' ').trim();
+      }
+
       // Encrypt sensitive data
       const subjectEnc = await encryptForOrg(orgId, subject, 'email:subject');
-      const bodyEnc = await encryptForOrg(orgId, body, 'email:body');
+      const bodyEnc = await encryptForOrg(orgId, textBody || htmlBody, 'email:body');
       const fromEnc = await encryptForOrg(orgId, from, 'email:from');
       const toEnc = await encryptForOrg(orgId, to, 'email:to');
 
@@ -318,12 +355,12 @@ export class GmailService {
             subjectEnc,
             participantsEnc,
             subjectIndex: subject.toLowerCase(),
-            participantsIndex: `${from} ${to}`.toLowerCase(),
+            participantsIndex: `${from} ${to} ${cc || ''} ${bcc || ''}`.toLowerCase(),
           }
         });
       }
 
-      // Create message using current schema
+      // Create message using current schema (without new fields for now)
       await prisma.emailMessage.create({
         data: {
           orgId,
@@ -335,8 +372,18 @@ export class GmailService {
           toEnc,
           sentAt: new Date(message.internalDate ? parseInt(message.internalDate) : Date.now()),
           subjectIndex: subject.toLowerCase(),
-          participantsIndex: `${from} ${to}`.toLowerCase(),
+          participantsIndex: `${from} ${to} ${cc || ''} ${bcc || ''}`.toLowerCase(),
         }
+      });
+
+      // Log the message details for debugging
+      console.log(`Processed message: ${subject}`, {
+        from,
+        to,
+        hasHtmlBody: !!htmlBody,
+        hasTextBody: !!textBody,
+        snippet: snippet.substring(0, 100),
+        attachments: attachments.length
       });
 
       // Update thread indexing
