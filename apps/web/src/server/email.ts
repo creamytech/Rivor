@@ -13,12 +13,26 @@ export async function listThreads(orgId: string, limit = 50): Promise<UiEmailThr
     where: { orgId },
     orderBy: { updatedAt: 'desc' },
     take: limit,
-    select: { id: true, subjectEnc: true, participantsEnc: true, updatedAt: true },
+    select: { 
+      id: true, 
+      subjectIndex: true, 
+      participantsIndex: true, 
+      subjectEnc: true, 
+      participantsEnc: true, 
+      updatedAt: true 
+    },
   });
+  
   const out: UiEmailThread[] = [];
   for (const t of raws) {
     let subject = '';
-    if (t.subjectEnc) {
+    let participants = '';
+    
+    // Try to use plain text fields first (new sync process)
+    if (t.subjectIndex) {
+      subject = t.subjectIndex;
+    } else if (t.subjectEnc) {
+      // Fallback to encrypted fields (old sync process)
       try {
         const dec = await decryptForOrg(orgId, t.subjectEnc, 'email:subject');
         subject = new TextDecoder().decode(dec);
@@ -26,8 +40,11 @@ export async function listThreads(orgId: string, limit = 50): Promise<UiEmailThr
         subject = '(encrypted)';
       }
     }
-    let participants = '';
-    if (t.participantsEnc) {
+    
+    if (t.participantsIndex) {
+      participants = t.participantsIndex;
+    } else if (t.participantsEnc) {
+      // Fallback to encrypted fields (old sync process)
       try {
         const dec = await decryptForOrg(orgId, t.participantsEnc, 'email:participants');
         participants = new TextDecoder().decode(dec);
@@ -35,6 +52,15 @@ export async function listThreads(orgId: string, limit = 50): Promise<UiEmailThr
         participants = '';
       }
     }
+    
+    // If still no subject, create one from participants
+    if (!subject && participants) {
+      const emails = participants.split(',').map(p => p.trim());
+      subject = `Email from ${emails[0] || 'Unknown'}`;
+    } else if (!subject) {
+      subject = '(No subject)';
+    }
+    
     out.push({ id: t.id, subject, participants, updatedAt: t.updatedAt });
   }
   return out;
@@ -54,24 +80,84 @@ export type UiEmailMessage = {
 export async function getThreadWithMessages(orgId: string, threadId: string): Promise<{ thread: UiEmailThread | null; messages: UiEmailMessage[] }>{
   const thread = await prisma.emailThread.findUnique({
     where: { id: threadId },
-    select: { id: true, orgId: true, subjectEnc: true, participantsEnc: true, updatedAt: true },
+    select: { 
+      id: true, 
+      orgId: true, 
+      subjectIndex: true,
+      participantsIndex: true,
+      subjectEnc: true, 
+      participantsEnc: true, 
+      updatedAt: true 
+    },
   });
   if (!thread || thread.orgId !== orgId) return { thread: null, messages: [] };
+  
   let subject = '';
   let participants = '';
-  if (thread.subjectEnc) {
-    try { subject = new TextDecoder().decode(await decryptForOrg(orgId, thread.subjectEnc, 'email:subject')); } catch {}
+  
+  // Try to use plain text fields first (new sync process)
+  if (thread.subjectIndex) {
+    subject = thread.subjectIndex;
+  } else if (thread.subjectEnc) {
+    // Fallback to encrypted fields (old sync process)
+    try { 
+      subject = new TextDecoder().decode(await decryptForOrg(orgId, thread.subjectEnc, 'email:subject')); 
+    } catch {}
   }
-  if (thread.participantsEnc) {
-    try { participants = new TextDecoder().decode(await decryptForOrg(orgId, thread.participantsEnc, 'email:participants')); } catch {}
+  
+  if (thread.participantsIndex) {
+    participants = thread.participantsIndex;
+  } else if (thread.participantsEnc) {
+    // Fallback to encrypted fields (old sync process)
+    try { 
+      participants = new TextDecoder().decode(await decryptForOrg(orgId, thread.participantsEnc, 'email:participants')); 
+    } catch {}
   }
+  
   const msgsRaw = await prisma.emailMessage.findMany({
     where: { threadId },
     orderBy: { sentAt: 'asc' },
-    select: { id: true, sentAt: true, fromEnc: true, toEnc: true, ccEnc: true, bccEnc: true, subjectEnc: true, snippetEnc: true },
+    select: { 
+      id: true, 
+      sentAt: true, 
+      subjectIndex: true,
+      participantsIndex: true,
+      htmlBody: true,
+      textBody: true,
+      snippet: true,
+      fromEnc: true, 
+      toEnc: true, 
+      ccEnc: true, 
+      bccEnc: true, 
+      subjectEnc: true, 
+      snippetEnc: true 
+    },
   });
+  
   const messages: UiEmailMessage[] = [];
   for (const m of msgsRaw) {
+    // Try to use plain text fields first (new sync process)
+    let messageSubject = '';
+    let messageSnippet = '';
+    
+    if (m.subjectIndex) {
+      messageSubject = m.subjectIndex;
+    } else if (m.subjectEnc) {
+      // Fallback to encrypted fields (old sync process)
+      try {
+        messageSubject = new TextDecoder().decode(await decryptForOrg(orgId, m.subjectEnc as unknown as Buffer, 'email:subject'));
+      } catch {}
+    }
+    
+    if (m.snippet) {
+      messageSnippet = m.snippet;
+    } else if (m.snippetEnc) {
+      // Fallback to encrypted fields (old sync process)
+      try {
+        messageSnippet = new TextDecoder().decode(await decryptForOrg(orgId, m.snippetEnc as unknown as Buffer, 'email:snippet'));
+      } catch {}
+    }
+    
     const dec = async (blob?: Buffer, aad?: string) => blob ? new TextDecoder().decode(await decryptForOrg(orgId, blob, aad!)) : '';
     messages.push({
       id: m.id,
@@ -80,8 +166,8 @@ export async function getThreadWithMessages(orgId: string, threadId: string): Pr
       to: await dec(m.toEnc as unknown as Buffer, 'email:to'),
       cc: await dec(m.ccEnc as unknown as Buffer, 'email:cc'),
       bcc: await dec(m.bccEnc as unknown as Buffer, 'email:bcc'),
-      subject: await dec(m.subjectEnc as unknown as Buffer, 'email:subject'),
-      snippet: await dec(m.snippetEnc as unknown as Buffer, 'email:snippet'),
+      subject: messageSubject,
+      snippet: messageSnippet,
     });
   }
   return { thread: { id: thread.id, subject, participants, updatedAt: thread.updatedAt }, messages };
