@@ -1,42 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
-import { mixWithDemoData, demoEmails } from '@/lib/demo-data';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * Search inbox threads
- */
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as unknown).orgId;
+    const orgId = (session as { orgId?: string }).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
 
     const url = new URL(req.url);
-    const query = url.searchParams.get('q');
+    const query = url.searchParams.get('q') || '';
+    const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '20');
+    const offset = (page - 1) * limit;
 
-    if (!query || query.trim() === '') {
-      return NextResponse.json({ threads: [], total: 0 });
+    if (!query.trim()) {
+      return NextResponse.json({ threads: [], pagination: { page, limit, total: 0, totalPages: 0 } });
     }
 
-    // Search in database
+    // Search in threads and messages
     const threads = await prisma.emailThread.findMany({
       where: {
         orgId,
         OR: [
           {
-            subject: {
-              contains: query,
-              mode: 'insensitive'
+            subjectIndex: {
+              contains: query.toLowerCase()
+            }
+          },
+          {
+            participantsIndex: {
+              contains: query.toLowerCase()
             }
           },
           {
@@ -44,27 +47,18 @@ export async function GET(_req: NextRequest) {
               some: {
                 OR: [
                   {
-                    subject: {
-                      contains: query,
-                      mode: 'insensitive'
+                    subjectIndex: {
+                      contains: query.toLowerCase()
+                    }
+                  },
+                  {
+                    participantsIndex: {
+                      contains: query.toLowerCase()
                     }
                   },
                   {
                     textBody: {
-                      contains: query,
-                      mode: 'insensitive'
-                    }
-                  },
-                  {
-                    fromEmail: {
-                      contains: query,
-                      mode: 'insensitive'
-                    }
-                  },
-                  {
-                    fromName: {
-                      contains: query,
-                      mode: 'insensitive'
+                      contains: query
                     }
                   }
                 ]
@@ -79,12 +73,9 @@ export async function GET(_req: NextRequest) {
           take: 1,
           select: {
             id: true,
-            subject: true,
-            snippet: true,
-            fromEmail: true,
-            fromName: true,
-            sentAt: true,
-            hasAttachments: true
+            subjectIndex: true,
+            participantsIndex: true,
+            sentAt: true
           }
         },
         _count: {
@@ -94,64 +85,110 @@ export async function GET(_req: NextRequest) {
         }
       },
       orderBy: { updatedAt: 'desc' },
+      skip: offset,
       take: limit
+    });
+
+    // Get total count for pagination
+    const totalCount = await prisma.emailThread.count({
+      where: {
+        orgId,
+        OR: [
+          {
+            subjectIndex: {
+              contains: query.toLowerCase()
+            }
+          },
+          {
+            participantsIndex: {
+              contains: query.toLowerCase()
+            }
+          },
+          {
+            messages: {
+              some: {
+                OR: [
+                  {
+                    subjectIndex: {
+                      contains: query.toLowerCase()
+                    }
+                  },
+                  {
+                    participantsIndex: {
+                      contains: query.toLowerCase()
+                    }
+                  },
+                  {
+                    textBody: {
+                      contains: query
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
     });
 
     // Transform to UI format
     const threadsFormatted = threads.map(thread => {
       const latestMessage = thread.messages[0];
       
+      // Parse participants from participantsIndex
+      let participants = [{ name: 'Unknown', email: 'unknown@example.com' }];
+      
+      if (latestMessage?.participantsIndex) {
+        participants = latestMessage.participantsIndex.split(',').map((p: string) => p.trim()).map((email: string) => ({
+          name: email.split('@')[0] || 'Unknown',
+          email: email
+        }));
+      } else if (thread.participantsIndex) {
+        participants = thread.participantsIndex.split(',').map((p: string) => p.trim()).map((email: string) => ({
+          name: email.split('@')[0] || 'Unknown',
+          email: email
+        }));
+      }
+      
+      // Create snippet
+      let snippet = 'Email content available';
+      if (latestMessage?.participantsIndex) {
+        const emails = latestMessage.participantsIndex.split(',').map((p: string) => p.trim());
+        snippet = `From: ${emails[0] || 'Unknown'} | To: ${emails.slice(1).join(', ') || 'Unknown'}`;
+      } else if (thread.participantsIndex) {
+        const emails = thread.participantsIndex.split(',').map((p: string) => p.trim());
+        snippet = `From: ${emails[0] || 'Unknown'} | To: ${emails.slice(1).join(', ') || 'Unknown'}`;
+      }
+      
       return {
         id: thread.id,
-        subject: latestMessage?.subject || thread.subject || '(No subject)',
-        snippet: latestMessage?.snippet || '',
-        participants: [{
-          name: latestMessage?.fromName || null,
-          email: latestMessage?.fromEmail || 'unknown@example.com'
-        }],
+        subject: latestMessage?.subjectIndex || thread.subjectIndex || 'Email from ' + (participants[0]?.name || participants[0]?.email || 'Unknown'),
+        snippet: snippet,
+        participants: participants,
         messageCount: thread._count.messages,
-        unread: thread.unread,
-        starred: thread.starred,
-        hasAttachments: latestMessage?.hasAttachments || false,
+        unread: thread.unread || false,
+        starred: thread.starred || false,
+        hasAttachments: false, // Not implemented yet
         labels: thread.labels || [],
         lastMessageAt: latestMessage?.sentAt?.toISOString() || thread.updatedAt.toISOString(),
         updatedAt: thread.updatedAt.toISOString()
       };
     });
 
-    // Search demo data if enabled
-    const demoResults = demoEmails.filter(email => 
-      email.subject.toLowerCase().includes(query.toLowerCase()) ||
-      email.snippet.toLowerCase().includes(query.toLowerCase()) ||
-      email.from.toLowerCase().includes(query.toLowerCase())
-    ).map(email => ({
-      id: email.id,
-      subject: email.subject,
-      snippet: email.snippet,
-      participants: [{ name: null, email: email.from }],
-      messageCount: 1,
-      unread: email.unread,
-      starred: false,
-      hasAttachments: false,
-      labels: email.labels,
-      lastMessageAt: email.createdAt,
-      updatedAt: email.createdAt
-    }));
+    return NextResponse.json({
+      threads: threadsFormatted,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit)
+      }
+    });
 
-    const finalThreads = mixWithDemoData(threadsFormatted, demoResults);
-
-    const response = {
-      threads: finalThreads,
-      total: finalThreads.length,
-      query
-    };
-
-    return NextResponse.json(response);
-
-  } catch (error: unknown) {
-    console.error('Inbox search API error:', error);
+  } catch (error) {
+    logger.error('Search failed', { error });
     return NextResponse.json(
-      { error: 'Failed to search threads' },
+      { error: 'Search failed' },
       { status: 500 }
     );
   }

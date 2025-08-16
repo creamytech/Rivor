@@ -5,6 +5,7 @@ import FlowCard from '@/components/river/FlowCard';
 import StatusBadge from '@/components/river/StatusBadge';
 import SkeletonFlow from '@/components/river/SkeletonFlow';
 import CreateLeadModal from '@/components/pipeline/CreateLeadModal';
+import ComposeModal from '@/components/inbox/ComposeModal';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/river/RiverToast';
 import { 
@@ -82,6 +83,7 @@ export default function ThreadView({ threadId, onBack, className }: ThreadViewPr
   const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
   const [showingCompose, setShowingCompose] = useState(false);
   const [showCreateLead, setShowCreateLead] = useState(false);
+  const [replyTo, setReplyTo] = useState<{ to: string; subject: string; threadId?: string } | null>(null);
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -125,9 +127,23 @@ export default function ThreadView({ threadId, onBack, className }: ThreadViewPr
 
   const handleThreadAction = async (action: 'star' | 'unstar' | 'archive' | 'delete') => {
     try {
-      const response = await fetch(`/api/inbox/threads/${threadId}/${action}`, {
-        method: 'PATCH'
-      });
+      let response;
+      
+      if (action === 'star' || action === 'unstar') {
+        // For star/unstar, we need to send the starred status in the body
+        response = await fetch(`/api/inbox/threads/${threadId}/star`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ starred: action === 'star' })
+        });
+      } else {
+        // For archive and delete, use the specific endpoints
+        response = await fetch(`/api/inbox/threads/${threadId}/${action}`, {
+          method: action === 'delete' ? 'DELETE' : 'PATCH'
+        });
+      }
       
       if (response.ok) {
         if (action === 'star' || action === 'unstar') {
@@ -135,6 +151,8 @@ export default function ThreadView({ threadId, onBack, className }: ThreadViewPr
         } else if (action === 'archive' || action === 'delete') {
           onBack(); // Navigate back after archiving/deleting
         }
+      } else {
+        console.error(`Failed to ${action} thread:`, await response.text());
       }
     } catch (error) {
       console.error(`Failed to ${action} thread:`, error);
@@ -420,11 +438,40 @@ export default function ThreadView({ threadId, onBack, className }: ThreadViewPr
 
                         {/* Message Actions */}
                         <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              setReplyTo({
+                                to: message.from.email,
+                                subject: message.subject,
+                                threadId: thread.id
+                              });
+                              setShowingCompose(true);
+                            }}
+                          >
                             <Reply className="h-4 w-4 mr-2" />
                             Reply
                           </Button>
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              // For reply all, include all participants
+                              const allEmails = [
+                                message.from.email,
+                                ...message.to.map(p => p.email),
+                                ...(message.cc || []).map(p => p.email)
+                              ].filter((email, index, arr) => arr.indexOf(email) === index);
+                              
+                              setReplyTo({
+                                to: allEmails.join(', '),
+                                subject: message.subject,
+                                threadId: thread.id
+                              });
+                              setShowingCompose(true);
+                            }}
+                          >
                             <ReplyAll className="h-4 w-4 mr-2" />
                             Reply All
                           </Button>
@@ -458,6 +505,13 @@ export default function ThreadView({ threadId, onBack, className }: ThreadViewPr
           onLeadCreated={handleLeadCreated}
         />
       )}
+
+      {/* Compose Modal */}
+      <ComposeModal
+        open={showingCompose}
+        onOpenChange={setShowingCompose}
+        replyTo={replyTo || undefined}
+      />
     </FlowCard>
   );
 }

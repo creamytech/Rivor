@@ -108,10 +108,10 @@ export async function GET(req: NextRequest) {
         snippet: snippet,
         participants: participants,
         messageCount: thread._count.messages,
-        unread: false, // Not implemented yet
-        starred: false, // Not implemented yet
+        unread: thread.unread || false,
+        starred: thread.starred || false,
         hasAttachments: false, // Not implemented yet
-        labels: [], // Not implemented yet
+        labels: thread.labels || [],
         lastMessageAt: latestMessage?.sentAt?.toISOString() || thread.updatedAt.toISOString(),
         updatedAt: thread.updatedAt.toISOString()
       };

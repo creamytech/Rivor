@@ -101,9 +101,23 @@ export default function ThreadList({ className }: ThreadListProps) {
 
   const handleThreadAction = async (threadId: string, action: 'star' | 'unstar' | 'archive' | 'delete') => {
     try {
-      const response = await fetch(`/api/inbox/threads/${threadId}/${action}`, {
-        method: 'PATCH'
-      });
+      let response;
+      
+      if (action === 'star' || action === 'unstar') {
+        // For star/unstar, we need to send the starred status in the body
+        response = await fetch(`/api/inbox/threads/${threadId}/star`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ starred: action === 'star' })
+        });
+      } else {
+        // For archive and delete, use the specific endpoints
+        response = await fetch(`/api/inbox/threads/${threadId}/${action}`, {
+          method: action === 'delete' ? 'DELETE' : 'PATCH'
+        });
+      }
       
       if (response.ok) {
         // Optimistic update
@@ -126,6 +140,8 @@ export default function ThreadList({ className }: ThreadListProps) {
         if (action === 'delete' || action === 'archive') {
           setThreads(prev => prev.filter(t => t.id !== threadId));
         }
+      } else {
+        console.error(`Failed to ${action} thread:`, await response.text());
       }
     } catch (error) {
       console.error(`Failed to ${action} thread:`, error);
