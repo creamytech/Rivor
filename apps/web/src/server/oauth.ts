@@ -1,7 +1,4 @@
 import { prisma } from "./db";
-import { validateGoogleToken, validateAllGoogleTokens } from "./token-validation";
-import { runOrgHealthProbes } from "./health-probes";
-import { decryptForOrg } from "./crypto";
 import { logger } from "@/lib/logger";
 
 export interface ProbeResult {
@@ -33,30 +30,8 @@ export interface TokenHealth {
 }
 
 /**
- * Check the health of OAuth tokens for a user with live validation
+ * Check the health of OAuth tokens for a user
  */
-/**
- * Helper function to check if account has valid refresh token by decrypting it
- */
-async function hasValidRefreshToken(orgId: string, account: unknown): Promise<boolean> {
-  if (!account.refreshToken || account.refreshToken.length === 0) {
-    return false;
-  }
-  
-  try {
-    const refreshTokenBytes = await decryptForOrg(orgId, account.refreshToken, 'oauth:refresh');
-    const refreshToken = new TextDecoder().decode(refreshTokenBytes);
-    return refreshToken.length > 0;
-  } catch (error) {
-    logger.warn('Failed to decrypt refresh token', {
-      accountId: account.id,
-      provider: account.provider,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-    return false;
-  }
-}
-
 export async function checkTokenHealth(userEmail: string, skipValidation = false): Promise<TokenHealth[]> {
   const correlationId = `health-check-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   
@@ -148,108 +123,50 @@ export async function checkTokenHealth(userEmail: string, skipValidation = false
       if (isConnected) {
         baseHealth.services = {
           gmail: account.provider === 'google' ? {
-            connected: true,
-            lastSyncDate: account.lastSyncedAt || null,
-            error: account.errorReason || null
+            service: 'gmail' as const,
+            success: true,
+            timestamp: new Date()
           } : null,
           calendar: {
-            connected: true,
-            lastSyncDate: null, // CalendarAccount doesn't track this in same way
-            error: null
+            service: 'calendar' as const,
+            success: true,
+            timestamp: new Date()
           }
         };
-              
-              if (accountProbe && (accountProbe.gmail || accountProbe.calendar)) {
-                // Use probe results
-                baseHealth.services = {
-                  gmail: accountProbe.gmail ? { 
-                    service: 'gmail' as const,
-                    success: accountProbe.gmail.status === 'ok',
-                    timestamp: accountProbe.probeAt,
-                    error: accountProbe.gmail.reason 
-                  } : null,
-                  calendar: accountProbe.calendar ? { 
-                    service: 'calendar' as const,
-                    success: accountProbe.calendar.status === 'ok',
-                    timestamp: accountProbe.probeAt,
-                    error: accountProbe.calendar.reason 
-                  } : null
-                };
-                
-                // Update overall status based on successful probes
-                const hasSuccessfulProbe = 
-                  (accountProbe.gmail?.status === 'ok') || 
-                  (accountProbe.calendar?.status === 'ok');
-                
-                if (hasSuccessfulProbe) {
-                  baseHealth.lastProbeSuccess = accountProbe.probeAt;
-                } else {
-                  baseHealth.lastProbeError = 
-                    accountProbe.gmail?.reason || 
-                    accountProbe.calendar?.reason ||
-                    'Health probe failed';
-                }
-              } else {
-                // No probe results available - services status unknown
-                baseHealth.services = {
-                  gmail: { 
-                    service: 'gmail' as const,
-                    success: false, 
-                    timestamp: new Date(),
-                    error: 'No recent health probe data' 
-                  },
-                  calendar: { 
-                    service: 'calendar' as const,
-                    success: false, 
-                    timestamp: new Date(),
-                    error: 'No recent health probe data' 
-                  }
-                };
-              }
-            }
+      }
 
-            // Update connected status based on validation AND probe results
-            const hasRecentSuccessfulProbe = baseHealth.lastProbeSuccess && 
-              (Date.now() - baseHealth.lastProbeSuccess.getTime()) < (10 * 60 * 1000); // 10 minutes
-            
-            // For now, just use the basic connection status
-            // Token validation logic will be added later
-            baseHealth.connected = isConnected;
-            
-            logger.info('Token health check completed for account', {
-              correlationId,
-              accountId: account.id,
-              isConnected,
-              hasRecentProbe: hasRecentSuccessfulProbe,
-              finalConnectedStatus: baseHealth.connected,
-              action: 'health_check_complete'
-            });
-        }
-
-        return baseHealth;
-      });
-
-      const tokenHealth = await Promise.all(tokenHealthPromises);
-
-      logger.info('Token health check completed', {
-        userEmail,
+      logger.info('Token health check completed for account', {
         correlationId,
-        accountCount: accounts.length,
-        connectedCount: tokenHealth.filter(t => t.connected).length,
+        accountId: account.id,
+        isConnected,
+        finalConnectedStatus: baseHealth.connected,
         action: 'health_check_complete'
       });
 
-      return tokenHealth;
-    } catch (error) {
-      logger.error('Error checking token health', {
-        userEmail,
-        correlationId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        action: 'health_check_error'
-      });
-      return [];
-    }
+      return baseHealth;
+    });
+
+    const tokenHealth = await Promise.all(tokenHealthPromises);
+
+    logger.info('Token health check completed', {
+      userEmail,
+      correlationId,
+      accountCount: accounts.length,
+      connectedCount: tokenHealth.filter(t => t.connected).length,
+      action: 'health_check_complete'
+    });
+
+    return tokenHealth;
+  } catch (error) {
+    logger.error('Error checking token health', {
+      userEmail,
+      correlationId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      action: 'health_check_error'
+    });
+    return [];
   }
+}
 
 /**
  * Get missing required scopes for a provider
