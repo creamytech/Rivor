@@ -334,9 +334,11 @@ export class GmailService {
         snippet = htmlBody.replace(/<[^>]*>/g, '').substring(0, 200).replace(/\s+/g, ' ').trim();
       }
 
-      // Encrypt sensitive data
+      // Encrypt sensitive data - store HTML and text separately for rich formatting
       const subjectEnc = await encryptForOrg(orgId, subject, 'email:subject');
-      const bodyEnc = await encryptForOrg(orgId, textBody || htmlBody, 'email:body');
+      const htmlBodyEnc = await encryptForOrg(orgId, htmlBody, 'email:htmlBody');
+      const textBodyEnc = await encryptForOrg(orgId, textBody, 'email:textBody');
+      const bodyEnc = await encryptForOrg(orgId, htmlBody || textBody, 'email:body'); // Keep for backward compatibility
       const fromEnc = await encryptForOrg(orgId, from, 'email:from');
       const toEnc = await encryptForOrg(orgId, to, 'email:to');
       const ccEnc = await encryptForOrg(orgId, cc, 'email:cc');
@@ -367,24 +369,26 @@ export class GmailService {
         });
       }
 
-      // Create message with all encrypted content
-      await prisma.emailMessage.create({
-        data: {
-          orgId,
-          threadId: thread.id,
-          messageId: message.id,
-          sentAt: new Date(message.internalDate ? parseInt(message.internalDate) : Date.now()),
-          subjectEnc,
-          bodyRefEnc: bodyEnc,
-          fromEnc,
-          toEnc,
-          ccEnc,
-          bccEnc,
-          snippetEnc,
-          subjectIndex: subject.toLowerCase(),
-          participantsIndex: `${from} ${to} ${cc || ''} ${bcc || ''}`.toLowerCase(),
-        }
-      });
+             // Create message with all encrypted content
+       await prisma.emailMessage.create({
+         data: {
+           orgId,
+           threadId: thread.id,
+           messageId: message.id,
+           sentAt: new Date(message.internalDate ? parseInt(message.internalDate) : Date.now()),
+           subjectEnc,
+           bodyRefEnc: bodyEnc,
+           htmlBodyEnc,
+           textBodyEnc,
+           fromEnc,
+           toEnc,
+           ccEnc,
+           bccEnc,
+           snippetEnc,
+           subjectIndex: subject.toLowerCase(),
+           participantsIndex: `${from} ${to} ${cc || ''} ${bcc || ''}`.toLowerCase(),
+         }
+       });
 
       // Log the message details for debugging
       console.log(`Processed message: ${subject}`, {

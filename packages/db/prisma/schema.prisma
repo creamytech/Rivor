@@ -212,6 +212,8 @@ model EmailMessage {
   subjectEnc         Bytes?
   snippetEnc         Bytes?
   bodyRefEnc         Bytes?
+  htmlBodyEnc        Bytes?
+  textBodyEnc        Bytes?
   attachmentsMetaEnc Bytes?
   subjectIndex       String?
   participantsIndex  String?
