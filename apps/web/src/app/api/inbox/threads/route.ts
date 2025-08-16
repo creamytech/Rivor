@@ -28,10 +28,8 @@ export async function GET(req: NextRequest) {
 
     // Build where clause based on filter
     const whereClause: any = {
-      orgId,
-      messages: {
-        some: {} // Only threads with messages
-      }
+      orgId
+      // Removed messages requirement to show all threads
     };
 
     // Note: Current schema doesn't support these filters yet
