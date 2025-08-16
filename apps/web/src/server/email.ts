@@ -75,6 +75,7 @@ export type UiEmailMessage = {
   bcc: string;
   subject: string;
   snippet: string;
+  body: string;
 };
 
 export async function getThreadWithMessages(orgId: string, threadId: string): Promise<{ thread: UiEmailThread | null; messages: UiEmailMessage[] }>{
@@ -122,15 +123,13 @@ export async function getThreadWithMessages(orgId: string, threadId: string): Pr
       sentAt: true, 
       subjectIndex: true,
       participantsIndex: true,
-      htmlBody: true,
-      textBody: true,
-      snippet: true,
       fromEnc: true, 
       toEnc: true, 
       ccEnc: true, 
       bccEnc: true, 
       subjectEnc: true, 
-      snippetEnc: true 
+      snippetEnc: true,
+      bodyRefEnc: true
     },
   });
   
@@ -149,16 +148,15 @@ export async function getThreadWithMessages(orgId: string, threadId: string): Pr
       } catch {}
     }
     
-    if (m.snippet) {
-      messageSnippet = m.snippet;
-    } else if (m.snippetEnc) {
-      // Fallback to encrypted fields (old sync process)
+    if (m.snippetEnc) {
+      // Use encrypted snippet field
       try {
         messageSnippet = new TextDecoder().decode(await decryptForOrg(orgId, m.snippetEnc as unknown as Buffer, 'email:snippet'));
       } catch {}
     }
     
     const dec = async (blob?: Buffer, aad?: string) => blob ? new TextDecoder().decode(await decryptForOrg(orgId, blob, aad!)) : '';
+    const body = await dec(m.bodyRefEnc as unknown as Buffer, 'email:body');
     messages.push({
       id: m.id,
       sentAt: m.sentAt,
@@ -168,6 +166,7 @@ export async function getThreadWithMessages(orgId: string, threadId: string): Pr
       bcc: await dec(m.bccEnc as unknown as Buffer, 'email:bcc'),
       subject: messageSubject,
       snippet: messageSnippet,
+      body: body,
     });
   }
   return { thread: { id: thread.id, subject, participants, updatedAt: thread.updatedAt }, messages };

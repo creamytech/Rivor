@@ -254,7 +254,7 @@ export class GmailService {
     }
   }
 
-  private async processMessage(orgId: string, emailAccountId: string, messageId: string): Promise<void> {
+  async processMessage(orgId: string, emailAccountId: string, messageId: string): Promise<void> {
     const gmail = await this.getGmail();
     
     try {
@@ -339,6 +339,9 @@ export class GmailService {
       const bodyEnc = await encryptForOrg(orgId, textBody || htmlBody, 'email:body');
       const fromEnc = await encryptForOrg(orgId, from, 'email:from');
       const toEnc = await encryptForOrg(orgId, to, 'email:to');
+      const ccEnc = await encryptForOrg(orgId, cc, 'email:cc');
+      const bccEnc = await encryptForOrg(orgId, bcc, 'email:bcc');
+      const snippetEnc = await encryptForOrg(orgId, snippet, 'email:snippet');
 
       // Find or create thread based on subject
       let thread = await prisma.emailThread.findFirst({
@@ -364,17 +367,24 @@ export class GmailService {
         });
       }
 
-             // Create message with enhanced content
-       await prisma.emailMessage.create({
-         data: {
-           orgId,
-           threadId: thread.id,
-           messageId: message.id,
-           sentAt: new Date(message.internalDate ? parseInt(message.internalDate) : Date.now()),
-           subjectIndex: subject.toLowerCase(),
-           participantsIndex: `${from} ${to} ${cc || ''} ${bcc || ''}`.toLowerCase(),
-         }
-       });
+      // Create message with all encrypted content
+      await prisma.emailMessage.create({
+        data: {
+          orgId,
+          threadId: thread.id,
+          messageId: message.id,
+          sentAt: new Date(message.internalDate ? parseInt(message.internalDate) : Date.now()),
+          subjectEnc,
+          bodyRefEnc: bodyEnc,
+          fromEnc,
+          toEnc,
+          ccEnc,
+          bccEnc,
+          snippetEnc,
+          subjectIndex: subject.toLowerCase(),
+          participantsIndex: `${from} ${to} ${cc || ''} ${bcc || ''}`.toLowerCase(),
+        }
+      });
 
       // Log the message details for debugging
       console.log(`Processed message: ${subject}`, {
