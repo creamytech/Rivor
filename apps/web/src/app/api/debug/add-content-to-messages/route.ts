@@ -21,12 +21,10 @@ export async function POST(__request: NextRequest) {
 
     logger.info('Adding content to existing messages', { userEmail, orgId });
 
-    // Get messages that don't have content
+    // Get messages that don't have content (using only existing fields)
     const messages = await prisma.emailMessage.findMany({
       where: { 
-        orgId,
-        htmlBody: null,
-        textBody: null
+        orgId
       },
       select: {
         id: true,
