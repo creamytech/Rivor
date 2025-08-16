@@ -42,8 +42,16 @@ export async function GET(req: NextRequest) {
         break;
     }
 
+    // Build filter conditions
+    let filterCondition = '';
+    if (filter === 'unread') {
+      filterCondition = 'AND et.unread = true';
+    } else if (filter === 'starred') {
+      filterCondition = 'AND et.starred = true';
+    }
+
     // Get threads with proper sorting by latest message date
-    const threads = await prisma.$queryRaw`
+    const threadsQuery = `
       SELECT 
         et.id,
         et."orgId",
@@ -61,24 +69,26 @@ export async function GET(req: NextRequest) {
         COUNT(em.id) as message_count
       FROM "EmailThread" et
       LEFT JOIN "EmailMessage" em ON et.id = em."threadId"
-      WHERE et."orgId" = ${orgId}
-      ${filter === 'unread' ? 'AND et.unread = true' : ''}
-      ${filter === 'starred' ? 'AND et.starred = true' : ''}
+      WHERE et."orgId" = $1
+      ${filterCondition}
       GROUP BY et.id, et."orgId", et."accountId", et."subjectEnc", et."participantsEnc", 
                et."subjectIndex", et."participantsIndex", et."createdAt", et."updatedAt", 
                et.labels, et.starred, et.unread
       ORDER BY latest_message_date DESC NULLS LAST
-      LIMIT ${limit} OFFSET ${offset}
+      LIMIT $2 OFFSET $3
     `;
+    
+    const threads = await prisma.$queryRawUnsafe(threadsQuery, orgId, limit, offset);
 
     // Get total count for pagination
-    const totalCountResult = await prisma.$queryRaw`
+    const countQuery = `
       SELECT COUNT(DISTINCT et.id) as total
       FROM "EmailThread" et
-      WHERE et."orgId" = ${orgId}
-      ${filter === 'unread' ? 'AND et.unread = true' : ''}
-      ${filter === 'starred' ? 'AND et.starred = true' : ''}
+      WHERE et."orgId" = $1
+      ${filterCondition}
     `;
+    
+    const totalCountResult = await prisma.$queryRawUnsafe(countQuery, orgId);
     const totalCount = Number((totalCountResult as any)[0]?.total || 0);
 
     // Transform to UI format
