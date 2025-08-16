@@ -360,19 +360,20 @@ export class GmailService {
         });
       }
 
-      // Create message using current schema (without new fields for now)
+      // Create message with enhanced content
       await prisma.emailMessage.create({
         data: {
           orgId,
           threadId: thread.id,
           messageId: message.id,
-          subjectEnc,
-          bodyRefEnc: bodyEnc,
-          fromEnc,
-          toEnc,
           sentAt: new Date(message.internalDate ? parseInt(message.internalDate) : Date.now()),
           subjectIndex: subject.toLowerCase(),
           participantsIndex: `${from} ${to} ${cc || ''} ${bcc || ''}`.toLowerCase(),
+          // Store actual email content
+          htmlBody: htmlBody || null,
+          textBody: textBody || null,
+          snippet: snippet || null,
+          attachments: attachments.length > 0 ? attachments : null,
         }
       });
 
