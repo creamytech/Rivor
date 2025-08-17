@@ -9,6 +9,7 @@ import DashboardContent from "@/components/app/DashboardContent";
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const [dashboardData, setDashboardData] = useState<any>(null);
+  const [tokenHealthData, setTokenHealthData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,7 +39,23 @@ export default function DashboardPage() {
       }
     };
 
+    // Fetch token health data separately (optional)
+    const fetchTokenHealthData = async () => {
+      try {
+        const response = await fetch('/api/token-health');
+        if (response.ok) {
+          const data = await response.json();
+          setTokenHealthData(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch token health data:', error);
+        // Don't set error state for token health - it's optional
+      }
+    };
+
     fetchDashboardData();
+    // Fetch token health data after a short delay to not block initial load
+    setTimeout(fetchTokenHealthData, 1000);
   }, [session, status]);
 
   if (status === "loading" || loading) {
@@ -82,7 +99,16 @@ export default function DashboardPage() {
     tokenHealth: []
   };
 
-  const data = dashboardData || defaultData;
+  // Merge dashboard data with token health data
+  const baseData = dashboardData || defaultData;
+  const data = {
+    ...baseData,
+    // Override with token health data if available
+    hasEmailIntegration: tokenHealthData?.hasEmailIntegration ?? baseData.hasEmailIntegration,
+    hasCalendarIntegration: tokenHealthData?.hasCalendarIntegration ?? baseData.hasCalendarIntegration,
+    showOnboarding: tokenHealthData?.showOnboarding ?? baseData.showOnboarding,
+    tokenHealth: tokenHealthData?.tokenHealth ?? baseData.tokenHealth
+  };
 
   return (
     <ToastProvider>
