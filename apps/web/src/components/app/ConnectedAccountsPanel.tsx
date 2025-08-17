@@ -115,16 +115,16 @@ export default function ConnectedAccountsPanel({
 
   // Debug logging for integration detection
   console.log('ConnectedAccountsPanel debug:', {
-    tokenHealthCount: tokenHealth.length,
-    tokenHealth: tokenHealth.map(t => ({
+    tokenHealthCount: tokenHealth?.length || 0,
+    tokenHealth: tokenHealth?.map(t => ({
       provider: t.provider,
       connected: t.connected,
       expired: t.expired,
       scopes: t.scopes
-    }))
+    })) || []
   });
 
-  const connectedAccounts = tokenHealth.filter(t => t.connected);
+  const connectedAccounts = tokenHealth?.filter(t => t.connected) || [];
   const googleAccount = connectedAccounts.find(t => t.provider === 'google');
   const microsoftAccount = connectedAccounts.find(t => t.provider === 'azure-ad');
 
