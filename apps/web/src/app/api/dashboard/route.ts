@@ -69,11 +69,35 @@ export async function GET(_req: NextRequest) {
           messageCount: threads[0]._count.messages
         } : 'No threads');
 
-        // Decrypt thread data for display
+        // Decrypt thread data for display - get subject from latest message like inbox does
         recentThreads = await Promise.all(threads.map(async (thread) => {
           try {
-            const subject = thread.subjectEnc ? await decryptForOrg(orgId, thread.subjectEnc, 'email:subject') : 'No Subject';
-            const participants = thread.participantsEnc ? await decryptForOrg(orgId, thread.participantsEnc, 'email:participants') : 'No Participants';
+            // Get the latest message for this thread to extract real data
+            const latestMessage = await prisma.emailMessage.findFirst({
+              where: { threadId: thread.id },
+              select: {
+                subjectEnc: true,
+                fromEnc: true,
+                toEnc: true,
+                sentAt: true
+              },
+              orderBy: { sentAt: 'desc' }
+            });
+
+            let subject = 'No Subject';
+            let participants = 'Email Participants';
+
+            if (latestMessage?.subjectEnc) {
+              const subjectBytes = await decryptForOrg(orgId, latestMessage.subjectEnc, 'email:subject');
+              subject = new TextDecoder().decode(subjectBytes);
+            }
+
+            // Get participants from latest message
+            if (latestMessage?.fromEnc) {
+              const fromBytes = await decryptForOrg(orgId, latestMessage.fromEnc, 'email:from');
+              const from = new TextDecoder().decode(fromBytes);
+              participants = from;
+            }
             
             return {
               id: thread.id,
@@ -167,8 +191,18 @@ export async function GET(_req: NextRequest) {
         // Decrypt event data
         upcomingEvents = await Promise.all(events.map(async (event) => {
           try {
-            const title = event.titleEnc ? await decryptForOrg(orgId, event.titleEnc, 'calendar:title') : 'Untitled Event';
-            const location = event.locationEnc ? await decryptForOrg(orgId, event.locationEnc, 'calendar:location') : null;
+            let title = 'Untitled Event';
+            let location = null;
+
+            if (event.titleEnc) {
+              const titleBytes = await decryptForOrg(orgId, event.titleEnc, 'calendar:title');
+              title = new TextDecoder().decode(titleBytes);
+            }
+
+            if (event.locationEnc) {
+              const locationBytes = await decryptForOrg(orgId, event.locationEnc, 'calendar:location');
+              location = new TextDecoder().decode(locationBytes);
+            }
             
             return {
               id: event.id,
