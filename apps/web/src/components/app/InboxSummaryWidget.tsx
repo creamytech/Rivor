@@ -64,7 +64,7 @@ export default function InboxSummaryWidget({
     );
   }
 
-  if (recentThreads.length === 0) {
+  if (!recentThreads || recentThreads.length === 0) {
     return (
       <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300">
         <div className="p-6">
@@ -127,7 +127,7 @@ export default function InboxSummaryWidget({
         </p>
         
         <div className="space-y-3">
-          {recentThreads.slice(0, 5).map((thread, index) => (
+          {recentThreads?.slice(0, 5).map((thread, index) => (
             <Link 
               key={thread.id} 
               href={`/app/inbox/${thread.id}`}

@@ -68,7 +68,7 @@ export default function PipelineGlanceWidget({
     );
   }
 
-  if (pipelineStats.length === 0 || totalActiveLeads === 0) {
+  if (!pipelineStats || pipelineStats.length === 0 || totalActiveLeads === 0) {
     return (
       <Card>
         <CardHeader>
@@ -102,7 +102,7 @@ export default function PipelineGlanceWidget({
     }).format(value);
   };
 
-  const totalValue = pipelineStats.reduce((sum, stage) => sum + stage.totalValue, 0);
+  const totalValue = pipelineStats?.reduce((sum, stage) => sum + stage.totalValue, 0) || 0;
 
   return (
     <Card>
@@ -125,7 +125,7 @@ export default function PipelineGlanceWidget({
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {pipelineStats.map((stage) => (
+          {pipelineStats?.map((stage) => (
             <Link
               key={stage.stageId}
               href={`/app/pipeline?filter=stage&stage=${encodeURIComponent(stage.stageName)}`}

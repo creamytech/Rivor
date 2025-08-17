@@ -68,7 +68,7 @@ export default function CalendarSnapshotWidget({
     );
   }
 
-  if (upcomingEvents.length === 0) {
+  if (!upcomingEvents || upcomingEvents.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -135,7 +135,7 @@ export default function CalendarSnapshotWidget({
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {upcomingEvents.slice(0, 5).map((event) => (
+          {upcomingEvents?.slice(0, 5).map((event) => (
             <div 
               key={event.id}
               className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2"
