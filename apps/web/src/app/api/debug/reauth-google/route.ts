@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
-import { google } from 'googleapis';
 
 export async function GET(req: NextRequest) {
   try {
@@ -9,36 +8,20 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Create OAuth2 client
-    const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      'https://www.rivor.ai/api/auth/callback/google'
-    );
-
-    // Generate authorization URL
-    const authUrl = oauth2Client.generateAuthUrl({
-      access_type: 'offline',
-      prompt: 'consent', // Force consent to get refresh token
-      scope: [
-        'openid',
-        'email',
-        'profile',
-        'https://www.googleapis.com/auth/gmail.readonly',
-        'https://www.googleapis.com/auth/calendar.readonly'
-      ]
-    });
+    // Redirect to the existing NextAuth Google sign-in
+    const signInUrl = 'https://www.rivor.ai/auth/signin?provider=google&callbackUrl=https://www.rivor.ai/app';
 
     return NextResponse.json({
       success: true,
-      message: 'Redirect to Google OAuth for re-authentication',
-      authUrl,
+      message: 'Redirect to existing NextAuth Google sign-in',
+      signInUrl,
       instructions: [
-        '1. Click the authUrl to go to Google OAuth',
-        '2. Grant permissions to the app',
-        '3. You will be redirected back to the app',
+        '1. Click the signInUrl to go to the existing Google sign-in page',
+        '2. Sign in with Google (this will refresh your OAuth tokens)',
+        '3. You will be redirected back to the app dashboard',
         '4. The new tokens will be automatically encrypted and stored'
       ],
+      note: 'This uses the existing NextAuth OAuth flow which is already configured and working',
       timestamp: new Date().toISOString()
     });
 
