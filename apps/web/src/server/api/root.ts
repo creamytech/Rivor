@@ -935,19 +935,17 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const user = await getCurrentUser();
         
-        // This would typically integrate with an AI service
-        // For now, return a mock response
-        return {
-          id: `msg_${Date.now()}`,
-          content: `I understand you're asking about "${input.message}". Let me help you with that.`,
-          role: 'assistant',
-          timestamp: new Date(),
-          reasoning: 'Based on the context provided, I can see this is related to lead management.',
-          actions: [
-            { type: 'create_task', label: 'Create follow-up task' },
-            { type: 'promote_lead', label: 'Promote to next stage' }
-          ]
-        };
+        // Import AI service
+        const { aiService } = await import('@/server/ai/ai-service');
+        
+        // Send message to AI service with context
+        const response = await aiService.sendMessage(
+          input.message,
+          input.threadId,
+          input.context
+        );
+        
+        return response;
       }),
 
     getThread: protectedProcedure
@@ -955,22 +953,36 @@ export const appRouter = router({
       .query(async ({ input }) => {
         const user = await getCurrentUser();
         
-        // This would typically fetch from a chat history table
-        return {
-          id: input.threadId,
-          messages: [
-            {
-              id: 'msg_1',
-              content: 'Hello! How can I help you today?',
-              role: 'assistant',
-              timestamp: new Date(Date.now() - 60000)
-            }
-          ],
-          context: {
-            type: 'lead',
-            id: 'lead_123'
-          }
-        };
+        // Import AI service
+        const { aiService } = await import('@/server/ai/ai-service');
+        
+        // Get thread from AI service
+        return await aiService.getThread(input.threadId);
+      }),
+
+    executeAction: protectedProcedure
+      .input(z.object({
+        actionType: z.string(),
+        context: z.object({
+          type: z.enum(['lead', 'contact', 'thread']).optional(),
+          id: z.string().optional()
+        }).optional(),
+        actionData: z.any().optional()
+      }))
+      .mutation(async ({ input }) => {
+        const user = await getCurrentUser();
+        
+        // Import AI service
+        const { aiService } = await import('@/server/ai/ai-service');
+        
+        // Execute the suggested action
+        const result = await aiService.executeSuggestedAction(
+          input.actionType,
+          input.context,
+          input.actionData
+        );
+        
+        return { result };
       })
   }
 });
