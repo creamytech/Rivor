@@ -64,17 +64,54 @@ export async function GET(req: NextRequest) {
       try {
         let decryptedToken = null;
         let error = null;
+        let successfulContext = null;
 
         if (token.encryptedTokenBlob) {
-          try {
-            const decryptedBytes = await decryptForOrg(
-              orgId,
-              token.encryptedTokenBlob,
-              `oauth:${token.tokenType === 'oauth_access' ? 'access' : 'refresh'}`
-            );
-            decryptedToken = new TextDecoder().decode(decryptedBytes);
-          } catch (decryptError) {
-            error = `Decryption failed: ${decryptError instanceof Error ? decryptError.message : 'Unknown error'}`;
+          // Test multiple possible decryption contexts
+          const contextsToTest = [
+            `oauth:${token.tokenType === 'oauth_access' ? 'access' : 'refresh'}`,
+            `oauth:${token.tokenType === 'oauth_access' ? 'access' : 'refresh'}:${session.user.email}`,
+            `oauth:${token.tokenType === 'oauth_access' ? 'access' : 'refresh'}:google`,
+            `oauth:${token.tokenType === 'oauth_access' ? 'access' : 'refresh'}:${orgId}`,
+            `oauth:${token.tokenType}`,
+            `oauth:${token.tokenType}:${session.user.email}`,
+            `oauth:${token.tokenType}:google`,
+            `oauth:${token.tokenType}:${orgId}`,
+            `token:${token.tokenType}`,
+            `token:${token.tokenType}:${session.user.email}`,
+            `token:${token.tokenType}:google`,
+            `token:${token.tokenType}:${orgId}`,
+            `google:${token.tokenType}`,
+            `google:${token.tokenType}:${session.user.email}`,
+            `google:${token.tokenType}:${orgId}`,
+            `${token.tokenType}`,
+            `${token.tokenType}:${session.user.email}`,
+            `${token.tokenType}:google`,
+            `${token.tokenType}:${orgId}`,
+          ];
+
+          for (const context of contextsToTest) {
+            try {
+              const decryptedBytes = await decryptForOrg(
+                orgId,
+                token.encryptedTokenBlob,
+                context
+              );
+              const testDecrypted = new TextDecoder().decode(decryptedBytes);
+              
+              // Basic validation that it looks like a token
+              if (testDecrypted && testDecrypted.length > 10 && !testDecrypted.includes('\0')) {
+                decryptedToken = testDecrypted;
+                successfulContext = context;
+                break;
+              }
+            } catch (contextError) {
+              // Continue to next context
+            }
+          }
+
+          if (!decryptedToken) {
+            error = `Decryption failed for all tested contexts. Tried: ${contextsToTest.slice(0, 5).join(', ')}...`;
           }
         }
 
@@ -84,6 +121,7 @@ export async function GET(req: NextRequest) {
           hasEncryptedBlob: !!token.encryptedTokenBlob,
           encryptedBlobLength: token.encryptedTokenBlob?.length || 0,
           decryptedToken: decryptedToken ? `${decryptedToken.substring(0, 20)}...` : null,
+          successfulContext,
           error,
           status: error ? 'failed' : 'success'
         });
@@ -94,6 +132,7 @@ export async function GET(req: NextRequest) {
           hasEncryptedBlob: !!token.encryptedTokenBlob,
           encryptedBlobLength: token.encryptedTokenBlob?.length || 0,
           decryptedToken: null,
+          successfulContext: null,
           error: `Token processing failed: ${tokenError instanceof Error ? tokenError.message : 'Unknown error'}`,
           status: 'failed'
         });
