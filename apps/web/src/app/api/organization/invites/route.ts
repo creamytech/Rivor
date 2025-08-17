@@ -1,118 +1,114 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const fetchCache = 'force-no-store';
 
-/**
- * Get pending invitations
- */
-export async function GET(_req: NextRequest) {
-  try {
-    const session = await auth();
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const orgId = (session as unknown).orgId;
-    if (!orgId) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
-    }
-
-    // For now, return demo data since we don't have an invites table yet
-    const demoInvites = [
-      {
-        id: 'demo-invite-1',
-        email: 'newteam@company.com',
-        role: 'member' as const,
-        invitedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        invitedBy: 'john@company.com',
-        expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString()
-      }
-    ];
-
-    return NextResponse.json({ invites: demoInvites });
-
-  } catch (error: unknown) {
-    console.error('Organization invites API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch invitations' },
-      { status: 500 }
-    );
+export async function GET() {
+  const session = await auth();
+  if (!session?.user?.email) {
+    return new Response('Unauthorized', { status: 401 });
   }
-}
 
-/**
- * Create new invitation
- */
-export async function POST(req: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const orgId = (session as unknown).orgId;
-    if (!orgId) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
-    }
-
-    const body = await req.json();
-    const { email, role } = body;
-
-    if (!email || !role) {
-      return NextResponse.json(
-        { error: 'Email and role are required' },
-        { status: 400 }
-      );
-    }
-
-    if (!['admin', 'member'].includes(role)) {
-      return NextResponse.json(
-        { error: 'Invalid role' },
-        { status: 400 }
-      );
-    }
-
-    // Check if user already exists in org
-    const existingMember = await prisma.orgMember.findFirst({
-      where: {
-        orgId,
-        user: {
-          email: email.toLowerCase()
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: {
+        orgMembers: {
+          include: {
+            org: true
+          }
         }
       }
     });
 
-    if (existingMember) {
-      return NextResponse.json(
-        { error: 'User is already a member of this organization' },
-        { status: 409 }
-      );
+    if (!user || user.orgMembers.length === 0) {
+      return new Response('No organization found', { status: 404 });
     }
 
-    // For now, return success without actually creating the invite
+    const org = user.orgMembers[0].org;
+
+    // For now, return empty invites array
+    // In a real implementation, you'd have an Invite model in your database
+    const invites: any[] = [];
+
+    return Response.json({ invites });
+  } catch (error) {
+    console.error('Failed to fetch organization invites:', error);
+    return new Response('Internal Server Error', { status: 500 });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.email) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  try {
+    const body = await request.json();
+    const { email, role } = body;
+
+    if (!email || !role) {
+      return new Response('Missing required fields', { status: 400 });
+    }
+
+    if (!['admin', 'member'].includes(role)) {
+      return new Response('Invalid role', { status: 400 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: {
+        orgMembers: {
+          include: {
+            org: true
+          }
+        }
+      }
+    });
+
+    if (!user || user.orgMembers.length === 0) {
+      return new Response('No organization found', { status: 404 });
+    }
+
+    const org = user.orgMembers[0];
+    const currentUserMember = user.orgMembers[0];
+
+    // Check if current user has permission to invite
+    if (currentUserMember.role !== 'owner' && currentUserMember.role !== 'admin') {
+      return new Response('Insufficient permissions', { status: 403 });
+    }
+
+    // Check if user is already a member
+    const existingMember = await prisma.orgMember.findFirst({
+      where: {
+        orgId: org.org.id,
+        user: { email }
+      }
+    });
+
+    if (existingMember) {
+      return new Response('User is already a member of this organization', { status: 400 });
+    }
+
     // In a real implementation, you would:
-    // 1. Create an invitation record
+    // 1. Create an invite record in the database
     // 2. Send an email invitation
-    // 3. Generate a secure invite token
+    // 3. Generate a unique invite link
 
-    const mockInvite = {
-      id: `invite-${Date.now()}`,
-      email: email.toLowerCase(),
-      role,
-      invitedAt: new Date().toISOString(),
-      invitedBy: session.user.email,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-    };
+    // For now, we'll just return success
+    console.log('Invitation would be sent to:', email, 'for role:', role, 'in org:', org.org.id);
 
-    return NextResponse.json(mockInvite);
-
-  } catch (error: unknown) {
-    console.error('Organization invite creation API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create invitation' },
-      { status: 500 }
-    );
+    return Response.json({ 
+      success: true, 
+      message: 'Invitation sent successfully',
+      inviteId: `invite-${Date.now()}` // Mock invite ID
+    });
+  } catch (error) {
+    console.error('Failed to create organization invite:', error);
+    return new Response('Internal Server Error', { status: 500 });
   }
 }

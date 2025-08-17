@@ -1,7 +1,9 @@
 "use client";
 import { useState } from 'react';
+import { signOut } from 'next-auth/react';
 import FlowCard from '@/components/river/FlowCard';
 import RiverTabs from '@/components/river/RiverTabs';
+import { Button } from '@/components/ui/button';
 import { 
   User, 
   Building2, 
@@ -11,7 +13,8 @@ import {
   Palette, 
   Download,
   Trash2,
-  Activity
+  Activity,
+  LogOut
 } from 'lucide-react';
 
 interface SettingsTab {
@@ -34,11 +37,19 @@ export default function SettingsLayout({
   onTabChange, 
   tabs 
 }: SettingsLayoutProps) {
+  const handleLogout = async () => {
+    try {
+      await signOut({ callbackUrl: '/' });
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   return (
     <FlowCard className="min-h-[600px]">
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-64 border-r border-slate-200 dark:border-slate-700">
+        <div className="w-64 border-r border-slate-200 dark:border-slate-700 flex flex-col">
           <div className="p-6 border-b border-slate-200 dark:border-slate-700">
             <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
               Settings
@@ -48,7 +59,7 @@ export default function SettingsLayout({
             </p>
           </div>
           
-          <nav className="p-4">
+          <nav className="p-4 flex-1">
             <div className="space-y-1">
               {tabs.map((tab) => (
                 <button
@@ -66,6 +77,18 @@ export default function SettingsLayout({
               ))}
             </div>
           </nav>
+
+          {/* Logout Section */}
+          <div className="p-4 border-t border-slate-200 dark:border-slate-700">
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="w-full text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-950/30"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
         </div>
 
         {/* Content */}

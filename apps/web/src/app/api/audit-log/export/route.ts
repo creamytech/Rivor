@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     const range = searchParams.get('range') || '7d';
     const category = searchParams.get('category') || '';
     const search = searchParams.get('search') || '';
+    const format = searchParams.get('format') || 'csv';
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
@@ -80,29 +81,77 @@ export async function GET(request: NextRequest) {
       },
       orderBy: {
         createdAt: 'desc'
-      },
-      take: 100 // Limit to 100 most recent entries
+      }
     });
 
-    const formattedLogs = auditLogs.map(log => ({
-      id: log.id,
-      timestamp: log.createdAt.toISOString(),
-      userId: log.userId,
-      userName: log.user.name || 'Unknown User',
-      userEmail: log.user.email,
-      action: log.action,
-      resource: log.resource,
-      resourceId: log.resourceId,
-      details: log.details,
-      ipAddress: log.ipAddress || 'Unknown',
-      userAgent: log.userAgent || 'Unknown',
-      severity: log.severity,
-      category: log.category
-    }));
+    if (format === 'csv') {
+      // Generate CSV
+      const csvHeaders = [
+        'Timestamp',
+        'User Name',
+        'User Email',
+        'Action',
+        'Resource',
+        'Resource ID',
+        'Details',
+        'IP Address',
+        'User Agent',
+        'Severity',
+        'Category'
+      ];
 
-    return Response.json({ logs: formattedLogs });
+      const csvRows = auditLogs.map(log => [
+        log.createdAt.toISOString(),
+        log.user.name || 'Unknown User',
+        log.user.email,
+        log.action,
+        log.resource,
+        log.resourceId || '',
+        log.details,
+        log.ipAddress || 'Unknown',
+        log.userAgent || 'Unknown',
+        log.severity,
+        log.category
+      ]);
+
+      const csvContent = [
+        csvHeaders.join(','),
+        ...csvRows.map(row => row.map(field => `"${field}"`).join(','))
+      ].join('\n');
+
+      return new Response(csvContent, {
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="audit-log-${new Date().toISOString().split('T')[0]}.csv"`
+        }
+      });
+    } else {
+      // Return JSON
+      const formattedLogs = auditLogs.map(log => ({
+        id: log.id,
+        timestamp: log.createdAt.toISOString(),
+        userId: log.userId,
+        userName: log.user.name || 'Unknown User',
+        userEmail: log.user.email,
+        action: log.action,
+        resource: log.resource,
+        resourceId: log.resourceId,
+        details: log.details,
+        ipAddress: log.ipAddress || 'Unknown',
+        userAgent: log.userAgent || 'Unknown',
+        severity: log.severity,
+        category: log.category
+      }));
+
+      return new Response(JSON.stringify(formattedLogs, null, 2), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Disposition': `attachment; filename="audit-log-${new Date().toISOString().split('T')[0]}.json"`
+        }
+      });
+    }
   } catch (error) {
-    console.error('Failed to fetch audit logs:', error);
+    console.error('Failed to export audit logs:', error);
     return new Response('Internal Server Error', { status: 500 });
   }
 }

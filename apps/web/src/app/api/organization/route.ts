@@ -1,102 +1,92 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const fetchCache = 'force-no-store';
 
-/**
- * Get organization details
- */
-export async function GET(_req: NextRequest) {
+export async function GET() {
+  const session = await auth();
+  if (!session?.user?.email) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
   try {
-    const session = await auth();
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const orgId = (session as unknown).orgId;
-    if (!orgId) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
-    }
-
-    const org = await prisma.org.findFirst({
-      where: { id: orgId },
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
       include: {
-        _count: {
-          select: {
-            members: true
+        orgMembers: {
+          include: {
+            org: true
           }
         }
       }
     });
 
-    if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+    if (!user || user.orgMembers.length === 0) {
+      return new Response('No organization found', { status: 404 });
     }
 
-    const response = {
+    // For now, return the first organization the user is a member of
+    // In a real implementation, you might want to handle multiple organizations
+    const org = user.orgMembers[0].org;
+
+    return Response.json({
       id: org.id,
       name: org.name,
-      createdAt: org.createdAt.toISOString(),
-      updatedAt: org.updatedAt.toISOString(),
-      memberCount: org._count.members
-    };
-
-    return NextResponse.json(response);
-
-  } catch (error: unknown) {
-    console.error('Organization API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch organization' },
-      { status: 500 }
-    );
+      slug: org.slug,
+      brandName: org.brandName,
+      createdAt: org.createdAt,
+      updatedAt: org.updatedAt
+    });
+  } catch (error) {
+    console.error('Failed to fetch organization:', error);
+    return new Response('Internal Server Error', { status: 500 });
   }
 }
 
-/**
- * Update organization details
- */
-export async function PATCH(req: NextRequest) {
+export async function PUT(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.email) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
   try {
-    const session = await auth();
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const body = await request.json();
+    const { name, slug, brandName } = body;
 
-    const orgId = (session as unknown).orgId;
-    if (!orgId) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
-    }
-
-    const body = await req.json();
-    const { name } = body;
-
-    if (!name || typeof name !== 'string' || name.trim().length === 0) {
-      return NextResponse.json({ error: 'Organization name is required' }, { status: 400 });
-    }
-
-    const updatedOrg = await prisma.org.update({
-      where: { id: orgId },
-      data: {
-        name: name.trim(),
-        updatedAt: new Date()
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: {
+        orgMembers: {
+          include: {
+            org: true
+          }
+        }
       }
     });
 
-    const response = {
-      id: updatedOrg.id,
-      name: updatedOrg.name,
-      createdAt: updatedOrg.createdAt.toISOString(),
-      updatedAt: updatedOrg.updatedAt.toISOString()
-    };
+    if (!user || user.orgMembers.length === 0) {
+      return new Response('No organization found', { status: 404 });
+    }
 
-    return NextResponse.json(response);
+    const org = user.orgMembers[0].org;
 
-  } catch (error: unknown) {
-    console.error('Organization update API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update organization' },
-      { status: 500 }
-    );
+    // Update organization
+    const updatedOrg = await prisma.org.update({
+      where: { id: org.id },
+      data: {
+        name: name || undefined,
+        slug: slug || undefined,
+        brandName: brandName || undefined
+      }
+    });
+
+    return Response.json(updatedOrg);
+  } catch (error) {
+    console.error('Failed to update organization:', error);
+    return new Response('Internal Server Error', { status: 500 });
   }
 }
+

@@ -1,151 +1,76 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
-import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const fetchCache = 'force-no-store';
 
-export async function GET(req: NextRequest) {
+export async function GET() {
+  const session = await auth();
+  if (!session?.user?.email) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
   try {
-    const session = await auth();
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const orgId = (session as { orgId?: string }).orgId;
-    if (!orgId) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
-    }
-
-    const url = new URL(req.url);
-    const probe = url.searchParams.get('probe') === 'true';
-
-    // Get email accounts with detailed status
-    const emailAccounts = await prisma.emailAccount.findMany({
-      where: { orgId },
-      select: {
-        id: true,
-        provider: true,
-        email: true,
-        displayName: true,
-        status: true,
-        syncStatus: true,
-        lastSyncedAt: true,
-        errorReason: true,
-        encryptionStatus: true,
-        kmsErrorCode: true,
-        kmsErrorAt: true,
-        tokenStatus: true
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: {
+        orgMembers: {
+          include: {
+            org: {
+              include: {
+                emailAccounts: true,
+                calendarAccounts: true
+              }
+            }
+          }
+        }
       }
     });
 
-    // Get secure tokens for encryption status
-    const secureTokens = await prisma.secureToken.findMany({
-      where: { orgId },
-      select: {
-        encryptionStatus: true,
-        kmsErrorCode: true,
-        kmsErrorAt: true,
-        createdAt: true
-      }
-    });
-
-    // Transform email accounts with UI status
-    const transformedAccounts = emailAccounts.map(account => {
-      let uiStatus = 'connected';
-      let requiresRetry = false;
-      let canReconnect = true;
-
-      // Determine UI status based on account health
-      if (account.status === 'disconnected') {
-        uiStatus = 'disconnected';
-        canReconnect = true;
-      } else if (account.encryptionStatus === 'failed') {
-        uiStatus = 'encryption_failed';
-        requiresRetry = true;
-        canReconnect = false;
-      } else if (account.tokenStatus === 'failed') {
-        uiStatus = 'missing_tokens';
-        requiresRetry = true;
-        canReconnect = true;
-      } else if (account.status === 'action_needed') {
-        uiStatus = 'action_needed';
-        canReconnect = true;
-      } else if (account.status === 'connected' && account.encryptionStatus === 'ok') {
-        uiStatus = 'connected';
-        canReconnect = false;
-      } else {
-        uiStatus = 'action_needed';
-        canReconnect = true;
-      }
-
-      return {
-        id: account.id,
-        provider: account.provider,
-        email: account.email,
-        displayName: account.displayName,
-        status: account.status,
-        syncStatus: account.syncStatus,
-        lastSyncedAt: account.lastSyncedAt?.toISOString(),
-        errorReason: account.errorReason,
-        encryptionStatus: account.encryptionStatus,
-        kmsErrorCode: account.kmsErrorCode,
-        kmsErrorAt: account.kmsErrorAt?.toISOString(),
-        uiStatus,
-        requiresRetry,
-        canReconnect
-      };
-    });
-
-    // Calculate summary statistics
-    const summary = {
-      totalAccounts: emailAccounts.length,
-      connectedAccounts: emailAccounts.filter(acc => acc.status === 'connected').length,
-      actionNeededAccounts: emailAccounts.filter(acc => acc.status === 'action_needed').length,
-      disconnectedAccounts: emailAccounts.filter(acc => acc.status === 'disconnected').length
-    };
-
-    // Determine overall status
-    let overallStatus = 'all_connected';
-    if (summary.disconnectedAccounts > 0) {
-      overallStatus = 'some_disconnected';
-    } else if (summary.actionNeededAccounts > 0) {
-      overallStatus = 'action_needed';
+    if (!user || user.orgMembers.length === 0) {
+      return new Response('No organization found', { status: 404 });
     }
 
-    // Token encryption status
-    const tokenEncryption = {
-      totalTokens: secureTokens.length,
-      okTokens: secureTokens.filter(token => token.encryptionStatus === 'ok').length,
-      pendingTokens: secureTokens.filter(token => token.encryptionStatus === 'pending').length,
-      failedTokens: secureTokens.filter(token => token.encryptionStatus === 'failed').length,
-      oldestFailure: secureTokens
-        .filter(token => token.encryptionStatus === 'failed' && token.kmsErrorAt)
-        .sort((a, b) => new Date(a.kmsErrorAt!).getTime() - new Date(b.kmsErrorAt!).getTime())[0]?.kmsErrorAt
-    };
+    const org = user.orgMembers[0].org;
 
-    const status = {
-      overallStatus,
-      summary,
-      emailAccounts: transformedAccounts,
-      tokenEncryption,
-      lastUpdated: new Date().toISOString()
-    };
+    // Get email accounts
+    const emailIntegrations = org.emailAccounts.map(account => ({
+      id: account.id,
+      name: `${account.provider} Email`,
+      type: 'email' as const,
+      provider: account.provider as 'google' | 'microsoft',
+      status: account.status as 'not_connected' | 'connecting' | 'backfilling' | 'live' | 'error' | 'paused',
+      email: account.email,
+      syncStatus: account.status,
+      lastSyncAt: account.lastSyncAt?.toISOString(),
+      errorMessage: account.errorMessage,
+      accountsCount: 1,
+      itemsCount: 0 // You'd calculate this from actual message count
+    }));
 
-    logger.info('Integration status fetched', { 
-      orgId, 
-      summary,
-      probe 
-    });
+    // Get calendar accounts
+    const calendarIntegrations = org.calendarAccounts.map(account => ({
+      id: account.id,
+      name: `${account.provider} Calendar`,
+      type: 'calendar' as const,
+      provider: account.provider as 'google' | 'microsoft',
+      status: account.status as 'not_connected' | 'connecting' | 'backfilling' | 'live' | 'error' | 'paused',
+      email: account.email,
+      syncStatus: account.status,
+      lastSyncAt: account.lastSyncAt?.toISOString(),
+      errorMessage: account.errorMessage,
+      accountsCount: 1,
+      itemsCount: 0 // You'd calculate this from actual event count
+    }));
 
-    return NextResponse.json(status);
+    const integrations = [...emailIntegrations, ...calendarIntegrations];
 
+    return Response.json({ integrations });
   } catch (error) {
-    logger.error('Failed to fetch integration status', { error });
-    return NextResponse.json(
-      { error: 'Failed to fetch integration status' },
-      { status: 500 }
-    );
+    console.error('Failed to fetch integrations status:', error);
+    return new Response('Internal Server Error', { status: 500 });
   }
 }
 
