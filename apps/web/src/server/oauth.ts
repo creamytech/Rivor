@@ -44,15 +44,26 @@ export async function checkTokenHealth(userEmail: string, skipValidation = false
     });
 
     // For JWT strategy, check EmailAccount records instead of OAuthAccount
-    const user = await prisma.user.findUnique({
-      where: { email: userEmail },
-      include: {
-        emailAccounts: true,
-        orgMembers: {
-          include: { org: true }
+    let user;
+    try {
+      user = await prisma.user.findUnique({
+        where: { email: userEmail },
+        include: {
+          emailAccounts: true,
+          orgMembers: {
+            include: { org: true }
+          }
         }
-      }
-    });
+      });
+    } catch (dbError) {
+      logger.error('Database error in token health check', {
+        userEmail,
+        correlationId,
+        error: dbError instanceof Error ? dbError.message : 'Unknown database error',
+        action: 'health_check_db_error'
+      });
+      return [];
+    }
 
     if (!user) {
       logger.warn('User not found for token health check', { userEmail, correlationId });
@@ -79,71 +90,93 @@ export async function checkTokenHealth(userEmail: string, skipValidation = false
     });
 
     const tokenHealthPromises = accounts.map(async (account): Promise<TokenHealth> => {
-      const orgId = user.orgMembers?.[0]?.org?.id;
-      
-      // For EmailAccount records, determine scopes based on provider and check token status
-      const isConnected = account.status === 'connected' && 
-                         account.encryptionStatus === 'ok' && 
-                         account.tokenStatus === 'encrypted';
-      
-      // Determine scopes based on provider
-      let scopes: string[] = [];
-      if (account.provider === 'google') {
-        scopes = [
-          'openid',
-          'email', 
-          'profile',
-          'https://www.googleapis.com/auth/gmail.readonly',
-          'https://www.googleapis.com/auth/calendar.readonly'
-        ];
-      } else if (account.provider === 'microsoft') {
-        scopes = [
-          'openid',
-          'email',
-          'profile', 
-          'offline_access',
-          'https://graph.microsoft.com/Mail.Read',
-          'https://graph.microsoft.com/Calendars.ReadWrite'
-        ];
-      }
-
-      const baseHealth: TokenHealth = {
-        provider: account.provider,
-        connected: isConnected,
-        expired: false, // EmailAccount doesn't track expiration directly
-        scopes: scopes,
-        lastUpdated: account.updatedAt,
-        services: {
-          gmail: null,
-          calendar: null
+      try {
+        const orgId = user.orgMembers?.[0]?.org?.id;
+        
+        // For EmailAccount records, determine scopes based on provider and check token status
+        const isConnected = account.status === 'connected' && 
+                           account.encryptionStatus === 'ok' && 
+                           account.tokenStatus === 'encrypted';
+        
+        // Determine scopes based on provider
+        let scopes: string[] = [];
+        if (account.provider === 'google') {
+          scopes = [
+            'openid',
+            'email', 
+            'profile',
+            'https://www.googleapis.com/auth/gmail.readonly',
+            'https://www.googleapis.com/auth/calendar.readonly'
+          ];
+        } else if (account.provider === 'microsoft') {
+          scopes = [
+            'openid',
+            'email',
+            'profile', 
+            'offline_access',
+            'https://graph.microsoft.com/Mail.Read',
+            'https://graph.microsoft.com/Calendars.ReadWrite'
+          ];
         }
-      };
 
-      // For connected accounts, assume services are available based on scopes
-      if (isConnected) {
-        baseHealth.services = {
-          gmail: account.provider === 'google' ? {
-            service: 'gmail' as const,
-            success: true,
-            timestamp: new Date()
-          } : null,
-          calendar: {
-            service: 'calendar' as const,
-            success: true,
-            timestamp: new Date()
+        const baseHealth: TokenHealth = {
+          provider: account.provider,
+          connected: isConnected,
+          expired: false, // EmailAccount doesn't track expiration directly
+          scopes: scopes,
+          lastUpdated: account.updatedAt,
+          services: {
+            gmail: null,
+            calendar: null
+          }
+        };
+
+        // For connected accounts, assume services are available based on scopes
+        if (isConnected) {
+          baseHealth.services = {
+            gmail: account.provider === 'google' ? {
+              service: 'gmail' as const,
+              success: true,
+              timestamp: new Date()
+            } : null,
+            calendar: {
+              service: 'calendar' as const,
+              success: true,
+              timestamp: new Date()
+            }
+          };
+        }
+
+        logger.info('Token health check completed for account', {
+          correlationId,
+          accountId: account.id,
+          isConnected,
+          finalConnectedStatus: baseHealth.connected,
+          action: 'health_check_complete'
+        });
+
+        return baseHealth;
+      } catch (accountError) {
+        logger.error('Error processing account in token health check', {
+          correlationId,
+          accountId: account.id,
+          error: accountError instanceof Error ? accountError.message : 'Unknown account error',
+          action: 'health_check_account_error'
+        });
+        
+        // Return a basic health object for this account
+        return {
+          provider: account.provider,
+          connected: false,
+          expired: false,
+          scopes: [],
+          lastUpdated: account.updatedAt,
+          services: {
+            gmail: null,
+            calendar: null
           }
         };
       }
-
-      logger.info('Token health check completed for account', {
-        correlationId,
-        accountId: account.id,
-        isConnected,
-        finalConnectedStatus: baseHealth.connected,
-        action: 'health_check_complete'
-      });
-
-      return baseHealth;
     });
 
     const tokenHealth = await Promise.all(tokenHealthPromises);

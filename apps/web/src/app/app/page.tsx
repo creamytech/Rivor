@@ -1,13 +1,47 @@
 "use client";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import AppShell from "@/components/app/AppShell";
 import FlowRibbon from "@/components/river/FlowRibbon";
 import { ToastProvider } from "@/components/river/RiverToast";
+import DashboardContent from "@/components/app/DashboardContent";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (status === "loading") {
+  useEffect(() => {
+    if (status === "loading") return;
+    
+    if (!session) {
+      return;
+    }
+
+    // Fetch dashboard data
+    const fetchDashboardData = async () => {
+      try {
+        setError(null);
+        const response = await fetch('/api/dashboard');
+        if (response.ok) {
+          const data = await response.json();
+          setDashboardData(data);
+        } else {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+        setError('Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [session, status]);
+
+  if (status === "loading" || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -33,8 +67,8 @@ export default function DashboardPage() {
     );
   }
 
-  // Simple data without API calls
-  const data = {
+  // Default data if API fails
+  const defaultData = {
     userName: session.user?.name || session.user?.email?.split('@')[0] || 'there',
     showOnboarding: true,
     hasEmailIntegration: false,
@@ -48,21 +82,26 @@ export default function DashboardPage() {
     tokenHealth: []
   };
 
+  const data = dashboardData || defaultData;
+
   return (
     <ToastProvider>
       <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
         <FlowRibbon />
         <AppShell>
-          <div className="container py-6 space-y-8">
-            <div className="text-center">
-              <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-                Welcome, {data.userName}!
-              </h1>
-              <p className="text-slate-600 dark:text-slate-400 text-lg">
-                Dashboard is working with simplified data.
-              </p>
-            </div>
-          </div>
+          <DashboardContent 
+            userName={data.userName}
+            showOnboarding={data.showOnboarding}
+            hasEmailIntegration={data.hasEmailIntegration}
+            hasCalendarIntegration={data.hasCalendarIntegration}
+            unreadCount={data.unreadCount}
+            recentThreads={data.recentThreads}
+            upcomingEvents={data.upcomingEvents}
+            calendarStats={data.calendarStats}
+            pipelineStats={data.pipelineStats}
+            totalActiveLeads={data.totalActiveLeads}
+            tokenHealth={data.tokenHealth}
+          />
         </AppShell>
       </div>
     </ToastProvider>
