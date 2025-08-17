@@ -22,23 +22,37 @@ export async function GET(_req: NextRequest) {
     // Log dashboard access
     logger.userAction('dashboard_access', userEmail || 'unknown', orgId || 'unknown');
 
-    // Check token health
-    const tokenHealth = userEmail ? await checkTokenHealth(userEmail).catch(() => []) : [];
+    // Check token health with better error handling
+    let tokenHealth = [];
+    let hasEmailIntegration = false;
+    let hasCalendarIntegration = false;
+    let showOnboarding = true;
 
-    // Check integration status based on specific scopes
-    const hasEmailIntegration = tokenHealth.some(t => 
-      t.connected && !t.expired && (
-        t.scopes.includes('https://www.googleapis.com/auth/gmail.readonly') ||
-        t.scopes.includes('https://graph.microsoft.com/Mail.Read')
-      )
-    );
-    const hasCalendarIntegration = tokenHealth.some(t => 
-      t.connected && !t.expired && (
-        t.scopes.includes('https://www.googleapis.com/auth/calendar.readonly') ||
-        t.scopes.includes('https://graph.microsoft.com/Calendars.ReadWrite')
-      )
-    );
-    const showOnboarding = !hasEmailIntegration && !hasCalendarIntegration;
+    try {
+      tokenHealth = userEmail ? await checkTokenHealth(userEmail).catch(() => []) : [];
+
+      // Check integration status based on specific scopes
+      hasEmailIntegration = tokenHealth.some(t => 
+        t.connected && !t.expired && (
+          t.scopes.includes('https://www.googleapis.com/auth/gmail.readonly') ||
+          t.scopes.includes('https://graph.microsoft.com/Mail.Read')
+        )
+      );
+      hasCalendarIntegration = tokenHealth.some(t => 
+        t.connected && !t.expired && (
+          t.scopes.includes('https://www.googleapis.com/auth/calendar.readonly') ||
+          t.scopes.includes('https://graph.microsoft.com/Calendars.ReadWrite')
+        )
+      );
+      showOnboarding = !hasEmailIntegration && !hasCalendarIntegration;
+    } catch (error) {
+      console.error('Token health check failed:', error);
+      // Use default values if token health check fails
+      tokenHealth = [];
+      hasEmailIntegration = false;
+      hasCalendarIntegration = false;
+      showOnboarding = true;
+    }
 
     // Return data with token health
     return Response.json({
