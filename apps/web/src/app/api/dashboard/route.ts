@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@/server/auth';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -13,7 +14,12 @@ export async function GET(_req: NextRequest) {
       return new Response('Unauthorized', { status: 401 });
     }
 
+    const orgId = (session as { orgId?: string }).orgId;
     const userName = session.user?.name || session.user?.email?.split('@')[0] || 'there';
+    const userEmail = session.user?.email;
+
+    // Log dashboard access
+    logger.userAction('dashboard_access', userEmail || 'unknown', orgId || 'unknown');
 
     // Return simple data without calling server functions
     return Response.json({
