@@ -48,7 +48,7 @@ export async function GET(_req: NextRequest) {
             }
           },
           orderBy: { updatedAt: 'desc' },
-          take: 5
+          take: 20  // Show more threads
         });
         console.log('Found threads:', threads.length);
 
