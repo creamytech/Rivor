@@ -91,16 +91,28 @@ export async function GET(req: NextRequest) {
     const totalCountResult = await prisma.$queryRawUnsafe(countQuery, orgId);
     const totalCount = Number((totalCountResult as any)[0]?.total || 0);
 
-    // Transform to UI format
-    const threadsFormatted = (threads as any[]).map((thread: any) => {
-      // Parse participants from participantsIndex - improved parsing
-      let participants = [];
+    // Transform to UI format - process each thread
+    const threadsFormatted = await Promise.all((threads as any[]).map(async (thread: any) => {
+      // Get the latest message for this thread to extract real data
+      const latestMessage = await prisma.emailMessage.findFirst({
+        where: { threadId: thread.id },
+        select: {
+          subjectIndex: true,
+          participantsIndex: true,
+          sentAt: true
+        },
+        orderBy: { sentAt: 'desc' }
+      });
+
+      // Parse participants from message data (which is not encrypted)
+      let participants: Array<{ name: string; email: string }> = [];
+      let subject = thread.subjectIndex || 'No Subject';
       
-      if (thread.participantsIndex && thread.participantsIndex.trim()) {
+      if (latestMessage?.participantsIndex && latestMessage.participantsIndex.trim()) {
         // The participantsIndex contains concatenated email addresses
         // Extract email addresses using regex
         const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
-        const emails = thread.participantsIndex.match(emailRegex) || [];
+        const emails = latestMessage.participantsIndex.match(emailRegex) || [];
         
         if (emails.length > 0) {
           participants = emails.map((email: string) => {
@@ -119,6 +131,11 @@ export async function GET(req: NextRequest) {
             };
           });
         }
+      }
+      
+      // Use subject from message if thread subject is empty
+      if (latestMessage?.subjectIndex && latestMessage.subjectIndex.trim()) {
+        subject = latestMessage.subjectIndex;
       }
       
       // If no participants found, create a default one
@@ -141,7 +158,7 @@ export async function GET(req: NextRequest) {
       
       return {
         id: thread.id,
-        subject: thread.subjectIndex || `Email from ${participants[0]?.name || participants[0]?.email || 'Contact'}`,
+        subject: subject,
         snippet: snippet,
         participants: participants,
         messageCount: Number(thread.message_count) || 0,
@@ -152,7 +169,7 @@ export async function GET(req: NextRequest) {
         lastMessageAt: thread.latest_message_date?.toISOString() || thread.updatedAt.toISOString(),
         updatedAt: thread.updatedAt.toISOString()
       };
-    });
+    }));
 
     return NextResponse.json({
       threads: threadsFormatted,
