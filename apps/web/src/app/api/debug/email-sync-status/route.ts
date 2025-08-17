@@ -46,8 +46,6 @@ export async function GET(req: NextRequest) {
       where: { orgId },
       select: {
         id: true,
-        subjectIndex: true,
-        participantsIndex: true,
         subjectEnc: true,
         participantsEnc: true,
         updatedAt: true,
@@ -63,8 +61,6 @@ export async function GET(req: NextRequest) {
       select: {
         id: true,
         threadId: true,
-        subjectIndex: true,
-        participantsIndex: true,
         sentAt: true
       },
       orderBy: { sentAt: 'desc' },
@@ -84,8 +80,8 @@ export async function GET(req: NextRequest) {
         accounts: emailAccounts,
         recentThreads: recentThreads.map(t => ({
           id: t.id,
-          subject: t.subjectIndex || 'No Subject',
-          participants: t.participantsIndex || 'No Participants',
+          subject: t.subjectEnc ? 'Encrypted Subject' : 'No Subject',
+          participants: t.participantsEnc ? 'Encrypted Participants' : 'No Participants',
           subjectEnc: t.subjectEnc ? 'Encrypted' : 'Not Encrypted',
           participantsEnc: t.participantsEnc ? 'Encrypted' : 'Not Encrypted',
           messageCount: t._count.messages,
@@ -94,8 +90,6 @@ export async function GET(req: NextRequest) {
         recentMessages: recentMessages.map(m => ({
           id: m.id,
           threadId: m.threadId,
-          subject: m.subjectIndex || 'No Subject',
-          participants: m.participantsIndex || 'No Participants',
           sentAt: m.sentAt
         }))
       }
