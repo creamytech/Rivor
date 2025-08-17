@@ -177,6 +177,46 @@ body {
   animation: flow-lines 3s ease-in-out infinite;
 }
 
+/* Enhanced Flow Animations */
+@keyframes flow-enhanced {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scaleX(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scaleX(1.2);
+  }
+}
+
+.animate-flow-enhanced {
+  animation: flow-enhanced 4s ease-in-out infinite;
+}
+
+.animate-flow-enhanced-delay {
+  animation: flow-enhanced 4s ease-in-out infinite 1s;
+}
+
+.animate-flow-enhanced-delay-2 {
+  animation: flow-enhanced 4s ease-in-out infinite 2s;
+}
+
+/* Flow Underline Animation */
+@keyframes flowUnderline {
+  0%, 100% {
+    transform: scaleX(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scaleX(1.1);
+    opacity: 1;
+  }
+}
+
+.animate-flow-underline {
+  animation: flowUnderline 3s ease-in-out infinite;
+}
+
 /* Parallax Helper */
 .parallax-card {
   --parallax-x: 0px;
@@ -200,6 +240,22 @@ body {
 
 .animate-scale-in {
   animation: scale-in 400ms ease-out;
+}
+
+/* Count-up Animation */
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-count-up {
+  animation: countUp 0.5s ease-out forwards;
 }
 
 /* Reduced motion */
