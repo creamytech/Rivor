@@ -15,7 +15,7 @@ async function processJob(job: Job) {
 }
 
 export function startEmailSummarizeWorker() {
-  const worker = new Worker('email:summarize', processJob, getConnection());
+  const worker = new Worker('email-summarize', processJob, getConnection());
   worker.on('failed', (job, err) => console.error('[worker] failed', job?.id, err));
   worker.on('completed', (job) => console.log('[worker] done', job.id));
   return worker;

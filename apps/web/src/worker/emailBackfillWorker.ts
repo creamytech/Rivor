@@ -18,7 +18,7 @@ async function processJob(job: Job) {
   const { orgId, emailAccountId, daysPastToSync = 90 } = job.data as BackfillJobData;
   const correlationId = `backfill-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   
-  logger.info('[worker] email:backfill started', { 
+      logger.info('[worker] email-backfill started', { 
     correlationId,
     orgId, 
     emailAccountId, 
@@ -86,14 +86,14 @@ async function processJob(job: Job) {
       }
     });
 
-    logger.info('[worker] email:backfill completed successfully', { 
+    logger.info('[worker] email-backfill completed successfully', { 
       correlationId,
       orgId, 
       emailAccountId 
     });
 
   } catch (error: unknown) {
-    logger.error('[worker] email:backfill failed', { 
+    logger.error('[worker] email-backfill failed', { 
       correlationId,
       orgId, 
       emailAccountId, 

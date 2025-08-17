@@ -14,7 +14,7 @@ interface HealthProbeJobData {
 
 // Worker for health probe jobs
 const worker = new Worker(
-  'health:probe',
+  'health-probe',
   async (job: Job<HealthProbeJobData>) => {
     const { emailAccountId } = job.data;
     await runHealthProbe(emailAccountId);
@@ -27,7 +27,7 @@ const worker = new Worker(
 
 worker.on('ready', () => {
   logger.info('Health probe worker ready', {
-    queueName: 'health:probe',
+    queueName: 'health-probe',
     worker: 'healthProbeWorker'
   });
 });

@@ -17,7 +17,7 @@ async function processJob(job: Job) {
   const { orgId, calendarAccountId, daysFutureToSync = 90 } = job.data as CalendarBackfillJobData;
   const correlationId = `cal-backfill-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   
-  logger.info('[worker] calendar:backfill started', { 
+      logger.info('[worker] calendar-backfill started', { 
     correlationId,
     orgId, 
     calendarAccountId, 
@@ -51,7 +51,7 @@ async function processJob(job: Job) {
 
     if (calendarAccount.provider === 'google') {
       // TODO: Implement Google Calendar backfill
-      logger.info('[worker] calendar:backfill Google Calendar - not implemented yet', { 
+      logger.info('[worker] calendar-backfill Google Calendar - not implemented yet', { 
         correlationId,
         provider: calendarAccount.provider,
         startDate: startDate.toISOString(),
@@ -59,7 +59,7 @@ async function processJob(job: Job) {
       });
     } else if (calendarAccount.provider === 'azure-ad') {
       // TODO: Implement Microsoft Calendar backfill
-      logger.info('[worker] calendar:backfill Microsoft Calendar - not implemented yet', { 
+      logger.info('[worker] calendar-backfill Microsoft Calendar - not implemented yet', { 
         correlationId,
         provider: calendarAccount.provider,
         startDate: startDate.toISOString(),
@@ -77,14 +77,14 @@ async function processJob(job: Job) {
       }
     });
 
-    logger.info('[worker] calendar:backfill completed successfully', { 
+    logger.info('[worker] calendar-backfill completed successfully', { 
       correlationId,
       orgId, 
       calendarAccountId 
     });
 
   } catch (error: unknown) {
-    logger.error('[worker] calendar:backfill failed', { 
+    logger.error('[worker] calendar-backfill failed', { 
       correlationId,
       orgId, 
       calendarAccountId, 
@@ -104,14 +104,14 @@ async function processJob(job: Job) {
 }
 
 export function startCalendarBackfillWorker() {
-  const worker = new Worker('calendar:backfill', processJob, getConnection());
+  const worker = new Worker('calendar-backfill', processJob, getConnection());
   
   worker.on('failed', (job, err) => {
-    console.error('[worker] calendar:backfill failed', job?.id, err);
+    console.error('[worker] calendar-backfill failed', job?.id, err);
   });
   
   worker.on('completed', (job) => {
-    console.log('[worker] calendar:backfill completed', job.id);
+    console.log('[worker] calendar-backfill completed', job.id);
   });
   
   return worker;

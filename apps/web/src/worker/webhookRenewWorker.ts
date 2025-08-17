@@ -148,7 +148,7 @@ async function renewCalendarChannel(orgId: string, calendarAccountId: string, co
 }
 
 export function startWebhookRenewWorker() {
-  const worker = new Worker('webhooks:renew', processJob, getConnection());
+  const worker = new Worker('webhooks-renew', processJob, getConnection());
   
   worker.on('failed', (job, err) => {
     logger.error('Webhook renewal worker job failed', {
