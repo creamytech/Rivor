@@ -11,9 +11,22 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Debug session information
+    const sessionInfo = {
+      userEmail: session.user.email,
+      orgId: session.user.orgId,
+      hasOrgId: !!session.user.orgId,
+      sessionKeys: Object.keys(session.user || {})
+    };
+
     const orgId = session.user.orgId;
     if (!orgId) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
+      return NextResponse.json({
+        success: false,
+        message: 'No organization found in session',
+        sessionInfo,
+        timestamp: new Date().toISOString()
+      });
     }
 
     // Get secure tokens
@@ -30,6 +43,7 @@ export async function GET(req: NextRequest) {
         success: false,
         message: 'No secure tokens found',
         orgId,
+        sessionInfo,
         timestamp: new Date().toISOString()
       });
     }
@@ -79,6 +93,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       orgId,
+      sessionInfo,
       totalTokens: secureTokens.length,
       results,
       timestamp: new Date().toISOString()
