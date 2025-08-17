@@ -14,9 +14,14 @@ const globalQueues = globalThis as unknown as {
 };
 
 function getConnection() {
-  const url = process.env.REDIS_URL;
-  if (!url) throw new Error("REDIS_URL is not set");
-  return { connection: { url } } as const;
+  const url = process.env.REDIS_URL || 'redis://localhost:6379';
+  return { 
+    connection: { 
+      url,
+      connectTimeout: 10000, // 10 second timeout
+      lazyConnect: true // Don't connect until needed
+    } 
+  } as const;
 }
 
 export function getEmailSyncQueue(): Queue {
