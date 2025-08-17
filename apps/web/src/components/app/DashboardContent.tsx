@@ -125,13 +125,13 @@ export default function DashboardContent({
 
       {/* Main Dashboard Grid */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Email/Inbox Widget - temporarily removed */}
-        {/* <div className="lg:col-span-2">
+        {/* Email/Inbox Widget */}
+        <div className="lg:col-span-2">
           <InboxSummaryWidget 
             unreadCount={unreadCount}
             recentThreads={recentThreads}
           />
-        </div> */}
+        </div>
 
         {/* Calendar Widget - temporarily removed */}
         {/* <div>
