@@ -61,8 +61,8 @@ export default function DashboardContent({
 
   return (
     <div className="container py-6 space-y-8">
-      {/* Token Error Banner */}
-      <TokenErrorBanner />
+      {/* Token Error Banner - temporarily removed */}
+      {/* <TokenErrorBanner /> */}
       
       {/* Hero Section */}
       <section>
@@ -83,7 +83,8 @@ export default function DashboardContent({
               </p>
             </div>
             
-            <div className="flex gap-2">
+            {/* Sync buttons - temporarily removed */}
+            {/* <div className="flex gap-2">
               <SyncButton 
                 type="email" 
                 variant="outline"
@@ -102,56 +103,78 @@ export default function DashboardContent({
                   window.location.reload();
                 }}
               />
-            </div>
+            </div> */}
           </div>
         </div>
-        
-        <HeroFlowCard />
       </section>
 
-      {/* Show onboarding for new users, otherwise show widgets */}
-      {showOnboarding ? (
-        <div className="space-y-6">
+      {/* Onboarding Section */}
+      {showOnboarding && (
+        <section>
           <FirstRunOnboarding 
             hasEmailIntegration={hasEmailIntegration}
             hasCalendarIntegration={hasCalendarIntegration}
           />
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {/* Main Widgets Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Inbox Summary */}
-            <div className="flow-in flow-in-delay-1">
-              <InboxSummaryWidget 
-                unreadCount={unreadCount}
-                recentThreads={recentThreads}
-              />
-            </div>
-
-            {/* Calendar Snapshot */}
-            <div className="flow-in flow-in-delay-2">
-              <CalendarSnapshotWidget 
-                upcomingEvents={upcomingEvents}
-                todayCount={calendarStats.todayCount}
-              />
-            </div>
-
-            {/* Pipeline Glance */}
-            <div className="flow-in flow-in-delay-3">
-              <PipelineGlanceWidget 
-                pipelineStats={pipelineStats}
-                totalActiveLeads={totalActiveLeads}
-              />
-            </div>
-          </div>
-
-          {/* Integration Status Panel */}
-          <div className="max-w-2xl flow-in flow-in-delay-3">
-            <IntegrationStatusPanel />
-          </div>
-        </div>
+        </section>
       )}
+
+      {/* Integration Status Panel - temporarily removed */}
+      {/* <section>
+        <IntegrationStatusPanel />
+      </section> */}
+
+      {/* Main Dashboard Grid */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Email/Inbox Widget - temporarily removed */}
+        {/* <div className="lg:col-span-2">
+          <InboxSummaryWidget 
+            unreadCount={unreadCount}
+            recentThreads={recentThreads}
+          />
+        </div> */}
+
+        {/* Calendar Widget - temporarily removed */}
+        {/* <div>
+          <CalendarSnapshotWidget 
+            upcomingEvents={upcomingEvents}
+            calendarStats={calendarStats}
+          />
+        </div> */}
+      </section>
+
+      {/* Pipeline Widget - temporarily removed */}
+      {/* <section>
+        <PipelineGlanceWidget 
+          pipelineStats={pipelineStats}
+          totalActiveLeads={totalActiveLeads}
+        />
+      </section> */}
+
+      {/* Backfill Progress - temporarily removed */}
+      {/* <section>
+        <BackfillProgressCard />
+      </section> */}
+
+      {/* Flow Cards */}
+      <section>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <HeroFlowCard />
+          <FlowCard 
+            title="Email Management"
+            description="Organize and prioritize your inbox"
+            icon="mail"
+            status={hasEmailIntegration ? 'connected' : 'disconnected'}
+            href="/app/inbox"
+          />
+          <FlowCard 
+            title="Calendar Sync"
+            description="Keep your schedule in sync"
+            icon="calendar"
+            status={hasCalendarIntegration ? 'connected' : 'disconnected'}
+            href="/app/calendar"
+          />
+        </div>
+      </section>
     </div>
   );
 }
