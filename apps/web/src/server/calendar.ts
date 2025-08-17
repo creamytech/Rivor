@@ -170,7 +170,7 @@ export class GoogleCalendarService {
     const accessTokenBytes = await decryptForOrg(
       orgId, 
       accessTokenRecord.encryptedTokenBlob, 
-      `oauth:access:calendar`
+      `oauth:access`
     );
     const accessToken = new TextDecoder().decode(accessTokenBytes);
     
@@ -181,7 +181,7 @@ export class GoogleCalendarService {
       const refreshTokenBytes = await decryptForOrg(
         orgId, 
         refreshTokenRecord.encryptedTokenBlob, 
-        `oauth:refresh:calendar`
+        `oauth:refresh`
       );
       refreshToken = new TextDecoder().decode(refreshTokenBytes);
     }
