@@ -15,8 +15,6 @@ export async function listThreads(orgId: string, limit = 50): Promise<UiEmailThr
     take: limit,
     select: { 
       id: true, 
-      subjectIndex: true, 
-      participantsIndex: true, 
       subjectEnc: true, 
       participantsEnc: true, 
       updatedAt: true 
@@ -28,11 +26,8 @@ export async function listThreads(orgId: string, limit = 50): Promise<UiEmailThr
     let subject = '';
     let participants = '';
     
-    // Try to use plain text fields first (new sync process)
-    if (t.subjectIndex) {
-      subject = t.subjectIndex;
-    } else if (t.subjectEnc) {
-      // Fallback to encrypted fields (old sync process)
+    // Decrypt subject from encrypted field
+    if (t.subjectEnc) {
       try {
         const dec = await decryptForOrg(orgId, t.subjectEnc, 'email:subject');
         subject = new TextDecoder().decode(dec);
@@ -41,10 +36,8 @@ export async function listThreads(orgId: string, limit = 50): Promise<UiEmailThr
       }
     }
     
-    if (t.participantsIndex) {
-      participants = t.participantsIndex;
-    } else if (t.participantsEnc) {
-      // Fallback to encrypted fields (old sync process)
+    // Decrypt participants from encrypted field
+    if (t.participantsEnc) {
       try {
         const dec = await decryptForOrg(orgId, t.participantsEnc, 'email:participants');
         participants = new TextDecoder().decode(dec);
@@ -84,8 +77,6 @@ export async function getThreadWithMessages(orgId: string, threadId: string): Pr
     select: { 
       id: true, 
       orgId: true, 
-      subjectIndex: true,
-      participantsIndex: true,
       subjectEnc: true, 
       participantsEnc: true, 
       updatedAt: true 
@@ -96,20 +87,15 @@ export async function getThreadWithMessages(orgId: string, threadId: string): Pr
   let subject = '';
   let participants = '';
   
-  // Try to use plain text fields first (new sync process)
-  if (thread.subjectIndex) {
-    subject = thread.subjectIndex;
-  } else if (thread.subjectEnc) {
-    // Fallback to encrypted fields (old sync process)
+  // Decrypt subject from encrypted field
+  if (thread.subjectEnc) {
     try { 
       subject = new TextDecoder().decode(await decryptForOrg(orgId, thread.subjectEnc, 'email:subject')); 
     } catch {}
   }
   
-  if (thread.participantsIndex) {
-    participants = thread.participantsIndex;
-  } else if (thread.participantsEnc) {
-    // Fallback to encrypted fields (old sync process)
+  // Decrypt participants from encrypted field
+  if (thread.participantsEnc) {
     try { 
       participants = new TextDecoder().decode(await decryptForOrg(orgId, thread.participantsEnc, 'email:participants')); 
     } catch {}
@@ -121,8 +107,6 @@ export async function getThreadWithMessages(orgId: string, threadId: string): Pr
     select: { 
       id: true, 
       sentAt: true, 
-      subjectIndex: true,
-      participantsIndex: true,
       fromEnc: true, 
       toEnc: true, 
       ccEnc: true, 
@@ -135,14 +119,11 @@ export async function getThreadWithMessages(orgId: string, threadId: string): Pr
   
   const messages: UiEmailMessage[] = [];
   for (const m of msgsRaw) {
-    // Try to use plain text fields first (new sync process)
+    // Decrypt message data from encrypted fields
     let messageSubject = '';
     let messageSnippet = '';
     
-    if (m.subjectIndex) {
-      messageSubject = m.subjectIndex;
-    } else if (m.subjectEnc) {
-      // Fallback to encrypted fields (old sync process)
+    if (m.subjectEnc) {
       try {
         messageSubject = new TextDecoder().decode(await decryptForOrg(orgId, m.subjectEnc as unknown as Buffer, 'email:subject'));
       } catch {}

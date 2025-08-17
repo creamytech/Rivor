@@ -9,12 +9,9 @@ function normalizeForIndex(value: string): string {
 }
 
 export async function indexThread(threadId: string) {
-  const t = await prisma.emailThread.findUnique({ where: { id: threadId }, select: { id: true, orgId: true, subjectEnc: true, participantsEnc: true } });
-  if (!t) return;
-  // Do not decrypt; only derive index from safe sources when available (e.g., provider metadata). Placeholder uses empty indexes.
-  const subjectIndex = '';
-  const participantsIndex = '';
-  await prisma.emailThread.update({ where: { id: threadId }, data: { subjectIndex, participantsIndex } });
+  // SOC2 compliant: No plain text indexing of sensitive data
+  // All data remains encrypted at rest
+  console.log('Thread indexing disabled for SOC2 compliance');
 }
 
 export async function indexLead(leadId: string) {

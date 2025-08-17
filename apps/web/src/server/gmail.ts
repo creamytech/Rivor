@@ -361,8 +361,6 @@ export class GmailService {
              accountId: emailAccountId,
              subjectEnc,
              participantsEnc,
-             subjectIndex: subject.toLowerCase(),
-             participantsIndex: `${from} ${to} ${cc || ''} ${bcc || ''}`.toLowerCase(),
            }
          });
        } else {
@@ -387,8 +385,6 @@ export class GmailService {
            ccEnc,
            bccEnc,
            snippetEnc,
-           subjectIndex: subject.toLowerCase(),
-           participantsIndex: `${from} ${to} ${cc || ''} ${bcc || ''}`.toLowerCase(),
          }
        });
 
