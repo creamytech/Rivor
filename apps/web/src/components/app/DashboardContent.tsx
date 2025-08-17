@@ -118,10 +118,10 @@ export default function DashboardContent({
         </section>
       )}
 
-      {/* Integration Status Panel - temporarily removed */}
-      {/* <section>
+      {/* Integration Status Panel */}
+      <section>
         <IntegrationStatusPanel />
-      </section> */}
+      </section>
 
       {/* Main Dashboard Grid */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -133,27 +133,27 @@ export default function DashboardContent({
           />
         </div>
 
-        {/* Calendar Widget - temporarily removed */}
-        {/* <div>
+        {/* Calendar Widget */}
+        <div>
           <CalendarSnapshotWidget 
             upcomingEvents={upcomingEvents}
             calendarStats={calendarStats}
           />
-        </div> */}
+        </div>
       </section>
 
-      {/* Pipeline Widget - temporarily removed */}
-      {/* <section>
+      {/* Pipeline Widget */}
+      <section>
         <PipelineGlanceWidget 
           pipelineStats={pipelineStats}
           totalActiveLeads={totalActiveLeads}
         />
-      </section> */}
+      </section>
 
-      {/* Backfill Progress - temporarily removed */}
-      {/* <section>
+      {/* Backfill Progress */}
+      <section>
         <BackfillProgressCard />
-      </section> */}
+      </section>
 
       {/* Flow Cards */}
       <section>

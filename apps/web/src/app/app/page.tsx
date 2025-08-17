@@ -9,6 +9,7 @@ import DashboardContent from "@/components/app/DashboardContent";
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const [dashboardData, setDashboardData] = useState<any>(null);
+  const [tokenHealthData, setTokenHealthData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,7 +39,24 @@ export default function DashboardPage() {
       }
     };
 
+    // Fetch token health data after a delay
+    const fetchTokenHealthData = async () => {
+      try {
+        // Wait 1 second before fetching token health to avoid blocking initial load
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const response = await fetch('/api/token-health');
+        if (response.ok) {
+          const data = await response.json();
+          setTokenHealthData(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch token health data:', error);
+        // Don't set error state for token health as it's not critical
+      }
+    };
+
     fetchDashboardData();
+    fetchTokenHealthData();
   }, [session, status]);
 
   if (status === "loading" || loading) {
@@ -82,7 +100,11 @@ export default function DashboardPage() {
     tokenHealth: []
   };
 
-  const data = dashboardData || defaultData;
+  // Merge dashboard data with token health data
+  const data = {
+    ...(dashboardData || defaultData),
+    tokenHealth: tokenHealthData?.tokenHealth || defaultData.tokenHealth
+  };
 
   return (
     <ToastProvider>
