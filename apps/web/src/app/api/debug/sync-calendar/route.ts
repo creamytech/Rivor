@@ -99,9 +99,10 @@ export async function POST(req: NextRequest) {
           accountId: account.id,
           provider: account.provider,
           status: 'success',
-          eventsFound: events.length,
-          syncedCount,
-          updatedCount
+          eventsProcessed: events.length,
+          eventsCreated: syncedCount,
+          eventsUpdated: updatedCount,
+          eventsSkipped: events.length - syncedCount - updatedCount
         });
 
       } catch (error) {
