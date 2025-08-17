@@ -74,8 +74,15 @@ async function processJob(job: Job) {
 }
 
 export function startEmailSyncWorker() {
-  const worker = new Worker("email:sync", processJob, getConnection());
-  worker.on("failed", (job, err) => console.error("[worker] failed", job?.id, err));
-  worker.on("completed", (job) => console.log("[worker] done", job.id));
+  const worker = new Worker("email-sync", processJob, getConnection());
+  
+  worker.on('failed', (job, err) => {
+    console.error('[worker] email-sync failed', job?.id, err);
+  });
+  
+  worker.on('completed', (job) => {
+    console.log('[worker] email-sync completed', job.id);
+  });
+  
   return worker;
 }

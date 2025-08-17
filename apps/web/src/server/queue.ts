@@ -21,7 +21,7 @@ function getConnection() {
 
 export function getEmailSyncQueue(): Queue {
   if (!globalQueues.emailSyncQueue) {
-    globalQueues.emailSyncQueue = new Queue("email:sync", getConnection());
+    globalQueues.emailSyncQueue = new Queue("email-sync", getConnection());
   }
   return globalQueues.emailSyncQueue;
 }
@@ -121,7 +121,7 @@ export function getEmailSummarizeQueue(): Queue {
 
 export function getCalendarSyncQueue(): Queue {
   if (!globalQueues.calendarSyncQueue) {
-    globalQueues.calendarSyncQueue = new Queue("calendar:sync", getConnection());
+    globalQueues.calendarSyncQueue = new Queue("calendar-sync", getConnection());
   }
   return globalQueues.calendarSyncQueue;
 }

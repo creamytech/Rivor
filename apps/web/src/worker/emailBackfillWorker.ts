@@ -114,14 +114,14 @@ async function processJob(job: Job) {
 }
 
 export function startEmailBackfillWorker() {
-  const worker = new Worker('email:backfill', processJob, getConnection());
+  const worker = new Worker('email-backfill', processJob, getConnection());
   
   worker.on('failed', (job, err) => {
-    console.error('[worker] email:backfill failed', job?.id, err);
+    console.error('[worker] email-backfill failed', job?.id, err);
   });
   
   worker.on('completed', (job) => {
-    console.log('[worker] email:backfill completed', job.id);
+    console.log('[worker] email-backfill completed', job.id);
   });
   
   return worker;

@@ -113,14 +113,14 @@ async function processJob(job: Job) {
 }
 
 export function startCalendarSyncWorker() {
-  const worker = new Worker('calendar:sync', processJob, getConnection());
+  const worker = new Worker('calendar-sync', processJob, getConnection());
   
   worker.on('failed', (job, err) => {
-    console.error('[worker] calendar:sync failed', job?.id, err);
+    console.error('[worker] calendar-sync failed', job?.id, err);
   });
   
   worker.on('completed', (job) => {
-    console.log('[worker] calendar:sync completed', job.id);
+    console.log('[worker] calendar-sync completed', job.id);
   });
   
   return worker;

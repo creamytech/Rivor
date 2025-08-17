@@ -3,10 +3,9 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Send, Plus, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { useToast } from '@/components/river/RiverToast';
 
 interface ComposeEmailModalProps {
   trigger?: React.ReactNode;
@@ -34,6 +33,7 @@ export default function ComposeEmailModal({
     subject: defaultSubject,
     body: defaultBody
   });
+  const { addToast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,16 +55,27 @@ export default function ComposeEmailModal({
       const result = await response.json();
 
       if (result.success) {
-        toast.success('Email sent successfully!');
+        addToast({
+          type: 'success',
+          title: 'Email Sent',
+          description: 'Your email has been sent successfully.'
+        });
         setOpen(false);
         setFormData({ to: '', cc: '', bcc: '', subject: '', body: '' });
         onEmailSent?.(result);
       } else {
-        toast.error(result.error || 'Failed to send email');
+        addToast({
+          type: 'error',
+          title: 'Send Failed',
+          description: result.error || 'Failed to send email.'
+        });
       }
     } catch (error) {
-      console.error('Error sending email:', error);
-      toast.error('Failed to send email');
+      addToast({
+        type: 'error',
+        title: 'Send Failed',
+        description: 'Failed to send email. Please try again.'
+      });
     } finally {
       setLoading(false);
     }
@@ -94,7 +105,9 @@ export default function ComposeEmailModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* To Field */}
           <div className="space-y-2">
-            <Label htmlFor="to">To *</Label>
+            <label htmlFor="to" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              To *
+            </label>
             <Input
               id="to"
               type="email"
@@ -107,7 +120,9 @@ export default function ComposeEmailModal({
 
           {/* CC Field */}
           <div className="space-y-2">
-            <Label htmlFor="cc">CC</Label>
+            <label htmlFor="cc" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              CC
+            </label>
             <Input
               id="cc"
               type="email"
@@ -119,7 +134,9 @@ export default function ComposeEmailModal({
 
           {/* BCC Field */}
           <div className="space-y-2">
-            <Label htmlFor="bcc">BCC</Label>
+            <label htmlFor="bcc" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              BCC
+            </label>
             <Input
               id="bcc"
               type="email"
@@ -131,7 +148,9 @@ export default function ComposeEmailModal({
 
           {/* Subject Field */}
           <div className="space-y-2">
-            <Label htmlFor="subject">Subject *</Label>
+            <label htmlFor="subject" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Subject *
+            </label>
             <Input
               id="subject"
               value={formData.subject}
@@ -143,7 +162,9 @@ export default function ComposeEmailModal({
 
           {/* Body Field */}
           <div className="space-y-2">
-            <Label htmlFor="body">Message *</Label>
+            <label htmlFor="body" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Message *
+            </label>
             <Textarea
               id="body"
               value={formData.body}
