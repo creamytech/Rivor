@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Logo from "@/components/branding/Logo";
-import EnhancedCommandPalette from "@/components/app/EnhancedCommandPalette";
 import { useEffect, useState } from "react";
 import { Search, Bell, HelpCircle, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Toaster } from "@/components/ui/toaster";
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -105,7 +105,8 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       </div>
       
       {/* Command Palette */}
-      <EnhancedCommandPalette isOpen={showCommandPalette} setIsOpen={setShowCommandPalette} />
+      {/* <EnhancedCommandPalette isOpen={showCommandPalette} setIsOpen={setShowCommandPalette} /> */}
+      <Toaster />
     </div>
   );
 }
