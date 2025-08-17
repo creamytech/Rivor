@@ -39,24 +39,6 @@ export default function InboxSummaryWidget({
           </div>
         </div>
       </div>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
-            <CardTitle>Inbox Summary</CardTitle>
-          </div>
-          <CardDescription>Latest email activity</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     );
   }
 

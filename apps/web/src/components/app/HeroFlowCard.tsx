@@ -222,6 +222,6 @@ export default function HeroFlowCard() {
           </div>
         </div>
       </div>
-    </FlowCard>
+    </div>
   );
 }
