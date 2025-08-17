@@ -1,9 +1,63 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export function SocialProofSection() {
   const [hoveredLogo, setHoveredLogo] = useState<number | null>(null);
+  const [countedStats, setCountedStats] = useState({
+    agents: 0,
+    deals: 0,
+    satisfaction: 0
+  });
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Start count-up animation
+            animateCountUp();
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  const animateCountUp = () => {
+    const duration = 2000; // 2 seconds
+    const steps = 60;
+    const stepDuration = duration / steps;
+    
+    let currentStep = 0;
+    
+    const timer = setInterval(() => {
+      currentStep++;
+      const progress = currentStep / steps;
+      
+      setCountedStats({
+        agents: Math.floor(500 * progress),
+        deals: Math.floor(2.4 * progress * 100) / 100, // Keep 2 decimal places
+        satisfaction: Math.floor(98 * progress)
+      });
+      
+      if (currentStep >= steps) {
+        clearInterval(timer);
+        setCountedStats({
+          agents: 500,
+          deals: 2.4,
+          satisfaction: 98
+        });
+      }
+    }, stepDuration);
+  };
 
   const logoPlaceholders = [
     { name: "Keller Williams", width: "w-32" },
@@ -15,7 +69,7 @@ export function SocialProofSection() {
   ];
 
   return (
-    <section className="container py-16 md:py-20">
+    <section ref={sectionRef} className="container py-16 md:py-20">
       {/* "Trusted by …" strip */}
       <div className="text-center mb-12">
         <p className="text-sm text-muted-foreground mb-8 animate-fade-up">
@@ -50,19 +104,60 @@ export function SocialProofSection() {
         </div>
       </div>
 
-      {/* Stats or testimonial preview */}
+      {/* Enhanced Stats with icons and count-up animation */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 animate-fade-up-delay-3">
-        <div className="text-center">
-          <div className="text-2xl font-bold gradient-text mb-2">500+</div>
-          <div className="text-sm text-muted-foreground">Active Agents</div>
+        <div className="text-center group">
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rivor-indigo/20 to-rivor-teal/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <span className="text-2xl">🏠</span>
+            </div>
+          </div>
+          <div className="text-4xl md:text-5xl font-bold gradient-text mb-2">
+            {countedStats.agents}+
+          </div>
+          <div className="text-lg text-muted-foreground font-medium">Active Agents</div>
         </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold gradient-text mb-2">$2.4B+</div>
-          <div className="text-sm text-muted-foreground">Deals Tracked</div>
+        
+        <div className="text-center group">
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rivor-teal/20 to-rivor-aqua/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <span className="text-2xl">💰</span>
+            </div>
+          </div>
+          <div className="text-4xl md:text-5xl font-bold gradient-text mb-2">
+            ${countedStats.deals}B+
+          </div>
+          <div className="text-lg text-muted-foreground font-medium">Deals Tracked</div>
         </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold gradient-text mb-2">98%</div>
-          <div className="text-sm text-muted-foreground">Satisfaction Rate</div>
+        
+        <div className="text-center group">
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rivor-aqua/20 to-rivor-indigo/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <span className="text-2xl">⚡</span>
+            </div>
+          </div>
+          <div className="text-4xl md:text-5xl font-bold gradient-text mb-2">
+            {countedStats.satisfaction}%
+          </div>
+          <div className="text-lg text-muted-foreground font-medium">Satisfaction Rate</div>
+        </div>
+      </div>
+
+      {/* Testimonial preview */}
+      <div className="mt-12 text-center animate-fade-up-delay-4">
+        <div className="card p-8 max-w-2xl mx-auto bg-gradient-to-br from-rivor-deep/20 to-rivor-indigo/20 border-rivor-teal/20">
+          <div className="text-lg text-muted-foreground mb-4">
+            "Rivor saves me 10+ hours per week. I never miss a client email."
+          </div>
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rivor-teal to-rivor-aqua flex items-center justify-center text-white font-bold">
+              J
+            </div>
+            <div className="text-left">
+              <div className="font-semibold">Jane D.</div>
+              <div className="text-sm text-muted-foreground">Realtor, Keller Williams</div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
