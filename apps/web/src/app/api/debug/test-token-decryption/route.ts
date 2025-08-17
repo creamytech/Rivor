@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
-import { decryptForOrg } from '@/server/crypto';
+import { decryptForOrg, encryptForOrg } from '@/server/crypto';
 import { logger } from '@/lib/logger';
 
 export async function GET(req: NextRequest) {
@@ -39,6 +39,30 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Test basic encryption/decryption functionality
+    const encryptionTest = {
+      success: false,
+      error: null,
+      testData: 'test-encryption-data',
+      encryptedLength: 0,
+      decryptedData: null,
+      dataMatches: false
+    };
+
+    try {
+      const testData = 'test-encryption-data';
+      const encrypted = await encryptForOrg(orgId, testData, 'test:context');
+      const decrypted = await decryptForOrg(orgId, encrypted, 'test:context');
+      const decryptedText = new TextDecoder().decode(decrypted);
+      
+      encryptionTest.success = true;
+      encryptionTest.encryptedLength = encrypted.length;
+      encryptionTest.decryptedData = decryptedText;
+      encryptionTest.dataMatches = decryptedText === testData;
+    } catch (encryptError) {
+      encryptionTest.error = `Encryption test failed: ${encryptError instanceof Error ? encryptError.message : 'Unknown error'}`;
+    }
+
     // Get secure tokens
     const secureTokens = await prisma.secureToken.findMany({
       where: {
@@ -54,6 +78,7 @@ export async function GET(req: NextRequest) {
         message: 'No secure tokens found',
         orgId,
         sessionInfo,
+        encryptionTest,
         timestamp: new Date().toISOString()
       });
     }
@@ -143,6 +168,7 @@ export async function GET(req: NextRequest) {
       success: true,
       orgId,
       sessionInfo,
+      encryptionTest,
       totalTokens: secureTokens.length,
       results,
       timestamp: new Date().toISOString()
