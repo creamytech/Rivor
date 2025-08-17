@@ -26,10 +26,12 @@ export async function GET(req: NextRequest) {
         id: true,
         provider: true,
         status: true,
-        syncStatus: true,
-        lastSyncedAt: true,
-        errorReason: true,
-        createdAt: true
+        channelId: true,
+        channelResourceId: true,
+        channelExpiration: true,
+        webhookEndpoint: true,
+        createdAt: true,
+        updatedAt: true
       }
     });
 
