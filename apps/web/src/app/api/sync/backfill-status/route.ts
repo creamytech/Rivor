@@ -42,14 +42,14 @@ export async function GET(req: NextRequest) {
     const emailAccountStatus = {
       total: emailAccounts.length,
       running: emailAccounts.filter(acc => acc.syncStatus === 'running').length,
-      completed: emailAccounts.filter(acc => acc.syncStatus === 'idle' && acc.lastSyncedAt).length,
+      completed: emailAccounts.filter(acc => acc.syncStatus === 'idle').length, // Consider idle as completed
       failed: emailAccounts.filter(acc => acc.syncStatus === 'error').length
     };
 
     // Calculate calendar account status
     const calendarAccountStatus = {
       total: calendarAccounts.length,
-      running: calendarAccounts.filter(acc => acc.status === 'connected').length, // Assume connected accounts are running
+      running: 0, // Calendar accounts don't have running sync status
       completed: calendarAccounts.filter(acc => acc.status === 'connected').length,
       failed: calendarAccounts.filter(acc => acc.status === 'error').length
     };
