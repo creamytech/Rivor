@@ -87,12 +87,22 @@ export async function GET(req: NextRequest) {
       oauthTest.error = `OAuth encryption test failed: ${oauthError instanceof Error ? oauthError.message : 'Unknown error'}`;
     }
 
-    // Get secure tokens
+    // Get secure tokens with metadata
     const secureTokens = await prisma.secureToken.findMany({
       where: {
         orgId,
         provider: 'google',
         encryptionStatus: 'ok'
+      },
+      select: {
+        id: true,
+        tokenType: true,
+        encryptedTokenBlob: true,
+        encryptionStatus: true,
+        createdAt: true,
+        updatedAt: true,
+        orgId: true,
+        provider: true
       }
     });
 
@@ -170,6 +180,9 @@ export async function GET(req: NextRequest) {
           tokenType: token.tokenType,
           hasEncryptedBlob: !!token.encryptedTokenBlob,
           encryptedBlobLength: token.encryptedTokenBlob?.length || 0,
+          createdAt: token.createdAt,
+          updatedAt: token.updatedAt,
+          encryptionStatus: token.encryptionStatus,
           decryptedToken: decryptedToken ? `${decryptedToken.substring(0, 20)}...` : null,
           successfulContext,
           error,
@@ -181,6 +194,9 @@ export async function GET(req: NextRequest) {
           tokenType: token.tokenType,
           hasEncryptedBlob: !!token.encryptedTokenBlob,
           encryptedBlobLength: token.encryptedTokenBlob?.length || 0,
+          createdAt: token.createdAt,
+          updatedAt: token.updatedAt,
+          encryptionStatus: token.encryptionStatus,
           decryptedToken: null,
           successfulContext: null,
           error: `Token processing failed: ${tokenError instanceof Error ? tokenError.message : 'Unknown error'}`,
