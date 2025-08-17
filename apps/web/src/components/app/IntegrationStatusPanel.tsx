@@ -242,8 +242,8 @@ export default function IntegrationStatusPanel({
           <div className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
             <CardTitle>Integrations</CardTitle>
-            {status && status.summary.totalAccounts > 0 && (
-              <Badge variant={status.overallStatus === 'all_connected' ? 'default' : 'secondary'}>
+            {status?.summary?.totalAccounts > 0 && (
+              <Badge variant={status?.overallStatus === 'all_connected' ? 'default' : 'secondary'}>
                 {status.summary.connectedAccounts}/{status.summary.totalAccounts}
               </Badge>
             )}
@@ -417,7 +417,7 @@ export default function IntegrationStatusPanel({
             </div>
           ))}
           
-          {(!status || status.emailAccounts.length === 0) && (
+          {(!status || status?.emailAccounts?.length === 0) && (
             <div className="text-center py-4 text-sm text-gray-500">
               No integrations connected yet
             </div>
