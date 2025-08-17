@@ -67,8 +67,8 @@ export function PricingSection() {
         {/* Section Header */}
         <div className="text-center mb-16 animate-fade-up">
           <h2 className="text-display-md md:text-display-lg mb-6">
-            Simple, Transparent{" "}
-            <span className="gradient-text">Pricing</span>
+            Plans That Scale With Your{" "}
+            <span className="gradient-text">Deals</span>
           </h2>
           <p className="text-body-lg text-muted-foreground max-w-2xl mx-auto mb-8">
             Choose the plan that fits your business. All plans include a 14-day free trial 
@@ -96,7 +96,7 @@ export function PricingSection() {
               }`}
             >
               Annual
-              <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-rivor-teal text-white text-xs rounded-full">
+              <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-gradient-to-r from-rivor-teal to-rivor-aqua text-white text-xs rounded-full animate-pulse">
                 Save 20%
               </span>
             </button>
@@ -112,12 +112,12 @@ export function PricingSection() {
                 index === 0 ? "animate-fade-up-delay-1" : 
                 index === 1 ? "animate-fade-up-delay-2" : 
                 "animate-fade-up-delay-3"
-              } ${plan.popular ? "card-glow ring-2 ring-rivor-teal/50" : ""} hover-lift`}
+              } ${plan.popular ? "ring-2 ring-rivor-teal/50 bg-gradient-to-br from-rivor-teal/5 to-rivor-aqua/5" : ""} hover-lift`}
             >
               {/* Popular Badge */}
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <div className="px-4 py-1 bg-rivor-teal text-white text-sm font-medium rounded-full">
+                  <div className="px-6 py-2 bg-gradient-to-r from-rivor-teal to-rivor-aqua text-white text-sm font-semibold rounded-full shadow-lg shadow-rivor-teal/25 animate-pulse">
                     Most Popular
                   </div>
                 </div>
@@ -135,7 +135,7 @@ export function PricingSection() {
                   ) : (
                     <>
                       <div className="flex items-baseline justify-center gap-1">
-                        <span className="text-3xl font-bold">${formatPrice(plan.price[billingCycle])}</span>
+                        <span className="text-4xl font-bold">${formatPrice(plan.price[billingCycle])}</span>
                         <span className="text-muted-foreground">/month</span>
                       </div>
                       {billingCycle === "annual" && (
@@ -152,7 +152,7 @@ export function PricingSection() {
                   href={plan.cta === "Contact Sales" ? "/contact" : "/auth/signin"}
                   className={`inline-flex items-center justify-center w-full px-6 py-3 rounded-xl font-medium transition-all hover-lift ${
                     plan.popular
-                      ? "brand-gradient text-white"
+                      ? "bg-gradient-to-r from-rivor-teal to-rivor-aqua text-white shadow-lg shadow-rivor-teal/25 hover:from-rivor-aqua hover:to-rivor-teal"
                       : "border border-border bg-surface hover:bg-muted"
                   }`}
                 >

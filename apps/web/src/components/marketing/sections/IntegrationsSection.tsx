@@ -41,25 +41,52 @@ export function IntegrationsSection() {
 
   const integrations = [
     {
-      name: "Google Workspace",
-      description: "Gmail, Calendar, Drive",
-      icon: "🌐",
-      color: "from-blue-500 to-green-500",
-      benefits: ["Email sync", "Calendar integration", "File access"]
+      name: "Gmail",
+      description: "Email & Calendar",
+      icon: "📧",
+      color: "from-red-500 to-red-600",
+      status: "available",
+      benefits: ["Email sync", "Calendar integration", "Smart filtering"]
     },
     {
-      name: "Microsoft 365", 
-      description: "Outlook, Calendar, OneDrive",
+      name: "Outlook", 
+      description: "Email & Calendar",
       icon: "📨",
-      color: "from-blue-600 to-purple-600",
-      benefits: ["Outlook sync", "Teams integration", "SharePoint access"]
+      color: "from-blue-600 to-blue-700",
+      status: "available",
+      benefits: ["Outlook sync", "Teams integration", "Advanced rules"]
+    },
+    {
+      name: "iCal",
+      description: "Calendar sync",
+      icon: "📅",
+      color: "from-purple-500 to-purple-600",
+      status: "available",
+      benefits: ["Universal calendar", "Event sync", "Timezone handling"]
+    },
+    {
+      name: "Slack",
+      description: "Team communication",
+      icon: "💬",
+      color: "from-purple-400 to-purple-500",
+      status: "coming-soon",
+      benefits: ["Team notifications", "Channel integration", "Bot automation"]
     },
     {
       name: "Zapier",
-      description: "Connect 5000+ apps",
+      description: "5000+ app connections",
       icon: "⚡",
-      color: "from-orange-500 to-yellow-500",
-      benefits: ["Custom workflows", "App connections", "Automation"]
+      color: "from-orange-500 to-orange-600",
+      status: "coming-soon",
+      benefits: ["Custom workflows", "App connections", "Advanced automation"]
+    },
+    {
+      name: "HubSpot",
+      description: "CRM integration",
+      icon: "🎯",
+      color: "from-orange-400 to-orange-500",
+      status: "coming-soon",
+      benefits: ["Lead sync", "Contact management", "Deal tracking"]
     }
   ];
 
@@ -77,76 +104,49 @@ export function IntegrationsSection() {
         </p>
       </div>
 
-      {/* Integration Diagram */}
-      <div className="relative max-w-4xl mx-auto mb-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 items-center">
-          
-          {/* Left: External Integrations */}
-          <div className="space-y-6">
-            {integrations.map((integration, index) => (
-              <div
-                key={integration.name}
-                className={`integration-logo card p-6 hover-lift opacity-0 cursor-pointer ${
-                  hoveredIntegration === integration.name ? "card-glow" : ""
-                }`}
-                onMouseEnter={() => setHoveredIntegration(integration.name)}
-                onMouseLeave={() => setHoveredIntegration(null)}
-              >
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${integration.color} flex items-center justify-center`}>
-                    <span className="text-xl">{integration.icon}</span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1">{integration.name}</h3>
-                    <p className="text-sm text-muted-foreground">{integration.description}</p>
-                  </div>
-                </div>
-
-                {/* Benefits shown on hover */}
-                {hoveredIntegration === integration.name && (
-                  <div className="mt-4 pt-4 border-t border-border animate-fade-up">
-                    <ul className="space-y-1">
-                      {integration.benefits.map((benefit, benefitIndex) => (
-                        <li key={benefitIndex} className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <div className="w-1 h-1 rounded-full bg-rivor-teal"></div>
-                          {benefit}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+      {/* Integration Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-16">
+        {integrations.map((integration, index) => (
+          <div
+            key={integration.name}
+            className={`integration-logo card p-6 hover-lift opacity-0 cursor-pointer text-center ${
+              hoveredIntegration === integration.name ? "card-glow" : ""
+            } ${integration.status === "coming-soon" ? "relative" : ""}`}
+            onMouseEnter={() => setHoveredIntegration(integration.name)}
+            onMouseLeave={() => setHoveredIntegration(null)}
+          >
+            {/* Coming Soon Badge */}
+            {integration.status === "coming-soon" && (
+              <div className="absolute -top-2 -right-2 px-2 py-1 bg-gradient-to-r from-rivor-teal to-rivor-aqua text-white text-xs font-medium rounded-full animate-pulse">
+                Soon
               </div>
-            ))}
-          </div>
+            )}
 
-          {/* Center: Connector Lines */}
-          <div className="relative h-32 md:h-64 flex items-center justify-center">
-            {/* Horizontal connectors */}
-            <div className="connector-line absolute inset-0 flex items-center justify-center opacity-0">
-              <div className="w-full h-0.5 bg-gradient-to-r from-rivor-indigo via-rivor-teal to-rivor-aqua"></div>
-            </div>
-            
-            {/* Animated flow indicators */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rivor-indigo to-rivor-teal flex items-center justify-center">
-                <div className="w-4 h-4 rounded-full bg-white/30 backdrop-blur animate-pulse"></div>
+            <div className="flex flex-col items-center gap-3">
+              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${integration.color} flex items-center justify-center shadow-lg`}>
+                <span className="text-xl">{integration.icon}</span>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-1 text-sm">{integration.name}</h3>
+                <p className="text-xs text-muted-foreground">{integration.description}</p>
               </div>
             </div>
-          </div>
 
-          {/* Right: Rivor Logo */}
-          <div className="flex justify-center">
-            <div className="integration-logo card p-8 bg-gradient-to-br from-rivor-deep to-rivor-indigo text-white opacity-0">
-              <div className="text-center">
-                <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl font-bold">R</span>
-                </div>
-                <h3 className="text-lg font-bold mb-2">Rivor</h3>
-                <p className="text-sm opacity-80">Unified Workspace</p>
+            {/* Benefits shown on hover */}
+            {hoveredIntegration === integration.name && (
+              <div className="mt-4 pt-4 border-t border-border animate-fade-up">
+                <ul className="space-y-1">
+                  {integration.benefits.map((benefit, benefitIndex) => (
+                    <li key={benefitIndex} className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <div className="w-1 h-1 rounded-full bg-rivor-teal"></div>
+                      {benefit}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
+            )}
           </div>
-        </div>
+        ))}
       </div>
 
       {/* Security & Compliance */}
@@ -187,9 +187,9 @@ export function IntegrationsSection() {
       <div className="text-center animate-fade-up-delay-4">
         <a 
           href="/auth/signin"
-          className="inline-flex items-center justify-center px-8 py-4 rounded-xl brand-gradient text-white font-medium hover-lift"
+          className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-gradient-to-r from-rivor-teal to-rivor-aqua text-white font-semibold hover:from-rivor-aqua hover:to-rivor-teal hover-lift shadow-lg shadow-rivor-teal/25 transition-all duration-300"
         >
-          Connect Your Tools
+          Connect Your Tools →
         </a>
       </div>
 

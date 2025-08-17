@@ -33,23 +33,38 @@ export function CoreFeaturesSection() {
   const features = [
     {
       icon: "📥",
-      title: "Unified Inbox",
+      title: "One Inbox, Zero Chaos",
       description: "AI-powered email summaries turn conversation threads into actionable insights. Never miss a lead or important follow-up.",
-      benefits: ["Smart email prioritization", "Automated thread summaries", "Lead qualification scoring"],
+      benefits: [
+        "Smart email prioritization",
+        "Automated thread summaries", 
+        "Lead qualification scoring",
+        "Instant response suggestions"
+      ],
       link: "/features/inbox"
     },
     {
       icon: "📅", 
-      title: "Smart Scheduling",
+      title: "Scheduling That Just Works",
       description: "Calendar integration that automatically schedules showings, calls, and meetings based on your availability and preferences.",
-      benefits: ["Automated scheduling", "Buffer time management", "Client timezone handling"],
+      benefits: [
+        "Automated scheduling",
+        "Buffer time management",
+        "Client timezone handling",
+        "Smart conflict resolution"
+      ],
       link: "/features/calendar"
     },
     {
       icon: "🎯",
-      title: "Pipeline Power", 
+      title: "Pipelines That Move With You", 
       description: "Visual deal tracking with automated stage progression, task generation, and performance analytics to close more deals.",
-      benefits: ["Visual deal tracking", "Automated workflows", "Performance insights"],
+      benefits: [
+        "Visual deal tracking",
+        "Automated workflows",
+        "Performance insights",
+        "Predictive analytics"
+      ],
       link: "/features/pipeline"
     }
   ];
@@ -76,37 +91,43 @@ export function CoreFeaturesSection() {
             href={feature.link}
             className="feature-card group block opacity-0"
           >
-            <div className="card p-8 h-full hover-lift group-hover:card-glow transition-all duration-300">
-              {/* Icon with gradient accent */}
-              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-rivor-indigo/20 to-rivor-teal/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                <span className="text-2xl">{feature.icon}</span>
+            <div className="card p-8 h-full hover-lift group-hover:card-glow transition-all duration-300 relative overflow-hidden">
+              {/* Animated background gradient on hover */}
+              <div className="absolute inset-0 bg-gradient-to-br from-rivor-indigo/5 via-rivor-teal/5 to-rivor-aqua/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              
+              {/* Icon with enhanced styling */}
+              <div className="relative z-10 w-20 h-20 rounded-2xl bg-gradient-to-br from-rivor-indigo/20 to-rivor-teal/20 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 border border-rivor-teal/20">
+                <span className="text-3xl group-hover:scale-110 transition-transform duration-300">{feature.icon}</span>
               </div>
 
               {/* Title */}
-              <h3 className="text-display-sm mb-4 group-hover:gradient-text transition-all duration-300">
+              <h3 className="relative z-10 text-display-sm mb-4 group-hover:gradient-text transition-all duration-300">
                 {feature.title}
               </h3>
 
               {/* Description */}
-              <p className="text-body-md text-muted-foreground mb-6 leading-relaxed">
+              <p className="relative z-10 text-body-md text-muted-foreground mb-6 leading-relaxed">
                 {feature.description}
               </p>
 
-              {/* Benefits List */}
-              <ul className="space-y-2 mb-6">
+              {/* Benefits List with enhanced styling */}
+              <ul className="relative z-10 space-y-3 mb-6">
                 {feature.benefits.map((benefit, benefitIndex) => (
-                  <li key={benefitIndex} className="flex items-center gap-3 text-sm">
-                    <div className="w-1.5 h-1.5 rounded-full bg-rivor-teal"></div>
-                    <span className="text-muted-foreground">{benefit}</span>
+                  <li key={benefitIndex} className="flex items-center gap-3 text-sm group-hover:text-foreground transition-colors duration-300">
+                    <div className="w-2 h-2 rounded-full bg-rivor-teal group-hover:scale-125 transition-transform duration-300 flex-shrink-0"></div>
+                    <span className="text-muted-foreground group-hover:text-foreground transition-colors duration-300">{benefit}</span>
                   </li>
                 ))}
               </ul>
 
-              {/* CTA */}
-              <div className="flex items-center gap-2 text-sm font-medium text-rivor-teal group-hover:gap-3 transition-all duration-300">
+              {/* CTA with enhanced animation */}
+              <div className="relative z-10 flex items-center gap-2 text-sm font-medium text-rivor-teal group-hover:gap-3 transition-all duration-300">
                 <span>Learn more</span>
-                <span className="transform group-hover:translate-x-1 transition-transform duration-300">→</span>
+                <span className="transform group-hover:translate-x-2 transition-transform duration-300">→</span>
               </div>
+
+              {/* Hover glow effect */}
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-rivor-teal/10 via-transparent to-rivor-aqua/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
             </div>
           </Link>
         ))}
@@ -116,9 +137,9 @@ export function CoreFeaturesSection() {
       <div className="text-center mt-16 animate-fade-up-delay-4">
         <Link 
           href="/auth/signin"
-          className="inline-flex items-center justify-center px-8 py-4 rounded-xl brand-gradient text-white font-medium hover-lift"
+          className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-gradient-to-r from-rivor-teal to-rivor-aqua text-white font-semibold hover:from-rivor-aqua hover:to-rivor-teal hover-lift shadow-lg shadow-rivor-teal/25 transition-all duration-300"
         >
-          Try All Features Free
+          Try All Features Free →
         </Link>
       </div>
     </section>
