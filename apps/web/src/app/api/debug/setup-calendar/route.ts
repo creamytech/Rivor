@@ -47,12 +47,22 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Create calendar account
+    // Get the first access token to use as reference
+    const accessToken = secureTokens.find(t => t.tokenType === 'oauth_access');
+    if (!accessToken) {
+      return NextResponse.json({
+        success: false,
+        message: 'No access token found in secure tokens'
+      }, { status: 400 });
+    }
+
+    // Create calendar account with tokenRef
     const calendarAccount = await prisma.calendarAccount.create({
       data: {
         orgId,
         provider: 'google',
-        status: 'connected'
+        status: 'connected',
+        tokenRef: accessToken.id
       }
     });
 
