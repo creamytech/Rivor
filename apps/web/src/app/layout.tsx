@@ -2,13 +2,12 @@
 import { Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import dynamic from "next/dynamic";
-import { SessionProvider } from "next-auth/react";
-import { auth } from "@/server/auth";
 
 // Start all workers (only on server side)
 import "@/worker/startWorkers";
 
 const ClientRoot = dynamic(() => import("@/components/providers/ClientRoot"), { ssr: false });
+const SessionProviderWrapper = dynamic(() => import("@/components/providers/SessionProviderWrapper"), { ssr: false });
 
 const geistSans = Inter({
   variable: "--font-inter",
@@ -98,25 +97,23 @@ export const viewport: Viewport = {
   ],
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        <SessionProvider session={session}>
+        <SessionProviderWrapper>
           {children}
           <ClientRoot />
           <div id="portal-toasts" />
           <div id="portal-modals" />
           <div id="portal-drawers" />
-        </SessionProvider>
+        </SessionProviderWrapper>
       </body>
     </html>
   );
