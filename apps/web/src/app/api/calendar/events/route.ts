@@ -93,7 +93,6 @@ export async function POST(req: NextRequest) {
         orgId,
         start: new Date(event.data.start?.dateTime || event.data.start?.date!),
         end: new Date(event.data.end?.dateTime || event.data.end?.date!),
-        titleEnc: null, // Will be encrypted if needed
         titleIndex: event.data.summary || title,
         locationIndex: event.data.location || location || '',
         notesEnc: null,
