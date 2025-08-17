@@ -43,9 +43,8 @@ export async function GET(_req: NextRequest) {
         const threads = await prisma.emailThread.findMany({
           where: { orgId },
           include: {
-            messages: {
-              orderBy: { sentAt: 'desc' },
-              take: 1
+            _count: {
+              select: { messages: true }
             }
           },
           orderBy: { updatedAt: 'desc' },
@@ -58,7 +57,7 @@ export async function GET(_req: NextRequest) {
           subject: 'Email Thread', // SOC2 compliant: no plain text subject
           participants: 'Email Participants', // SOC2 compliant: no plain text participants
           lastMessageAt: thread.updatedAt,
-          messageCount: thread._count?.messages || 0,
+          messageCount: thread._count.messages,
           unreadCount: 0 // We'll calculate this separately if needed
         }));
         console.log('Processed threads:', recentThreads.length);
