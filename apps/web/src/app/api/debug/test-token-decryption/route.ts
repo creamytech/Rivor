@@ -63,6 +63,30 @@ export async function GET(req: NextRequest) {
       encryptionTest.error = `Encryption test failed: ${encryptError instanceof Error ? encryptError.message : 'Unknown error'}`;
     }
 
+    // Test OAuth token encryption/decryption specifically
+    const oauthTest = {
+      success: false,
+      error: null,
+      testToken: 'test-oauth-token-12345',
+      encryptedLength: 0,
+      decryptedToken: null,
+      tokenMatches: false
+    };
+
+    try {
+      const testToken = 'test-oauth-token-12345';
+      const encrypted = await encryptForOrg(orgId, testToken, 'oauth:access');
+      const decrypted = await decryptForOrg(orgId, encrypted, 'oauth:access');
+      const decryptedText = new TextDecoder().decode(decrypted);
+      
+      oauthTest.success = true;
+      oauthTest.encryptedLength = encrypted.length;
+      oauthTest.decryptedToken = decryptedText;
+      oauthTest.tokenMatches = decryptedText === testToken;
+    } catch (oauthError) {
+      oauthTest.error = `OAuth encryption test failed: ${oauthError instanceof Error ? oauthError.message : 'Unknown error'}`;
+    }
+
     // Get secure tokens
     const secureTokens = await prisma.secureToken.findMany({
       where: {
@@ -79,6 +103,7 @@ export async function GET(req: NextRequest) {
         orgId,
         sessionInfo,
         encryptionTest,
+        oauthTest,
         timestamp: new Date().toISOString()
       });
     }
@@ -169,6 +194,7 @@ export async function GET(req: NextRequest) {
       orgId,
       sessionInfo,
       encryptionTest,
+      oauthTest,
       totalTokens: secureTokens.length,
       results,
       timestamp: new Date().toISOString()
