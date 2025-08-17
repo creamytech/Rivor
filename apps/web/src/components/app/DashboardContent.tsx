@@ -13,6 +13,7 @@ import BackfillProgressCard from "@/components/app/BackfillProgressCard";
 import TokenErrorBanner from "@/components/common/TokenErrorBanner";
 import SyncButton from "@/components/common/SyncButton";
 import FlowCard from "@/components/river/FlowCard";
+import { Sparkles } from "lucide-react";
 
 interface DashboardContentProps {
   userName: string;
@@ -48,6 +49,16 @@ export default function DashboardContent({
     return "Good evening";
   };
 
+  const getTimeOfDay = () => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return 'morning';
+    if (hour >= 12 && hour < 17) return 'afternoon';
+    if (hour >= 17 && hour < 21) return 'evening';
+    return 'night';
+  };
+
+  const timeOfDay = getTimeOfDay();
+
   return (
     <div className="container py-6 space-y-8">
       {/* Token Error Banner */}
@@ -58,6 +69,12 @@ export default function DashboardContent({
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-5 w-5 text-teal-400 animate-pulse" />
+                <span className="text-sm font-medium text-teal-400 uppercase tracking-wide">
+                  {timeOfDay} Flow
+                </span>
+              </div>
               <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">
                 {getGreeting()}, {userName}! 👋
               </h1>

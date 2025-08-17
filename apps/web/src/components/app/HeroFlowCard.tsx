@@ -12,7 +12,8 @@ import {
   TrendingUp, 
   Plus,
   Shield,
-  ArrowRight
+  ArrowRight,
+  Sparkles
 } from 'lucide-react';
 
 interface FlowInsight {
@@ -69,22 +70,26 @@ export default function HeroFlowCard() {
   }
 
   return (
-    <FlowCard variant="hero" className="relative overflow-hidden">
-      {/* Background river flow effect */}
-      <div 
-        className="absolute inset-0 opacity-5 pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10,50 Q50,10 90,50 T170,50' stroke='rgb(20,184,166)' stroke-width='2' fill='none' opacity='0.3'/%3E%3C/svg%3E")`,
-          backgroundSize: '200px 100px',
-          backgroundRepeat: 'repeat-x'
-        }}
-      />
+    <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shadow-xl relative overflow-hidden hover:shadow-2xl transition-all duration-300">
+      {/* Enhanced background with subtle flow effect */}
+      <div className="absolute inset-0 bg-gradient-to-br from-teal-50/20 via-transparent to-blue-50/20 dark:from-teal-900/10 dark:via-transparent dark:to-blue-900/10" />
+      
+      {/* Animated flow lines */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none">
+        <div className="absolute top-1/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-teal-400 to-transparent animate-pulse" style={{ animationDuration: '3s' }} />
+        <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-blue-400 to-transparent animate-pulse" style={{ animationDuration: '3s', animationDelay: '1s' }} />
+        <div className="absolute top-3/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-teal-400 to-transparent animate-pulse" style={{ animationDuration: '3s', animationDelay: '2s' }} />
+      </div>
       
       <div className="relative z-10 p-8">
         <div className="grid md:grid-cols-2 gap-8 items-center">
           {/* Left side - Welcome & Actions */}
           <div className="space-y-6">
             <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="h-5 w-5 text-teal-400 animate-pulse" />
+                <span className="text-sm font-medium text-teal-400 uppercase tracking-wide">Today's Flow</span>
+              </div>
               <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
                 Where Deals Flow Seamlessly
               </h1>
@@ -103,7 +108,7 @@ export default function HeroFlowCard() {
                 <div className="space-y-3">
                   <Button
                     onClick={() => signIn('google', { callbackUrl: '/app' })}
-                    className="w-full bg-gradient-to-r from-teal-500 to-azure-500 hover:from-teal-600 hover:to-azure-600 text-white"
+                    className="w-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                     size="lg"
                   >
                     <Mail className="h-5 w-5 mr-2" />
@@ -140,7 +145,7 @@ export default function HeroFlowCard() {
                 </div>
                 
                 <Button 
-                  className="bg-gradient-to-r from-teal-500 to-azure-500 hover:from-teal-600 hover:to-azure-600 text-white"
+                  className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                   onClick={() => window.location.href = '/app/inbox'}
                 >
                   <Mail className="h-4 w-4 mr-2" />
@@ -158,46 +163,60 @@ export default function HeroFlowCard() {
             </h3>
             
             {insights?.connectionStatus === 'none' ? (
-              <DataEmpty
-                icon={<TrendingUp className="h-12 w-12" />}
-                title="Ready to Flow"
-                description="Connect your accounts to see live insights about your emails, calendar, and deals."
-                className="py-8"
-              />
+              <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-200/50 dark:border-slate-700/50 p-8 text-center">
+                <div className="mb-4">
+                  <TrendingUp className="h-12 w-12 text-teal-400 mx-auto animate-pulse" />
+                </div>
+                <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                  Ready to Flow
+                </h4>
+                <p className="text-slate-600 dark:text-slate-400">
+                  Connect your accounts to see live insights about your emails, calendar, and deals.
+                </p>
+              </div>
             ) : (
               <div className="grid grid-cols-3 gap-4">
                 {/* Today's Emails */}
-                <FlowCard className="p-4 text-center">
-                  <Mail className="h-8 w-8 text-teal-500 mx-auto mb-2" />
+                <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-200/50 dark:border-slate-700/50 p-4 text-center hover:scale-105 transition-all duration-300 group">
+                  <div className="relative">
+                    <Mail className="h-8 w-8 text-teal-500 mx-auto mb-2 group-hover:animate-bounce" />
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-teal-400 rounded-full animate-pulse" />
+                  </div>
                   <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                     {insights?.todayEmails || 0}
                   </div>
                   <div className="text-sm text-slate-600 dark:text-slate-400">
                     Today's Emails
                   </div>
-                </FlowCard>
+                </div>
 
                 {/* Upcoming Events */}
-                <FlowCard className="p-4 text-center">
-                  <Calendar className="h-8 w-8 text-azure-500 mx-auto mb-2" />
+                <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-200/50 dark:border-slate-700/50 p-4 text-center hover:scale-105 transition-all duration-300 group">
+                  <div className="relative">
+                    <Calendar className="h-8 w-8 text-blue-500 mx-auto mb-2 group-hover:animate-bounce" />
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-400 rounded-full animate-pulse" />
+                  </div>
                   <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                     {insights?.upcomingEvents || 0}
                   </div>
                   <div className="text-sm text-slate-600 dark:text-slate-400">
                     Upcoming Events
                   </div>
-                </FlowCard>
+                </div>
 
                 {/* Active Leads */}
-                <FlowCard className="p-4 text-center">
-                  <Users className="h-8 w-8 text-jade-500 mx-auto mb-2" />
+                <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-200/50 dark:border-slate-700/50 p-4 text-center hover:scale-105 transition-all duration-300 group">
+                  <div className="relative">
+                    <Users className="h-8 w-8 text-green-500 mx-auto mb-2 group-hover:animate-bounce" />
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse" />
+                  </div>
                   <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                     {insights?.activeLeads || 0}
                   </div>
                   <div className="text-sm text-slate-600 dark:text-slate-400">
                     Active Leads
                   </div>
-                </FlowCard>
+                </div>
               </div>
             )}
           </div>
