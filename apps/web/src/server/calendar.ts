@@ -148,6 +148,18 @@ export class GoogleCalendarService {
       throw new Error(`Calendar account ${calendarAccountId} not found`);
     }
 
+    // Get the email account to find the externalAccountId
+    const emailAccount = await prisma.emailAccount.findFirst({
+      where: {
+        orgId,
+        provider: 'google'
+      }
+    });
+
+    if (!emailAccount?.externalAccountId) {
+      throw new Error(`No Google email account with externalAccountId found for org ${orgId}`);
+    }
+
     // Get all secure tokens for this account
     const secureTokens = await prisma.secureToken.findMany({
       where: {
@@ -167,14 +179,10 @@ export class GoogleCalendarService {
       throw new Error(`Access token not found for Google calendar account ${calendarAccountId}`);
     }
 
-    // Get the external account ID from the token reference
-    const tokenRefParts = accessTokenRecord.tokenRef.split('-');
-    const externalAccountId = tokenRefParts[tokenRefParts.length - 2]; // Second to last part
-
     const accessTokenBytes = await decryptForOrg(
       orgId, 
       accessTokenRecord.encryptedTokenBlob, 
-      `oauth:access:${externalAccountId}`
+      `oauth:access:${emailAccount.externalAccountId}`
     );
     const accessToken = new TextDecoder().decode(accessTokenBytes);
     
@@ -185,7 +193,7 @@ export class GoogleCalendarService {
       const refreshTokenBytes = await decryptForOrg(
         orgId, 
         refreshTokenRecord.encryptedTokenBlob, 
-        `oauth:refresh:${externalAccountId}`
+        `oauth:refresh:${emailAccount.externalAccountId}`
       );
       refreshToken = new TextDecoder().decode(refreshTokenBytes);
     }
