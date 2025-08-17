@@ -93,30 +93,42 @@ export async function GET(req: NextRequest) {
 
     // Transform to UI format
     const threadsFormatted = (threads as any[]).map((thread: any) => {
-      // Parse participants from participantsIndex - handle space-separated format
+      // Parse participants from participantsIndex - improved parsing
       let participants = [{ name: 'Unknown', email: 'unknown@example.com' }];
       
       if (thread.participantsIndex) {
-        // Split by spaces and filter out empty strings, then extract emails
-        const parts = thread.participantsIndex.split(/\s+/).filter((p: string) => p.trim());
-        const emails = parts.filter((part: string) => part.includes('@'));
+        // The participantsIndex contains concatenated email addresses
+        // Extract email addresses using regex
+        const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
+        const emails = thread.participantsIndex.match(emailRegex) || [];
         
         if (emails.length > 0) {
-          participants = emails.map((email: string) => ({
-            name: email.split('@')[0] || 'Unknown',
-            email: email.trim()
-          }));
+          participants = emails.map((email: string) => {
+            const emailLower = email.toLowerCase();
+            // Extract name from email (before @)
+            const name = email.split('@')[0];
+            // Clean up the name (remove dots, underscores, etc.)
+            const cleanName = name
+              .replace(/[._-]/g, ' ')
+              .replace(/\b\w/g, (l) => l.toUpperCase())
+              .trim();
+            
+            return {
+              name: cleanName || 'Unknown',
+              email: emailLower
+            };
+          });
         }
       }
       
-      // Create a better snippet from the thread data
+      // Create a better snippet showing the conversation
       let snippet = 'Email content available';
-      if (thread.participantsIndex) {
-        const parts = thread.participantsIndex.split(/\s+/).filter((p: string) => p.trim());
-        const emails = parts.filter((part: string) => part.includes('@'));
-        if (emails.length > 0) {
-          snippet = `From: ${emails[0] || 'Unknown'} | To: ${emails.slice(1).join(', ') || 'Unknown'}`;
-        }
+      if (participants.length > 1) {
+        const from = participants[0]?.name || participants[0]?.email || 'Unknown';
+        const to = participants.slice(1).map(p => p.name || p.email).join(', ') || 'Unknown';
+        snippet = `From: ${from} | To: ${to}`;
+      } else if (participants.length === 1) {
+        snippet = `From: ${participants[0]?.name || participants[0]?.email || 'Unknown'}`;
       }
       
       return {
