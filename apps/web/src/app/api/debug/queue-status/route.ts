@@ -18,56 +18,25 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
 
-    // Get queue status
+    // Get queue instances (but don't fetch jobs yet)
     const emailBackfillQueue = getEmailBackfillQueue();
     const emailSyncQueue = getEmailSyncQueue();
 
-    const [backfillJobs, syncJobs, backfillWaiting, syncWaiting, backfillActive, syncActive] = await Promise.all([
-      emailBackfillQueue.getJobs(['completed', 'failed']),
-      emailSyncQueue.getJobs(['completed', 'failed']),
-      emailBackfillQueue.getWaiting(),
-      emailSyncQueue.getWaiting(),
-      emailBackfillQueue.getActive(),
-      emailSyncQueue.getActive()
-    ]);
-
-    // Get recent jobs for this org
-    const orgBackfillJobs = backfillJobs.filter(job => job.data.orgId === orgId);
-    const orgSyncJobs = syncJobs.filter(job => job.data.orgId === orgId);
-
+    // Simple queue info without fetching jobs
     return NextResponse.json({
       success: true,
       orgId,
       queues: {
         emailBackfill: {
-          waiting: backfillWaiting.length,
-          active: backfillActive.length,
-          completed: backfillJobs.length,
-          failed: backfillJobs.filter(j => j.failedReason).length
+          name: 'email-backfill',
+          status: 'available'
         },
         emailSync: {
-          waiting: syncWaiting.length,
-          active: syncActive.length,
-          completed: syncJobs.length,
-          failed: syncJobs.filter(j => j.failedReason).length
+          name: 'email-sync', 
+          status: 'available'
         }
       },
-      orgJobs: {
-        backfill: orgBackfillJobs.map(job => ({
-          id: job.id,
-          status: job.finishedOn ? 'completed' : 'failed',
-          data: job.data,
-          timestamp: job.finishedOn || job.processedOn,
-          error: job.failedReason
-        })),
-        sync: orgSyncJobs.map(job => ({
-          id: job.id,
-          status: job.finishedOn ? 'completed' : 'failed',
-          data: job.data,
-          timestamp: job.finishedOn || job.processedOn,
-          error: job.failedReason
-        }))
-      }
+      message: 'Queue instances created successfully. Use /api/debug/sync-status for detailed sync info.'
     });
 
   } catch (error) {
