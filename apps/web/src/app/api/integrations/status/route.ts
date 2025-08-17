@@ -99,15 +99,15 @@ export async function GET() {
       failedTokens: org.emailAccounts.filter(acc => acc.encryptionStatus === 'failed').length
     };
 
-    const status = {
-      overallStatus: summary.connectedAccounts === summary.totalAccounts ? 'all_connected' : 'partial_connected',
+    const overallStatus = summary.connectedAccounts === summary.totalAccounts ? 'all_connected' : 'action_needed';
+
+    return Response.json({
+      overallStatus,
       summary,
       emailAccounts,
       tokenEncryption,
       lastUpdated: new Date().toISOString()
-    };
-
-    return Response.json(status);
+    });
   } catch (error) {
     console.error('Failed to fetch integrations status:', error);
     return new Response('Internal Server Error', { status: 500 });

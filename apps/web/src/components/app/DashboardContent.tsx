@@ -4,7 +4,6 @@ import InboxSummaryWidget from './InboxSummaryWidget';
 import CalendarSnapshotWidget from './CalendarSnapshotWidget';
 import PipelineGlanceWidget from './PipelineGlanceWidget';
 import IntegrationStatusPanel from './IntegrationStatusPanel';
-import ConnectedAccountsPanel from './ConnectedAccountsPanel';
 import BackfillProgressCard from './BackfillProgressCard';
 import TokenErrorBanner from '../common/TokenErrorBanner';
 import SyncButton from '../common/SyncButton';
@@ -162,15 +161,6 @@ export default function DashboardContent({
               totalActiveLeads={totalActiveLeads}
             />
           </div>
-        </div>
-
-        {/* Connected Accounts Panel */}
-        <div className="mt-6">
-          <ConnectedAccountsPanel 
-            tokenHealth={tokenHealth} 
-            userEmail={userName} 
-            userName={userName} 
-          />
         </div>
       </div>
     </div>
