@@ -167,8 +167,8 @@ export async function GET(_req: NextRequest) {
           }
         });
 
-        // Get actual upcoming events for display
-        const events = await prisma.calendarEvent.findMany({
+        // Get actual upcoming events for display (or recent past events if no upcoming)
+        let events = await prisma.calendarEvent.findMany({
           where: {
             orgId,
             start: {
@@ -178,6 +178,20 @@ export async function GET(_req: NextRequest) {
           orderBy: { start: 'asc' },
           take: 10
         });
+
+        // If no upcoming events, get recent past events instead
+        if (events.length === 0) {
+          events = await prisma.calendarEvent.findMany({
+            where: {
+              orgId,
+              start: {
+                lt: now
+              }
+            },
+            orderBy: { start: 'desc' },
+            take: 10
+          });
+        }
 
         console.log('Found upcoming events:', events.length);
         console.log('First event sample:', events[0] ? {
@@ -195,27 +209,37 @@ export async function GET(_req: NextRequest) {
             let location = null;
 
             if (event.titleEnc) {
-              const titleBytes = await decryptForOrg(orgId, event.titleEnc, 'calendar:title');
-              title = new TextDecoder().decode(titleBytes);
+              try {
+                const titleBytes = await decryptForOrg(orgId, event.titleEnc, 'calendar:title');
+                title = new TextDecoder().decode(titleBytes);
+              } catch (decryptError) {
+                console.error('Failed to decrypt title:', decryptError);
+                title = 'Calendar Event';
+              }
             }
 
             if (event.locationEnc) {
-              const locationBytes = await decryptForOrg(orgId, event.locationEnc, 'calendar:location');
-              location = new TextDecoder().decode(locationBytes);
+              try {
+                const locationBytes = await decryptForOrg(orgId, event.locationEnc, 'calendar:location');
+                location = new TextDecoder().decode(locationBytes);
+              } catch (decryptError) {
+                console.error('Failed to decrypt location:', decryptError);
+                location = null;
+              }
             }
             
             return {
               id: event.id,
-              title: title || 'Untitled Event',
+              title: title || 'Calendar Event',
               start: event.start,
               end: event.end,
               location: location
             };
           } catch (error) {
-            console.error('Failed to decrypt event data:', error);
+            console.error('Failed to process event data:', error);
             return {
               id: event.id,
-              title: 'Untitled Event',
+              title: 'Calendar Event',
               start: event.start,
               end: event.end,
               location: null
