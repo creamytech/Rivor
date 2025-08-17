@@ -148,10 +148,6 @@ export class GoogleCalendarService {
       throw new Error(`Calendar account ${calendarAccountId} not found`);
     }
 
-    if (!calendarAccount.tokenRef) {
-      throw new Error(`No token reference found for calendar account ${calendarAccountId}`);
-    }
-
     // Get all secure tokens for this account
     const secureTokens = await prisma.secureToken.findMany({
       where: {
@@ -174,7 +170,7 @@ export class GoogleCalendarService {
     const accessTokenBytes = await decryptForOrg(
       orgId, 
       accessTokenRecord.encryptedTokenBlob, 
-      `oauth:access:${calendarAccount.externalAccountId}`
+      `oauth:access:calendar`
     );
     const accessToken = new TextDecoder().decode(accessTokenBytes);
     
@@ -185,7 +181,7 @@ export class GoogleCalendarService {
       const refreshTokenBytes = await decryptForOrg(
         orgId, 
         refreshTokenRecord.encryptedTokenBlob, 
-        `oauth:refresh:${calendarAccount.externalAccountId}`
+        `oauth:refresh:calendar`
       );
       refreshToken = new TextDecoder().decode(refreshTokenBytes);
     }
