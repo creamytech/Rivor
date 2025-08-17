@@ -618,6 +618,14 @@ function DataPrivacySettings() {
 }
 
 export default function SettingsPage() {
+  return (
+    <ToastProvider>
+      <SettingsPageContent />
+    </ToastProvider>
+  );
+}
+
+function SettingsPageContent() {
   const [activeTab, setActiveTab] = useState('profile');
   const { data: session, status } = useSession();
 
@@ -681,34 +689,32 @@ export default function SettingsPage() {
   }
 
   return (
-    <ToastProvider>
-      <div className="relative min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
-        <FlowRibbon />
-        <AppShell>
-          <div className="container py-6 space-y-6">
-            <TokenErrorBanner />
-            
-            <div className="space-y-6">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-                  Settings
-                </h1>
-                <p className="text-slate-600 dark:text-slate-400">
-                  Manage your account, organization, and application preferences.
-                </p>
-              </div>
-              
-              <SettingsLayout
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-                tabs={settingsTabs}
-              >
-                {renderTabContent()}
-              </SettingsLayout>
+    <div className="relative min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
+      <FlowRibbon />
+      <AppShell>
+        <div className="container py-6 space-y-6">
+          <TokenErrorBanner />
+          
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+                Settings
+              </h1>
+              <p className="text-slate-600 dark:text-slate-400">
+                Manage your account, organization, and application preferences.
+              </p>
             </div>
+            
+            <SettingsLayout
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              tabs={settingsTabs}
+            >
+              {renderTabContent()}
+            </SettingsLayout>
           </div>
-        </AppShell>
-      </div>
-    </ToastProvider>
+        </div>
+      </AppShell>
+    </div>
   );
 }

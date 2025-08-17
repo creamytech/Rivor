@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { SessionProvider } from "next-auth/react";
 import CommandPalette from "@/components/common/CommandPalette";
 import Toaster from "@/components/common/Toaster";
 import { AnalyticsProvider } from "./AnalyticsProvider";
@@ -19,12 +18,10 @@ export default function ClientRoot() {
   }, [bus]);
 
   return (
-    <SessionProvider>
-      <AnalyticsProvider>
-        <CommandPalette />
-        <Toaster bus={bus} />
-      </AnalyticsProvider>
-    </SessionProvider>
+    <AnalyticsProvider>
+      <CommandPalette />
+      <Toaster bus={bus} />
+    </AnalyticsProvider>
   );
 }
 

@@ -2,6 +2,8 @@
 import { Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import dynamic from "next/dynamic";
+import { SessionProvider } from "next-auth/react";
+import { auth } from "@/server/auth";
 
 // Start all workers (only on server side)
 import "@/worker/startWorkers";
@@ -96,21 +98,25 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        {children}
-        <ClientRoot />
-        <div id="portal-toasts" />
-        <div id="portal-modals" />
-        <div id="portal-drawers" />
+        <SessionProvider session={session}>
+          {children}
+          <ClientRoot />
+          <div id="portal-toasts" />
+          <div id="portal-modals" />
+          <div id="portal-drawers" />
+        </SessionProvider>
       </body>
     </html>
   );
