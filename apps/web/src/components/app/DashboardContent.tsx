@@ -61,8 +61,8 @@ export default function DashboardContent({
 
   return (
     <div className="container py-6 space-y-8">
-      {/* Token Error Banner - temporarily removed */}
-      {/* <TokenErrorBanner /> */}
+      {/* Token Error Banner */}
+      <TokenErrorBanner />
       
       {/* Hero Section */}
       <section>
