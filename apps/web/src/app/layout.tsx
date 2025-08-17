@@ -8,6 +8,7 @@ import "@/worker/startWorkers";
 
 const ClientRoot = dynamic(() => import("@/components/providers/ClientRoot"), { ssr: false });
 const SessionProviderWrapper = dynamic(() => import("@/components/providers/SessionProviderWrapper"), { ssr: false });
+const TRPCProvider = dynamic(() => import("@/components/providers/TRPCProvider").then(mod => ({ default: mod.TRPCProvider })), { ssr: false });
 
 const geistSans = Inter({
   variable: "--font-inter",
@@ -108,11 +109,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         <SessionProviderWrapper>
-          {children}
-          <ClientRoot />
-          <div id="portal-toasts" />
-          <div id="portal-modals" />
-          <div id="portal-drawers" />
+          <TRPCProvider>
+            {children}
+            <ClientRoot />
+            <div id="portal-toasts" />
+            <div id="portal-modals" />
+            <div id="portal-drawers" />
+          </TRPCProvider>
         </SessionProviderWrapper>
       </body>
     </html>

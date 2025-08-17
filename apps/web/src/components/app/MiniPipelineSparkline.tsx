@@ -2,68 +2,55 @@
 import { useState } from 'react';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, Minus, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, BarChart3, Users, Clock } from 'lucide-react';
 
 interface PipelineStage {
+  id: string;
   name: string;
-  count: number;
-  color: string;
-  dropOffRate?: number;
+  color: string | null;
+  order: number;
+  _count: {
+    leads: number;
+  };
 }
 
 interface MiniPipelineSparklineProps {
-  stages?: PipelineStage[];
-  totalLeads?: number;
-  conversionRate?: number;
+  stages: PipelineStage[];
+  totalLeads: number;
+  conversionRate: number;
 }
 
-export default function MiniPipelineSparkline({
-  stages = [],
-  totalLeads = 0,
-  conversionRate = 0
+export default function MiniPipelineSparkline({ 
+  stages = [], 
+  totalLeads = 0, 
+  conversionRate = 0 
 }: MiniPipelineSparklineProps) {
-  const [hoveredStage, setHoveredStage] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  const maxCount = Math.max(...stages.map(stage => stage.count), 1);
+  // Sort stages by order
+  const sortedStages = [...stages].sort((a, b) => a.order - b.order);
   
-  const getTrendIcon = (dropOffRate?: number) => {
-    if (!dropOffRate) return <Minus className="h-3 w-3 text-slate-400" />;
-    if (dropOffRate < 0) return <TrendingUp className="h-3 w-3 text-green-500" />;
-    return <TrendingDown className="h-3 w-3 text-red-500" />;
+  // Calculate max count for scaling
+  const maxCount = Math.max(...sortedStages.map(stage => stage._count.leads), 1);
+  
+  // Calculate drop-off rates
+  const dropOffRates = sortedStages.map((stage, index) => {
+    if (index === 0) return 0;
+    const previousCount = sortedStages[index - 1]._count.leads;
+    const currentCount = stage._count.leads;
+    return previousCount > 0 ? ((previousCount - currentCount) / previousCount) * 100 : 0;
+  });
+
+  const getDropOffColor = (rate: number) => {
+    if (rate <= 10) return 'text-green-500';
+    if (rate <= 25) return 'text-yellow-500';
+    return 'text-red-500';
   };
 
-  const getTrendColor = (dropOffRate?: number) => {
-    if (!dropOffRate) return 'text-slate-500';
-    if (dropOffRate < 0) return 'text-green-600 dark:text-green-400';
-    return 'text-red-600 dark:text-red-400';
-  };
-
-  const getStageColor = (color: string) => {
-    const colorMap: Record<string, string> = {
-      'blue': 'bg-blue-500',
-      'green': 'bg-green-500',
-      'yellow': 'bg-yellow-500',
-      'red': 'bg-red-500',
-      'purple': 'bg-purple-500',
-      'teal': 'bg-teal-500',
-      'orange': 'bg-orange-500',
-      'pink': 'bg-pink-500'
-    };
-    return colorMap[color] || 'bg-slate-500';
-  };
-
-  const getStageBorderColor = (color: string) => {
-    const colorMap: Record<string, string> = {
-      'blue': 'border-blue-200 dark:border-blue-800',
-      'green': 'border-green-200 dark:border-green-800',
-      'yellow': 'border-yellow-200 dark:border-yellow-800',
-      'red': 'border-red-200 dark:border-red-800',
-      'purple': 'border-purple-200 dark:border-purple-800',
-      'teal': 'border-teal-200 dark:border-teal-800',
-      'orange': 'border-orange-200 dark:border-orange-800',
-      'pink': 'border-pink-200 dark:border-pink-800'
-    };
-    return colorMap[color] || 'border-slate-200 dark:border-slate-800';
+  const getDropOffIcon = (rate: number) => {
+    if (rate <= 10) return <TrendingUp className="h-3 w-3" />;
+    if (rate <= 25) return <Clock className="h-3 w-3" />;
+    return <TrendingDown className="h-3 w-3" />;
   };
 
   return (
@@ -75,108 +62,120 @@ export default function MiniPipelineSparkline({
             <GlassCardTitle className="text-lg">Pipeline</GlassCardTitle>
           </div>
           <Badge variant="outline" className="text-xs">
-            {totalLeads} total
+            {conversionRate}% conversion
           </Badge>
         </div>
       </GlassCardHeader>
-      
       <GlassCardContent className="p-0">
         <div className="space-y-4">
           {/* Sparkline Chart */}
-          <div className="px-4">
-            <div className="flex items-end justify-between h-20 gap-1">
-              {stages.map((stage, index) => {
-                const height = (stage.count / maxCount) * 100;
-                const isHovered = hoveredStage === stage.name;
-                
-                return (
-                  <div
-                    key={stage.name}
-                    className="flex-1 flex flex-col items-center"
-                    onMouseEnter={() => setHoveredStage(stage.name)}
-                    onMouseLeave={() => setHoveredStage(null)}
-                  >
-                    {/* Bar */}
-                    <div className="relative w-full flex justify-center">
-                      <div
-                        className={`w-full rounded-t transition-all duration-300 ${getStageColor(stage.color)} ${
-                          isHovered ? 'opacity-100' : 'opacity-80'
-                        }`}
-                        style={{ height: `${Math.max(height, 4)}%` }}
-                      />
-                    </div>
-                    
-                    {/* Stage Name */}
-                    <div className="text-xs text-slate-600 dark:text-slate-400 mt-2 text-center leading-tight">
-                      {stage.name}
-                    </div>
-                    
-                    {/* Count */}
-                    <div className="text-xs font-medium text-slate-900 dark:text-slate-100 mt-1">
-                      {stage.count}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Stage Details */}
-          <div className="space-y-2 px-4">
-            {stages.map((stage) => (
-              <div
-                key={stage.name}
-                className={`flex items-center justify-between p-2 rounded-lg border transition-colors ${
-                  hoveredStage === stage.name 
-                    ? 'bg-white/10 border-white/30' 
-                    : 'bg-white/5 border-white/10'
-                } ${getStageBorderColor(stage.color)}`}
-                onMouseEnter={() => setHoveredStage(stage.name)}
-                onMouseLeave={() => setHoveredStage(null)}
-              >
-                <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${getStageColor(stage.color)}`} />
-                  <span className="text-sm font-medium">{stage.name}</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold">{stage.count}</span>
-                  {stage.dropOffRate !== undefined && (
-                    <div className="flex items-center gap-1">
-                      {getTrendIcon(stage.dropOffRate)}
-                      <span className={`text-xs ${getTrendColor(stage.dropOffRate)}`}>
-                        {Math.abs(stage.dropOffRate)}%
+          <div className="flex items-end justify-between gap-2 h-20 px-2">
+            {sortedStages.map((stage, index) => {
+              const height = (stage._count.leads / maxCount) * 100;
+              const dropOffRate = dropOffRates[index];
+              
+              return (
+                <div key={stage.id} className="flex-1 flex flex-col items-center">
+                  {/* Bar */}
+                  <div 
+                    className="w-full rounded-t-sm transition-all duration-300 hover:opacity-80 cursor-pointer"
+                    style={{
+                      height: `${Math.max(height, 4)}%`,
+                      backgroundColor: stage.color || '#6366f1',
+                      minHeight: '4px'
+                    }}
+                    title={`${stage.name}: ${stage._count.leads} leads`}
+                  />
+                  
+                  {/* Drop-off indicator */}
+                  {index > 0 && dropOffRate > 0 && (
+                    <div className={`flex items-center gap-1 mt-1 ${getDropOffColor(dropOffRate)}`}>
+                      {getDropOffIcon(dropOffRate)}
+                      <span className="text-xs font-medium">
+                        {dropOffRate.toFixed(0)}%
                       </span>
                     </div>
                   )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          {/* Conversion Rate */}
-          <div className="px-4 pt-2 border-t border-white/20">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-600 dark:text-slate-400">
-                Conversion Rate
-              </span>
-              <div className="flex items-center gap-1">
-                <span className="text-sm font-bold text-green-600 dark:text-green-400">
+          {/* Stage Details */}
+          <div className="space-y-2">
+            {sortedStages.map((stage, index) => {
+              const dropOffRate = dropOffRates[index];
+              const percentage = totalLeads > 0 ? (stage._count.leads / totalLeads) * 100 : 0;
+              
+              return (
+                <div key={stage.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: stage.color || '#6366f1' }}
+                    />
+                    <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                      {stage.name}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                      {stage._count.leads}
+                    </span>
+                    <Badge variant="outline" className="text-xs">
+                      {percentage.toFixed(1)}%
+                    </Badge>
+                    {index > 0 && dropOffRate > 0 && (
+                      <div className={`flex items-center gap-1 ${getDropOffColor(dropOffRate)}`}>
+                        {getDropOffIcon(dropOffRate)}
+                        <span className="text-xs">
+                          {dropOffRate.toFixed(0)}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Summary Stats */}
+          <div className="border-t border-white/20 pt-3">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                  {totalLeads}
+                </div>
+                <div className="text-slate-600 dark:text-slate-400">
+                  Total Leads
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                   {conversionRate}%
-                </span>
-                <TrendingUp className="h-3 w-3 text-green-500" />
+                </div>
+                <div className="text-slate-600 dark:text-slate-400">
+                  Conversion Rate
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {stages.length === 0 && (
+        {sortedStages.length === 0 && (
           <div className="p-6 text-center">
             <BarChart3 className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-            <p className="text-slate-600 dark:text-slate-400 mb-2">No pipeline data</p>
-            <p className="text-xs text-slate-500">
-              Add deals to see your pipeline flow
+            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
+              No pipeline stages
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 mb-4">
+              Create pipeline stages to track your leads
             </p>
+            <Badge variant="outline">
+              <Users className="h-4 w-4 mr-2" />
+              Set up pipeline
+            </Badge>
           </div>
         )}
       </GlassCardContent>

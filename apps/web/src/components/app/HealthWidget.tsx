@@ -3,105 +3,66 @@ import { useState } from 'react';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  CheckCircle, 
-  AlertTriangle, 
-  XCircle, 
-  RefreshCw, 
-  Wifi, 
-  WifiOff,
-  Settings,
-  Clock,
-  Zap
-} from 'lucide-react';
+import { CheckCircle, AlertTriangle, XCircle, RefreshCw, Wifi, WifiOff, Settings, Clock, Zap } from 'lucide-react';
 
-interface IntegrationStatus {
+interface Integration {
   id: string;
-  name: string;
-  type: 'email' | 'calendar' | 'contacts';
-  status: 'healthy' | 'warning' | 'error' | 'disconnected';
-  lastSync: string;
-  errors: number;
-  needsReauth: boolean;
-  isConnected: boolean;
+  provider: string;
+  status: string;
+  lastSyncedAt: string | null;
+  errorReason: string | null;
 }
 
 interface HealthWidgetProps {
-  integrations?: IntegrationStatus[];
-  onFix?: (integrationId: string) => void;
-  onReauth?: (integrationId: string) => void;
+  integrations: Integration[];
+  onFix: (id: string) => void;
+  onReauth: (id: string) => void;
 }
 
-export default function HealthWidget({ 
-  integrations = [], 
-  onFix, 
-  onReauth 
-}: HealthWidgetProps) {
+export default function HealthWidget({ integrations = [], onFix, onReauth }: HealthWidgetProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'healthy':
+      case 'connected':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'warning':
+      case 'action_needed':
         return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-      case 'error':
-        return <XCircle className="h-4 w-4 text-red-500" />;
       case 'disconnected':
-        return <WifiOff className="h-4 w-4 text-slate-400" />;
+        return <XCircle className="h-4 w-4 text-red-500" />;
       default:
-        return <Wifi className="h-4 w-4 text-slate-400" />;
+        return <Clock className="h-4 w-4 text-gray-500" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'healthy':
-        return 'text-green-600 dark:text-green-400';
-      case 'warning':
-        return 'text-yellow-600 dark:text-yellow-400';
-      case 'error':
-        return 'text-red-600 dark:text-red-400';
+      case 'connected':
+        return 'text-green-600 bg-green-100 dark:bg-green-900/20';
+      case 'action_needed':
+        return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20';
       case 'disconnected':
-        return 'text-slate-500';
+        return 'text-red-600 bg-red-100 dark:bg-red-900/20';
       default:
-        return 'text-slate-500';
+        return 'text-gray-600 bg-gray-100 dark:bg-gray-900/20';
     }
   };
 
-  const getStatusBadgeColor = (status: string) => {
+  const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'healthy':
-        return 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300';
-      case 'warning':
-        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300';
-      case 'error':
-        return 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300';
+      case 'connected':
+        return 'Healthy';
+      case 'action_needed':
+        return 'Needs Attention';
       case 'disconnected':
-        return 'bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300';
+        return 'Disconnected';
       default:
-        return 'bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300';
+        return 'Unknown';
     }
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'email':
-        return '📧';
-      case 'calendar':
-        return '📅';
-      case 'contacts':
-        return '👥';
-      default:
-        return '🔗';
-    }
-  };
-
-  const hasIssues = integrations.some(integration => 
-    integration.status !== 'healthy' || integration.needsReauth
-  );
-
-  const totalErrors = integrations.reduce((sum, integration) => sum + integration.errors, 0);
+  const hasIssues = integrations.some(integration => integration.status !== 'connected');
+  const totalErrors = integrations.filter(integration => integration.errorReason).length;
 
   return (
     <GlassCard variant="gradient" intensity="medium" className="h-full">
@@ -128,95 +89,86 @@ export default function HealthWidget({
           </div>
         </div>
       </GlassCardHeader>
-      
       <GlassCardContent className="p-0">
         <div className="space-y-3">
           {integrations.map((integration) => (
-            <div 
+            <div
               key={integration.id}
               className={`p-3 rounded-lg border transition-colors ${
-                integration.status === 'healthy' 
-                  ? 'bg-green-50/50 dark:bg-green-900/20 border-green-200/50 dark:border-green-800/50' 
-                  : integration.status === 'warning'
-                  ? 'bg-yellow-50/50 dark:bg-yellow-900/20 border-yellow-200/50 dark:border-yellow-800/50'
-                  : 'bg-red-50/50 dark:bg-red-900/20 border-red-200/50 dark:border-red-800/50'
+                integration.status === 'connected'
+                  ? 'bg-green-50/50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                  : integration.status === 'action_needed'
+                  ? 'bg-yellow-50/50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                  : 'bg-red-50/50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">{getTypeIcon(integration.type)}</span>
-                  <span className="font-medium text-sm">{integration.name}</span>
                   {getStatusIcon(integration.status)}
+                  <span className="font-medium text-slate-900 dark:text-slate-100">
+                    {integration.provider}
+                  </span>
                 </div>
-                <Badge 
-                  variant="secondary" 
-                  className={`text-xs ${getStatusBadgeColor(integration.status)}`}
-                >
-                  {integration.status}
+                <Badge className={getStatusColor(integration.status)}>
+                  {getStatusLabel(integration.status)}
                 </Badge>
               </div>
-              
-              <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 mb-2">
-                <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  Last sync: {integration.lastSync}
-                </div>
-                {integration.errors > 0 && (
-                  <span className="text-red-500">
-                    {integration.errors} errors
-                  </span>
+
+              <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+                {integration.lastSyncedAt ? (
+                  <span>Last sync: {new Date(integration.lastSyncedAt).toLocaleString()}</span>
+                ) : (
+                  <span>Never synced</span>
                 )}
               </div>
 
-              {isExpanded && (
-                <div className="border-t border-white/20 pt-2 mt-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-600 dark:text-slate-400">
-                      Connection: {integration.isConnected ? 'Active' : 'Inactive'}
-                    </span>
-                    {integration.needsReauth && (
-                      <span className="text-yellow-600 dark:text-yellow-400">
-                        Needs reauthorization
-                      </span>
-                    )}
-                  </div>
+              {integration.errorReason && (
+                <div className="text-sm text-red-600 dark:text-red-400 mb-2">
+                  Error: {integration.errorReason}
                 </div>
               )}
 
-              {(integration.status !== 'healthy' || integration.needsReauth) && (
-                <div className="flex gap-2 mt-2">
+              <div className="flex items-center gap-2">
+                {integration.status !== 'connected' && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onFix?.(integration.id)}
-                    className="text-xs h-7"
+                    onClick={() => onFix(integration.id)}
+                    className="text-xs"
                   >
                     <RefreshCw className="h-3 w-3 mr-1" />
                     Fix
                   </Button>
-                  {integration.needsReauth && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onReauth?.(integration.id)}
-                      className="text-xs h-7"
-                    >
-                      Reauth
-                    </Button>
-                  )}
-                </div>
-              )}
+                )}
+                {integration.status === 'action_needed' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onReauth(integration.id)}
+                    className="text-xs"
+                  >
+                    <Wifi className="h-3 w-3 mr-1" />
+                    Reauth
+                  </Button>
+                )}
+              </div>
             </div>
           ))}
         </div>
 
         {integrations.length === 0 && (
           <div className="p-6 text-center">
-            <Wifi className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-            <p className="text-slate-600 dark:text-slate-400 mb-2">No integrations</p>
-            <p className="text-xs text-slate-500">
-              Connect your accounts to get started
+            <WifiOff className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
+              No integrations configured
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 mb-4">
+              Connect your email and calendar accounts to get started
             </p>
+            <Button variant="outline">
+              <Settings className="h-4 w-4 mr-2" />
+              Configure Integrations
+            </Button>
           </div>
         )}
       </GlassCardContent>
