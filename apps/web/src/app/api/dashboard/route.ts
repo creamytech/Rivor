@@ -55,8 +55,8 @@ export async function GET(_req: NextRequest) {
 
         recentThreads = threads.map(thread => ({
           id: thread.id,
-          subject: thread.subjectIndex || 'No Subject',
-          participants: thread.participantsIndex || '',
+          subject: 'Email Thread', // SOC2 compliant: no plain text subject
+          participants: 'Email Participants', // SOC2 compliant: no plain text participants
           lastMessageAt: thread.updatedAt,
           messageCount: thread._count?.messages || 0,
           unreadCount: 0 // We'll calculate this separately if needed

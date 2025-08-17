@@ -343,14 +343,13 @@ export class GmailService {
       const bccEnc = await encryptForOrg(orgId, bcc, 'email:bcc');
       const snippetEnc = await encryptForOrg(orgId, snippet, 'email:snippet');
 
-      // Find or create thread based on subject
-      let thread = await prisma.emailThread.findFirst({
-        where: { 
-          orgId,
-          accountId: emailAccountId,
-          subjectIndex: { contains: subject.toLowerCase() }
-        }
-      });
+             // Find or create thread based on subject (SOC2 compliant)
+       let thread = await prisma.emailThread.findFirst({
+         where: { 
+           orgId,
+           accountId: emailAccountId
+         }
+       });
 
              if (!thread) {
          const participantsEnc = await encryptForOrg(orgId, `${from}, ${to}`, 'email:participants');

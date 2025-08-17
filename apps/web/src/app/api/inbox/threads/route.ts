@@ -59,8 +59,6 @@ export async function GET(req: NextRequest) {
         et."accountId",
         et."subjectEnc",
         et."participantsEnc",
-        et."subjectIndex",
-        et."participantsIndex",
         et."createdAt",
         et."updatedAt",
         et.labels,
@@ -73,7 +71,7 @@ export async function GET(req: NextRequest) {
       WHERE et."orgId" = $1
       ${filterCondition}
       GROUP BY et.id, et."orgId", et."accountId", et."subjectEnc", et."participantsEnc", 
-               et."subjectIndex", et."participantsIndex", et."createdAt", et."updatedAt", 
+               et."createdAt", et."updatedAt", 
                et.labels, et.starred, et.unread
       ORDER BY latest_message_date DESC NULLS LAST
       LIMIT $2 OFFSET $3
