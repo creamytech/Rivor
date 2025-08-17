@@ -53,6 +53,20 @@ export function FooterSection() {
               </p>
             </div>
 
+            {/* Mini CTA */}
+            <div className="card p-6 bg-gradient-to-br from-rivor-deep/20 to-rivor-indigo/20 border-rivor-teal/20">
+              <h3 className="font-semibold mb-3">Get started in 2 minutes →</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                No setup fees, no long contracts. Start your free trial today.
+              </p>
+              <Link 
+                href="/auth/signin"
+                className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-gradient-to-r from-rivor-teal to-rivor-aqua text-white text-sm font-medium hover:from-rivor-aqua hover:to-rivor-teal transition-all duration-300"
+              >
+                Start Free Trial
+              </Link>
+            </div>
+
             {/* Email Capture */}
             <div className="space-y-4">
               <h3 className="font-semibold">Stay Updated</h3>
@@ -64,7 +78,7 @@ export function FooterSection() {
                 />
                 <button
                   type="submit"
-                  className="px-6 py-2 rounded-lg brand-gradient text-white font-medium hover:scale-105 transition-transform"
+                  className="px-6 py-2 rounded-lg bg-gradient-to-r from-rivor-teal to-rivor-aqua text-white font-medium hover:from-rivor-aqua hover:to-rivor-teal hover:scale-105 transition-transform"
                 >
                   Subscribe
                 </button>
@@ -162,7 +176,7 @@ export function FooterSection() {
           </div>
         </div>
 
-        {/* Bottom Bar */}
+        {/* Bottom Bar with Trust Elements */}
         <div className="mt-16 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-sm text-muted-foreground">
             © 2024 Rivor. All rights reserved.
@@ -170,12 +184,20 @@ export function FooterSection() {
           
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
               <span>All systems operational</span>
             </div>
             <div className="flex items-center gap-2">
               <span>🔒</span>
+              <span>SSL Secured</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span>✅</span>
               <span>SOC2 Type II</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span>🛡️</span>
+              <span>GDPR Compliant</span>
             </div>
           </div>
         </div>

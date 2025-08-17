@@ -39,16 +39,16 @@ export function FinalCTASection() {
       <div className="container relative z-10 text-center text-white">
         {/* Headline */}
         <h2 className="text-display-lg md:text-display-xl lg:text-display-2xl mb-8 opacity-0 animate-on-scroll">
-          Ready to{" "}
+          Stop Losing Deals to Your{" "}
           <span className="relative">
-            Flow?
+            Inbox
             <div className="absolute inset-0 bg-gradient-to-r from-rivor-aqua/30 to-rivor-teal/30 blur-xl animate-pulse"></div>
           </span>
         </h2>
 
         {/* Subtext */}
         <p className="text-xl md:text-2xl text-white/90 mb-12 max-w-3xl mx-auto opacity-0 animate-on-scroll-delay-1">
-          Join hundreds of real estate professionals who've transformed their workflow. 
+          Let Rivor Handle the Work. Join hundreds of real estate professionals who've transformed their workflow. 
           Start your free trial today—no credit card required.
         </p>
 
@@ -56,10 +56,9 @@ export function FinalCTASection() {
         <div className="flex flex-col sm:flex-row gap-6 justify-center opacity-0 animate-on-scroll-delay-2">
           <a 
             href="/auth/signin"
-            className="inline-flex items-center justify-center px-10 py-5 rounded-xl bg-white text-rivor-deep font-semibold text-lg hover:bg-white/90 hover:scale-105 transition-all duration-300 shadow-2xl"
+            className="inline-flex items-center justify-center px-10 py-5 rounded-xl bg-gradient-to-r from-rivor-teal to-rivor-aqua text-white font-semibold text-lg hover:from-rivor-aqua hover:to-rivor-teal hover:scale-105 transition-all duration-300 shadow-2xl shadow-rivor-teal/25"
           >
-            Start Free Trial
-            <span className="ml-2 text-xl">→</span>
+            Try Free →
           </a>
           
           <a 
