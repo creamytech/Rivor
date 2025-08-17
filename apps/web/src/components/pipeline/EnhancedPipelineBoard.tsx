@@ -1,333 +1,156 @@
 "use client";
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  DndContext,
-  DragEndEvent,
-  DragOverlay,
-  DragStartEvent,
-  PointerSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-  closestCorners,
-  DragOverEvent
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  sortableKeyboardCoordinates
-} from '@dnd-kit/sortable';
+import { useState, useEffect } from 'react';
+import { trpc } from '@/lib/trpc';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
-  Plus, 
+  DndContext, 
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { 
   Filter, 
+  Search, 
   Users, 
+  BarChart3, 
   MoreHorizontal,
-  User, 
-  Building, 
-  Home,
-  Clock,
   Calendar,
-  MessageSquare,
+  Clock,
   ArrowUp,
-  CheckCircle,
-  AlertCircle,
-  Star,
-  Eye,
-  Trash2,
-  Settings,
-  BarChart3,
+  ArrowDown,
+  User,
+  Building,
+  Home,
+  DollarSign,
   Target,
   TrendingUp,
   TrendingDown,
-  Search,
-  X,
-  Move,
+  Plus,
+  Settings,
+  Eye,
+  Edit,
+  Trash2,
   Copy,
-  Archive
+  Share2
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
-interface Deal {
+interface Lead {
   id: string;
-  title: string;
-  contact: {
-    name: string;
-    email: string;
-    avatar?: string;
-  };
-  company: string;
-  value: number;
-  probability: number;
-  stage: string;
-  intent: 'buyer' | 'seller' | 'renter' | 'other';
-  confidence: number;
-  lastMessageTime: string;
-  nextTask?: {
-    type: 'call' | 'email' | 'meeting' | 'follow-up';
-    dueDate: string;
-    description: string;
-  };
-  assignedTo?: {
-    name: string;
-    avatar?: string;
-  };
-  source: string;
+  title: string | null;
+  status: string;
+  priority: string;
+  source: string | null;
+  probabilityPercent: number | null;
+  expectedCloseDate: string | null;
   createdAt: string;
   updatedAt: string;
-  tags: string[];
-  slaDays: number;
-  avgDaysInStage: number;
+  contact?: {
+    id: string;
+    nameEnc?: any;
+    emailEnc?: any;
+    companyEnc?: any;
+  } | null;
+  assignedTo?: {
+    id: string;
+    user: {
+      name: string | null;
+      email: string;
+    };
+  } | null;
+  stage?: {
+    id: string;
+    name: string;
+    color: string | null;
+    order: number;
+  } | null;
+  tasks?: Array<{
+    id: string;
+    title: string;
+    dueAt: string | null;
+    done: boolean;
+  }>;
 }
 
 interface PipelineStage {
   id: string;
   name: string;
-  color: string;
-  position: number;
-  deals: Deal[];
-  count: number;
-  wipLimit?: number;
-  avgDaysInStage: number;
-  dropOffRate?: number;
+  color: string | null;
+  order: number;
+  _count: {
+    leads: number;
+  };
 }
 
-interface FilterOption {
-  id: string;
-  label: string;
-  type: 'intent' | 'agent' | 'source' | 'value' | 'confidence';
-  value: string;
+interface EnhancedPipelineBoardProps {
+  className?: string;
 }
 
-export default function EnhancedPipelineBoard() {
-  const [stages, setStages] = useState<PipelineStage[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [selectedDeals, setSelectedDeals] = useState<Set<string>>(new Set());
-  const [showBulkActions, setShowBulkActions] = useState(false);
-  const [filters, setFilters] = useState<FilterOption[]>([]);
-  const [groupBy, setGroupBy] = useState<'owner' | 'source'>('owner');
+export default function EnhancedPipelineBoard({ className = '' }: EnhancedPipelineBoardProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [dragOverStage, setDragOverStage] = useState<string | null>(null);
+  const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  const [groupBy, setGroupBy] = useState<'stage' | 'owner' | 'source'>('stage');
+  const [filterIntent, setFilterIntent] = useState<string>('all');
+  const [filterAgent, setFilterAgent] = useState<string>('all');
+
+  // Fetch real data from tRPC
+  const { data: leadsData, isLoading: leadsLoading, refetch: refetchLeads } = trpc.leads.list.useQuery({
+    search: searchQuery || undefined,
+    limit: 100
+  });
+
+  const { data: stagesData, isLoading: stagesLoading } = trpc.pipelineStages.list.useQuery();
+
+  // Mutations
+  const updateLeadMutation = trpc.leads.update.useMutation({
+    onSuccess: () => refetchLeads()
+  });
+
+  const leads = leadsData?.leads || [];
+  const stages = stagesData || [];
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
+    useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
-  // Mock data
-  useEffect(() => {
-    const mockStages: PipelineStage[] = [
-      {
-        id: 'new',
-        name: 'New',
-        color: 'blue',
-        position: 1,
-        count: 8,
-        wipLimit: 10,
-        avgDaysInStage: 2.5,
-        dropOffRate: 15,
-        deals: [
-          {
-            id: '1',
-            title: 'Property inquiry - 123 Main St',
-            contact: { name: 'John Smith', email: 'john@email.com' },
-            company: 'Individual',
-            value: 350000,
-            probability: 25,
-            stage: 'new',
-            intent: 'buyer',
-            confidence: 85,
-            lastMessageTime: '2 hours ago',
-            nextTask: {
-              type: 'call',
-              dueDate: '2024-01-20',
-              description: 'Initial consultation call'
-            },
-            assignedTo: { name: 'Sarah Johnson' },
-            source: 'Email',
-            createdAt: '2024-01-18',
-            updatedAt: '2024-01-18',
-            tags: ['high-priority', 'first-time-buyer'],
-            slaDays: 3,
-            avgDaysInStage: 2
-          },
-          {
-            id: '2',
-            title: 'Commercial lease inquiry',
-            contact: { name: 'Mike Wilson', email: 'mike@company.com' },
-            company: 'Tech Corp',
-            value: 120000,
-            probability: 40,
-            stage: 'new',
-            intent: 'renter',
-            confidence: 78,
-            lastMessageTime: '1 day ago',
-            nextTask: {
-              type: 'meeting',
-              dueDate: '2024-01-22',
-              description: 'Property viewing'
-            },
-            source: 'Website',
-            createdAt: '2024-01-17',
-            updatedAt: '2024-01-17',
-            tags: ['commercial', 'lease'],
-            slaDays: 3,
-            avgDaysInStage: 1
-          }
-        ]
-      },
-      {
-        id: 'qualified',
-        name: 'Qualified',
-        color: 'green',
-        position: 2,
-        count: 5,
-        wipLimit: 8,
-        avgDaysInStage: 5.2,
-        dropOffRate: -8,
-        deals: [
-          {
-            id: '3',
-            title: 'House valuation request',
-            contact: { name: 'Lisa Brown', email: 'lisa@email.com' },
-            company: 'Individual',
-            value: 450000,
-            probability: 60,
-            stage: 'qualified',
-            intent: 'seller',
-            confidence: 92,
-            lastMessageTime: '3 days ago',
-            nextTask: {
-              type: 'follow-up',
-              dueDate: '2024-01-25',
-              description: 'Send market analysis'
-            },
-            assignedTo: { name: 'David Chen' },
-            source: 'Referral',
-            createdAt: '2024-01-15',
-            updatedAt: '2024-01-16',
-            tags: ['valuation', 'market-analysis'],
-            slaDays: 7,
-            avgDaysInStage: 4
-          }
-        ]
-      },
-      {
-        id: 'meeting',
-        name: 'Meeting Set',
-        color: 'purple',
-        position: 3,
-        count: 3,
-        wipLimit: 6,
-        avgDaysInStage: 8.1,
-        dropOffRate: 12,
-        deals: []
-      },
-      {
-        id: 'proposal',
-        name: 'Proposal',
-        color: 'orange',
-        position: 4,
-        count: 2,
-        wipLimit: 5,
-        avgDaysInStage: 12.3,
-        dropOffRate: 5,
-        deals: []
-      },
-      {
-        id: 'closed',
-        name: 'Closed',
-        color: 'gray',
-        position: 5,
-        count: 1,
-        avgDaysInStage: 18.5,
-        deals: []
-      }
-    ];
-    setStages(mockStages);
-    setLoading(false);
-  }, []);
+  const getTimeAgo = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
 
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+    return `${Math.floor(diffInDays / 7)}w ago`;
   };
 
-  const handleDragOver = (event: DragOverEvent) => {
-    const { over } = event;
-    setDragOverStage(over?.id as string || null);
-  };
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveId(null);
-    setDragOverStage(null);
-
-    if (!over) return;
-
-    const activeId = active.id as string;
-    const overId = over.id as string;
-
-    // Find the deal being dragged
-    const activeDeal = stages
-      .flatMap(stage => stage.deals)
-      .find(deal => deal.id === activeId);
-
-    if (!activeDeal) return;
-
-    // Find the target stage
-    const targetStage = stages.find(stage => 
-      stage.id === overId || stage.deals.some(deal => deal.id === overId)
-    );
-
-    if (!targetStage || activeDeal.stage === targetStage.id) return;
-
-    // Check WIP limit
-    if (targetStage.wipLimit && targetStage.deals.length >= targetStage.wipLimit) {
-      console.log('WIP limit reached for stage:', targetStage.name);
-      return;
-    }
-
-    // Optimistic update
-    setStages(prevStages => {
-      const newStages = prevStages.map(stage => ({
-        ...stage,
-        deals: stage.deals.filter(deal => deal.id !== activeId),
-        count: stage.deals.filter(deal => deal.id !== activeId).length
-      }));
-
-      const targetStageIndex = newStages.findIndex(s => s.id === targetStage.id);
-      if (targetStageIndex !== -1) {
-        const updatedDeal = { ...activeDeal, stage: targetStage.id };
-        newStages[targetStageIndex] = {
-          ...newStages[targetStageIndex],
-          deals: [...newStages[targetStageIndex].deals, updatedDeal],
-          count: newStages[targetStageIndex].deals.length + 1
-        };
-      }
-
-      return newStages;
-    });
-
-    // TODO: Persist the change to API
-    console.log(`Moved deal "${activeDeal.title}" to ${targetStage.name}`);
-  };
-
-  const handleBulkAction = (action: 'move' | 'assign' | 'archive' | 'delete') => {
-    console.log(`Bulk ${action} for deals:`, Array.from(selectedDeals));
-    setSelectedDeals(new Set());
-    setShowBulkActions(false);
+  const getIntentFromTitle = (title: string | null): 'buyer' | 'seller' | 'renter' => {
+    if (!title) return 'buyer';
+    const lowerTitle = title.toLowerCase();
+    if (lowerTitle.includes('sell') || lowerTitle.includes('listing')) return 'seller';
+    if (lowerTitle.includes('rent') || lowerTitle.includes('lease')) return 'renter';
+    return 'buyer';
   };
 
   const getIntentIcon = (intent: string) => {
@@ -335,7 +158,7 @@ export default function EnhancedPipelineBoard() {
       case 'buyer': return <Home className="h-3 w-3" />;
       case 'seller': return <Building className="h-3 w-3" />;
       case 'renter': return <User className="h-3 w-3" />;
-      default: return <User className="h-3 w-3" />;
+      default: return <Target className="h-3 w-3" />;
     }
   };
 
@@ -348,379 +171,457 @@ export default function EnhancedPipelineBoard() {
     }
   };
 
-  const getStageColor = (color: string) => {
-    const colorMap: Record<string, string> = {
-      'blue': 'bg-blue-500',
-      'green': 'bg-green-500',
-      'purple': 'bg-purple-500',
-      'orange': 'bg-orange-500',
-      'gray': 'bg-slate-500'
-    };
-    return colorMap[color] || 'bg-slate-500';
-  };
-
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 80) return 'text-green-600 dark:text-green-400';
-    if (confidence >= 60) return 'text-yellow-600 dark:text-yellow-400';
-    return 'text-red-600 dark:text-red-400';
-  };
-
-  const getTaskIcon = (type: string) => {
-    switch (type) {
-      case 'call': return <MessageSquare className="h-3 w-3" />;
-      case 'email': return <MessageSquare className="h-3 w-3" />;
-      case 'meeting': return <Calendar className="h-3 w-3" />;
-      case 'follow-up': return <ArrowUp className="h-3 w-3" />;
-      default: return <Clock className="h-3 w-3" />;
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300';
+      case 'medium': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300';
+      case 'low': return 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300';
+      default: return 'bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300';
     }
   };
 
-  const renderDealCard = (deal: Deal, isDragging = false) => (
-    <motion.div
-      key={deal.id}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={cn(
-        'p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all cursor-pointer group',
-        isDragging && 'rotate-3 shadow-xl',
-        selectedDeals.has(deal.id) && 'ring-2 ring-blue-500'
-      )}
-      onClick={() => {
-        if (selectedDeals.has(deal.id)) {
-          setSelectedDeals(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(deal.id);
-            return newSet;
-          });
-        } else {
-          setSelectedDeals(prev => new Set(prev).add(deal.id));
-        }
-      }}
-    >
-      <div className="space-y-3">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
-            <h4 className="font-medium text-sm text-slate-900 dark:text-slate-100 truncate">
-              {deal.title}
-            </h4>
-            <p className="text-xs text-slate-600 dark:text-slate-400">
-              {deal.contact.name} • {deal.company}
-            </p>
-          </div>
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-              <MoreHorizontal className="h-3 w-3" />
-            </Button>
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const activeLead = leads.find(lead => lead.id === active.id);
+      const targetStage = stages.find(stage => stage.id === over.id);
+
+      if (activeLead && targetStage) {
+        updateLeadMutation.mutate({
+          id: activeLead.id,
+          stageId: targetStage.id
+        });
+      }
+    }
+  };
+
+  const handleBulkAction = (action: 'move' | 'assign' | 'delete') => {
+    selectedLeads.forEach(leadId => {
+      if (action === 'delete') {
+        // Add delete mutation
+        console.log('Delete lead:', leadId);
+      }
+      // Add other bulk actions as needed
+    });
+    setSelectedLeads(new Set());
+  };
+
+  const handleLeadToggle = (leadId: string) => {
+    const newSelected = new Set(selectedLeads);
+    if (newSelected.has(leadId)) {
+      newSelected.delete(leadId);
+    } else {
+      newSelected.add(leadId);
+    }
+    setSelectedLeads(newSelected);
+  };
+
+  const filteredLeads = leads.filter(lead => {
+    if (filterIntent !== 'all') {
+      const intent = getIntentFromTitle(lead.title);
+      if (intent !== filterIntent) return false;
+    }
+    if (filterAgent !== 'all' && lead.assignedTo?.user.email !== filterAgent) {
+      return false;
+    }
+    return true;
+  });
+
+  const groupedLeads = filteredLeads.reduce((acc, lead) => {
+    let key = 'unassigned';
+    if (groupBy === 'stage') {
+      key = lead.stage?.id || 'unassigned';
+    } else if (groupBy === 'owner') {
+      key = lead.assignedTo?.user.email || 'unassigned';
+    } else if (groupBy === 'source') {
+      key = lead.source || 'unassigned';
+    }
+    
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(lead);
+    return acc;
+  }, {} as Record<string, Lead[]>);
+
+  if (leadsLoading || stagesLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+        <div className="p-6">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-1/4"></div>
+            <div className="h-12 bg-slate-200 dark:bg-slate-700 rounded"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-96 bg-slate-200 dark:bg-slate-700 rounded"></div>
+              ))}
+            </div>
           </div>
         </div>
-
-        {/* Intent and Confidence */}
-        <div className="flex items-center gap-2">
-          <Badge 
-            variant="secondary" 
-            className={`text-xs ${getIntentColor(deal.intent)}`}
-          >
-            {getIntentIcon(deal.intent)}
-            <span className="ml-1 capitalize">{deal.intent}</span>
-          </Badge>
-          
-          <Badge 
-            variant="outline" 
-            className={`text-xs ${getConfidenceColor(deal.confidence)}`}
-          >
-            {deal.confidence}% confidence
-          </Badge>
-        </div>
-
-        {/* Value and Probability */}
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-slate-600 dark:text-slate-400">
-            ${deal.value.toLocaleString()}
-          </span>
-          <span className="text-slate-600 dark:text-slate-400">
-            {deal.probability}% probability
-          </span>
-        </div>
-
-        {/* Last Message Time */}
-        <div className="flex items-center gap-1 text-xs text-slate-500">
-          <Clock className="h-3 w-3" />
-          {deal.lastMessageTime}
-        </div>
-
-        {/* Next Task */}
-        {deal.nextTask && (
-          <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-700 rounded text-xs">
-            {getTaskIcon(deal.nextTask.type)}
-            <span className="text-slate-600 dark:text-slate-400">
-              {deal.nextTask.description}
-            </span>
-          </div>
-        )}
-
-        {/* Assigned To */}
-        {deal.assignedTo && (
-          <div className="flex items-center gap-2">
-            <Avatar className="h-6 w-6">
-              <AvatarImage src={deal.assignedTo.avatar} />
-              <AvatarFallback className="text-xs">
-                {deal.assignedTo.name.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-xs text-slate-600 dark:text-slate-400">
-              {deal.assignedTo.name}
-            </span>
-          </div>
-        )}
-
-        {/* Tags */}
-        {deal.tags.length > 0 && (
-          <div className="flex items-center gap-1 flex-wrap">
-            {deal.tags.slice(0, 2).map((tag) => (
-              <Badge key={tag} variant="outline" className="text-xs">
-                {tag}
-              </Badge>
-            ))}
-            {deal.tags.length > 2 && (
-              <span className="text-xs text-slate-500">
-                +{deal.tags.length - 2}
-              </span>
-            )}
-          </div>
-        )}
       </div>
-    </motion.div>
-  );
-
-  const renderStageColumn = (stage: PipelineStage) => (
-    <div key={stage.id} className="flex flex-col min-h-[600px]">
-      {/* Stage Header */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${getStageColor(stage.color)}`} />
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100">
-              {stage.name}
-            </h3>
-            <Badge variant="secondary" className="text-xs">
-              {stage.count}
-            </Badge>
-          </div>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* SLA Info */}
-        <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 mb-2">
-          <span>Avg: {stage.avgDaysInStage}d</span>
-          {stage.wipLimit && (
-            <span className={cn(
-              stage.count >= stage.wipLimit ? 'text-red-500' : 'text-green-500'
-            )}>
-              {stage.count}/{stage.wipLimit}
-            </span>
-          )}
-        </div>
-
-        {/* SLA Heatmap */}
-        <div className="w-full h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-          <div 
-            className={cn(
-              'h-full transition-all duration-300',
-              stage.avgDaysInStage > 10 ? 'bg-red-500' :
-              stage.avgDaysInStage > 7 ? 'bg-yellow-500' : 'bg-green-500'
-            )}
-            style={{ width: `${Math.min((stage.avgDaysInStage / 15) * 100, 100)}%` }}
-          />
-        </div>
-
-        {/* Drop-off Rate */}
-        {stage.dropOffRate !== undefined && (
-          <div className="flex items-center gap-1 mt-1">
-            {stage.dropOffRate > 0 ? (
-              <TrendingDown className="h-3 w-3 text-red-500" />
-            ) : (
-              <TrendingUp className="h-3 w-3 text-green-500" />
-            )}
-            <span className={cn(
-              'text-xs',
-              stage.dropOffRate > 0 ? 'text-red-500' : 'text-green-500'
-            )}>
-              {Math.abs(stage.dropOffRate)}%
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Drop Zone */}
-      <div 
-        className={cn(
-          'flex-1 min-h-[400px] p-2 rounded-lg border-2 border-dashed transition-all',
-          dragOverStage === stage.id 
-            ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' 
-            : 'border-slate-200 dark:border-slate-700'
-        )}
-      >
-        <SortableContext
-          items={stage.deals.map(deal => deal.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <div className="space-y-3">
-            {stage.deals.map((deal) => renderDealCard(deal))}
-          </div>
-        </SortableContext>
-      </div>
-    </div>
-  );
+    );
+  }
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCorners}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="space-y-6">
-        {/* Board Toolbar */}
-        <GlassCard variant="gradient" intensity="medium">
-          <GlassCardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    type="text"
-                    placeholder="Search deals..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 w-64"
-                  />
-                </div>
-                
-                <Button variant="outline" size="sm">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filter
-                </Button>
-                
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-600 dark:text-slate-400">Group by:</span>
-                  <Button
-                    variant={groupBy === 'owner' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setGroupBy('owner')}
-                  >
-                    Owner
-                  </Button>
-                  <Button
-                    variant={groupBy === 'source' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setGroupBy('source')}
-                  >
-                    Source
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {selectedDeals.size > 0 && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-600 dark:text-slate-400">
-                      {selectedDeals.size} selected
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowBulkActions(!showBulkActions)}
-                    >
-                      Bulk Actions
-                    </Button>
-                  </div>
-                )}
-                
-                <Button 
-                  className="bg-gradient-to-r from-teal-500 to-azure-500 hover:from-teal-600 hover:to-azure-600 text-white"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Deal
-                </Button>
-              </div>
-            </div>
-          </GlassCardContent>
-        </GlassCard>
-
-        {/* Pipeline Board */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-          {stages.map(renderStageColumn)}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <div className="p-6">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+            Pipeline
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400">
+            Manage your deals and track progress
+          </p>
         </div>
 
-        {/* Drag Overlay */}
-        <DragOverlay>
-          {activeId ? (
-            (() => {
-              const deal = stages
-                .flatMap(stage => stage.deals)
-                .find(d => d.id === activeId);
-              return deal ? renderDealCard(deal, true) : null;
-            })()
-          ) : null}
-        </DragOverlay>
+        {/* Toolbar */}
+        <div className="mb-6 space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Search leads..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-white/20"
+              />
+            </div>
+            <Button variant="outline" size="sm">
+              <Filter className="h-4 w-4 mr-2" />
+              Filters
+            </Button>
+            <Button variant="outline" size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Lead
+            </Button>
+            <Button variant="outline" size="sm">
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </Button>
+          </div>
 
-        {/* Bulk Actions Modal */}
-        <AnimatePresence>
-          {showBulkActions && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50"
-            >
-              <GlassCard variant="gradient" intensity="medium">
-                <GlassCardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium">
-                      {selectedDeals.size} deals selected
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleBulkAction('move')}
-                    >
-                      <Move className="h-4 w-4 mr-2" />
-                      Move
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleBulkAction('assign')}
-                    >
-                      <Users className="h-4 w-4 mr-2" />
-                      Assign
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleBulkAction('archive')}
-                    >
-                      <Archive className="h-4 w-4 mr-2" />
-                      Archive
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowBulkActions(false)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </GlassCardContent>
-              </GlassCard>
-            </motion.div>
+          {/* Filters */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-600 dark:text-slate-400">Intent:</span>
+              <select
+                value={filterIntent}
+                onChange={(e) => setFilterIntent(e.target.value)}
+                className="text-sm bg-white/80 dark:bg-slate-800/80 border border-white/20 rounded px-2 py-1"
+              >
+                <option value="all">All</option>
+                <option value="buyer">Buyer</option>
+                <option value="seller">Seller</option>
+                <option value="renter">Renter</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-600 dark:text-slate-400">Agent:</span>
+              <select
+                value={filterAgent}
+                onChange={(e) => setFilterAgent(e.target.value)}
+                className="text-sm bg-white/80 dark:bg-slate-800/80 border border-white/20 rounded px-2 py-1"
+              >
+                <option value="all">All</option>
+                {Array.from(new Set(leads.map(lead => lead.assignedTo?.user.email).filter(Boolean))).map(email => (
+                  <option key={email} value={email}>{email}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-600 dark:text-slate-400">Group by:</span>
+              <select
+                value={groupBy}
+                onChange={(e) => setGroupBy(e.target.value as 'stage' | 'owner' | 'source')}
+                className="text-sm bg-white/80 dark:bg-slate-800/80 border border-white/20 rounded px-2 py-1"
+              >
+                <option value="stage">Stage</option>
+                <option value="owner">Owner</option>
+                <option value="source">Source</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Bulk Actions */}
+          {selectedLeads.size > 0 && (
+            <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <span className="text-sm text-blue-700 dark:text-blue-300">
+                {selectedLeads.size} selected
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleBulkAction('move')}
+              >
+                <ArrowUp className="h-4 w-4 mr-1" />
+                Move
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleBulkAction('assign')}
+              >
+                <Users className="h-4 w-4 mr-1" />
+                Assign
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleBulkAction('delete')}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Delete
+              </Button>
+            </div>
           )}
-        </AnimatePresence>
+        </div>
+
+        {/* Pipeline Board */}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {groupBy === 'stage' ? (
+              // Kanban view by stage
+              stages.map((stage) => {
+                const stageLeads = filteredLeads.filter(lead => lead.stage?.id === stage.id);
+                const avgDaysInStage = 5; // This would be calculated from real data
+                const conversionRate = 75; // This would be calculated from real data
+
+                return (
+                  <GlassCard key={stage.id} variant="gradient" intensity="medium" className="h-full">
+                    <GlassCardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <GlassCardTitle className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: stage.color || '#6366f1' }}
+                            />
+                            {stage.name}
+                          </GlassCardTitle>
+                          <div className="flex items-center gap-4 mt-1 text-xs text-slate-600 dark:text-slate-400">
+                            <span>{stageLeads.length} leads</span>
+                            <span>• {avgDaysInStage}d avg</span>
+                            <span>• {conversionRate}% conv</span>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </GlassCardHeader>
+                    <GlassCardContent className="p-0">
+                      <SortableContext items={stageLeads.map(lead => lead.id)} strategy={verticalListSortingStrategy}>
+                        <div className="space-y-2 p-2 max-h-[600px] overflow-y-auto">
+                          {stageLeads.map((lead) => {
+                            const intent = getIntentFromTitle(lead.title);
+                            const nextTask = lead.tasks?.find(task => !task.done);
+
+                            return (
+                              <div
+                                key={lead.id}
+                                className="p-3 bg-white/50 dark:bg-slate-800/50 rounded-lg border border-white/20 hover:bg-white/70 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+                              >
+                                <div className="flex items-start gap-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedLeads.has(lead.id)}
+                                    onChange={(e) => {
+                                      e.stopPropagation();
+                                      handleLeadToggle(lead.id);
+                                    }}
+                                    className="mt-1"
+                                  />
+                                  
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between mb-2">
+                                      <h4 className="font-medium text-slate-900 dark:text-slate-100 text-sm truncate">
+                                        {lead.title || 'Untitled Lead'}
+                                      </h4>
+                                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                        <MoreHorizontal className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Badge
+                                        variant="secondary"
+                                        className={`text-xs ${getIntentColor(intent)}`}
+                                      >
+                                        {getIntentIcon(intent)}
+                                        <span className="ml-1 capitalize">{intent}</span>
+                                      </Badge>
+                                      <Badge
+                                        variant="outline"
+                                        className={`text-xs ${getPriorityColor(lead.priority)}`}
+                                      >
+                                        {lead.priority}
+                                      </Badge>
+                                      {lead.probabilityPercent && (
+                                        <Badge variant="outline" className="text-xs">
+                                          {lead.probabilityPercent}%
+                                        </Badge>
+                                      )}
+                                    </div>
+
+                                    <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+                                      <div className="flex items-center gap-2">
+                                        {lead.assignedTo ? (
+                                          <Avatar className="h-5 w-5">
+                                            <AvatarFallback className="text-xs">
+                                              {lead.assignedTo.user.name?.charAt(0) || lead.assignedTo.user.email.charAt(0)}
+                                            </AvatarFallback>
+                                          </Avatar>
+                                        ) : (
+                                          <User className="h-3 w-3" />
+                                        )}
+                                        <span className="truncate">
+                                          {lead.assignedTo?.user.name || lead.assignedTo?.user.email || 'Unassigned'}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <Clock className="h-3 w-3" />
+                                        {getTimeAgo(lead.updatedAt)}
+                                      </div>
+                                    </div>
+
+                                    {nextTask && (
+                                      <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded text-xs">
+                                        <div className="flex items-center gap-1 text-yellow-700 dark:text-yellow-300">
+                                          <Calendar className="h-3 w-3" />
+                                          Next: {nextTask.title}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </SortableContext>
+                    </GlassCardContent>
+                  </GlassCard>
+                );
+              })
+            ) : (
+              // List view grouped by owner or source
+              Object.entries(groupedLeads).map(([key, groupLeads]) => (
+                <GlassCard key={key} variant="gradient" intensity="medium" className="h-full">
+                  <GlassCardHeader className="pb-3">
+                    <GlassCardTitle>
+                      {groupBy === 'owner' ? (key === 'unassigned' ? 'Unassigned' : key) :
+                       groupBy === 'source' ? (key === 'unassigned' ? 'Unknown Source' : key) : key}
+                    </GlassCardTitle>
+                    <div className="text-sm text-slate-600 dark:text-slate-400">
+                      {groupLeads.length} leads
+                    </div>
+                  </GlassCardHeader>
+                  <GlassCardContent className="p-0">
+                    <div className="space-y-2 p-2 max-h-[600px] overflow-y-auto">
+                      {groupLeads.map((lead) => {
+                        const intent = getIntentFromTitle(lead.title);
+                        const nextTask = lead.tasks?.find(task => !task.done);
+
+                        return (
+                          <div
+                            key={lead.id}
+                            className="p-3 bg-white/50 dark:bg-slate-800/50 rounded-lg border border-white/20 hover:bg-white/70 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+                          >
+                            <div className="flex items-start gap-2">
+                              <input
+                                type="checkbox"
+                                checked={selectedLeads.has(lead.id)}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  handleLeadToggle(lead.id);
+                                }}
+                                className="mt-1"
+                              />
+                              
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between mb-2">
+                                  <h4 className="font-medium text-slate-900 dark:text-slate-100 text-sm truncate">
+                                    {lead.title || 'Untitled Lead'}
+                                  </h4>
+                                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                    <MoreHorizontal className="h-3 w-3" />
+                                  </Button>
+                                </div>
+
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Badge
+                                    variant="secondary"
+                                    className={`text-xs ${getIntentColor(intent)}`}
+                                  >
+                                    {getIntentIcon(intent)}
+                                    <span className="ml-1 capitalize">{intent}</span>
+                                  </Badge>
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-xs ${getPriorityColor(lead.priority)}`}
+                                  >
+                                    {lead.priority}
+                                  </Badge>
+                                  {lead.stage && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs"
+                                      style={{
+                                        borderColor: lead.stage.color || undefined,
+                                        color: lead.stage.color || undefined
+                                      }}
+                                    >
+                                      {lead.stage.name}
+                                    </Badge>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+                                  <div className="flex items-center gap-2">
+                                    {lead.assignedTo ? (
+                                      <Avatar className="h-5 w-5">
+                                        <AvatarFallback className="text-xs">
+                                          {lead.assignedTo.user.name?.charAt(0) || lead.assignedTo.user.email.charAt(0)}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                    ) : (
+                                      <User className="h-3 w-3" />
+                                    )}
+                                    <span className="truncate">
+                                      {lead.assignedTo?.user.name || lead.assignedTo?.user.email || 'Unassigned'}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {getTimeAgo(lead.updatedAt)}
+                                  </div>
+                                </div>
+
+                                {nextTask && (
+                                  <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded text-xs">
+                                    <div className="flex items-center gap-1 text-yellow-700 dark:text-yellow-300">
+                                      <Calendar className="h-3 w-3" />
+                                      Next: {nextTask.title}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </GlassCardContent>
+                </GlassCard>
+              ))
+            )}
+          </div>
+        </DndContext>
       </div>
-    </DndContext>
+    </div>
   );
 }
