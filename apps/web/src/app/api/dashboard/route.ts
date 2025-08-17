@@ -19,8 +19,8 @@ export async function GET(_req: NextRequest) {
     const userName = session.user?.name || session.user?.email?.split('@')[0] || 'there';
     const userEmail = session.user?.email;
 
-    // Log dashboard access
-    logger.userAction('dashboard_access', userEmail || 'unknown', orgId || 'unknown');
+    // Log dashboard access - temporarily commented out to test
+    // logger.userAction('dashboard_access', userEmail || 'unknown', orgId || 'unknown');
 
     // Check token health with better error handling
     let tokenHealth = [];

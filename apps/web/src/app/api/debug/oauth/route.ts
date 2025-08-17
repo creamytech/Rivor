@@ -5,6 +5,8 @@ import { checkTokenHealth } from "@/server/oauth-fixed";
 
 // Force dynamic rendering - this route uses session/auth data
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const fetchCache = 'force-no-store';
 
 export async function GET(__request: NextRequest) {
   try {
@@ -37,8 +39,14 @@ export async function GET(__request: NextRequest) {
       }
     });
 
-    // Check token health
-    const tokenHealth = await checkTokenHealth(userEmail);
+    // Check token health with error handling
+    let tokenHealth = [];
+    try {
+      tokenHealth = await checkTokenHealth(userEmail);
+    } catch (error) {
+      console.error('Token health check failed in debug route:', error);
+      tokenHealth = [];
+    }
 
     // Check email and calendar accounts
     const org = await prisma.org.findFirst({ where: { name: userEmail } });
