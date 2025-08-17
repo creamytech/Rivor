@@ -117,9 +117,9 @@ export const RATE_LIMITS = {
     windowMs: 60 * 60 * 1000
   },
   
-  // Max 10 general auth requests per IP per minute (includes provider checks)
+  // Max 100 general auth requests per IP per minute (increased for development)
   IP_GENERAL: {
-    maxAttempts: 10,
+    maxAttempts: 100,
     windowMs: 60 * 1000
   }
 } as const;

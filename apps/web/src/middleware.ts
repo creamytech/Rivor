@@ -37,7 +37,28 @@ export function middleware(request: NextRequest) {
     const result = rateLimit(rateLimitKey, RATE_LIMITS.IP_GENERAL);
     
     if (!result.success) {
-      return new NextResponse('Rate limit exceeded', { status: 429 });
+      // Log rate limit exceeded for debugging
+      logger.warn('Rate limit exceeded for auth endpoint', {
+        pathname,
+        ip,
+        rateLimitKey,
+        remaining: result.remaining,
+        resetTime: result.resetTime
+      });
+      
+      // Return JSON response for API endpoints to prevent NextAuth parsing errors
+      return new NextResponse(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          message: 'Too many requests, please try again later'
+        }), 
+        { 
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
     }
   }
   
