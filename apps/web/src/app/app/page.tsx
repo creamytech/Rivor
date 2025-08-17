@@ -3,6 +3,7 @@ import { useSession } from "next-auth/react";
 import AppShell from "@/components/app/AppShell";
 import FlowRibbon from "@/components/river/FlowRibbon";
 import { ToastProvider } from "@/components/river/RiverToast";
+import DashboardContent from "@/components/app/DashboardContent";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -38,26 +39,19 @@ export default function DashboardPage() {
       <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
         <FlowRibbon />
         <AppShell>
-          <div className="container mx-auto py-8">
-            <div className="text-center">
-              <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-                Welcome, {session.user?.name || session.user?.email?.split('@')[0] || 'there'}!
-              </h1>
-              <p className="text-slate-600 dark:text-slate-400 text-lg">
-                This is a minimal dashboard page to test functionality.
-              </p>
-              <div className="mt-8 p-6 bg-white dark:bg-slate-800 rounded-lg shadow-lg max-w-md mx-auto">
-                <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-4">
-                  Session Info
-                </h2>
-                <div className="text-left space-y-2 text-sm">
-                  <p><strong>Email:</strong> {session.user?.email}</p>
-                  <p><strong>Name:</strong> {session.user?.name || 'Not provided'}</p>
-                  <p><strong>Status:</strong> {status}</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <DashboardContent 
+            userName={session.user?.name || session.user?.email?.split('@')[0] || 'there'}
+            showOnboarding={true}
+            hasEmailIntegration={false}
+            hasCalendarIntegration={false}
+            unreadCount={0}
+            recentThreads={[]}
+            upcomingEvents={[]}
+            calendarStats={{ todayCount: 0, upcomingCount: 0 }}
+            pipelineStats={[]}
+            totalActiveLeads={0}
+            tokenHealth={[]}
+          />
         </AppShell>
       </div>
     </ToastProvider>
