@@ -167,10 +167,14 @@ export class GoogleCalendarService {
       throw new Error(`Access token not found for Google calendar account ${calendarAccountId}`);
     }
 
+    // Get the external account ID from the token reference
+    const tokenRefParts = accessTokenRecord.tokenRef.split('-');
+    const externalAccountId = tokenRefParts[tokenRefParts.length - 2]; // Second to last part
+
     const accessTokenBytes = await decryptForOrg(
       orgId, 
       accessTokenRecord.encryptedTokenBlob, 
-      `oauth:access`
+      `oauth:access:${externalAccountId}`
     );
     const accessToken = new TextDecoder().decode(accessTokenBytes);
     
@@ -181,7 +185,7 @@ export class GoogleCalendarService {
       const refreshTokenBytes = await decryptForOrg(
         orgId, 
         refreshTokenRecord.encryptedTokenBlob, 
-        `oauth:refresh`
+        `oauth:refresh:${externalAccountId}`
       );
       refreshToken = new TextDecoder().decode(refreshTokenBytes);
     }
