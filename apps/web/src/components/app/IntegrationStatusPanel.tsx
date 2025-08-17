@@ -265,7 +265,7 @@ export default function IntegrationStatusPanel({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {status?.emailAccounts.map((account) => (
+          {status && status.emailAccounts && status.emailAccounts.map((account) => (
             <div 
               key={account.id}
               className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700"

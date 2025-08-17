@@ -65,9 +65,49 @@ export async function GET() {
       itemsCount: 0 // You'd calculate this from actual event count
     }));
 
-    const integrations = [...emailIntegrations, ...calendarIntegrations];
+    // Transform to expected format
+    const emailAccounts = org.emailAccounts.map(account => ({
+      id: account.id,
+      provider: account.provider,
+      email: account.email,
+      displayName: account.displayName,
+      status: account.status,
+      syncStatus: account.syncStatus || 'idle',
+      lastSyncedAt: account.lastSyncedAt?.toISOString(),
+      encryptionStatus: account.encryptionStatus || 'ok',
+      errorReason: account.errorReason,
+      kmsErrorCode: account.kmsErrorCode,
+      kmsErrorAt: account.kmsErrorAt?.toISOString(),
+      uiStatus: account.status === 'connected' ? 'connected' : 'action_needed',
+      requiresRetry: account.encryptionStatus === 'failed',
+      canReconnect: true
+    }));
 
-    return Response.json({ integrations });
+    const summary = {
+      totalAccounts: org.emailAccounts.length + org.calendarAccounts.length,
+      connectedAccounts: org.emailAccounts.filter(acc => acc.status === 'connected').length + 
+                        org.calendarAccounts.filter(acc => acc.status === 'connected').length,
+      actionNeededAccounts: org.emailAccounts.filter(acc => acc.status !== 'connected').length + 
+                           org.calendarAccounts.filter(acc => acc.status !== 'connected').length,
+      disconnectedAccounts: 0
+    };
+
+    const tokenEncryption = {
+      totalTokens: org.emailAccounts.length,
+      okTokens: org.emailAccounts.filter(acc => acc.encryptionStatus === 'ok').length,
+      pendingTokens: org.emailAccounts.filter(acc => acc.encryptionStatus === 'pending').length,
+      failedTokens: org.emailAccounts.filter(acc => acc.encryptionStatus === 'failed').length
+    };
+
+    const status = {
+      overallStatus: summary.connectedAccounts === summary.totalAccounts ? 'all_connected' : 'partial_connected',
+      summary,
+      emailAccounts,
+      tokenEncryption,
+      lastUpdated: new Date().toISOString()
+    };
+
+    return Response.json(status);
   } catch (error) {
     console.error('Failed to fetch integrations status:', error);
     return new Response('Internal Server Error', { status: 500 });
