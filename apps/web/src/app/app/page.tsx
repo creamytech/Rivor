@@ -1,10 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import AppShell from "@/components/app/AppShell";
+import FlowRibbon from "@/components/river/FlowRibbon";
+import { ToastProvider } from "@/components/river/RiverToast";
+import DashboardContent from "@/components/app/DashboardContent";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
-  const [testResult, setTestResult] = useState<any>(null);
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -14,26 +19,29 @@ export default function DashboardPage() {
       return;
     }
 
-    // Test basic functionality
-    const testBasicFunctionality = async () => {
+    // Fetch dashboard data
+    const fetchDashboardData = async () => {
       try {
-        const response = await fetch('/api/debug/test-app');
+        setError(null);
+        const response = await fetch('/api/dashboard');
         if (response.ok) {
           const data = await response.json();
-          setTestResult(data);
+          setDashboardData(data);
         } else {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
       } catch (error) {
-        console.error('Test failed:', error);
-        setError(error instanceof Error ? error.message : 'Unknown error');
+        console.error('Failed to fetch dashboard data:', error);
+        setError('Failed to load dashboard data');
+      } finally {
+        setLoading(false);
       }
     };
 
-    testBasicFunctionality();
+    fetchDashboardData();
   }, [session, status]);
 
-  if (status === "loading") {
+  if (status === "loading" || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -59,37 +67,44 @@ export default function DashboardPage() {
     );
   }
 
+  // Default data if API fails
+  const defaultData = {
+    userName: session.user?.name || session.user?.email?.split('@')[0] || 'there',
+    showOnboarding: true,
+    hasEmailIntegration: false,
+    hasCalendarIntegration: false,
+    unreadCount: 0,
+    recentThreads: [],
+    upcomingEvents: [],
+    calendarStats: { todayCount: 0, upcomingCount: 0 },
+    pipelineStats: [],
+    totalActiveLeads: 0,
+    tokenHealth: []
+  };
+
+  // Use dashboard data or fallback to defaults
+  const data = dashboardData || defaultData;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 p-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-6">
-          Dashboard Test
-        </h1>
-        
-        <div className="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-lg">
-          <h2 className="text-xl font-semibold mb-4">User Info</h2>
-          <p><strong>Email:</strong> {session.user?.email}</p>
-          <p><strong>Name:</strong> {session.user?.name || 'Not provided'}</p>
-          
-          {testResult && (
-            <div className="mt-6">
-              <h2 className="text-xl font-semibold mb-4">Test Results</h2>
-              <pre className="bg-slate-100 dark:bg-slate-700 p-4 rounded text-sm overflow-auto">
-                {JSON.stringify(testResult, null, 2)}
-              </pre>
-            </div>
-          )}
-          
-          {error && (
-            <div className="mt-6">
-              <h2 className="text-xl font-semibold mb-4 text-red-600">Error</h2>
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded">
-                <p className="text-red-800 dark:text-red-200">{error}</p>
-              </div>
-            </div>
-          )}
-        </div>
+    <ToastProvider>
+      <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
+        <FlowRibbon />
+        <AppShell>
+          <DashboardContent 
+            userName={data.userName}
+            showOnboarding={data.showOnboarding}
+            hasEmailIntegration={data.hasEmailIntegration}
+            hasCalendarIntegration={data.hasCalendarIntegration}
+            unreadCount={data.unreadCount}
+            recentThreads={data.recentThreads}
+            upcomingEvents={data.upcomingEvents}
+            calendarStats={data.calendarStats}
+            pipelineStats={data.pipelineStats}
+            totalActiveLeads={data.totalActiveLeads}
+            tokenHealth={data.tokenHealth}
+          />
+        </AppShell>
       </div>
-    </div>
+    </ToastProvider>
   );
 }
