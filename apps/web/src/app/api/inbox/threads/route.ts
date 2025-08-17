@@ -94,9 +94,9 @@ export async function GET(req: NextRequest) {
     // Transform to UI format
     const threadsFormatted = (threads as any[]).map((thread: any) => {
       // Parse participants from participantsIndex - improved parsing
-      let participants = [{ name: 'Unknown', email: 'unknown@example.com' }];
+      let participants = [];
       
-      if (thread.participantsIndex) {
+      if (thread.participantsIndex && thread.participantsIndex.trim()) {
         // The participantsIndex contains concatenated email addresses
         // Extract email addresses using regex
         const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
@@ -114,18 +114,26 @@ export async function GET(req: NextRequest) {
               .trim();
             
             return {
-              name: cleanName || 'Unknown',
+              name: cleanName || emailLower.split('@')[0], // Use email username if no clean name
               email: emailLower
             };
           });
         }
       }
       
+      // If no participants found, create a default one
+      if (participants.length === 0) {
+        participants = [{ 
+          name: 'Email Contact', 
+          email: 'contact@example.com' 
+        }];
+      }
+      
       // Create a better snippet showing the conversation
       let snippet = 'Email content available';
       if (participants.length > 1) {
         const from = participants[0]?.name || participants[0]?.email || 'Unknown';
-        const to = participants.slice(1).map(p => p.name || p.email).join(', ') || 'Unknown';
+        const to = participants.slice(1).map((p: any) => p.name || p.email).join(', ') || 'Unknown';
         snippet = `From: ${from} | To: ${to}`;
       } else if (participants.length === 1) {
         snippet = `From: ${participants[0]?.name || participants[0]?.email || 'Unknown'}`;
@@ -133,7 +141,7 @@ export async function GET(req: NextRequest) {
       
       return {
         id: thread.id,
-        subject: thread.subjectIndex || 'Email from ' + (participants[0]?.name || participants[0]?.email || 'Unknown'),
+        subject: thread.subjectIndex || `Email from ${participants[0]?.name || participants[0]?.email || 'Contact'}`,
         snippet: snippet,
         participants: participants,
         messageCount: Number(thread.message_count) || 0,
