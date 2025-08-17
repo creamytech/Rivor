@@ -33,6 +33,7 @@
         "@radix-ui/react-tabs": "^1.1.13",
         "@radix-ui/react-toast": "^1.2.15",
         "@radix-ui/react-tooltip": "^1.2.8",
+        "@radix-ui/react-progress": "^1.1.2",
         "@rivor/config": "file:../../packages/config",
         "@rivor/crypto": "file:../../packages/crypto",
         "@rivor/db": "file:../../packages/db",
