@@ -1,90 +1,82 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
-import { enqueueEmailSync } from '@/server/queue';
+import { enqueueEmailBackfill } from '@/server/queue';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const fetchCache = 'force-no-store';
 
-export async function POST(__request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userEmail = session.user.email;
     const orgId = (session as { orgId?: string }).orgId;
-
-    if (!orgId || orgId === 'unknown') {
-      return NextResponse.json({ error: "Organization not found" }, { status: 400 });
+    if (!orgId) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
 
-    // Get user to find correct userId
-    const user = await prisma.user.findUnique({
-      where: { email: userEmail }
+    // Get all email accounts (not just connected ones)
+    const emailAccounts = await prisma.emailAccount.findMany({
+      where: { orgId }
     });
 
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    if (emailAccounts.length === 0) {
+      return NextResponse.json({
+        success: false,
+        message: 'No email accounts found'
+      }, { status: 400 });
     }
 
-    // Get EmailAccount for this user
-    const emailAccount = await prisma.emailAccount.findFirst({
-      where: { 
-        orgId,
-        userId: user.id,
-        provider: 'google'
+    // Queue sync for each account
+    const syncJobs = [];
+    for (const account of emailAccounts) {
+      try {
+        console.log(`Triggering sync for account: ${account.id} (${account.email})`);
+        await enqueueEmailBackfill(orgId, account.id, 30); // Sync last 30 days
+        syncJobs.push({
+          accountId: account.id,
+          email: account.email,
+          provider: account.provider,
+          status: account.status,
+          syncStatus: account.syncStatus,
+          status: 'queued'
+        });
+      } catch (error) {
+        syncJobs.push({
+          accountId: account.id,
+          email: account.email,
+          provider: account.provider,
+          status: account.status,
+          syncStatus: account.syncStatus,
+          status: 'failed',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
       }
-    });
-
-    if (!emailAccount) {
-      return NextResponse.json({ error: "EmailAccount not found" }, { status: 404 });
     }
 
-    // Check if SecureToken exists
-    const secureToken = await prisma.secureToken.findFirst({
-      where: { 
-        orgId,
-        provider: 'google',
-        tokenType: 'oauth_access'
-      }
-    });
-
-    if (!secureToken) {
-      return NextResponse.json({ error: "SecureToken not found" }, { status: 404 });
-    }
-
-    // Manually trigger email sync
-    logger.info('Manually triggering email sync', {
-      userEmail,
+    logger.info('Manual email sync triggered', {
       orgId,
-      emailAccountId: emailAccount.id,
-      secureTokenId: secureToken.id
-    });
-
-    await enqueueEmailSync(orgId, emailAccount.id);
-
-    // Update sync status
-    await prisma.emailAccount.update({
-      where: { id: emailAccount.id },
-      data: { 
-        syncStatus: 'scheduled',
-        lastSyncedAt: new Date()
-      }
+      accountsCount: emailAccounts.length,
+      syncJobs
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Email sync triggered successfully',
-      emailAccountId: emailAccount.id,
-      orgId,
-      syncStatus: 'scheduled',
+      message: `Email sync queued for ${emailAccounts.length} account(s)`,
+      accounts: syncJobs,
       timestamp: new Date().toISOString()
     });
 
-  } catch (error: any) {
-    logger.error('Failed to trigger email sync', { error: error.message, stack: error.stack });
-    return NextResponse.json({ error: "Failed to trigger email sync", details: error.message }, { status: 500 });
+  } catch (error) {
+    logger.error('Failed to trigger email sync:', error);
+    return NextResponse.json(
+      { error: 'Failed to trigger email sync', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
   }
 }
