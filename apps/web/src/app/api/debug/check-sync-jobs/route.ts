@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
       job.data.orgId === orgId
     );
 
-    // Get recent jobs (last 10)
+    // Get recent jobs (last 10) with more details
     const recentEmailBackfill = orgEmailBackfillJobs
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, 10)
@@ -50,7 +50,9 @@ export async function GET(req: NextRequest) {
         data: job.data,
         failedReason: job.failedReason,
         processedOn: job.processedOn ? new Date(job.processedOn).toISOString() : null,
-        finishedOn: job.finishedOn ? new Date(job.finishedOn).toISOString() : null
+        finishedOn: job.finishedOn ? new Date(job.finishedOn).toISOString() : null,
+        attempts: job.attemptsMade,
+        maxAttempts: job.opts.attempts
       }));
 
     const recentEmailSync = orgEmailSyncJobs
@@ -63,7 +65,9 @@ export async function GET(req: NextRequest) {
         data: job.data,
         failedReason: job.failedReason,
         processedOn: job.processedOn ? new Date(job.processedOn).toISOString() : null,
-        finishedOn: job.finishedOn ? new Date(job.finishedOn).toISOString() : null
+        finishedOn: job.finishedOn ? new Date(job.finishedOn).toISOString() : null,
+        attempts: job.attemptsMade,
+        maxAttempts: job.opts.attempts
       }));
 
     const recentCalendarSync = orgCalendarSyncJobs
@@ -76,8 +80,15 @@ export async function GET(req: NextRequest) {
         data: job.data,
         failedReason: job.failedReason,
         processedOn: job.processedOn ? new Date(job.processedOn).toISOString() : null,
-        finishedOn: job.finishedOn ? new Date(job.finishedOn).toISOString() : null
+        finishedOn: job.finishedOn ? new Date(job.finishedOn).toISOString() : null,
+        attempts: job.attemptsMade,
+        maxAttempts: job.opts.attempts
       }));
+
+    // Get failed jobs specifically
+    const failedEmailBackfill = recentEmailBackfill.filter(job => job.status === 'failed');
+    const failedEmailSync = recentEmailSync.filter(job => job.status === 'failed');
+    const failedCalendarSync = recentCalendarSync.filter(job => job.status === 'failed');
 
     return NextResponse.json({
       success: true,
@@ -89,7 +100,8 @@ export async function GET(req: NextRequest) {
           active: orgEmailBackfillJobs.filter(j => j.processedOn && !j.finishedOn).length,
           completed: orgEmailBackfillJobs.filter(j => j.finishedOn).length,
           failed: orgEmailBackfillJobs.filter(j => j.failedReason).length,
-          recent: recentEmailBackfill
+          recent: recentEmailBackfill,
+          failedJobs: failedEmailBackfill
         },
         emailSync: {
           totalJobs: orgEmailSyncJobs.length,
@@ -97,7 +109,8 @@ export async function GET(req: NextRequest) {
           active: orgEmailSyncJobs.filter(j => j.processedOn && !j.finishedOn).length,
           completed: orgEmailSyncJobs.filter(j => j.finishedOn).length,
           failed: orgEmailSyncJobs.filter(j => j.failedReason).length,
-          recent: recentEmailSync
+          recent: recentEmailSync,
+          failedJobs: failedEmailSync
         },
         calendarSync: {
           totalJobs: orgCalendarSyncJobs.length,
@@ -105,7 +118,8 @@ export async function GET(req: NextRequest) {
           active: orgCalendarSyncJobs.filter(j => j.processedOn && !j.finishedOn).length,
           completed: orgCalendarSyncJobs.filter(j => j.finishedOn).length,
           failed: orgCalendarSyncJobs.filter(j => j.failedReason).length,
-          recent: recentCalendarSync
+          recent: recentCalendarSync,
+          failedJobs: failedCalendarSync
         }
       },
       message: 'Sync job status retrieved'
