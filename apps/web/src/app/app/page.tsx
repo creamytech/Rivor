@@ -14,18 +14,27 @@ export default function DashboardPage() {
       return;
     }
 
-    // Fetch dashboard data
+    // Fetch dashboard data and debug info
     const fetchDashboardData = async () => {
       try {
-        const response = await fetch('/api/dashboard');
-        if (response.ok) {
-          const data = await response.json();
+        const [dashboardResponse, debugResponse] = await Promise.all([
+          fetch('/api/dashboard'),
+          fetch('/api/debug/check-threads')
+        ]);
+        
+        if (dashboardResponse.ok) {
+          const data = await dashboardResponse.json();
           setDashboardData(data);
         } else {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          throw new Error(`Dashboard HTTP ${dashboardResponse.status}: ${dashboardResponse.statusText}`);
+        }
+        
+        if (debugResponse.ok) {
+          const debugData = await debugResponse.json();
+          console.log('Debug data:', debugData);
         }
       } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
+        console.error('Failed to fetch data:', error);
         setError('Failed to load dashboard data');
       }
     };
