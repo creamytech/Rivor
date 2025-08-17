@@ -37,7 +37,7 @@ export default function ComposeModal({ open, onOpenChange, replyTo }: ComposeMod
 
     setSending(true);
     try {
-      const response = await fetch('/api/inbox/compose', {
+      const response = await fetch('/api/email/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -47,11 +47,13 @@ export default function ComposeModal({ open, onOpenChange, replyTo }: ComposeMod
           subject,
           body,
           threadId: replyTo?.threadId,
-          type: replyTo?.threadId ? 'reply' : 'new'
+          isHtml: true
         }),
       });
 
-      if (response.ok) {
+      const result = await response.json();
+
+      if (result.success) {
         addToast({
           type: 'success',
           title: 'Email Sent',
@@ -63,11 +65,10 @@ export default function ComposeModal({ open, onOpenChange, replyTo }: ComposeMod
         setSubject('');
         setBody('');
       } else {
-        const error = await response.json();
         addToast({
           type: 'error',
           title: 'Send Failed',
-          description: error.error || 'Failed to send email.'
+          description: result.error || 'Failed to send email.'
         });
       }
     } catch (error) {

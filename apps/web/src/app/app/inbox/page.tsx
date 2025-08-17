@@ -5,6 +5,7 @@ import FlowRibbon from "@/components/river/FlowRibbon";
 import { ToastProvider } from "@/components/river/RiverToast";
 import TokenErrorBanner from "@/components/common/TokenErrorBanner";
 import SyncButton from "@/components/common/SyncButton";
+import ComposeEmailModal from "@/components/inbox/ComposeEmailModal";
 
 export default function InboxPage() {
 
@@ -28,6 +29,13 @@ export default function InboxPage() {
                 </div>
                 
                 <div className="flex gap-2">
+                  <ComposeEmailModal 
+                    onEmailSent={(result) => {
+                      console.log('Email sent:', result);
+                      // Optionally refresh the thread list
+                      window.location.reload();
+                    }}
+                  />
                   <SyncButton 
                     type="email" 
                     variant="outline"

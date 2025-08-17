@@ -555,4 +555,86 @@ export class GmailService {
       throw error;
     }
   }
+
+  async sendEmail(emailData: {
+    to: string;
+    cc?: string;
+    bcc?: string;
+    subject: string;
+    body: string;
+    isHtml?: boolean;
+  }): Promise<{ id: string }> {
+    const gmail = await this.getGmail();
+    
+    // Create email message in RFC 2822 format
+    const message = this.createEmailMessage(emailData);
+    
+    // Encode the message in base64
+    const encodedMessage = Buffer.from(message).toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    try {
+      const response = await gmail.users.messages.send({
+        userId: 'me',
+        requestBody: {
+          raw: encodedMessage
+        }
+      });
+
+      logger.info('Email sent successfully via Gmail API', {
+        messageId: response.data.id,
+        to: emailData.to,
+        subject: emailData.subject
+      });
+
+      return { id: response.data.id! };
+    } catch (error) {
+      logger.error('Failed to send email via Gmail API', {
+        error: error instanceof Error ? error.message : String(error),
+        to: emailData.to,
+        subject: emailData.subject
+      });
+      throw error;
+    }
+  }
+
+  private createEmailMessage(emailData: {
+    to: string;
+    cc?: string;
+    bcc?: string;
+    subject: string;
+    body: string;
+    isHtml?: boolean;
+  }): string {
+    const boundary = 'boundary_' + Math.random().toString(36).substr(2, 9);
+    const contentType = emailData.isHtml ? 'text/html' : 'text/plain';
+    
+    let message = '';
+    
+    // Headers
+    message += `To: ${emailData.to}\r\n`;
+    if (emailData.cc) {
+      message += `Cc: ${emailData.cc}\r\n`;
+    }
+    if (emailData.bcc) {
+      message += `Bcc: ${emailData.bcc}\r\n`;
+    }
+    message += `Subject: ${emailData.subject}\r\n`;
+    message += `MIME-Version: 1.0\r\n`;
+    message += `Content-Type: multipart/alternative; boundary="${boundary}"\r\n`;
+    message += `\r\n`;
+    
+    // Body
+    message += `--${boundary}\r\n`;
+    message += `Content-Type: ${contentType}; charset=UTF-8\r\n`;
+    message += `Content-Transfer-Encoding: 7bit\r\n`;
+    message += `\r\n`;
+    message += `${emailData.body}\r\n`;
+    message += `\r\n`;
+    message += `--${boundary}--\r\n`;
+    
+    return message;
+  }
 }
