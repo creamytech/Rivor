@@ -89,16 +89,15 @@ export async function POST(req: NextRequest) {
     // Save event to database
     const savedEvent = await prisma.calendarEvent.create({
       data: {
-        eventId: event.data.id!,
-        title: event.data.summary || title,
-        description: event.data.description || description || '',
-        startTime: new Date(event.data.start?.dateTime || event.data.start?.date!),
-        endTime: new Date(event.data.end?.dateTime || event.data.end?.date!),
-        location: event.data.location || location || '',
-        isAllDay: isAllDay || false,
-        threadId: threadId || null,
-        calendarAccountId: calendarAccount.id,
-        orgId
+        accountId: calendarAccount.id,
+        orgId,
+        start: new Date(event.data.start?.dateTime || event.data.start?.date!),
+        end: new Date(event.data.end?.dateTime || event.data.end?.date!),
+        titleEnc: null, // Will be encrypted if needed
+        titleIndex: event.data.summary || title,
+        locationIndex: event.data.location || location || '',
+        notesEnc: null,
+        attendeesEnc: null
       }
     });
 
