@@ -1,5 +1,6 @@
 "use client";
 import { useSession } from "next-auth/react";
+import AppShell from "@/components/app/AppShell";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -31,7 +32,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
+    <AppShell>
       <div className="container mx-auto py-8">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-4">
@@ -52,6 +53,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }
