@@ -28,8 +28,9 @@ export async function getUpcomingEvents(orgId: string, limit = 10): Promise<UiCa
     take: limit,
     select: { 
       id: true, 
-      titleEnc: true, 
-      locationEnc: true, 
+      titleIndex: true, 
+      locationIndex: true, 
+      notesEnc: true,
       attendeesEnc: true,
       start: true, 
       end: true,
@@ -41,31 +42,14 @@ export async function getUpcomingEvents(orgId: string, limit = 10): Promise<UiCa
 
   const events: UiCalendarEvent[] = [];
   for (const event of raws) {
-    let title = '';
-    let location = '';
+    let title = event.titleIndex || 'Untitled Event';
+    let location = event.locationIndex || '';
     let attendees = '';
 
-    if (event.titleEnc) {
+    // Try to decrypt notes if available
+    if (event.notesEnc) {
       try {
-        const dec = await decryptForOrg(orgId, event.titleEnc, 'calendar:title');
-        title = new TextDecoder().decode(dec);
-      } catch {
-        title = '(encrypted)';
-      }
-    }
-
-    if (event.locationEnc) {
-      try {
-        const dec = await decryptForOrg(orgId, event.locationEnc, 'calendar:location');
-        location = new TextDecoder().decode(dec);
-      } catch {
-        location = '';
-      }
-    }
-
-    if (event.attendeesEnc) {
-      try {
-        const dec = await decryptForOrg(orgId, event.attendeesEnc, 'calendar:attendees');
+        const dec = await decryptForOrg(orgId, event.notesEnc, 'calendar:notes');
         attendees = new TextDecoder().decode(dec);
       } catch {
         attendees = '';

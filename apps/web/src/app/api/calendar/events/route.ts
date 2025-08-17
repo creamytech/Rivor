@@ -148,50 +148,46 @@ export async function GET(req: NextRequest) {
     const endDate = url.searchParams.get('end');
     const limit = parseInt(url.searchParams.get('limit') || '50');
 
-    // Get calendar account
-    const calendarAccount = await prisma.calendarAccount.findFirst({
-      where: { orgId, provider: 'google' }
+    // Build query conditions
+    const where: any = { orgId };
+    
+    if (startDate && endDate) {
+      where.start = {
+        gte: new Date(startDate),
+        lte: new Date(endDate)
+      };
+    }
+
+    // Get events from our database
+    const events = await prisma.calendarEvent.findMany({
+      where,
+      orderBy: { start: 'asc' },
+      take: limit,
+      select: {
+        id: true,
+        start: true,
+        end: true,
+        titleIndex: true,
+        locationIndex: true,
+        notesEnc: true,
+        attendeesEnc: true
+      }
     });
 
-    if (!calendarAccount) {
-      return NextResponse.json({ error: 'No calendar account found' }, { status: 400 });
-    }
-
-    // Create calendar service
-    const calendarService = await GoogleCalendarService.createFromAccount(orgId, calendarAccount.id);
-    const calendar = await calendarService.getCalendar();
-
-    // Prepare query parameters
-    const params: any = {
-      calendarId: 'primary',
-      maxResults: limit,
-      singleEvents: true,
-      orderBy: 'startTime'
-    };
-
-    if (startDate) {
-      params.timeMin = startDate;
-    }
-    if (endDate) {
-      params.timeMax = endDate;
-    }
-
-    // Get events from Google Calendar
-    const response = await calendar.events.list(params);
-
-    const events = response.data.items?.map(event => ({
+    // Transform events to match expected format
+    const transformedEvents = events.map(event => ({
       id: event.id,
-      title: event.summary,
-      description: event.description,
+      title: event.titleIndex || 'Untitled Event',
+      description: '', // We can decrypt notesEnc if needed
       start: event.start,
       end: event.end,
-      location: event.location,
-      attendees: event.attendees,
-      htmlLink: event.htmlLink,
-      isAllDay: !event.start?.dateTime
-    })) || [];
+      location: event.locationIndex || '',
+      attendees: [], // We can decrypt attendeesEnc if needed
+      htmlLink: '',
+      isAllDay: false // We can determine this from start/end times if needed
+    }));
 
-    return NextResponse.json({ events });
+    return NextResponse.json({ events: transformedEvents });
 
   } catch (error) {
     logger.error('Failed to fetch calendar events', { error });
