@@ -48,11 +48,27 @@ export async function GET(req: NextRequest) {
         id: true,
         subjectIndex: true,
         participantsIndex: true,
+        subjectEnc: true,
+        participantsEnc: true,
         updatedAt: true,
         _count: { select: { messages: true } }
       },
       orderBy: { updatedAt: 'desc' },
       take: 5
+    });
+
+    // Check a few recent messages to see the data format
+    const recentMessages = await prisma.emailMessage.findMany({
+      where: { orgId },
+      select: {
+        id: true,
+        threadId: true,
+        subjectIndex: true,
+        participantsIndex: true,
+        sentAt: true
+      },
+      orderBy: { sentAt: 'desc' },
+      take: 3
     });
 
     return NextResponse.json({
@@ -70,14 +86,23 @@ export async function GET(req: NextRequest) {
           id: t.id,
           subject: t.subjectIndex || 'No Subject',
           participants: t.participantsIndex || 'No Participants',
+          subjectEnc: t.subjectEnc ? 'Encrypted' : 'Not Encrypted',
+          participantsEnc: t.participantsEnc ? 'Encrypted' : 'Not Encrypted',
           messageCount: t._count.messages,
           updatedAt: t.updatedAt
+        })),
+        recentMessages: recentMessages.map(m => ({
+          id: m.id,
+          threadId: m.threadId,
+          subject: m.subjectIndex || 'No Subject',
+          participants: m.participantsIndex || 'No Participants',
+          sentAt: m.sentAt
         }))
       }
     });
 
   } catch (error) {
-    logger.error('Email sync status check failed:', error);
+    logger.error('Email sync status check failed:', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to check email sync status', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -145,7 +170,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    logger.error('Failed to trigger email sync:', error);
+    logger.error('Failed to trigger email sync:', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to trigger email sync', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
