@@ -33,9 +33,8 @@ export async function GET(req: NextRequest) {
       where: { orgId },
       select: {
         id: true,
-        syncStatus: true,
-        lastSyncedAt: true,
-        errorReason: true
+        status: true,
+        updatedAt: true
       }
     });
 
@@ -50,9 +49,9 @@ export async function GET(req: NextRequest) {
     // Calculate calendar account status
     const calendarAccountStatus = {
       total: calendarAccounts.length,
-      running: calendarAccounts.filter(acc => acc.syncStatus === 'running').length,
-      completed: calendarAccounts.filter(acc => acc.syncStatus === 'idle' && acc.lastSyncedAt).length,
-      failed: calendarAccounts.filter(acc => acc.syncStatus === 'error').length
+      running: calendarAccounts.filter(acc => acc.status === 'connected').length, // Assume connected accounts are running
+      completed: calendarAccounts.filter(acc => acc.status === 'connected').length,
+      failed: calendarAccounts.filter(acc => acc.status === 'error').length
     };
 
     // Get total counts
