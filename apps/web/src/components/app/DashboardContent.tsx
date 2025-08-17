@@ -11,6 +11,7 @@ import IntegrationStatusPanel from "@/components/app/IntegrationStatusPanel";
 import HeroFlowCard from "@/components/app/HeroFlowCard";
 import BackfillProgressCard from "@/components/app/BackfillProgressCard";
 import TokenErrorBanner from "@/components/common/TokenErrorBanner";
+import SyncButton from "@/components/common/SyncButton";
 import FlowCard from "@/components/river/FlowCard";
 
 interface DashboardContentProps {
@@ -55,12 +56,37 @@ export default function DashboardContent({
       {/* Hero Section */}
       <section>
         <div className="mb-6">
-          <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-            {getGreeting()}, {userName}! 👋
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-lg">
-            Here's what's flowing through your workflow today.
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+                {getGreeting()}, {userName}! 👋
+              </h1>
+              <p className="text-slate-600 dark:text-slate-400 text-lg">
+                Here's what's flowing through your workflow today.
+              </p>
+            </div>
+            
+            <div className="flex gap-2">
+              <SyncButton 
+                type="email" 
+                variant="outline"
+                size="sm"
+                onSyncComplete={(result) => {
+                  console.log('Email sync completed:', result);
+                  window.location.reload();
+                }}
+              />
+              <SyncButton 
+                type="calendar" 
+                variant="outline"
+                size="sm"
+                onSyncComplete={(result) => {
+                  console.log('Calendar sync completed:', result);
+                  window.location.reload();
+                }}
+              />
+            </div>
+          </div>
         </div>
         
         <HeroFlowCard />

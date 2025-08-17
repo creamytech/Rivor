@@ -9,6 +9,7 @@ import RiverTabs from "@/components/river/RiverTabs";
 import FlowCard from "@/components/river/FlowCard";
 import { ToastProvider, useToast } from "@/components/river/RiverToast";
 import TokenErrorBanner from "@/components/common/TokenErrorBanner";
+import SyncButton from "@/components/common/SyncButton";
 import { Calendar, CalendarDays, Plus } from "lucide-react";
 
 type View = "month" | "week";
@@ -71,12 +72,30 @@ function CalendarPageContent() {
                 </p>
               </div>
               
-              <RiverTabs
-                tabs={tabs}
-                value={view}
-                onChange={(value) => setView(value as View)}
-                variant="pills"
-              />
+              <div className="flex items-center gap-4">
+                <SyncButton 
+                  type="calendar" 
+                  variant="outline"
+                  size="sm"
+                  onSyncComplete={(result) => {
+                    console.log('Calendar sync completed:', result);
+                    addToast({
+                      type: 'success',
+                      title: 'Calendar Synced',
+                      description: `Synced ${result.results?.[0]?.syncedCount || 0} new events and updated ${result.results?.[0]?.updatedCount || 0} existing events.`
+                    });
+                    // Optionally refresh the calendar view
+                    window.location.reload();
+                  }}
+                />
+                
+                <RiverTabs
+                  tabs={tabs}
+                  value={view}
+                  onChange={(value) => setView(value as View)}
+                  variant="pills"
+                />
+              </div>
             </div>
             
             <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
