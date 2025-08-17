@@ -11,7 +11,7 @@ interface CalendarSnapshotWidgetProps {
   calendarStats: { todayCount: number; upcomingCount: number };
 }
 
-export function CalendarSnapshotWidget({ upcomingEvents, calendarStats }: CalendarSnapshotWidgetProps) {
+export default function CalendarSnapshotWidget({ upcomingEvents, calendarStats }: CalendarSnapshotWidgetProps) {
   const hasEvents = upcomingEvents && upcomingEvents.length > 0;
 
   return (

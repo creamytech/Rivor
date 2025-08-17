@@ -12,7 +12,7 @@ interface PipelineGlanceWidgetProps {
   totalActiveLeads: number;
 }
 
-export function PipelineGlanceWidget({ pipelineStats, totalActiveLeads }: PipelineGlanceWidgetProps) {
+export default function PipelineGlanceWidget({ pipelineStats, totalActiveLeads }: PipelineGlanceWidgetProps) {
   const hasDeals = pipelineStats && pipelineStats.length > 0 && totalActiveLeads > 0;
   const totalValue = pipelineStats?.reduce((sum, stage) => sum + stage.totalValue, 0) || 0;
 

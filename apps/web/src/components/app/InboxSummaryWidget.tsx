@@ -11,7 +11,7 @@ interface InboxSummaryWidgetProps {
   recentThreads: any[];
 }
 
-export function InboxSummaryWidget({ unreadCount, recentThreads }: InboxSummaryWidgetProps) {
+export default function InboxSummaryWidget({ unreadCount, recentThreads }: InboxSummaryWidgetProps) {
   const hasEmails = recentThreads && recentThreads.length > 0;
 
   return (
