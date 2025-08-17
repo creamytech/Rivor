@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/auth/callback/google'
+      'https://www.rivor.ai/api/auth/callback/google'
     );
 
     // Generate authorization URL
