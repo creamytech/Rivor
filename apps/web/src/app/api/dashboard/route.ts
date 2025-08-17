@@ -23,9 +23,13 @@ export async function GET(_req: NextRequest) {
     // Log dashboard access
     logger.userAction('dashboard_access', userEmail || 'unknown', orgId || 'unknown');
 
+    console.log('=== DASHBOARD DEBUG START ===');
+    console.log('orgId:', orgId);
+    console.log('userEmail:', userEmail);
+
     // Fetch real email data
     let unreadCount = 0;
-    let recentThreads = [];
+    let recentThreads: any[] = [];
     
     if (orgId) {
       try {
@@ -34,11 +38,16 @@ export async function GET(_req: NextRequest) {
         // Get unread count
         unreadCount = await prisma.emailMessage.count({
           where: {
-            orgId,
-            read: false
+            orgId
           }
         });
         console.log('Unread count:', unreadCount);
+
+        // Check total threads first
+        const totalThreads = await prisma.emailThread.count({
+          where: { orgId }
+        });
+        console.log('Total threads in database:', totalThreads);
 
         // Get recent threads with decrypted data
         const threads = await prisma.emailThread.findMany({
@@ -52,12 +61,19 @@ export async function GET(_req: NextRequest) {
           take: 20
         });
         console.log('Found threads:', threads.length);
+        console.log('First thread sample:', threads[0] ? {
+          id: threads[0].id,
+          subjectEnc: !!threads[0].subjectEnc,
+          participantsEnc: !!threads[0].participantsEnc,
+          updatedAt: threads[0].updatedAt,
+          messageCount: threads[0]._count.messages
+        } : 'No threads');
 
         // Decrypt thread data for display
         recentThreads = await Promise.all(threads.map(async (thread) => {
           try {
-            const subject = thread.subjectEnc ? await decryptForOrg(orgId, thread.subjectEnc) : 'No Subject';
-            const participants = thread.participantsEnc ? await decryptForOrg(orgId, thread.participantsEnc) : 'No Participants';
+            const subject = thread.subjectEnc ? await decryptForOrg(orgId, thread.subjectEnc, 'email:subject') : 'No Subject';
+            const participants = thread.participantsEnc ? await decryptForOrg(orgId, thread.participantsEnc, 'email:participants') : 'No Participants';
             
             return {
               id: thread.id,
@@ -90,7 +106,7 @@ export async function GET(_req: NextRequest) {
     }
 
     // Fetch calendar data
-    let upcomingEvents = [];
+    let upcomingEvents: any[] = [];
     let calendarStats = { todayCount: 0, upcomingCount: 0 };
     
     if (orgId) {
@@ -98,6 +114,12 @@ export async function GET(_req: NextRequest) {
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+        // Check total events first
+        const totalEvents = await prisma.calendarEvent.count({
+          where: { orgId }
+        });
+        console.log('Total calendar events in database:', totalEvents);
 
         // Get today's events
         const todayEvents = await prisma.calendarEvent.count({
@@ -133,11 +155,20 @@ export async function GET(_req: NextRequest) {
           take: 10
         });
 
+        console.log('Found upcoming events:', events.length);
+        console.log('First event sample:', events[0] ? {
+          id: events[0].id,
+          titleEnc: !!events[0].titleEnc,
+          locationEnc: !!events[0].locationEnc,
+          start: events[0].start,
+          end: events[0].end
+        } : 'No events');
+
         // Decrypt event data
         upcomingEvents = await Promise.all(events.map(async (event) => {
           try {
-            const title = event.titleEnc ? await decryptForOrg(orgId, event.titleEnc) : 'Untitled Event';
-            const location = event.locationEnc ? await decryptForOrg(orgId, event.locationEnc) : null;
+            const title = event.titleEnc ? await decryptForOrg(orgId, event.titleEnc, 'calendar:title') : 'Untitled Event';
+            const location = event.locationEnc ? await decryptForOrg(orgId, event.locationEnc, 'calendar:location') : null;
             
             return {
               id: event.id,
@@ -195,6 +226,8 @@ export async function GET(_req: NextRequest) {
       }
     }
 
+    console.log('=== DASHBOARD DEBUG END ===');
+
     // Return data with real information
     return Response.json({
       userName,
@@ -212,7 +245,7 @@ export async function GET(_req: NextRequest) {
 
   } catch (error) {
     console.error('Dashboard API error:', error);
-    logger.error('dashboard_api_error', error);
+    logger.error('dashboard_api_error', { error: error instanceof Error ? error.message : String(error) });
     
     return Response.json({
       userName: 'there',
