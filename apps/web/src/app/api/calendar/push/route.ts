@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db';
-import { CalendarWebhookService } from '@/server/calendar-webhooks';
+import { GoogleCalendarService } from '@/server/calendar';
 import { logger } from '@/lib/logger';
 
 // Force dynamic rendering - this route uses request headers
 export const dynamic = 'force-dynamic';
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   const correlationId = `calendar-push-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const startTime = Date.now();
   
@@ -16,128 +16,117 @@ export async function POST(_req: NextRequest) {
       action: 'calendar_push_received'
     });
 
-    // Validate notification headers
-    const validation = CalendarWebhookService.validateNotification(req.headers);
+    // Verify notification authenticity
+    const token = process.env.GOOGLE_PUBSUB_VERIFICATION_TOKEN;
+    const provided = req.headers.get('x-goog-verification-token') || req.headers.get('x-verification-token');
     
-    if (!validation.valid) {
-      logger.warn('Calendar push notification validation failed', {
+    if (!token) {
+      logger.warn('Calendar push verification token not configured', {
         correlationId,
-        error: validation.error,
-        action: 'calendar_push_validation_failed'
+        action: 'calendar_push_no_token'
       });
-      return NextResponse.json({ error: 'Invalid notification' }, { status: 400 });
+      return new Response('Server misconfigured', { status: 500 });
     }
 
-    const { channelId, resourceId, state } = validation;
+    if (provided !== token) {
+      logger.warn('Calendar push verification token mismatch', {
+        correlationId,
+        action: 'calendar_push_token_mismatch'
+      });
+      return new Response('Unauthorized', { status: 401 });
+    }
 
-    logger.info('Calendar push notification validated', {
-      correlationId,
-      channelId,
-      resourceId,
-      state,
-      action: 'calendar_push_validated'
-    });
+    // Parse the push notification body
+    const body = await req.json();
+    
+    if (!body || !body.resourceId) {
+      logger.warn('Calendar push notification missing resourceId', {
+        correlationId,
+        body,
+        action: 'calendar_push_missing_resource'
+      });
+      return new Response('Bad Request', { status: 400 });
+    }
 
-    // Find the calendar account for this channel
-    const calendarAccount = await prisma.calendarAccount.findFirst({
+    const resourceId = body.resourceId;
+    
+    // Find the calendar account that matches this resource
+    // For now, we'll process all Google calendar accounts
+    // In a more sophisticated setup, you'd store the resourceId mapping
+    const calendarAccounts = await prisma.calendarAccount.findMany({
       where: {
-        channelId: channelId,
-        channelResourceId: resourceId
-      },
-      include: {
-        org: true
+        provider: 'google',
+        status: 'connected'
       }
     });
 
-    if (!calendarAccount) {
-      logger.warn('Calendar push notification for unknown channel', {
+    if (calendarAccounts.length === 0) {
+      logger.warn('No connected calendar accounts found for push notification', {
         correlationId,
-        channelId,
         resourceId,
-        action: 'calendar_push_unknown_channel'
+        action: 'calendar_push_no_accounts'
       });
-      return NextResponse.json({ error: 'Unknown channel' }, { status: 404 });
+      return new Response('No accounts found', { status: 404 });
     }
 
-    // Check if channel is expired
-    if (calendarAccount.channelExpiration && calendarAccount.channelExpiration < new Date()) {
-      logger.warn('Calendar push notification for expired channel', {
-        correlationId,
-        channelId,
-        resourceId,
-        expiration: calendarAccount.channelExpiration,
-        action: 'calendar_push_expired_channel'
-      });
-      return NextResponse.json({ error: 'Channel expired' }, { status: 410 });
-    }
-
-    logger.info('Calendar push notification processing', {
-      correlationId,
-      channelId,
-      resourceId,
-      state,
-      orgId: calendarAccount.orgId,
-      accountId: calendarAccount.id,
-      action: 'calendar_push_processing'
+    // Process push notification for each account
+    const processingPromises = calendarAccounts.map(async (account) => {
+      try {
+        const calendarService = await GoogleCalendarService.createFromAccount(account.orgId, account.id);
+        await calendarService.handlePushNotification(account.orgId, account.id, resourceId);
+        
+        logger.info('Calendar push notification processed successfully', {
+          correlationId,
+          orgId: account.orgId,
+          calendarAccountId: account.id,
+          resourceId,
+          processingTime: Date.now() - startTime,
+          action: 'calendar_push_processed'
+        });
+        
+        return { success: true, accountId: account.id };
+      } catch (error) {
+        logger.error('Failed to process calendar push notification', {
+          correlationId,
+          orgId: account.orgId,
+          calendarAccountId: account.id,
+          resourceId,
+          error: error instanceof Error ? error.message : String(error),
+          action: 'calendar_push_processing_failed'
+        });
+        
+        return { success: false, accountId: account.id, error: error instanceof Error ? error.message : String(error) };
+      }
     });
 
-    // Handle different notification states
-    if (state === 'sync') {
-      // Initial sync notification - no action needed
-      logger.info('Calendar push notification sync state - no action needed', {
-        correlationId,
-        channelId,
-        action: 'calendar_push_sync_state'
-      });
-    } else if (state === 'exists') {
-      // Resource updated - trigger calendar sync
-      logger.info('Calendar push notification exists state - triggering sync', {
-        correlationId,
-        channelId,
-        action: 'calendar_push_exists_state'
-      });
+    const results = await Promise.all(processingPromises);
+    const successful = results.filter(r => r.success).length;
+    const failed = results.filter(r => !r.success).length;
 
-      // TODO: Implement calendar sync queue
-      // For now, we'll just log the event
-      logger.info('Calendar sync would be triggered here', {
-        correlationId,
-        orgId: calendarAccount.orgId,
-        accountId: calendarAccount.id,
-        action: 'calendar_sync_todo'
-      });
+    logger.info('Calendar push notification processing completed', {
+      correlationId,
+      totalAccounts: calendarAccounts.length,
+      successful,
+      failed,
+      totalProcessingTime: Date.now() - startTime,
+      action: 'calendar_push_completed'
+    });
+
+    // Return success if at least one account was processed successfully
+    if (successful > 0) {
+      return new Response('OK', { status: 200 });
     } else {
-      logger.info('Calendar push notification unknown state', {
-        correlationId,
-        channelId,
-        state,
-        action: 'calendar_push_unknown_state'
-      });
+      return new Response('Processing failed', { status: 500 });
     }
 
-    const latency = Date.now() - startTime;
-    logger.info('Calendar push notification processed successfully', {
+  } catch (error) {
+    logger.error('Calendar push notification handler error', {
       correlationId,
-      channelId,
-      resourceId,
-      state,
-      latency,
-      action: 'calendar_push_success'
+      error: error instanceof Error ? error.message : String(error),
+      action: 'calendar_push_handler_error'
     });
-
-    return NextResponse.json({ success: true });
-  } catch (error: unknown) {
-    const latency = Date.now() - startTime;
-    logger.error('Calendar push notification processing failed', {
-      correlationId,
-      error: error.message,
-      latency,
-      action: 'calendar_push_failed'
-    });
-
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    
+    return new Response('Internal Server Error', { status: 500 });
   }
 }
 
@@ -168,17 +157,14 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ status: 'ok' });
+    return new Response('OK', { status: 200 });
   } catch (error: unknown) {
     logger.error('Calendar webhook validation failed', {
       correlationId,
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
       action: 'calendar_webhook_validation_failed'
     });
 
-    return NextResponse.json(
-      { error: 'Validation failed' },
-      { status: 500 }
-    );
+    return new Response('Validation failed', { status: 500 });
   }
 }

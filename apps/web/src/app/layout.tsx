@@ -3,6 +3,9 @@ import { Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import dynamic from "next/dynamic";
 
+// Start all workers (only on server side)
+import "@/worker/startWorkers";
+
 const ClientRoot = dynamic(() => import("@/components/providers/ClientRoot"), { ssr: false });
 
 const geistSans = Inter({

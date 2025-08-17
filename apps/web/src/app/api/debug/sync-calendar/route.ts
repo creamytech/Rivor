@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
-import { GoogleCalendarService } from '@/server/calendar';
+import { enqueueCalendarSync } from '@/server/queue';
 import { logger } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
@@ -18,95 +18,28 @@ export async function POST(req: NextRequest) {
 
     // Get calendar accounts
     const calendarAccounts = await prisma.calendarAccount.findMany({
-      where: { orgId, provider: 'google' }
+      where: { orgId, status: 'connected' }
     });
 
     if (calendarAccounts.length === 0) {
       return NextResponse.json({
         success: false,
-        message: 'No calendar accounts found. Please setup calendar first.'
+        message: 'No connected calendar accounts found'
       }, { status: 400 });
     }
 
-    const syncResults = [];
-    
+    // Queue sync for each account
+    const syncJobs = [];
     for (const account of calendarAccounts) {
       try {
-        // Create calendar service
-        const calendarService = await GoogleCalendarService.createFromAccount(orgId, account.id);
-        const calendar = await calendarService.getCalendar();
-
-        // Get events from the last 30 days to next 30 days
-        const now = new Date();
-        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-        const response = await calendar.events.list({
-          calendarId: 'primary',
-          timeMin: thirtyDaysAgo.toISOString(),
-          timeMax: thirtyDaysFromNow.toISOString(),
-          singleEvents: true,
-          orderBy: 'startTime'
-        });
-
-        const events = response.data.items || [];
-        let syncedCount = 0;
-        let updatedCount = 0;
-
-        for (const event of events) {
-          if (!event.id) continue;
-
-          // Check if event already exists
-          const existingEvent = await prisma.calendarEvent.findFirst({
-            where: {
-              accountId: account.id,
-              titleIndex: event.summary || ''
-            }
-          });
-
-          if (existingEvent) {
-            // Update existing event
-            await prisma.calendarEvent.update({
-              where: { id: existingEvent.id },
-              data: {
-                start: new Date(event.start?.dateTime || event.start?.date!),
-                end: new Date(event.end?.dateTime || event.end?.date!),
-                titleIndex: event.summary || '',
-                locationIndex: event.location || ''
-              }
-            });
-            updatedCount++;
-          } else {
-            // Create new event
-            await prisma.calendarEvent.create({
-              data: {
-                accountId: account.id,
-                orgId,
-                start: new Date(event.start?.dateTime || event.start?.date!),
-                end: new Date(event.end?.dateTime || event.end?.date!),
-                titleEnc: null,
-                titleIndex: event.summary || '',
-                locationIndex: event.location || '',
-                notesEnc: null,
-                attendeesEnc: null
-              }
-            });
-            syncedCount++;
-          }
-        }
-
-        syncResults.push({
+        await enqueueCalendarSync(orgId, account.id, 30, 30); // Sync last 30 days and next 30 days
+        syncJobs.push({
           accountId: account.id,
           provider: account.provider,
-          status: 'success',
-          eventsProcessed: events.length,
-          eventsCreated: syncedCount,
-          eventsUpdated: updatedCount,
-          eventsSkipped: events.length - syncedCount - updatedCount
+          status: 'queued'
         });
-
       } catch (error) {
-        syncResults.push({
+        syncJobs.push({
           accountId: account.id,
           provider: account.provider,
           status: 'failed',
@@ -115,16 +48,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    logger.info('Manual calendar sync completed', {
+    logger.info('Manual calendar sync triggered', {
       orgId,
       accountsCount: calendarAccounts.length,
-      syncResults
+      syncJobs
     });
 
     return NextResponse.json({
       success: true,
-      message: `Calendar sync completed for ${calendarAccounts.length} account(s)`,
-      results: syncResults,
+      message: `Calendar sync queued for ${calendarAccounts.length} account(s)`,
+      accounts: syncJobs,
       timestamp: new Date().toISOString()
     });
 

@@ -35,6 +35,23 @@ export async function enqueueEmailSync(orgId: string, emailAccountId: string) {
   }
 }
 
+export async function enqueueCalendarSync(orgId: string, calendarAccountId: string, daysPast = 30, daysFuture = 30) {
+  try {
+    const queue = getCalendarSyncQueue();
+    await queue.add("sync", { 
+      orgId, 
+      calendarAccountId, 
+      daysPastToSync: daysPast, 
+      daysFutureToSync: daysFuture 
+    }, { 
+      attempts: 3, 
+      backoff: { type: "exponential", delay: 1000 } 
+    });
+  } catch (err) {
+    console.warn("[queue] enqueueCalendarSync failed", err);
+  }
+}
+
 // Queue for initial email backfill jobs
 export function getEmailBackfillQueue(): Queue {
   if (!globalQueues.emailBackfillQueue) {
