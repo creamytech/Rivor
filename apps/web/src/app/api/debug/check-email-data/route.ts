@@ -3,6 +3,10 @@ import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
 import { decryptForOrg } from '@/server/crypto';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const fetchCache = 'force-no-store';
+
 export async function GET(req: NextRequest) {
   try {
     const session = await auth();

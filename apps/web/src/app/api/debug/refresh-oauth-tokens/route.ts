@@ -5,6 +5,10 @@ import { encryptForOrg } from '@/server/crypto';
 import { logger } from '@/lib/logger';
 import { google } from 'googleapis';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const fetchCache = 'force-no-store';
+
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
