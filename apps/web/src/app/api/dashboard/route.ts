@@ -28,6 +28,8 @@ export async function GET(_req: NextRequest) {
     
     if (orgId) {
       try {
+        console.log('Fetching email data for orgId:', orgId);
+        
         // Get unread count
         unreadCount = await prisma.emailMessage.count({
           where: {
@@ -35,6 +37,7 @@ export async function GET(_req: NextRequest) {
             read: false
           }
         });
+        console.log('Unread count:', unreadCount);
 
         // Get recent threads
         const threads = await prisma.emailThread.findMany({
@@ -48,6 +51,7 @@ export async function GET(_req: NextRequest) {
           orderBy: { updatedAt: 'desc' },
           take: 5
         });
+        console.log('Found threads:', threads.length);
 
         recentThreads = threads.map(thread => ({
           id: thread.id,
@@ -57,19 +61,36 @@ export async function GET(_req: NextRequest) {
           messageCount: thread._count?.messages || 0,
           unreadCount: 0 // We'll calculate this separately if needed
         }));
+        console.log('Processed threads:', recentThreads.length);
       } catch (error) {
         console.error('Failed to fetch email data:', error);
         // Use default values if email data fetch fails
         unreadCount = 0;
         recentThreads = [];
       }
+    } else {
+      console.log('No orgId found for user:', userEmail);
+    }
+
+    // Check if user has email accounts connected
+    let hasEmailAccounts = false;
+    if (orgId) {
+      try {
+        const emailAccounts = await prisma.emailAccount.count({
+          where: { orgId, status: 'connected' }
+        });
+        hasEmailAccounts = emailAccounts > 0;
+        console.log('Connected email accounts:', emailAccounts);
+      } catch (error) {
+        console.error('Failed to check email accounts:', error);
+      }
     }
 
     // Return data with real email information
     return Response.json({
       userName,
-      showOnboarding: recentThreads.length === 0,
-      hasEmailIntegration: recentThreads.length > 0,
+      showOnboarding: !hasEmailAccounts, // Show onboarding only if no email accounts are connected
+      hasEmailIntegration: hasEmailAccounts,
       hasCalendarIntegration: false,
       unreadCount,
       recentThreads,
