@@ -83,8 +83,8 @@ export default function DashboardContent({
               </p>
             </div>
             
-            {/* Sync buttons - temporarily removed */}
-            {/* <div className="flex gap-2">
+            {/* Sync buttons */}
+            <div className="flex gap-2">
               <SyncButton 
                 type="email" 
                 variant="outline"
@@ -103,7 +103,7 @@ export default function DashboardContent({
                   window.location.reload();
                 }}
               />
-            </div> */}
+            </div>
           </div>
         </div>
       </section>
