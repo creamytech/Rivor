@@ -46,18 +46,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Get OAuth account to find refresh token
-    const oauthAccount = await prisma.oAuthAccount.findFirst({
-      where: {
-        orgId,
-        provider: 'google'
-      }
-    });
+    // Check if we have the necessary tokens
+    const refreshTokenRecord = existingTokens.find(t => t.tokenType === 'oauth_refresh');
+    const accessTokenRecord = existingTokens.find(t => t.tokenType === 'oauth_access');
 
-    if (!oauthAccount) {
+    if (!refreshTokenRecord?.encryptedTokenBlob) {
       return NextResponse.json({
         success: false,
-        message: 'No OAuth account found for Google',
+        message: 'No refresh token found',
         timestamp: new Date().toISOString()
       });
     }
