@@ -1,168 +1,115 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+"use client";
+import { motion } from 'framer-motion';
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Mail, ExternalLink, MessageSquare, Zap } from "lucide-react";
+import { Mail, ExternalLink, Inbox, MessageSquare, Clock } from "lucide-react";
 import Link from "next/link";
-import { UiEmailThread } from "@/server/email";
-import { EmptyState } from "@/components/ui/empty-state";
 
-interface InboxSummaryProps {
+interface InboxSummaryWidgetProps {
   unreadCount: number;
-  recentThreads: UiEmailThread[];
-  loading?: boolean;
-  error?: boolean;
-  onRetry?: () => void;
+  recentThreads: any[];
 }
 
-export default function InboxSummaryWidget({ 
-  unreadCount, 
-  recentThreads, 
-  loading, 
-  error,
-  onRetry 
-}: InboxSummaryProps) {
-  if (loading) {
-    return (
-      <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shadow-lg animate-pulse">
-        <div className="p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Mail className="h-5 w-5" />
-            <div className="h-5 bg-slate-200 dark:bg-slate-700 rounded w-24"></div>
-          </div>
-          <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-32 mb-6"></div>
-          <div className="space-y-3">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shadow-lg">
-        <div className="p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Mail className="h-5 w-5 text-red-500" />
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100">Email Stream</h3>
-          </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">Latest email activity</p>
-          <div className="text-center py-8">
-            <div className="text-sm text-slate-500 mb-4">
-              Unable to load inbox data
-            </div>
-            <Button variant="outline" size="sm" onClick={onRetry} className="bg-teal-50 hover:bg-teal-100 dark:bg-teal-900/20 dark:hover:bg-teal-900/30 border-teal-200 dark:border-teal-700">
-              Try Again
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!recentThreads || recentThreads.length === 0) {
-    return (
-      <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Mail className="h-5 w-5 text-teal-500" />
-              <h3 className="font-semibold text-slate-900 dark:text-slate-100">Email Stream</h3>
-            </div>
-            <Button variant="ghost" size="sm" asChild className="hover:bg-teal-50 dark:hover:bg-teal-900/20">
-              <Link href="/app/inbox" className="flex items-center gap-1">
-                View Stream
-                <ExternalLink className="h-3 w-3" />
-              </Link>
-            </Button>
-          </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">Latest email activity</p>
-          
-          <div className="text-center py-8">
-            <div className="mb-4">
-              <MessageSquare className="h-12 w-12 text-teal-400 mx-auto animate-pulse" />
-            </div>
-            <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
-              Start Your Email Flow
-            </h4>
-            <p className="text-slate-600 dark:text-slate-400 mb-4">
-              Connect your email account to see messages and start flowing through your inbox.
-            </p>
-            <Button className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white shadow-lg hover:shadow-xl transition-all duration-300" asChild>
-              <Link href="/app/inbox">
-                <Zap className="h-4 w-4 mr-2" />
-                Connect Email
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+export function InboxSummaryWidget({ unreadCount, recentThreads }: InboxSummaryWidgetProps) {
+  const hasEmails = recentThreads && recentThreads.length > 0;
 
   return (
-    <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300">
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-teal-500" />
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100">Email Stream</h3>
-            {unreadCount > 0 && (
-              <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse" />
-            )}
-          </div>
-          <Button variant="ghost" size="sm" asChild className="hover:bg-teal-50 dark:hover:bg-teal-900/20">
-            <Link href="/app/inbox" className="flex items-center gap-1">
-              View Stream
-              <ExternalLink className="h-3 w-3" />
-            </Link>
-          </Button>
-        </div>
-        <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
-          {unreadCount > 0 ? `${unreadCount} flowing in` : 'Stream is clear'}
-        </p>
-        
-        <div className="space-y-3">
-          {recentThreads?.slice(0, 5).map((thread, index) => (
-            <Link 
-              key={thread.id} 
-              href={`/app/inbox/${thread.id}`}
-              className={`block p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all duration-300 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 group`}
-              style={{ animationDelay: `${(index + 1) * 0.1}s` }}
-              aria-label={`Open email thread: ${thread.subject}`}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
-                    {thread.subject || '(no subject)'}
-                  </div>
-                  <div className="text-xs text-slate-500 truncate">
-                    {thread.participants}
-                  </div>
-                </div>
-                <div className="text-xs text-slate-400 ml-2 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors">
-                  {new Date(thread.updatedAt).toLocaleDateString()}
-                </div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -2 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <Mail className="h-5 w-5 text-blue-600" />
               </div>
-            </Link>
-          ))}
-        </div>
-        
-        {unreadCount > 0 && (
-          <div className="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
-            <Button variant="outline" className="w-full bg-gradient-to-r from-teal-50 to-teal-100 hover:from-teal-100 hover:to-teal-200 dark:from-teal-900/20 dark:to-teal-900/30 dark:hover:from-teal-900/30 dark:hover:to-teal-900/40 border-teal-200 dark:border-teal-700" asChild>
-              <Link href="/app/inbox">
-                <Mail className="h-4 w-4 mr-2" />
-                View {unreadCount} Unread Messages
+              <div>
+                <CardTitle className="text-lg font-semibold">Email Stream</CardTitle>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Latest email activity</p>
+              </div>
+            </div>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/app/inbox" className="flex items-center gap-2">
+                <span>View Stream</span>
+                <ExternalLink className="h-4 w-4" />
               </Link>
             </Button>
           </div>
-        )}
-      </div>
-    </div>
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          {/* Unread Count */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Inbox className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-medium">Unread Messages</span>
+            </div>
+            <Badge variant={unreadCount > 0 ? "destructive" : "secondary"} className="text-sm">
+              {unreadCount}
+            </Badge>
+          </div>
+
+          {/* Recent Threads */}
+          {hasEmails ? (
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300">Recent Threads</h4>
+              <div className="space-y-2">
+                {recentThreads?.slice(0, 5).map((thread, index) => (
+                  <motion.div
+                    key={thread.id || index}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                  >
+                    <div className="flex-shrink-0">
+                      <MessageSquare className="h-4 w-4 text-slate-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                        {thread.subject || 'No Subject'}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        {thread.participants || 'No participants'}
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0">
+                      <Clock className="h-3 w-3 text-slate-400" />
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center py-8"
+            >
+              <div className="mb-4">
+                <div className="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4">
+                  <Mail className="h-8 w-8 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                  Start Your Email Flow
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+                  Connect your email account to see messages and start flowing through your inbox.
+                </p>
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Mail className="h-4 w-4 mr-2" />
+                  Connect Email
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }

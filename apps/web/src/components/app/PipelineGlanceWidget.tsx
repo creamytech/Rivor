@@ -1,177 +1,126 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+"use client";
+import { motion } from 'framer-motion';
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Briefcase, TrendingUp, ExternalLink } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Briefcase, ExternalLink, TrendingUp, DollarSign } from "lucide-react";
 import Link from "next/link";
-import { PipelineStats } from "@/server/pipeline";
-import { EmptyState } from "@/components/ui/empty-state";
 
-interface PipelineGlanceProps {
-  pipelineStats: PipelineStats[];
+interface PipelineGlanceWidgetProps {
+  pipelineStats: any[];
   totalActiveLeads: number;
-  loading?: boolean;
-  error?: boolean;
-  onRetry?: () => void;
 }
 
-export default function PipelineGlanceWidget({ 
-  pipelineStats, 
-  totalActiveLeads,
-  loading, 
-  error,
-  onRetry 
-}: PipelineGlanceProps) {
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Briefcase className="h-5 w-5" />
-            <CardTitle>Deal Flow</CardTitle>
-          </div>
-          <CardDescription>Deals by stage</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Briefcase className="h-5 w-5" />
-            <CardTitle>Deal Flow</CardTitle>
-          </div>
-          <CardDescription>Deals by stage</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <div className="text-sm text-gray-500 mb-4">
-              Unable to load pipeline data
-            </div>
-            <Button variant="outline" size="sm" onClick={onRetry}>
-              Try Again
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!pipelineStats || pipelineStats.length === 0 || totalActiveLeads === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Briefcase className="h-5 w-5" />
-            <CardTitle>Deal Flow</CardTitle>
-          </div>
-          <CardDescription>Deals by stage</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <EmptyState
-            icon={<Briefcase className="h-12 w-12" />}
-            title="No active deals yet"
-            description="Start tracking your sales opportunities"
-            action={{
-              label: "Create Your First Deal",
-              href: "/app/pipeline?action=create"
-            }}
-          />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
+export function PipelineGlanceWidget({ pipelineStats, totalActiveLeads }: PipelineGlanceWidgetProps) {
+  const hasDeals = pipelineStats && pipelineStats.length > 0 && totalActiveLeads > 0;
   const totalValue = pipelineStats?.reduce((sum, stage) => sum + stage.totalValue, 0) || 0;
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Briefcase className="h-5 w-5" />
-            <CardTitle>Deal Flow</CardTitle>
-          </div>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/app/pipeline" className="flex items-center gap-1">
-              View All
-              <ExternalLink className="h-3 w-3" />
-            </Link>
-          </Button>
-        </div>
-        <CardDescription>
-          {totalActiveLeads} active deals • {formatCurrency(totalValue)} total value
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {pipelineStats?.map((stage) => (
-            <Link
-              key={stage.stageId}
-              href={`/app/pipeline?filter=stage&stage=${encodeURIComponent(stage.stageName)}`}
-              className="block p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border border-transparent hover:border-gray-200 dark:hover:border-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2"
-              aria-label={`View ${stage.count} deals in ${stage.stageName} stage, total value ${formatCurrency(stage.totalValue)}`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="text-sm font-medium">
-                    {stage.stageName}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {stage.count} deal{stage.count !== 1 ? 's' : ''}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium">
-                    {formatCurrency(stage.totalValue)}
-                  </div>
-                  {stage.count > 0 && (
-                    <div className="text-xs text-gray-500">
-                      avg: {formatCurrency(stage.totalValue / stage.count)}
-                    </div>
-                  )}
-                </div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -2 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <Briefcase className="h-5 w-5 text-green-600" />
               </div>
-            </Link>
-          ))}
-        </div>
-        
-        <div className="pt-4 mt-4 border-t">
-          <div className="flex gap-2">
-            <Button variant="outline" className="flex-1" asChild>
-              <Link href="/app/pipeline">
-                Manage Pipeline
-              </Link>
-            </Button>
-            <Button variant="default" size="sm" asChild>
-              <Link href="/app/pipeline?action=create">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                Create Deal
+              <div>
+                <CardTitle className="text-lg font-semibold">Deal Flow</CardTitle>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Deals by stage</p>
+              </div>
+            </div>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/app/pipeline" className="flex items-center gap-2">
+                <span>View Pipeline</span>
+                <ExternalLink className="h-4 w-4" />
               </Link>
             </Button>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          {/* Pipeline Stats */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">{totalActiveLeads}</div>
+              <div className="text-xs text-green-600">Active Deals</div>
+            </div>
+            <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">
+                ${(totalValue / 1000).toFixed(0)}k
+              </div>
+              <div className="text-xs text-blue-600">Total Value</div>
+            </div>
+          </div>
+
+          {/* Pipeline Stages */}
+          {hasDeals ? (
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300">Pipeline Stages</h4>
+              <div className="space-y-3">
+                {pipelineStats?.map((stage, index) => (
+                  <motion.div
+                    key={stage.stage || index}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                        <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                          {stage.stage || 'Unknown Stage'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-slate-600 dark:text-slate-400">
+                          {stage.count} deals
+                        </span>
+                        <Badge variant="outline" className="text-xs">
+                          ${(stage.totalValue / 1000).toFixed(0)}k
+                        </Badge>
+                      </div>
+                    </div>
+                    <Progress 
+                      value={(stage.count / totalActiveLeads) * 100} 
+                      className="h-2"
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center py-8"
+            >
+              <div className="mb-4">
+                <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4">
+                  <Briefcase className="h-8 w-8 text-green-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                  No active deals yet
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+                  Start tracking your sales opportunities
+                </p>
+                <Button className="bg-green-600 hover:bg-green-700 text-white">
+                  <Briefcase className="h-4 w-4 mr-2" />
+                  Create Your First Deal
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
