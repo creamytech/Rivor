@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
-import { GoogleCalendarService } from '@/server/calendar';
+import { decryptForOrg } from '@/server/crypto';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -19,72 +19,111 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
 
-    // Get calendar account
-    const calendarAccount = await prisma.calendarAccount.findFirst({
-      where: { orgId, provider: 'google' }
-    });
-
-    // Get secure tokens for calendar
-    const secureTokens = await prisma.secureToken.findMany({
-      where: {
-        orgId,
-        provider: 'google',
-        encryptionStatus: 'ok'
+    // Check calendar accounts
+    const calendarAccounts = await prisma.calendarAccount.findMany({
+      where: { orgId },
+      select: {
+        id: true,
+        provider: true,
+        status: true,
+        syncStatus: true,
+        lastSyncedAt: true,
+        errorReason: true,
+        createdAt: true
       }
     });
 
-    // Get calendar events count
-    const eventsCount = await prisma.calendarEvent.count({
+    // Check total calendar events
+    const totalEvents = await prisma.calendarEvent.count({
       where: { orgId }
     });
 
-    // Test calendar service if account exists
-    let calendarTest = null;
-    if (calendarAccount) {
+    // Get a few sample events
+    const sampleEvents = await prisma.calendarEvent.findMany({
+      where: { orgId },
+      select: {
+        id: true,
+        titleEnc: true,
+        locationEnc: true,
+        start: true,
+        end: true,
+        createdAt: true
+      },
+      orderBy: { start: 'desc' },
+      take: 5
+    });
+
+    // Try to decrypt one event to test
+    let decryptionTest = null;
+    if (sampleEvents.length > 0) {
       try {
-        const calendarService = await GoogleCalendarService.createFromAccount(orgId, calendarAccount.id);
-        const calendar = await calendarService.getCalendar();
-        
-        // Test calendar access
-        const calendars = await calendar.calendarList.list();
-        calendarTest = {
-          success: true,
-          calendars: calendars.data.items?.length || 0,
-          primaryCalendar: calendars.data.items?.find(c => c.primary)?.summary || 'Unknown'
-        };
+        const event = sampleEvents[0];
+        if (event.titleEnc) {
+          const titleBytes = await decryptForOrg(orgId, event.titleEnc, 'calendar:title');
+          const title = new TextDecoder().decode(titleBytes);
+          decryptionTest = {
+            success: true,
+            originalTitle: title,
+            eventId: event.id
+          };
+        } else {
+          decryptionTest = {
+            success: false,
+            reason: 'No encrypted title data'
+          };
+        }
       } catch (error) {
-        calendarTest = {
+        decryptionTest = {
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : String(error)
         };
       }
     }
 
+    // Check upcoming events (next 7 days)
+    const now = new Date();
+    const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    
+    const upcomingEvents = await prisma.calendarEvent.count({
+      where: {
+        orgId,
+        start: {
+          gte: now,
+          lte: nextWeek
+        }
+      }
+    });
+
     return NextResponse.json({
+      success: true,
       orgId,
-      calendarAccount: calendarAccount ? {
-        id: calendarAccount.id,
-        provider: calendarAccount.provider,
-        status: calendarAccount.status,
-        createdAt: calendarAccount.createdAt,
-        updatedAt: calendarAccount.updatedAt
-      } : null,
-      secureTokens: {
-        total: secureTokens.length,
-        byType: secureTokens.reduce((acc, token) => {
-          acc[token.tokenType] = (acc[token.tokenType] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>)
+      calendarAccounts: {
+        total: calendarAccounts.length,
+        connected: calendarAccounts.filter(a => a.status === 'connected').length,
+        accounts: calendarAccounts
       },
-      eventsCount,
-      calendarTest,
-      timestamp: new Date().toISOString()
+      events: {
+        total: totalEvents,
+        upcoming: upcomingEvents,
+        sample: sampleEvents.map(e => ({
+          id: e.id,
+          hasTitle: !!e.titleEnc,
+          hasLocation: !!e.locationEnc,
+          start: e.start,
+          end: e.end,
+          createdAt: e.createdAt
+        }))
+      },
+      decryptionTest
     });
 
   } catch (error) {
-    console.error('Failed to get calendar status:', error);
+    console.error('Calendar status error:', error);
     return NextResponse.json(
-      { error: 'Failed to get calendar status', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Failed to check calendar status',
+        details: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     );
   }
