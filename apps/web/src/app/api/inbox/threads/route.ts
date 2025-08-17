@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
+import { decryptForOrg } from '@/server/crypto';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -97,45 +98,71 @@ export async function GET(req: NextRequest) {
       const latestMessage = await prisma.emailMessage.findFirst({
         where: { threadId: thread.id },
         select: {
-          subjectIndex: true,
-          participantsIndex: true,
+          subjectEnc: true,
+          fromEnc: true,
+          toEnc: true,
+          ccEnc: true,
+          bccEnc: true,
           sentAt: true
         },
         orderBy: { sentAt: 'desc' }
       });
 
-      // Parse participants from message data (which is not encrypted)
+      // Decrypt sensitive data for display
       let participants: Array<{ name: string; email: string }> = [];
-      let subject = thread.subjectIndex || 'No Subject';
+      let subject = 'No Subject';
       
-      if (latestMessage?.participantsIndex && latestMessage.participantsIndex.trim()) {
-        // The participantsIndex contains concatenated email addresses
-        // Extract email addresses using regex
-        const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
-        const emails = latestMessage.participantsIndex.match(emailRegex) || [];
+      try {
+        // Decrypt subject from message
+        if (latestMessage?.subjectEnc) {
+          const subjectBytes = await decryptForOrg(orgId, latestMessage.subjectEnc, 'email:subject');
+          subject = new TextDecoder().decode(subjectBytes);
+        }
         
-        if (emails.length > 0) {
-          participants = emails.map((email: string) => {
-            const emailLower = email.toLowerCase();
-            // Extract name from email (before @)
-            const name = email.split('@')[0];
-            // Clean up the name (remove dots, underscores, etc.)
-            const cleanName = name
-              .replace(/[._-]/g, ' ')
-              .replace(/\b\w/g, (l) => l.toUpperCase())
-              .trim();
-            
-            return {
-              name: cleanName || emailLower.split('@')[0], // Use email username if no clean name
-              email: emailLower
-            };
+        // Decrypt and parse participants
+        if (latestMessage?.fromEnc) {
+          const fromBytes = await decryptForOrg(orgId, latestMessage.fromEnc, 'email:from');
+          const from = new TextDecoder().decode(fromBytes);
+          
+          // Parse from field
+          const fromMatch = from.match(/([^<]+)<([^>]+)>/) || [null, from, from];
+          const fromName = fromMatch[1]?.trim() || from.split('@')[0];
+          const fromEmail = fromMatch[2] || from;
+          
+          participants.push({
+            name: fromName,
+            email: fromEmail.toLowerCase()
           });
         }
-      }
-      
-      // Use subject from message if thread subject is empty
-      if (latestMessage?.subjectIndex && latestMessage.subjectIndex.trim()) {
-        subject = latestMessage.subjectIndex;
+        
+        // Decrypt and add to/cc recipients
+        if (latestMessage?.toEnc) {
+          const toBytes = await decryptForOrg(orgId, latestMessage.toEnc, 'email:to');
+          const to = new TextDecoder().decode(toBytes);
+          
+          // Parse multiple recipients
+          const toEmails = to.split(',').map(e => e.trim());
+          for (const email of toEmails) {
+            if (email && email !== participants[0]?.email) {
+              const emailMatch = email.match(/([^<]+)<([^>]+)>/) || [null, email, email];
+              const name = emailMatch[1]?.trim() || email.split('@')[0];
+              const emailAddr = emailMatch[2] || email;
+              
+              participants.push({
+                name: name,
+                email: emailAddr.toLowerCase()
+              });
+            }
+          }
+        }
+        
+      } catch (error) {
+        console.error('Failed to decrypt email data:', error);
+        // Fallback to default values
+        participants = [{ 
+          name: 'Email Contact', 
+          email: 'contact@example.com' 
+        }];
       }
       
       // If no participants found, create a default one
