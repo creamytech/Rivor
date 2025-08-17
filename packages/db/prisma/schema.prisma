@@ -29,12 +29,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?
-  access_token      String?
+  refresh_token_enc Bytes?
+  access_token_enc  Bytes?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?
+  id_token_enc      Bytes?
   session_state     String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -185,8 +185,6 @@ model EmailThread {
   accountId         String
   subjectEnc        Bytes?
   participantsEnc   Bytes?
-  subjectIndex      String?
-  participantsIndex String?
   summaryEnc        Bytes?
   summaryAt         DateTime?
   createdAt         DateTime       @default(now())
@@ -215,11 +213,6 @@ model EmailMessage {
   htmlBodyEnc        Bytes?
   textBodyEnc        Bytes?
   attachmentsMetaEnc Bytes?
-  subjectIndex       String?
-  participantsIndex  String?
-  htmlBody           String?
-  textBody           String?
-  snippet            String?
   attachments        Json?
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
@@ -256,8 +249,6 @@ model CalendarEvent {
   locationEnc   Bytes?
   notesEnc      Bytes?
   attendeesEnc  Bytes?
-  titleIndex    String?
-  locationIndex String?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   account       CalendarAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
@@ -274,9 +265,6 @@ model Contact {
   titleEnc     Bytes?
   addressEnc   Bytes?
   notesEnc     Bytes?
-  nameIndex    String?
-  emailIndex   String?
-  companyIndex String?
   source       String?
   tags         String[]
   lastActivity DateTime?
@@ -284,8 +272,6 @@ model Contact {
   updatedAt    DateTime  @updatedAt
   org          Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
   leads        Lead[]
-
-  @@unique([orgId, emailIndex])
 }
 
 model Lead {
