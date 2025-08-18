@@ -1,11 +1,29 @@
 "use client";
-import { motion } from 'framer-motion';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import PipelineCard from './PipelineCard';
-import { Plus, Activity } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import type { PipelineStage } from './PipelineBoard';
+import { Plus } from 'lucide-react';
+import PipelineCard from './PipelineCard';
+import { EmptyState } from '@/components/ui/empty-state';
+
+interface PipelineStage {
+  id: string;
+  name: string;
+  color: string;
+  leads: Array<{
+    id: string;
+    title: string;
+    value: number;
+    contact: {
+      name: string;
+      email: string;
+    };
+    probability: number;
+    expectedCloseDate: string;
+  }>;
+  recentActivity?: boolean;
+}
 
 interface PipelineColumnProps {
   stage: PipelineStage;
@@ -91,15 +109,21 @@ export default function PipelineColumn({ stage, onCreateLead }: PipelineColumnPr
           ))}
           
           {stage.leads.length === 0 && (
-            <div className="text-center py-8 text-slate-400">
-              <div className="mb-2">No leads yet</div>
-              <button
-                onClick={onCreateLead}
-                className="text-sm text-teal-500 hover:text-teal-600 transition-colors"
-              >
-                Add your first lead
-              </button>
-            </div>
+            <EmptyState
+              icon={<Plus className="h-5 w-5" />}
+              title="No leads yet"
+              description={`Add your first lead to the ${stage.name} stage to get started.`}
+              illustration="bubbles"
+              size="sm"
+              actions={[
+                {
+                  label: "Add Lead",
+                  onClick: onCreateLead,
+                  variant: 'default',
+                  icon: <Plus className="h-4 w-4" />
+                }
+              ]}
+            />
           )}
         </div>
       </SortableContext>

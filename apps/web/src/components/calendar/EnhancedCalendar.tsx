@@ -4,6 +4,7 @@ import { trpc } from '@/lib/trpc';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { 
   Calendar, 
@@ -31,7 +32,10 @@ import {
   Share2,
   Star,
   AlertCircle,
-  Info
+  Info,
+  Grid3X3,
+  List,
+  CalendarDays
 } from 'lucide-react';
 
 interface CalendarEvent {
@@ -296,18 +300,27 @@ export default function EnhancedCalendar({ className = '' }: EnhancedCalendarPro
             {formatDate(currentDate)}
           </h3>
           <p className="text-slate-600 dark:text-slate-400">
-            {dayEvents.length} events scheduled
+            {dayEvents.length} event{dayEvents.length !== 1 ? 's' : ''} scheduled
           </p>
         </div>
         
         <div className="space-y-2">
           {dayEvents.length === 0 ? (
-            <div className="text-center py-8">
-              <Calendar className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-              <p className="text-slate-600 dark:text-slate-400">
-                No events scheduled for this day
-              </p>
-            </div>
+            <EmptyState
+              icon={<Calendar className="h-6 w-6" />}
+              title="No events scheduled"
+              description={`No events are scheduled for ${formatDate(currentDate)}. Create a new event to get started.`}
+              illustration="waves"
+              size="md"
+              actions={[
+                {
+                  label: "Create Event",
+                  onClick: () => setShowCreateModal(true),
+                  variant: 'default',
+                  icon: <Plus className="h-4 w-4" />
+                }
+              ]}
+            />
           ) : (
             dayEvents.map((event) => (
               <div
@@ -331,12 +344,12 @@ export default function EnhancedCalendar({ className = '' }: EnhancedCalendarPro
                           Location
                         </div>
                       )}
-                                             {event.attendeesEnc && (
-                         <div className="flex items-center gap-1">
-                           <Users className="h-4 w-4" />
-                           Attendees
-                         </div>
-                       )}
+                      {event.attendeesEnc && (
+                        <div className="flex items-center gap-1">
+                          <Users className="h-4 w-4" />
+                          Attendees
+                        </div>
+                      )}
                     </div>
                   </div>
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -370,12 +383,21 @@ export default function EnhancedCalendar({ className = '' }: EnhancedCalendarPro
         
         <div className="space-y-2">
           {upcomingEvents.length === 0 ? (
-            <div className="text-center py-8">
-              <Calendar className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-              <p className="text-slate-600 dark:text-slate-400">
-                No upcoming events
-              </p>
-            </div>
+            <EmptyState
+              icon={<CalendarDays className="h-6 w-6" />}
+              title="No upcoming events"
+              description="You don't have any upcoming events scheduled. Create your first event to get started."
+              illustration="flow"
+              size="md"
+              actions={[
+                {
+                  label: "Create Event",
+                  onClick: () => setShowCreateModal(true),
+                  variant: 'default',
+                  icon: <Plus className="h-4 w-4" />
+                }
+              ]}
+            />
           ) : (
             upcomingEvents.map((event) => (
               <div
@@ -399,14 +421,9 @@ export default function EnhancedCalendar({ className = '' }: EnhancedCalendarPro
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">
-                      {event.account?.provider || 'Unknown'}
-                    </Badge>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             ))

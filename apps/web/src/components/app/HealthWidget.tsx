@@ -4,7 +4,8 @@ import { trpc } from '@/lib/trpc';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, AlertTriangle, XCircle, RefreshCw, Wifi, WifiOff, Settings, Clock, Zap } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
+import { CheckCircle, AlertTriangle, XCircle, RefreshCw, Wifi, WifiOff, Settings, Clock, Zap, Mail, Calendar } from 'lucide-react';
 
 interface Integration {
   id: string;
@@ -164,19 +165,27 @@ export default function HealthWidget({ integrations = [], onFix, onReauth }: Hea
         </div>
 
         {integrations.length === 0 && (
-          <div className="p-6 text-center">
-            <WifiOff className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
-              No integrations configured
-            </h3>
-            <p className="text-slate-600 dark:text-slate-400 mb-4">
-              Connect your email and calendar accounts to get started
-            </p>
-            <Button variant="outline">
-              <Settings className="h-4 w-4 mr-2" />
-              Configure Integrations
-            </Button>
-          </div>
+          <EmptyState
+            icon={<WifiOff className="h-6 w-6" />}
+            title="No integrations configured"
+            description="Connect your email and calendar accounts to start syncing data and detecting leads automatically."
+            illustration="waves"
+            size="md"
+            actions={[
+              {
+                label: "Connect Gmail",
+                onClick: () => console.log('Connect Gmail'),
+                variant: 'default',
+                icon: <Mail className="h-4 w-4" />
+              },
+              {
+                label: "Connect Calendar",
+                onClick: () => console.log('Connect Calendar'),
+                variant: 'outline',
+                icon: <Calendar className="h-4 w-4" />
+              }
+            ]}
+          />
         )}
       </GlassCardContent>
     </GlassCard>

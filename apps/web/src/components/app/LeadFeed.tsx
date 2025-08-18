@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, ArrowUp, Calendar, MoreHorizontal, User, Building, Home, Clock, Star, Eye, Plus } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
+import { MessageSquare, ArrowUp, Calendar, MoreHorizontal, User, Building, Home, Clock, Star, Eye, Plus, TrendingUp, Filter } from 'lucide-react';
 
 interface Lead {
   id: string;
@@ -196,19 +197,27 @@ export default function LeadFeed({ leads = [], reviewItems = [] }: LeadFeedProps
           
           <TabsContent value="leads" className="mt-0">
             {leads.length === 0 ? (
-              <div className="p-8 text-center">
-                <MessageSquare className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
-                  No leads yet
-                </h3>
-                <p className="text-slate-600 dark:text-slate-400 mb-4">
-                  Leads will appear here as they're detected from your email stream
-                </p>
-                <Button variant="outline">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Lead Manually
-                </Button>
-              </div>
+              <EmptyState
+                icon={<TrendingUp className="h-6 w-6" />}
+                title="No leads yet"
+                description="Leads will appear here as they're detected from your email stream. We'll automatically identify potential customers and opportunities."
+                illustration="flow"
+                size="lg"
+                actions={[
+                  {
+                    label: "Add Lead Manually",
+                    onClick: () => window.location.href = '/pipeline/create',
+                    variant: 'default',
+                    icon: <Plus className="h-4 w-4" />
+                  },
+                  {
+                    label: "View Email Stream",
+                    onClick: () => window.location.href = '/app/inbox',
+                    variant: 'outline',
+                    icon: <MessageSquare className="h-4 w-4" />
+                  }
+                ]}
+              />
             ) : (
               <div className="max-h-[600px] overflow-y-auto">
                 {leads.map(renderLeadItem)}
@@ -218,15 +227,27 @@ export default function LeadFeed({ leads = [], reviewItems = [] }: LeadFeedProps
           
           <TabsContent value="review" className="mt-0">
             {reviewItems.length === 0 ? (
-              <div className="p-8 text-center">
-                <Eye className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
-                  No items for review
-                </h3>
-                <p className="text-slate-600 dark:text-slate-400">
-                  Items that need your attention will appear here
-                </p>
-              </div>
+              <EmptyState
+                icon={<Filter className="h-6 w-6" />}
+                title="No items for review"
+                description="Items that need your attention will appear here. This includes leads that need qualification, follow-ups, or manual review."
+                illustration="bubbles"
+                size="lg"
+                actions={[
+                  {
+                    label: "Check Email Stream",
+                    onClick: () => window.location.href = '/app/inbox',
+                    variant: 'default',
+                    icon: <MessageSquare className="h-4 w-4" />
+                  },
+                  {
+                    label: "View All Leads",
+                    onClick: () => setActiveTab('leads'),
+                    variant: 'outline',
+                    icon: <TrendingUp className="h-4 w-4" />
+                  }
+                ]}
+              />
             ) : (
               <div className="max-h-[600px] overflow-y-auto">
                 {reviewItems.map((item) => (

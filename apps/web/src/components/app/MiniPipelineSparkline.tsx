@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, BarChart3, Users, Clock } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
+import { TrendingUp, TrendingDown, BarChart3, Users, Clock, Plus, Settings } from 'lucide-react';
 
 interface PipelineStage {
   id: string;
@@ -164,19 +165,27 @@ export default function MiniPipelineSparkline({
         </div>
 
         {sortedStages.length === 0 && (
-          <div className="p-6 text-center">
-            <BarChart3 className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
-              No pipeline stages
-            </h3>
-            <p className="text-slate-600 dark:text-slate-400 mb-4">
-              Create pipeline stages to track your leads
-            </p>
-            <Badge variant="outline">
-              <Users className="h-4 w-4 mr-2" />
-              Set up pipeline
-            </Badge>
-          </div>
+          <EmptyState
+            icon={<BarChart3 className="h-6 w-6" />}
+            title="No pipeline stages"
+            description="Create pipeline stages to track your leads through the sales process. This helps visualize your funnel and identify bottlenecks."
+            illustration="dots"
+            size="md"
+            actions={[
+              {
+                label: "Create Pipeline",
+                onClick: () => window.location.href = '/app/settings',
+                variant: 'default',
+                icon: <Plus className="h-4 w-4" />
+              },
+              {
+                label: "View Settings",
+                onClick: () => window.location.href = '/app/settings',
+                variant: 'outline',
+                icon: <Settings className="h-4 w-4" />
+              }
+            ]}
+          />
         )}
       </GlassCardContent>
     </GlassCard>
