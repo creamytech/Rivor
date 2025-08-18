@@ -1,14 +1,11 @@
 ﻿import type { Metadata, Viewport } from "next";
 import { Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
-import dynamic from "next/dynamic";
 
 // Start all workers (only on server side)
 import "@/worker/startWorkers";
 
-const ClientRoot = dynamic(() => import("@/components/providers/ClientRoot"), { ssr: false });
-const SessionProviderWrapper = dynamic(() => import("@/components/providers/SessionProviderWrapper"), { ssr: false });
-const TRPCProvider = dynamic(() => import("@/components/providers/TRPCProvider").then(mod => ({ default: mod.TRPCProvider })), { ssr: false });
+import ClientProviders from "@/components/providers/ClientProviders";
 
 const geistSans = Inter({
   variable: "--font-inter",
@@ -108,15 +105,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        <SessionProviderWrapper>
-          <TRPCProvider>
-            {children}
-            <ClientRoot />
-            <div id="portal-toasts" />
-            <div id="portal-modals" />
-            <div id="portal-drawers" />
-          </TRPCProvider>
-        </SessionProviderWrapper>
+        <ClientProviders>
+          {children}
+        </ClientProviders>
       </body>
     </html>
   );

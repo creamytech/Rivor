@@ -19,12 +19,12 @@ const nextConfig = {
   },
   experimental: {
     externalDir: true,
-    outputFileTracingIncludes: {
-      '/*': [
-        './node_modules/.prisma/client/**',
-        './node_modules/@prisma/client/**',
-      ],
-    },
+  },
+  outputFileTracingIncludes: {
+    '/*': [
+      './node_modules/.prisma/client/**',
+      './node_modules/@prisma/client/**',
+    ],
   },
   transpilePackages: ["@rivor/config", "@rivor/crypto", "@rivor/db"],
   webpack: (config) => {
