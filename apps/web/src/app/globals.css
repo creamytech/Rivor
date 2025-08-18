@@ -1071,6 +1071,11 @@ body {
   min-height: 0 !important;
 }
 
+/* Content scaling for dashboard cards */
+.dashboard-grid .react-grid-item > div {
+  transition: transform 0.2s ease-out;
+}
+
 /* Ensure grid items snap properly */
 .react-grid-layout {
   position: relative;
