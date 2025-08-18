@@ -17,6 +17,9 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   const pathname = usePathname();
 
   useEffect(() => {
+    // Temporarily disable analytics to fix initialization error
+    // TODO: Re-enable once the '$' initialization error is resolved
+    /*
     // Capture UTM parameters on initial load
     captureUTMParams();
 
@@ -28,11 +31,16 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
       cleanupScroll?.();
       cleanupTime?.();
     };
+    */
   }, []);
 
   useEffect(() => {
+    // Temporarily disable page view tracking
+    // TODO: Re-enable once the '$' initialization error is resolved
+    /*
     // Track page views
     trackPageView(pathname);
+    */
   }, [pathname]);
 
   return <>{children}</>;
