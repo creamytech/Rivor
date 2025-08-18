@@ -1,5 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 
 interface ChatMessage {
   id: string;
@@ -87,9 +90,9 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                     🤖 {getContextLabel()}
                   </h3>
                   <div className="flex items-center gap-2">
-                    <button className="px-3 py-1 text-xs border border-white/20 rounded bg-white/10 hover:bg-white/20">
+                    <Button variant="outline" size="sm">
                       Settings
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -107,15 +110,15 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                         I can help you manage leads, contacts, schedule meetings, and more.
                       </p>
                       <div className="flex flex-wrap gap-2 justify-center">
-                        <span className="px-2 py-1 text-xs border border-white/20 rounded bg-white/10">
+                        <Badge variant="outline" className="text-xs">
                           "Show me my leads"
-                        </span>
-                        <span className="px-2 py-1 text-xs border border-white/20 rounded bg-white/10">
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
                           "Schedule a meeting"
-                        </span>
-                        <span className="px-2 py-1 text-xs border border-white/20 rounded bg-white/10">
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
                           "Create a follow-up task"
-                        </span>
+                        </Badge>
                       </div>
                     </div>
                   ) : (
@@ -182,22 +185,21 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                 {/* Input Area */}
                 <div className="p-4 border-t border-white/20">
                   <div className="flex gap-2">
-                    <input
-                      type="text"
+                    <Input
                       placeholder="Ask me anything about your leads, contacts, or schedule..."
                       value={inputMessage}
                       onChange={(e) => setInputMessage(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                      className="flex-1 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-white/20 rounded-md px-3 py-2 text-sm"
+                      className="flex-1 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-white/20"
                       disabled={isLoading}
                     />
-                    <button
+                    <Button
                       onClick={handleSendMessage}
                       disabled={isLoading || !inputMessage.trim()}
-                      className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+                      className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
                     >
                       📤
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -215,9 +217,9 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                   </h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-1 text-xs border border-white/20 rounded bg-white/10">
+                      <Badge variant="outline" className="text-xs">
                         {context.type}
-                      </span>
+                      </Badge>
                       <span className="text-slate-600 dark:text-slate-400">
                         ID: {context.id}
                       </span>
@@ -237,30 +239,38 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                   ⚡ Quick Actions
                 </h3>
                 <div className="space-y-2">
-                  <button
-                    className="w-full text-left px-3 py-2 text-xs border border-white/20 rounded bg-white/10 hover:bg-white/20"
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start text-xs"
                     onClick={() => setInputMessage("Show me my leads")}
                   >
                     📋 View Leads
-                  </button>
-                  <button
-                    className="w-full text-left px-3 py-2 text-xs border border-white/20 rounded bg-white/10 hover:bg-white/20"
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start text-xs"
                     onClick={() => setInputMessage("Schedule a meeting")}
                   >
                     📅 Schedule Meeting
-                  </button>
-                  <button
-                    className="w-full text-left px-3 py-2 text-xs border border-white/20 rounded bg-white/10 hover:bg-white/20"
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start text-xs"
                     onClick={() => setInputMessage("Create a follow-up task")}
                   >
                     ✅ Create Task
-                  </button>
-                  <button
-                    className="w-full text-left px-3 py-2 text-xs border border-white/20 rounded bg-white/10 hover:bg-white/20"
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start text-xs"
                     onClick={() => setInputMessage("Send an email")}
                   >
                     📧 Send Email
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
