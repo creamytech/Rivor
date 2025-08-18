@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Responsive, WidthProvider } from 'react-grid-layout';
-import 'react-grid-layout/css/styles.css';
+// Temporarily disable react-grid-layout to fix initialization error
+// TODO: Re-enable once the '$' initialization error is resolved
+// import { Responsive, WidthProvider } from 'react-grid-layout';
+// import 'react-grid-layout/css/styles.css';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -29,7 +31,8 @@ import ActivityFeed from './ActivityFeed';
 import HealthWidget from './HealthWidget';
 import MiniPipelineSparkline from './MiniPipelineSparkline';
 
-const ResponsiveGridLayout = WidthProvider(Responsive);
+// Temporarily disable grid layout
+// const ResponsiveGridLayout = WidthProvider(Responsive);
 
 interface DashboardLayoutProps {
   className?: string;
@@ -267,6 +270,9 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
     }
   }, [loadLayoutMutation.data]);
 
+  // Temporarily disable card scaling to fix initialization error
+  // TODO: Re-enable once the '$' initialization error is resolved
+  /*
   // Handle card scaling with ResizeObserver
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -320,6 +326,7 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
       }
     };
   }, [layouts, visibleCards]);
+  */
 
   // Save layout when it changes
   const handleLayoutChange = useCallback((currentLayout: any, allLayouts: any) => {
@@ -471,35 +478,15 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
         )}
       </AnimatePresence>
 
-      {/* Main Dashboard Grid */}
+      {/* Main Dashboard Grid - Temporarily simplified */}
       <div className="p-4">
-        <ResponsiveGridLayout
-          className="layout dashboard-grid"
-          layouts={layouts}
-          breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-          cols={{ lg: 12, md: 8, sm: 4, xs: 4, xxs: 2 }}
-          rowHeight={80}
-          isDraggable={isEditMode}
-          isResizable={isEditMode}
-          onLayoutChange={handleLayoutChange}
-          onDragStart={handleDragStart}
-          onDragStop={handleDragStop}
-          onResizeStart={handleDragStart}
-          onResizeStop={handleDragStop}
-          margin={[0, 0]}
-          containerPadding={[0, 0]}
-          useCSSTransforms={true}
-          preventCollision={false}
-          compactType="vertical"
-          isBounded={true}
-          transformScale={1}
-        >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {visibleCards.map(cardId => (
-            <div key={cardId} className="relative w-full h-full p-2">
+            <div key={cardId} className="relative w-full h-64 p-2">
               {renderCard(cardId)}
             </div>
           ))}
-        </ResponsiveGridLayout>
+        </div>
       </div>
 
       {/* Edit Mode Toggle Button */}
