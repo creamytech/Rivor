@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
 
 interface ChatMessage {
   id: string;
@@ -83,21 +84,21 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Chat Area */}
           <div className="lg:col-span-3">
-            <div className="bg-white/20 backdrop-blur-md border border-white/20 rounded-xl h-[600px] flex flex-col">
-              <div className="p-6 pb-3">
+            <GlassCard variant="gradient" intensity="medium" className="h-[600px] flex flex-col">
+              <GlassCardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+                  <GlassCardTitle>
                     🤖 {getContextLabel()}
-                  </h3>
+                  </GlassCardTitle>
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm">
                       Settings
                     </Button>
                   </div>
                 </div>
-              </div>
+              </GlassCardHeader>
               
-              <div className="flex-1 p-0 flex flex-col">
+              <GlassCardContent className="flex-1 p-0 flex flex-col">
                 {/* Messages Area */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                   {messages.length === 0 ? (
@@ -202,19 +203,21 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                     </Button>
                   </div>
                 </div>
-              </div>
-            </div>
+              </GlassCardContent>
+            </GlassCard>
           </div>
 
           {/* Context Panel */}
           <div className="space-y-6">
             {/* Context Information */}
             {context && context.type && context.id && (
-              <div className="bg-white/20 backdrop-blur-md border border-white/20 rounded-xl">
-                <div className="p-6">
-                  <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">
+              <GlassCard variant="gradient" intensity="medium">
+                <GlassCardHeader>
+                  <GlassCardTitle>
                     💬 Context
-                  </h3>
+                  </GlassCardTitle>
+                </GlassCardHeader>
+                <GlassCardContent>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-xs">
@@ -228,16 +231,18 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                       I have access to this {context.type}'s data and can help you manage it.
                     </p>
                   </div>
-                </div>
-              </div>
+                </GlassCardContent>
+              </GlassCard>
             )}
 
             {/* Quick Actions */}
-            <div className="bg-white/20 backdrop-blur-md border border-white/20 rounded-xl">
-              <div className="p-6">
-                <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">
+            <GlassCard variant="gradient" intensity="medium">
+              <GlassCardHeader>
+                <GlassCardTitle>
                   ⚡ Quick Actions
-                </h3>
+                </GlassCardTitle>
+              </GlassCardHeader>
+              <GlassCardContent>
                 <div className="space-y-2">
                   <Button
                     variant="outline"
@@ -272,15 +277,17 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                     📧 Send Email
                   </Button>
                 </div>
-              </div>
-            </div>
+              </GlassCardContent>
+            </GlassCard>
 
             {/* Capabilities */}
-            <div className="bg-white/20 backdrop-blur-md border border-white/20 rounded-xl">
-              <div className="p-6">
-                <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">
+            <GlassCard variant="gradient" intensity="medium">
+              <GlassCardHeader>
+                <GlassCardTitle>
                   ❓ What I Can Do
-                </h3>
+                </GlassCardTitle>
+              </GlassCardHeader>
+              <GlassCardContent>
                 <div className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
                   <div className="flex items-center gap-2">
                     <span>🤖</span>
@@ -307,8 +314,8 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                     <span>Create contacts</span>
                   </div>
                 </div>
-              </div>
-            </div>
+              </GlassCardContent>
+            </GlassCard>
           </div>
         </div>
       </div>
