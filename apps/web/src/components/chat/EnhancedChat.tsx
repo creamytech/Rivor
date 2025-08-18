@@ -54,16 +54,28 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
   const [isLoading, setIsLoading] = useState(false);
   const [showReasoning, setShowReasoning] = useState(false);
   const [currentThreadId, setCurrentThreadId] = useState<string>('default');
+  const [isInitialized, setIsInitialized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // tRPC mutations
+  // Initialize component safely
+  useEffect(() => {
+    setIsInitialized(true);
+  }, []);
+
+  // tRPC mutations - only initialize after component is mounted
   const sendMessageMutation = trpc.chat.sendMessage.useMutation();
   const executeActionMutation = trpc.chat.executeAction.useMutation();
 
-  // Get thread data
+  // Get thread data - only after initialization
   const { data: threadData } = trpc.chat.getThread.useQuery(
     { threadId: currentThreadId },
-    { enabled: !!currentThreadId }
+    { 
+      enabled: isInitialized && !!currentThreadId,
+      retry: false,
+      onError: (error) => {
+        console.error('Thread data error:', error);
+      }
+    }
   );
 
   // Initialize messages from thread data
@@ -79,7 +91,7 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim() || isLoading) return;
+    if (!inputMessage.trim() || isLoading || !isInitialized) return;
 
     const userMessage: ChatMessage = {
       id: `user_${Date.now()}`,
@@ -126,7 +138,7 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
   };
 
   const handleActionClick = async (action: { type: string; label: string; data?: any }) => {
-    if (!action || !action.type || !action.label) {
+    if (!action || !action.type || !action.label || !isInitialized) {
       console.error('Invalid action object:', action);
       return;
     }
@@ -183,6 +195,18 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
       default: return 'General Assistant';
     }
   };
+
+  // Don't render until initialized
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-slate-600 dark:text-slate-400">Loading AI Assistant...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
@@ -248,17 +272,17 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                       </div>
                     </div>
                   ) : (
-                                         messages.filter(message => 
-                       message && 
-                       message.id && 
-                       message.content && 
-                       message.role && 
-                       message.timestamp
-                     ).map((message) => (
-                       <div
-                         key={message.id}
-                         className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                       >
+                    messages.filter(message => 
+                      message && 
+                      message.id && 
+                      message.content && 
+                      message.role && 
+                      message.timestamp
+                    ).map((message) => (
+                      <div
+                        key={message.id}
+                        className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
                         {message.role === 'assistant' && (
                           <Avatar className="h-8 w-8">
                             <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
@@ -287,31 +311,31 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                             </div>
                           )}
                           
-                                                     {/* Actions */}
-                           {message.actions && Array.isArray(message.actions) && message.actions.length > 0 && (
-                             <div className="mt-2 flex flex-wrap gap-2">
-                               {message.actions.filter(action => 
-                                 action && 
-                                 action.type && 
-                                 action.label
-                               ).map((action, index) => (
-                                 <Button
-                                   key={`${message.id}_action_${index}`}
-                                   variant="outline"
-                                   size="sm"
-                                   className="text-xs h-7"
-                                   onClick={() => handleActionClick(action)}
-                                 >
-                                   {getActionIcon(action.type)}
-                                   <span className="ml-1">{action.label}</span>
-                                 </Button>
-                               ))}
-                             </div>
-                           )}
+                          {/* Actions */}
+                          {message.actions && Array.isArray(message.actions) && message.actions.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {message.actions.filter(action => 
+                                action && 
+                                action.type && 
+                                action.label
+                              ).map((action, index) => (
+                                <Button
+                                  key={`${message.id}_action_${index}`}
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-xs h-7"
+                                  onClick={() => handleActionClick(action)}
+                                >
+                                  {getActionIcon(action.type)}
+                                  <span className="ml-1">{action.label}</span>
+                                </Button>
+                              ))}
+                            </div>
+                          )}
                           
-                                                     <div className="mt-1 text-xs text-slate-500">
-                             {message.timestamp instanceof Date ? message.timestamp.toLocaleTimeString() : new Date().toLocaleTimeString()}
-                           </div>
+                          <div className="mt-1 text-xs text-slate-500">
+                            {message.timestamp instanceof Date ? message.timestamp.toLocaleTimeString() : new Date().toLocaleTimeString()}
+                          </div>
                         </div>
                         
                         {message.role === 'user' && (
@@ -373,32 +397,32 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
 
           {/* Context Panel */}
           <div className="space-y-6">
-                         {/* Context Information */}
-             {context && context.type && context.id && (
-               <GlassCard variant="gradient" intensity="medium">
-                 <GlassCardHeader>
-                   <GlassCardTitle className="flex items-center gap-2">
-                     <MessageSquare className="h-4 w-4" />
-                     Context
-                   </GlassCardTitle>
-                 </GlassCardHeader>
-                 <GlassCardContent>
-                   <div className="space-y-2 text-sm">
-                     <div className="flex items-center gap-2">
-                       <Badge variant="outline" className="text-xs">
-                         {context.type}
-                       </Badge>
-                       <span className="text-slate-600 dark:text-slate-400">
-                         ID: {context.id}
-                       </span>
-                     </div>
-                     <p className="text-slate-600 dark:text-slate-400">
-                       I have access to this {context.type}'s data and can help you manage it.
-                     </p>
-                   </div>
-                 </GlassCardContent>
-               </GlassCard>
-             )}
+            {/* Context Information */}
+            {context && context.type && context.id && (
+              <GlassCard variant="gradient" intensity="medium">
+                <GlassCardHeader>
+                  <GlassCardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Context
+                  </GlassCardTitle>
+                </GlassCardHeader>
+                <GlassCardContent>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {context.type}
+                      </Badge>
+                      <span className="text-slate-600 dark:text-slate-400">
+                        ID: {context.id}
+                      </span>
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-400">
+                      I have access to this {context.type}'s data and can help you manage it.
+                    </p>
+                  </div>
+                </GlassCardContent>
+              </GlassCard>
+            )}
 
             {/* Quick Actions */}
             <GlassCard variant="gradient" intensity="medium">
