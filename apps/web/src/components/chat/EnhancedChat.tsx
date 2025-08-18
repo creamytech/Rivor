@@ -1,11 +1,18 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
+import { trpc } from '@/lib/trpc';
 
 interface ChatMessage {
   id: string;
   content: string;
   role: 'user' | 'assistant';
   timestamp: Date;
+  reasoning?: string;
+  actions?: Array<{
+    type: string;
+    label: string;
+    data?: any;
+  }>;
 }
 
 interface EnhancedChatProps {
@@ -20,12 +27,26 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // tRPC mutations and queries
+  const sendMessageMutation = trpc.chat.sendMessage.useMutation();
+  const executeActionMutation = trpc.chat.executeAction.useMutation();
+  // For now, we'll skip loading existing thread data since we don't have a threadId
+  // const threadData = trpc.chat.getThread.useQuery({ threadId: 'default' });
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Initialize immediately since we're not loading existing thread data
+  useEffect(() => {
+    if (!isInitialized) {
+      setIsInitialized(true);
+    }
+  }, [isInitialized]);
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
@@ -41,17 +62,83 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
     setInputMessage('');
     setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiMessage: ChatMessage = {
+    try {
+      const response = await sendMessageMutation.mutateAsync({
+        message: inputMessage,
+        context: context ? {
+          type: context.type,
+          id: context.id
+        } : undefined
+      });
+
+      if (response && typeof response === 'object' && response.id && response.content) {
+        const aiMessage: ChatMessage = {
+          id: response.id,
+          content: response.content,
+          role: 'assistant',
+          timestamp: new Date(response.timestamp || Date.now()),
+          reasoning: response.reasoning,
+          actions: response.actions
+        };
+        setMessages(prev => [...prev, aiMessage]);
+      } else {
+        // Fallback message if response is invalid
+        const fallbackMessage: ChatMessage = {
+          id: `assistant_${Date.now()}`,
+          content: "I'm having trouble processing your request right now. Please try again.",
+          role: 'assistant',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, fallbackMessage]);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      const errorMessage: ChatMessage = {
         id: `assistant_${Date.now()}`,
-        content: `I received your message: "${inputMessage}". This is a simulated response while we work on connecting the AI service.`,
+        content: "Sorry, I encountered an error while processing your request. Please try again.",
         role: 'assistant',
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, aiMessage]);
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
+  };
+
+  const handleActionClick = async (action: { type: string; label: string; data?: any }) => {
+    if (!action || !action.type || !action.label) {
+      console.error('Invalid action object:', action);
+      return;
+    }
+
+    try {
+      const result = await executeActionMutation.mutateAsync({
+        actionType: action.type,
+        actionData: action.data,
+        context: context ? {
+          type: context.type,
+          id: context.id
+        } : undefined
+      });
+
+      const actionMessage: ChatMessage = {
+        id: `action_${Date.now()}`,
+        content: typeof result === 'object' && result?.result ? result.result : 'Action executed successfully',
+        role: 'assistant',
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, actionMessage]);
+    } catch (error) {
+      console.error('Error executing action:', error);
+      const errorMessage: ChatMessage = {
+        id: `action_${Date.now()}`,
+        content: "Sorry, I encountered an error while executing that action. Please try again.",
+        role: 'assistant',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    }
   };
 
   const getContextLabel = () => {
@@ -63,6 +150,17 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
       default: return 'General Assistant';
     }
   };
+
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-slate-600 dark:text-slate-400">Loading AI Assistant...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
@@ -144,6 +242,36 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                           }`}>
                             <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                           </div>
+                          
+                          {/* Reasoning */}
+                          {message.reasoning && (
+                            <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs text-blue-700 dark:text-blue-300">
+                              <div className="flex items-center gap-1 mb-1">
+                                <span>🧠</span>
+                                <span className="font-medium">Reasoning:</span>
+                              </div>
+                              {message.reasoning}
+                            </div>
+                          )}
+                          
+                          {/* Actions */}
+                          {message.actions && Array.isArray(message.actions) && message.actions.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {message.actions.filter(action => 
+                                action && 
+                                action.type && 
+                                action.label
+                              ).map((action, index) => (
+                                <button
+                                  key={`${message.id}_action_${index}`}
+                                  onClick={() => handleActionClick(action)}
+                                  className="px-3 py-1 text-xs border border-white/20 rounded bg-white/10 hover:bg-white/20"
+                                >
+                                  {action.label}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                           
                           <div className="mt-1 text-xs text-slate-500">
                             {message.timestamp instanceof Date ? message.timestamp.toLocaleTimeString() : new Date().toLocaleTimeString()}
