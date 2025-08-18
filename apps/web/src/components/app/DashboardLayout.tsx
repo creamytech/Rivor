@@ -267,30 +267,58 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
     }
   }, [loadLayoutMutation.data]);
 
-  // Handle card scaling
+  // Handle card scaling with ResizeObserver
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const updateCardScales = () => {
-      const cards = document.querySelectorAll('[data-card-id]');
-      cards.forEach((card) => {
-        const parent = card.closest('.react-grid-item');
-        if (parent) {
-          const rect = parent.getBoundingClientRect();
-          const baseWidth = 400; // Base width for full scale
-          const scale = Math.min(rect.width / baseWidth, 1);
-          (card as HTMLElement).style.transform = `scale(${scale})`;
-          (card as HTMLElement).style.transformOrigin = 'top left';
-          (card as HTMLElement).style.width = `${100 / scale}%`;
-          (card as HTMLElement).style.height = `${100 / scale}%`;
-        }
-      });
+      try {
+        const cards = document.querySelectorAll('[data-card-id]');
+        cards.forEach((card) => {
+          const parent = card.closest('.react-grid-item');
+          if (parent && card instanceof HTMLElement) {
+            const rect = parent.getBoundingClientRect();
+            const baseWidth = 400; // Base width for full scale
+            const scale = Math.min(rect.width / baseWidth, 1);
+            card.style.transform = `scale(${scale})`;
+            card.style.transformOrigin = 'top left';
+            card.style.width = `${100 / scale}%`;
+            card.style.height = `${100 / scale}%`;
+          }
+        });
+      } catch (error) {
+        console.warn('Error updating card scales:', error);
+      }
     };
 
-    // Initial scale calculation
-    setTimeout(updateCardScales, 100);
+    // Use ResizeObserver for better performance
+    let resizeObserver: ResizeObserver | null = null;
+    
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => {
+        requestAnimationFrame(updateCardScales);
+      });
+      
+      const gridContainer = document.querySelector('.dashboard-grid');
+      if (gridContainer) {
+        resizeObserver.observe(gridContainer);
+      }
+    }
 
-    // Handle window resize
-    window.addEventListener('resize', updateCardScales);
-    return () => window.removeEventListener('resize', updateCardScales);
+    // Initial scale calculation
+    const timeoutId = setTimeout(updateCardScales, 100);
+
+    // Handle window resize as fallback
+    const handleResize = () => requestAnimationFrame(updateCardScales);
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', handleResize);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+    };
   }, [layouts, visibleCards]);
 
   // Save layout when it changes
@@ -330,22 +358,7 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
 
   const handleDragStop = () => {
     setIsDragging(false);
-    // Recalculate scales after drag/resize
-    setTimeout(() => {
-      const cards = document.querySelectorAll('[data-card-id]');
-      cards.forEach((card) => {
-        const parent = card.closest('.react-grid-item');
-        if (parent) {
-          const rect = parent.getBoundingClientRect();
-          const baseWidth = 400; // Base width for full scale
-          const scale = Math.min(rect.width / baseWidth, 1);
-          (card as HTMLElement).style.transform = `scale(${scale})`;
-          (card as HTMLElement).style.transformOrigin = 'top left';
-          (card as HTMLElement).style.width = `${100 / scale}%`;
-          (card as HTMLElement).style.height = `${100 / scale}%`;
-        }
-      });
-    }, 100);
+    // The ResizeObserver will handle scale updates automatically
   };
 
   const toggleCardVisibility = (cardId: string) => {
@@ -381,21 +394,6 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
         key={cardId} 
         className="h-full w-full overflow-hidden flex flex-col"
         data-card-id={cardId}
-        ref={(el) => {
-          if (el) {
-            // Calculate scale based on grid item size
-            const parent = el.closest('.react-grid-item');
-            if (parent) {
-              const rect = parent.getBoundingClientRect();
-              const baseWidth = 400; // Base width for full scale
-              const scale = Math.min(rect.width / baseWidth, 1);
-              el.style.transform = `scale(${scale})`;
-              el.style.transformOrigin = 'top left';
-              el.style.width = `${100 / scale}%`;
-              el.style.height = `${100 / scale}%`;
-            }
-          }
-        }}
       >
         <Component />
       </div>
