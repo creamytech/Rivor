@@ -4,20 +4,20 @@ import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 
 // Dynamically import components to avoid SSR issues
-const AppShell = dynamic(() => import("@/components/app/AppShell"), {
+const AppShell = dynamic(() => import("@/components/app/AppShell").then(mod => ({ default: mod.AppShell })), {
   ssr: false,
   loading: () => (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current-500"></div>
     </div>
   )
 });
 
-const DashboardContent = dynamic(() => import("@/components/app/DashboardContent"), {
+const DashboardConfluence = dynamic(() => import("@/components/app/DashboardConfluence").then(mod => ({ default: mod.DashboardConfluence })), {
   ssr: false,
   loading: () => (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current-500"></div>
     </div>
   )
 });
@@ -54,10 +54,10 @@ export default function DashboardPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-depth-0">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500 mx-auto mb-4"></div>
-          <p className="text-slate-600 dark:text-slate-400">Loading...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current-500 mx-auto mb-4"></div>
+          <p className="text-foam-60">Loading...</p>
         </div>
       </div>
     );
@@ -65,12 +65,12 @@ export default function DashboardPage() {
 
   if (!session) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-depth-0">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+          <h1 className="text-2xl font-bold gradient-text mb-4">
             Not Authenticated
           </h1>
-          <p className="text-slate-600 dark:text-slate-400">
+          <p className="text-foam-60">
             Please sign in to access the dashboard.
           </p>
         </div>
@@ -96,8 +96,17 @@ export default function DashboardPage() {
   const data = dashboardData || defaultData;
 
   return (
-    <AppShell>
-      <DashboardContent {...data} />
+    <AppShell
+      title="Dashboard"
+      subtitle="Here's what's flowing today"
+      showSearch={true}
+      primaryAction={{
+        label: "New Lead",
+        onClick: () => console.log("New Lead clicked"),
+        icon: <span className="text-lg">+</span>
+      }}
+    >
+      <DashboardConfluence />
     </AppShell>
   );
 }

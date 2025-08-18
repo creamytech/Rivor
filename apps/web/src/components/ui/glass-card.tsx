@@ -10,16 +10,16 @@ interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
 const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
   ({ className, variant = 'default', intensity = 'medium', children, ...props }, ref) => {
     const baseClasses = cn(
-      "rounded-xl border border-white/20 backdrop-blur-md transition-all duration-300",
-      "hover:shadow-lg hover:shadow-blue-500/10",
+      "glass rippleHover",
+      "rounded-2xl border border-foam-20 backdrop-blur-8 transition-all duration-300",
       {
-        'bg-white/10': intensity === 'light',
-        'bg-white/20': intensity === 'medium',
-        'bg-white/30': intensity === 'strong',
+        'bg-depth-100/60': intensity === 'light',
+        'bg-depth-100/80': intensity === 'medium',
+        'bg-depth-100/90': intensity === 'strong',
       },
       {
-        'bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-teal-500/10': variant === 'gradient',
-        'hover:bg-gradient-to-br hover:from-blue-500/20 hover:via-purple-500/20 hover:to-teal-500/20': variant === 'gradient',
+        'bg-gradient-to-br from-current-500/10 via-current-600/10 to-current-700/10': variant === 'gradient',
+        'hover:bg-gradient-to-br hover:from-current-500/20 hover:via-current-600/20 hover:to-current-700/20': variant === 'gradient',
       },
       {
         'relative overflow-hidden': variant === 'ripple',
@@ -30,7 +30,7 @@ const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
     return (
       <div ref={ref} className={baseClasses} {...props}>
         {variant === 'ripple' && (
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-foam-20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
         )}
         {children}
       </div>
@@ -53,7 +53,7 @@ const GlassCardTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn("font-semibold leading-none tracking-tight text-slate-900 dark:text-slate-100", className)}
+    className={cn("font-semibold leading-none tracking-tight gradient-text", className)}
     {...props}
   />
 ))
@@ -65,7 +65,7 @@ const GlassCardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-sm text-slate-600 dark:text-slate-400", className)}
+    className={cn("text-sm text-foam-60", className)}
     {...props}
   />
 ))
