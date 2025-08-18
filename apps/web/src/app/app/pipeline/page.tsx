@@ -30,8 +30,8 @@ export default function PipelinePage() {
           }}
         />
 
-        {/* Sticky Toolbar */}
-        <Toolbar>
+        {/* Page-specific toolbar moved back to page */}
+        <div className="px-6 py-4 border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--background)98%,transparent)]">
           <div className="flex items-center justify-between w-full">
             <ToolbarGroup>
               <ToolbarItem>
@@ -68,7 +68,7 @@ export default function PipelinePage() {
               </ToolbarItem>
             </ToolbarGroup>
           </div>
-        </Toolbar>
+        </div>
 
         {/* Enhanced Pipeline Board */}
         <div className="px-6 pb-8">

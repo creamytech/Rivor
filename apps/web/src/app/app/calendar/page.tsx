@@ -41,8 +41,11 @@ export default function CalendarPage() {
             via: "via-indigo-600/12",
             to: "to-blue-600/12"
           }}
-        >
-          <div className="flex items-center justify-between">
+        />
+
+        {/* Page-specific content moved back to page */}
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between mb-4">
             <SegmentedControl
               options={viewOptions}
               value={viewMode}
@@ -50,7 +53,7 @@ export default function CalendarPage() {
             />
             
             {kebabOpen && (
-              <div className="absolute right-0 top-full mt-2 w-48 bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-lg z-50">
+              <div className="absolute right-6 top-full mt-2 w-48 bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-lg z-50">
                 <div className="p-1">
                   <button className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--muted)] rounded-md flex items-center gap-2">
                     <Download className="h-4 w-4" />
@@ -64,7 +67,7 @@ export default function CalendarPage() {
               </div>
             )}
           </div>
-        </PageHeader>
+        </div>
 
         {/* Enhanced Calendar Component */}
         <div className="px-6 pb-8">

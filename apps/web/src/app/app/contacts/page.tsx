@@ -40,9 +40,12 @@ export default function ContactsPage() {
             via: "via-amber-600/12",
             to: "to-yellow-600/12"
           }}
-        >
+        />
+
+        {/* Page-specific content moved back to page */}
+        <div className="px-6 py-4">
           {segmentsOpen && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-lg z-50">
+            <div className="absolute right-6 top-full mt-2 w-48 bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-lg z-50">
               <div className="p-1">
                 <div className="text-sm font-medium text-[var(--muted-foreground)] px-3 py-1 mb-1">
                   Segments
@@ -59,7 +62,7 @@ export default function ContactsPage() {
               </div>
             </div>
           )}
-        </PageHeader>
+        </div>
 
         {/* Possible merges banner - positioned under header */}
         <div className="px-6 py-3 bg-orange-50 dark:bg-orange-900/20 border-b border-orange-200 dark:border-orange-800">

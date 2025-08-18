@@ -29,7 +29,10 @@ export default function ChatPage() {
             via: "via-cyan-600/12",
             to: "to-blue-600/12"
           }}
-        >
+        />
+
+        {/* Page-specific content moved back to page */}
+        <div className="px-6 py-4 border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--background)98%,transparent)]">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
               <span>Context:</span>
@@ -43,7 +46,7 @@ export default function ChatPage() {
               Writes back
             </Badge>
           </div>
-        </PageHeader>
+        </div>
 
         {/* Enhanced Chat Component */}
         <div className="px-6 pb-8">

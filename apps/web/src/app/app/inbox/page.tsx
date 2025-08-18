@@ -4,8 +4,9 @@ import AppShell from "@/components/app/AppShell";
 import EnhancedInbox from "@/components/inbox/EnhancedInbox";
 import PageHeader from "@/components/app/PageHeader";
 import SegmentedControl from "@/components/app/SegmentedControl";
+import Toolbar, { ToolbarGroup, ToolbarItem } from "@/components/app/Toolbar";
 import { Button } from "@/components/ui/button";
-import { Mail, Filter, ChevronDown, Bookmark } from "lucide-react";
+import { Mail, Filter, Bookmark, Search, MoreHorizontal } from "lucide-react";
 
 export default function InboxPage() {
   const [activeTab, setActiveTab] = useState("leads");
@@ -47,8 +48,11 @@ export default function InboxPage() {
             via: "via-purple-600/12", 
             to: "to-teal-600/12"
           }}
-        >
-          <div className="flex items-center justify-between">
+        />
+
+        {/* Page-specific content moved back to page */}
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between mb-4">
             <SegmentedControl
               options={tabOptions}
               value={activeTab}
@@ -56,7 +60,7 @@ export default function InboxPage() {
             />
             
             {savedFiltersOpen && (
-              <div className="absolute right-0 top-full mt-2 w-64 bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-lg z-50">
+              <div className="absolute right-6 top-full mt-2 w-64 bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-lg z-50">
                 <div className="p-2">
                   <div className="text-sm font-medium text-[var(--muted-foreground)] px-2 py-1 mb-2">
                     Saved Filters
@@ -74,7 +78,7 @@ export default function InboxPage() {
               </div>
             )}
           </div>
-        </PageHeader>
+        </div>
 
         {/* Enhanced Inbox Component */}
         <div className="px-6 pb-8">
