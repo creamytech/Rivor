@@ -1,50 +1,54 @@
 "use client";
 import AppShell from "@/components/app/AppShell";
 import EnhancedChat from "@/components/chat/EnhancedChat";
-import { motion } from 'framer-motion';
-import { MessageSquare, Sparkles, Bot } from "lucide-react";
+import PageHeader from "@/components/app/PageHeader";
+import { Badge } from "@/components/ui/badge";
+import { MessageSquare, ExternalLink, Bot } from "lucide-react";
 
 export default function ChatPage() {
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-teal-50 to-cyan-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <AppShell>
-        {/* Animated Header */}
-        <motion.div 
-          className="relative overflow-hidden"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+        <PageHeader
+          title="AI Assistant"
+          subtitle="Get help with emails, leads, calendar events, and tasks using AI-powered tools"
+          icon={<MessageSquare className="h-6 w-6" />}
+          metaChips={[
+            { label: "Context", value: "Thread #1234", color: "teal" },
+            { label: "Status", value: "Active", color: "green" }
+          ]}
+          secondaryActions={[
+            {
+              label: "View Thread",
+              onClick: () => console.log("View thread"),
+              icon: <ExternalLink className="h-4 w-4" />
+            }
+          ]}
+          gradientColors={{
+            from: "from-teal-600/12",
+            via: "via-cyan-600/12",
+            to: "to-blue-600/12"
+          }}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-teal-600/20 via-cyan-600/20 to-blue-600/20 animate-pulse"></div>
-          <div className="relative z-10 px-6 py-8">
-            <motion.h1 
-              className="text-4xl font-bold bg-gradient-to-r from-teal-600 via-cyan-600 to-blue-600 bg-clip-text text-transparent"
-              animate={{ 
-                backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-              }}
-              transition={{ 
-                duration: 8,
-                repeat: Infinity,
-                ease: "linear"
-              }}
-            >
-              AI Assistant
-            </motion.h1>
-            <p className="text-lg text-slate-600 dark:text-slate-400 mt-2">
-              Get help with emails, leads, calendar events, and tasks using AI-powered tools.
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
+              <span>Context:</span>
+              <a href="#" className="text-[var(--foreground)] hover:underline flex items-center gap-1">
+                <ExternalLink className="h-3 w-3" />
+                Thread #1234 - Property Inquiry
+              </a>
+            </div>
+            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300 flex items-center gap-1">
+              <Bot className="h-3 w-3" />
+              Writes back
+            </Badge>
           </div>
-        </motion.div>
+        </PageHeader>
 
         {/* Enhanced Chat Component */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="px-6 pb-8"
-        >
+        <div className="px-6 pb-8">
           <EnhancedChat />
-        </motion.div>
+        </div>
       </AppShell>
     </div>
   );

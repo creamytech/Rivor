@@ -64,7 +64,6 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
         <div className="px-6 py-8">
           <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-1/4"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="h-32 bg-slate-200 dark:bg-slate-700 rounded"></div>
@@ -87,36 +86,8 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
       
-      {/* Header with Search */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-indigo-600/20 to-purple-600/20 animate-pulse"></div>
-        <div className="relative z-10 px-6 py-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                {getGreeting()}
-              </h1>
-              <p className="text-lg text-slate-600 dark:text-slate-400 mt-2">
-                Here's what's happening with your deals today
-              </p>
-            </div>
-            <Button
-              onClick={() => setCommandPaletteOpen(true)}
-              variant="outline"
-              className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-white/20"
-            >
-              <Search className="h-4 w-4 mr-2" />
-              Search
-              <kbd className="ml-2 hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-slate-100 dark:bg-slate-800 px-1.5 font-mono text-[10px] font-medium text-slate-600 dark:text-slate-400">
-                ⌘K
-              </kbd>
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Today at a Glance */}
-      <div className="px-6 mb-6">
+      {/* Today at a Glance - First scannable row */}
+      <div className="px-6 py-6">
         <TodayAtAGlance 
           leadsData={dashboardData?.leadsData}
           repliesData={dashboardData?.repliesData}
@@ -201,11 +172,4 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
       <StickyActionStrip />
     </div>
   );
-}
-
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
 }

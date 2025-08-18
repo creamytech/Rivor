@@ -32,10 +32,9 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
   useEffect(() => setShowDrawer(Boolean(rightDrawer)), [rightDrawer]);
   
 
-
   return (
     <div className="grid grid-cols-[64px_1fr] md:grid-cols-[240px_1fr] min-h-screen">
-      <aside className="sticky top-0 h-screen hidden md:flex md:flex-col border-r border-[var(--border)] bg-[var(--muted)]">
+      <aside className="sticky top-0 h-screen hidden md:flex md:flex-col border-r border-[var(--border)] bg-[var(--muted)] z-40">
         <div className="h-14 flex items-center px-4 border-b border-[var(--border)]">
           <Logo href="/app/inbox" />
         </div>
@@ -54,7 +53,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         </nav>
       </aside>
       <div className="grid grid-rows-[56px_1fr]">
-        <header className="sticky top-0 z-30 h-14 border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--background)92%,transparent)] backdrop-blur flex items-center">
+        <header className="sticky top-0 z-50 h-14 border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--background)95%,transparent)] backdrop-blur flex items-center">
           <div className="px-3 md:px-4 w-full flex items-center gap-3">
             <div className="md:hidden"><Logo href="/app/inbox" size="sm" /></div>
             

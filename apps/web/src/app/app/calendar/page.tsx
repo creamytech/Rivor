@@ -1,50 +1,75 @@
 "use client";
 import AppShell from "@/components/app/AppShell";
 import EnhancedCalendar from "@/components/calendar/EnhancedCalendar";
-import { motion } from 'framer-motion';
-import { Calendar, CalendarDays, Plus } from "lucide-react";
+import PageHeader from "@/components/app/PageHeader";
+import SegmentedControl from "@/components/app/SegmentedControl";
+import { Button } from "@/components/ui/button";
+import { Calendar, MoreHorizontal, Download, Settings } from "lucide-react";
+import { useState } from "react";
 
 export default function CalendarPage() {
+  const [viewMode, setViewMode] = useState("week");
+  const [kebabOpen, setKebabOpen] = useState(false);
+
+  const viewOptions = [
+    { value: "today", label: "Today" },
+    { value: "week", label: "Week" },
+    { value: "day", label: "Day" },
+    { value: "agenda", label: "Agenda" }
+  ];
+
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <AppShell>
-        {/* Animated Header */}
-        <motion.div 
-          className="relative overflow-hidden"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+        <PageHeader
+          title="Calendar Flow"
+          subtitle="Manage your schedule with smart suggestions and intelligent scheduling"
+          icon={<Calendar className="h-6 w-6" />}
+          metaChips={[
+            { label: "Today", value: "3 events", color: "purple" },
+            { label: "This week", value: "12 events", color: "blue" }
+          ]}
+          secondaryActions={[
+            {
+              label: "More options",
+              onClick: () => setKebabOpen(!kebabOpen),
+              icon: <MoreHorizontal className="h-4 w-4" />
+            }
+          ]}
+          gradientColors={{
+            from: "from-purple-600/12",
+            via: "via-indigo-600/12",
+            to: "to-blue-600/12"
+          }}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-indigo-600/20 to-blue-600/20 animate-pulse"></div>
-          <div className="relative z-10 px-6 py-8">
-            <motion.h1 
-              className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 bg-clip-text text-transparent"
-              animate={{ 
-                backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-              }}
-              transition={{ 
-                duration: 8,
-                repeat: Infinity,
-                ease: "linear"
-              }}
-            >
-              Calendar Flow
-            </motion.h1>
-            <p className="text-lg text-slate-600 dark:text-slate-400 mt-2">
-              Manage your schedule with smart suggestions and intelligent scheduling.
-            </p>
+          <div className="flex items-center justify-between">
+            <SegmentedControl
+              options={viewOptions}
+              value={viewMode}
+              onChange={setViewMode}
+            />
+            
+            {kebabOpen && (
+              <div className="absolute right-0 top-full mt-2 w-48 bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-lg z-50">
+                <div className="p-1">
+                  <button className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--muted)] rounded-md flex items-center gap-2">
+                    <Download className="h-4 w-4" />
+                    Import ICS
+                  </button>
+                  <button className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--muted)] rounded-md flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Calendar Settings
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        </motion.div>
+        </PageHeader>
 
         {/* Enhanced Calendar Component */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="px-6 pb-8"
-        >
-          <EnhancedCalendar />
-        </motion.div>
+        <div className="px-6 pb-8">
+          <EnhancedCalendar viewMode={viewMode} />
+        </div>
       </AppShell>
     </div>
   );

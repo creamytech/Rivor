@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
+import PageHeader from "@/components/app/PageHeader";
+import { TrendingUp, TrendingDown, BarChart3 } from "lucide-react";
 
 // Dynamically import components to avoid SSR issues
 const AppShell = dynamic(() => import("@/components/app/AppShell"), {
@@ -95,9 +97,38 @@ export default function DashboardPage() {
 
   const data = dashboardData || defaultData;
 
+  // Mock 7-day deltas for demo
+  const sevenDayDeltas = [
+    { label: "Leads", value: "+12%", trend: "up", color: "green" },
+    { label: "Deals", value: "+8%", trend: "up", color: "blue" },
+    { label: "Revenue", value: "+15%", trend: "up", color: "purple" }
+  ];
+
   return (
     <AppShell>
+      <PageHeader
+        title={getGreeting()}
+        subtitle="Here's what's happening with your deals today"
+        icon={<BarChart3 className="h-6 w-6" />}
+        metaChips={sevenDayDeltas.map(delta => ({
+          label: delta.label,
+          value: delta.value,
+          color: delta.color
+        }))}
+        gradientColors={{
+          from: "from-blue-600/12",
+          via: "via-indigo-600/12",
+          to: "to-purple-600/12"
+        }}
+      />
       <DashboardContent {...data} />
     </AppShell>
   );
+}
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
 }

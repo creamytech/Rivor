@@ -28,6 +28,20 @@
   --spacing-xl: 2rem;    /* 32px */
   --spacing-2xl: 3rem;   /* 48px */
   --spacing-3xl: 4rem;   /* 64px */
+  
+  /* Header Heights */
+  --header-height: 56px;
+  --page-header-height: 80px;
+  --page-header-height-collapsed: 64px;
+  
+  /* Z-Index Scale */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
 }
 
 @theme inline {
@@ -40,17 +54,17 @@
   --font-mono: var(--font-plex-mono);
 }
 
+/* Light Mode Overrides */
 @media (prefers-color-scheme: light) {
   :root {
-    /* Light Mode Palette */
     --background: #ffffff;
-    --foreground: #0f1730;
-    --surface: #f4f7ff;
-    --muted: #f4f7ff;
-    --muted-foreground: #42557a;
-    --border: #e5eaf6;
+    --foreground: #0f172a;
+    --surface: #f8fafc;
+    --muted: #f1f5f9;
+    --muted-foreground: #64748b;
+    --border: #e2e8f0;
+    --focus: #3b82f6;
     
-    /* Light Mode Glassmorphism */
     --glass-bg: color-mix(in oklab, var(--surface) 90%, transparent);
     --glass-border: color-mix(in oklab, var(--border) 80%, transparent);
   }
@@ -311,6 +325,7 @@ body {
               linear-gradient(135deg, color-mix(in oklab, var(--rivor-indigo) 80%, transparent), color-mix(in oklab, var(--rivor-teal) 60%, transparent));
 }
 
+/* Gradient Text */
 .gradient-text {
   background: linear-gradient(135deg, var(--rivor-indigo), var(--rivor-teal), var(--rivor-aqua));
   background-clip: text;
@@ -831,4 +846,24 @@ body {
 
 .section-container {
   contain: layout style;
+}
+
+/* Custom Utilities */
+.safe-area-inset {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
 }
