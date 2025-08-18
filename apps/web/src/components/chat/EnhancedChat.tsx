@@ -4,6 +4,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
+import { 
+  Send, 
+  Bot, 
+  User, 
+  Calendar,
+  Task,
+  Mail,
+  ArrowUp,
+  UserPlus,
+  Settings,
+  MessageSquare,
+  Sparkles,
+  HelpCircle
+} from 'lucide-react';
 
 interface ChatMessage {
   id: string;
@@ -87,12 +101,13 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
             <GlassCard variant="gradient" intensity="medium" className="h-[600px] flex flex-col">
               <GlassCardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <GlassCardTitle>
-                    🤖 {getContextLabel()}
+                  <GlassCardTitle className="flex items-center gap-2">
+                    <Bot className="h-5 w-5" />
+                    {getContextLabel()}
                   </GlassCardTitle>
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm">
-                      Settings
+                      <Settings className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -103,7 +118,7 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                   {messages.length === 0 ? (
                     <div className="text-center py-8">
-                      <div className="text-4xl mb-4">🤖</div>
+                      <Bot className="h-12 w-12 text-slate-400 mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
                         Welcome to your AI Assistant
                       </h3>
@@ -136,7 +151,7 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                       >
                         {message.role === 'assistant' && (
                           <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm">
-                            🤖
+                            <Bot className="h-4 w-4" />
                           </div>
                         )}
                         
@@ -156,7 +171,7 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                         
                         {message.role === 'user' && (
                           <div className="h-8 w-8 rounded-full bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center text-white text-sm">
-                            👤
+                            <User className="h-4 w-4" />
                           </div>
                         )}
                       </div>
@@ -167,7 +182,7 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                   {isLoading && (
                     <div className="flex gap-3 justify-start">
                       <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm">
-                        🤖
+                        <Bot className="h-4 w-4" />
                       </div>
                       <div className="p-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-white/20 rounded-lg">
                         <div className="flex items-center gap-2">
@@ -199,7 +214,7 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                       disabled={isLoading || !inputMessage.trim()}
                       className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
                     >
-                      📤
+                      <Send className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -213,8 +228,9 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
             {context && context.type && context.id && (
               <GlassCard variant="gradient" intensity="medium">
                 <GlassCardHeader>
-                  <GlassCardTitle>
-                    💬 Context
+                  <GlassCardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Context
                   </GlassCardTitle>
                 </GlassCardHeader>
                 <GlassCardContent>
@@ -238,8 +254,9 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
             {/* Quick Actions */}
             <GlassCard variant="gradient" intensity="medium">
               <GlassCardHeader>
-                <GlassCardTitle>
-                  ⚡ Quick Actions
+                <GlassCardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  Quick Actions
                 </GlassCardTitle>
               </GlassCardHeader>
               <GlassCardContent>
@@ -250,7 +267,8 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                     className="w-full justify-start text-xs"
                     onClick={() => setInputMessage("Show me my leads")}
                   >
-                    📋 View Leads
+                    <Task className="h-3 w-3 mr-2" />
+                    View Leads
                   </Button>
                   <Button
                     variant="outline"
@@ -258,7 +276,8 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                     className="w-full justify-start text-xs"
                     onClick={() => setInputMessage("Schedule a meeting")}
                   >
-                    📅 Schedule Meeting
+                    <Calendar className="h-3 w-3 mr-2" />
+                    Schedule Meeting
                   </Button>
                   <Button
                     variant="outline"
@@ -266,7 +285,8 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                     className="w-full justify-start text-xs"
                     onClick={() => setInputMessage("Create a follow-up task")}
                   >
-                    ✅ Create Task
+                    <Task className="h-3 w-3 mr-2" />
+                    Create Task
                   </Button>
                   <Button
                     variant="outline"
@@ -274,7 +294,8 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                     className="w-full justify-start text-xs"
                     onClick={() => setInputMessage("Send an email")}
                   >
-                    📧 Send Email
+                    <Mail className="h-3 w-3 mr-2" />
+                    Send Email
                   </Button>
                 </div>
               </GlassCardContent>
@@ -283,34 +304,35 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
             {/* Capabilities */}
             <GlassCard variant="gradient" intensity="medium">
               <GlassCardHeader>
-                <GlassCardTitle>
-                  ❓ What I Can Do
+                <GlassCardTitle className="flex items-center gap-2">
+                  <HelpCircle className="h-4 w-4" />
+                  What I Can Do
                 </GlassCardTitle>
               </GlassCardHeader>
               <GlassCardContent>
                 <div className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
                   <div className="flex items-center gap-2">
-                    <span>🤖</span>
+                    <Bot className="h-3 w-3" />
                     <span>Access your CRM data</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span>📅</span>
+                    <Calendar className="h-3 w-3" />
                     <span>Schedule meetings</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span>✅</span>
+                    <Task className="h-3 w-3" />
                     <span>Create tasks</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span>📧</span>
+                    <Mail className="h-3 w-3" />
                     <span>Send emails</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span>⬆️</span>
+                    <ArrowUp className="h-3 w-3" />
                     <span>Update leads</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span>👤</span>
+                    <UserPlus className="h-3 w-3" />
                     <span>Create contacts</span>
                   </div>
                 </div>
