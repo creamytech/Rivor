@@ -7,6 +7,7 @@ import LeadFeed from './LeadFeed';
 import HealthWidget from './HealthWidget';
 import MiniPipelineSparkline from './MiniPipelineSparkline';
 import StickyActionStrip from './StickyActionStrip';
+import ActivityFeed from './ActivityFeed';
 import CommandPalette from '../common/CommandPalette';
 import { Button } from '@/components/ui/button';
 import { Search, Plus, Calendar, Mail, MessageSquare } from 'lucide-react';
@@ -16,7 +17,6 @@ interface DashboardContentProps {
 }
 
 export default function DashboardContent({ className = '' }: DashboardContentProps) {
-  const [activityTicker, setActivityTicker] = useState<string[]>([]);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   // Fetch real data from tRPC
@@ -24,27 +24,6 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
   const { data: leadsData, isLoading: leadsLoading } = trpc.leads.list.useQuery({ limit: 10 });
   const { data: pipelineStagesData, isLoading: pipelineLoading } = trpc.pipelineStages.list.useQuery();
   const { data: integrationsData, isLoading: integrationsLoading } = trpc.integrations.health.useQuery();
-
-  // Activity ticker simulation
-  useEffect(() => {
-    const activities = [
-      "New lead detected from email",
-      "Meeting scheduled for tomorrow",
-      "Pipeline stage updated",
-      "Contact enriched with company data",
-      "Task completed: Follow up call"
-    ];
-
-    const interval = setInterval(() => {
-      setActivityTicker(prev => {
-        const newActivity = activities[Math.floor(Math.random() * activities.length)];
-        const updated = [newActivity, ...prev.slice(0, 4)];
-        return updated;
-      });
-    }, 8000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   // Handle Command+K
   useEffect(() => {
@@ -96,20 +75,7 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
         />
       </div>
 
-      {/* Activity Ticker */}
-      {activityTicker.length > 0 && (
-        <div className="px-6 mb-6">
-          <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-lg p-3 border border-white/20">
-            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="font-medium">Live Activity:</span>
-              <span>{activityTicker[0]}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Compact Sync Progress */}
+      {/* Compact Sync Progress - Reduced prominence */}
       <div className="px-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <CompactSyncProgress 
@@ -149,8 +115,11 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
             />
           </div>
           
-          {/* Right Column */}
+          {/* Right Column - Enhanced with Activity Feed */}
           <div className="space-y-6">
+            {/* Activity Feed - New prominent position */}
+            <ActivityFeed />
+            
             {/* Health Widget */}
             <HealthWidget 
               integrations={integrationsData?.emailAccounts || []} 

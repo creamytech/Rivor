@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import PageHeader from "@/components/app/PageHeader";
-import { TrendingUp, TrendingDown, BarChart3 } from "lucide-react";
+import QuickActions from "@/components/app/QuickActions";
+import { TrendingUp, TrendingDown, BarChart3, Trophy, Target, Zap } from "lucide-react";
 
 // Dynamically import components to avoid SSR issues
 const AppShell = dynamic(() => import("@/components/app/AppShell"), {
@@ -97,18 +98,51 @@ export default function DashboardPage() {
 
   const data = dashboardData || defaultData;
 
-  // Mock 7-day deltas for demo
+  // Enhanced 7-day deltas with trends
   const sevenDayDeltas = [
-    { label: "Leads", value: "+12%", trend: "up", color: "green" },
-    { label: "Deals", value: "+8%", trend: "up", color: "blue" },
-    { label: "Revenue", value: "+15%", trend: "up", color: "purple" }
+    { 
+      label: "Leads", 
+      value: "+12%", 
+      trend: "up", 
+      color: "green",
+      icon: <Target className="h-3 w-3" />
+    },
+    { 
+      label: "Deals", 
+      value: "+8%", 
+      trend: "up", 
+      color: "blue",
+      icon: <Trophy className="h-3 w-3" />
+    },
+    { 
+      label: "Revenue", 
+      value: "+15%", 
+      trend: "up", 
+      color: "purple",
+      icon: <Zap className="h-3 w-3" />
+    }
   ];
+
+  // Personalized greeting based on time and user data
+  const getPersonalizedGreeting = () => {
+    const hour = new Date().getHours();
+    const userName = data.userName;
+    
+    if (hour < 12) return `Good morning, ${userName}`;
+    if (hour < 18) return `Good afternoon, ${userName}`;
+    return `Good evening, ${userName}`;
+  };
+
+  const getGreetingSubtitle = () => {
+    const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+    return `Here's your deal flow at a glance for ${today}`;
+  };
 
   return (
     <AppShell>
       <PageHeader
-        title={getGreeting()}
-        subtitle="Here's what's happening with your deals today"
+        title={getPersonalizedGreeting()}
+        subtitle={getGreetingSubtitle()}
         icon={<BarChart3 className="h-6 w-6" />}
         metaChips={sevenDayDeltas.map(delta => ({
           label: delta.label,
@@ -122,13 +156,7 @@ export default function DashboardPage() {
         }}
       />
       <DashboardContent {...data} />
+      <QuickActions />
     </AppShell>
   );
-}
-
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
 }

@@ -6,23 +6,50 @@ import PageHeader from "@/components/app/PageHeader";
 import SegmentedControl from "@/components/app/SegmentedControl";
 import Toolbar, { ToolbarGroup, ToolbarItem } from "@/components/app/Toolbar";
 import { Button } from "@/components/ui/button";
-import { Mail, Filter, Bookmark, Search, MoreHorizontal } from "lucide-react";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { 
+  Mail, 
+  Filter, 
+  Bookmark, 
+  Search, 
+  MoreHorizontal,
+  Star,
+  Clock,
+  AlertTriangle,
+  CheckCircle,
+  X
+} from "lucide-react";
 
 export default function InboxPage() {
   const [activeTab, setActiveTab] = useState("leads");
-  const [savedFiltersOpen, setSavedFiltersOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
   const tabOptions = [
-    { value: "leads", label: "Leads", count: 24 },
-    { value: "review", label: "Review", count: 8 },
-    { value: "other", label: "Other", count: 156 }
+    { value: "leads", label: "Leads", count: 24, icon: <Star className="h-3 w-3" /> },
+    { value: "review", label: "Review", count: 8, icon: <AlertTriangle className="h-3 w-3" /> },
+    { value: "other", label: "Other", count: 156, icon: <Mail className="h-3 w-3" /> }
   ];
 
   const savedFilters = [
-    "High Priority Leads",
-    "Follow-up Required", 
-    "New Inquiries",
-    "Meeting Requests"
+    { id: "high-priority", label: "High Priority Leads", icon: <AlertTriangle className="h-3 w-3" /> },
+    { id: "follow-up", label: "Follow-up Required", icon: <Clock className="h-3 w-3" /> },
+    { id: "new-inquiries", label: "New Inquiries", icon: <Star className="h-3 w-3" /> },
+    { id: "meeting-requests", label: "Meeting Requests", icon: <CheckCircle className="h-3 w-3" /> }
+  ];
+
+  const quickFilters = [
+    { label: "Unread", count: 24, active: false },
+    { label: "High Priority", count: 8, active: false },
+    { label: "This Week", count: 45, active: false },
+    { label: "Overdue", count: 3, active: false }
   ];
 
   return (
@@ -39,7 +66,7 @@ export default function InboxPage() {
           secondaryActions={[
             {
               label: "Saved Filters",
-              onClick: () => setSavedFiltersOpen(!savedFiltersOpen),
+              onClick: () => {}, // Handled by dropdown
               icon: <Filter className="h-4 w-4" />
             }
           ]}
@@ -50,39 +77,89 @@ export default function InboxPage() {
           }}
         />
 
-        {/* Page-specific content moved back to page */}
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between mb-4">
+        {/* Enhanced Search and Filter Bar */}
+        <div className="px-6 py-4 border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--background)98%,transparent)]">
+          <div className="flex items-center gap-4">
+            {/* Enhanced Segmented Control */}
             <SegmentedControl
               options={tabOptions}
               value={activeTab}
               onChange={setActiveTab}
+              className="flex-shrink-0"
             />
             
-            {savedFiltersOpen && (
-              <div className="absolute right-6 top-full mt-2 w-64 bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-lg z-50">
-                <div className="p-2">
-                  <div className="text-sm font-medium text-[var(--muted-foreground)] px-2 py-1 mb-2">
-                    Saved Filters
-                  </div>
-                  {savedFilters.map((filter, index) => (
-                    <button
-                      key={index}
-                      className="w-full text-left px-2 py-1.5 text-sm hover:bg-[var(--muted)] rounded-md flex items-center gap-2"
-                    >
-                      <Bookmark className="h-3 w-3" />
-                      {filter}
-                    </button>
-                  ))}
-                </div>
+            {/* Search Bar */}
+            <div className="flex-1 max-w-md">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search emails, contacts, or content..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-background border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
-            )}
+            </div>
+
+            {/* Saved Filters Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  Saved Filters
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Saved Filters</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {savedFilters.map((filter) => (
+                  <DropdownMenuItem 
+                    key={filter.id}
+                    onClick={() => setSelectedFilter(filter.id)}
+                    className="flex items-center gap-2"
+                  >
+                    {filter.icon}
+                    {filter.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Quick Filters */}
+          <div className="flex items-center gap-2 mt-3">
+            <span className="text-sm text-muted-foreground mr-2">Quick filters:</span>
+            {quickFilters.map((filter, index) => (
+              <Button
+                key={index}
+                variant={filter.active ? "default" : "outline"}
+                size="sm"
+                onClick={() => console.log(`Apply filter: ${filter.label}`)}
+                className="text-xs h-7"
+              >
+                {filter.label}
+                <span className="ml-1 text-xs opacity-70">({filter.count})</span>
+              </Button>
+            ))}
           </div>
         </div>
 
         {/* Enhanced Inbox Component */}
         <div className="px-6 pb-8">
-          <EnhancedInbox activeTab={activeTab} />
+          <EnhancedInbox 
+            activeTab={activeTab} 
+            searchQuery={searchQuery}
+            selectedFilter={selectedFilter}
+          />
         </div>
       </AppShell>
     </div>
