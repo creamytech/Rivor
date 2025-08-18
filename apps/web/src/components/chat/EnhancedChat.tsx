@@ -96,11 +96,20 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
       const response = await sendMessageMutation.mutateAsync({
         message: inputMessage,
         threadId: currentThreadId,
-        context: context
+        context: context || undefined
       });
 
-      if (response && typeof response === 'object') {
+      if (response && typeof response === 'object' && response.id && response.content) {
         setMessages(prev => [...prev, response]);
+      } else {
+        // Handle invalid response
+        const fallbackMessage: ChatMessage = {
+          id: `assistant_${Date.now()}`,
+          content: 'I received your message but encountered an issue processing it. Please try again.',
+          role: 'assistant',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, fallbackMessage]);
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -117,11 +126,16 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
   };
 
   const handleActionClick = async (action: { type: string; label: string; data?: any }) => {
+    if (!action || !action.type || !action.label) {
+      console.error('Invalid action object:', action);
+      return;
+    }
+
     try {
       const result = await executeActionMutation.mutateAsync({
         actionType: action.type,
-        context: context,
-        actionData: action.data
+        context: context || undefined,
+        actionData: action.data || undefined
       });
 
       // Add the action result as a system message
@@ -234,11 +248,17 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                       </div>
                     </div>
                   ) : (
-                    messages.filter(message => message && message.id && message.content).map((message) => (
-                      <div
-                        key={message.id}
-                        className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
+                                         messages.filter(message => 
+                       message && 
+                       message.id && 
+                       message.content && 
+                       message.role && 
+                       message.timestamp
+                     ).map((message) => (
+                       <div
+                         key={message.id}
+                         className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                       >
                         {message.role === 'assistant' && (
                           <Avatar className="h-8 w-8">
                             <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
@@ -267,27 +287,31 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                             </div>
                           )}
                           
-                          {/* Actions */}
-                          {message.actions && Array.isArray(message.actions) && message.actions.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-2">
-                              {message.actions.map((action, index) => (
-                                <Button
-                                  key={`${message.id}_action_${index}`}
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-xs h-7"
-                                  onClick={() => handleActionClick(action)}
-                                >
-                                  {getActionIcon(action.type)}
-                                  <span className="ml-1">{action.label}</span>
-                                </Button>
-                              ))}
-                            </div>
-                          )}
+                                                     {/* Actions */}
+                           {message.actions && Array.isArray(message.actions) && message.actions.length > 0 && (
+                             <div className="mt-2 flex flex-wrap gap-2">
+                               {message.actions.filter(action => 
+                                 action && 
+                                 action.type && 
+                                 action.label
+                               ).map((action, index) => (
+                                 <Button
+                                   key={`${message.id}_action_${index}`}
+                                   variant="outline"
+                                   size="sm"
+                                   className="text-xs h-7"
+                                   onClick={() => handleActionClick(action)}
+                                 >
+                                   {getActionIcon(action.type)}
+                                   <span className="ml-1">{action.label}</span>
+                                 </Button>
+                               ))}
+                             </div>
+                           )}
                           
-                          <div className="mt-1 text-xs text-slate-500">
-                            {message.timestamp.toLocaleTimeString()}
-                          </div>
+                                                     <div className="mt-1 text-xs text-slate-500">
+                             {message.timestamp instanceof Date ? message.timestamp.toLocaleTimeString() : new Date().toLocaleTimeString()}
+                           </div>
                         </div>
                         
                         {message.role === 'user' && (
@@ -349,32 +373,32 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
 
           {/* Context Panel */}
           <div className="space-y-6">
-            {/* Context Information */}
-            {context && (
-              <GlassCard variant="gradient" intensity="medium">
-                <GlassCardHeader>
-                  <GlassCardTitle className="flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    Context
-                  </GlassCardTitle>
-                </GlassCardHeader>
-                <GlassCardContent>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        {context.type}
-                      </Badge>
-                      <span className="text-slate-600 dark:text-slate-400">
-                        ID: {context.id}
-                      </span>
-                    </div>
-                    <p className="text-slate-600 dark:text-slate-400">
-                      I have access to this {context.type}'s data and can help you manage it.
-                    </p>
-                  </div>
-                </GlassCardContent>
-              </GlassCard>
-            )}
+                         {/* Context Information */}
+             {context && context.type && context.id && (
+               <GlassCard variant="gradient" intensity="medium">
+                 <GlassCardHeader>
+                   <GlassCardTitle className="flex items-center gap-2">
+                     <MessageSquare className="h-4 w-4" />
+                     Context
+                   </GlassCardTitle>
+                 </GlassCardHeader>
+                 <GlassCardContent>
+                   <div className="space-y-2 text-sm">
+                     <div className="flex items-center gap-2">
+                       <Badge variant="outline" className="text-xs">
+                         {context.type}
+                       </Badge>
+                       <span className="text-slate-600 dark:text-slate-400">
+                         ID: {context.id}
+                       </span>
+                     </div>
+                     <p className="text-slate-600 dark:text-slate-400">
+                       I have access to this {context.type}'s data and can help you manage it.
+                     </p>
+                   </div>
+                 </GlassCardContent>
+               </GlassCard>
+             )}
 
             {/* Quick Actions */}
             <GlassCard variant="gradient" intensity="medium">
