@@ -68,7 +68,7 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
 
   // Initialize messages from thread data
   useEffect(() => {
-    if (threadData?.messages) {
+    if (threadData?.messages && Array.isArray(threadData.messages)) {
       setMessages(threadData.messages);
     }
   }, [threadData]);
@@ -99,7 +99,9 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
         context: context
       });
 
-      setMessages(prev => [...prev, response]);
+      if (response && typeof response === 'object') {
+        setMessages(prev => [...prev, response]);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       const errorMessage: ChatMessage = {
@@ -125,7 +127,7 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
       // Add the action result as a system message
       const actionMessage: ChatMessage = {
         id: `action_${Date.now()}`,
-        content: result.result,
+        content: result?.result || result || 'Action executed successfully',
         role: 'assistant',
         timestamp: new Date()
       };
@@ -133,6 +135,16 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
       setMessages(prev => [...prev, actionMessage]);
     } catch (error) {
       console.error('Error executing action:', error);
+      
+      // Add error message
+      const errorMessage: ChatMessage = {
+        id: `error_${Date.now()}`,
+        content: 'Sorry, I encountered an error while executing that action. Please try again.',
+        role: 'assistant',
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
     }
   };
 
@@ -222,7 +234,7 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                       </div>
                     </div>
                   ) : (
-                    messages.map((message) => (
+                    messages.filter(message => message && message.id && message.content).map((message) => (
                       <div
                         key={message.id}
                         className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -256,11 +268,11 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                           )}
                           
                           {/* Actions */}
-                          {message.actions && message.actions.length > 0 && (
+                          {message.actions && Array.isArray(message.actions) && message.actions.length > 0 && (
                             <div className="mt-2 flex flex-wrap gap-2">
                               {message.actions.map((action, index) => (
                                 <Button
-                                  key={index}
+                                  key={`${message.id}_action_${index}`}
                                   variant="outline"
                                   size="sm"
                                   className="text-xs h-7"
