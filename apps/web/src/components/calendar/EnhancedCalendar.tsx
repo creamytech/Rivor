@@ -193,7 +193,7 @@ export default function EnhancedCalendar({ className = '' }: EnhancedCalendarPro
                 onClick={() => setSelectedEvent(event)}
               >
                 <div className="font-medium truncate">
-                  {event.titleEnc ? 'Event Title' : 'Untitled Event'}
+                  {event.titleEnc ? 'Calendar Event' : 'Untitled Event'}
                 </div>
                 <div className="text-slate-600 dark:text-slate-400">
                   {formatTime(event.start)}

@@ -338,10 +338,10 @@ export default function EnhancedInbox({ className = '' }: EnhancedInboxProps) {
                               <div className="flex items-start justify-between mb-2">
                                 <div className="flex-1 min-w-0">
                                   <h4 className="font-medium text-slate-900 dark:text-slate-100 truncate">
-                                    {thread.subjectEnc ? 'Subject' : 'No Subject'}
+                                    {thread.subjectEnc ? 'Email Subject' : 'No Subject'}
                                   </h4>
                                   <p className="text-sm text-slate-600 dark:text-slate-400">
-                                    {latestMessage?.fromEnc ? 'From: User' : 'Unknown sender'}
+                                    {latestMessage?.fromEnc ? 'From: Contact' : 'Unknown sender'}
                                   </p>
                                 </div>
                                 <div className="flex items-center gap-2 ml-2">

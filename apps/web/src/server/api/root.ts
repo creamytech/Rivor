@@ -59,50 +59,57 @@ export const appRouter = router({
   dashboard: protectedProcedure.query(async () => {
     const org = await getCurrentUserOrg();
     
-    // Get leads data
-    const leadsData = await prisma.lead.groupBy({
-      by: ['status'],
-      where: { orgId: org.id },
-      _count: { id: true }
-    });
-
-    const totalLeads = leadsData.reduce((sum, group) => sum + group._count.id, 0);
-    const newLeads = await prisma.lead.count({
-      where: { 
-        orgId: org.id,
-        createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
-      }
-    });
-
-    // Get replies due today
+    // Get all data in parallel for better performance
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    const repliesDueToday = await prisma.task.count({
-      where: {
-        orgId: org.id,
-        dueAt: { gte: today, lt: tomorrow },
-        done: false,
-        title: { contains: 'reply', mode: 'insensitive' }
-      }
-    });
+    const [
+      leadsData,
+      newLeads,
+      repliesDueToday,
+      meetingsToday,
+      emailAccounts
+    ] = await Promise.all([
+      // Get leads data
+      prisma.lead.groupBy({
+        by: ['status'],
+        where: { orgId: org.id },
+        _count: { id: true }
+      }),
+      // Get new leads in last 24h
+      prisma.lead.count({
+        where: { 
+          orgId: org.id,
+          createdAt: { gte: yesterday }
+        }
+      }),
+      // Get replies due today
+      prisma.task.count({
+        where: {
+          orgId: org.id,
+          dueAt: { gte: today, lt: tomorrow },
+          done: false,
+          title: { contains: 'reply', mode: 'insensitive' }
+        }
+      }),
+      // Get meetings today
+      prisma.calendarEvent.count({
+        where: {
+          orgId: org.id,
+          start: { gte: today, lt: tomorrow }
+        }
+      }),
+      // Get token health
+      prisma.emailAccount.findMany({
+        where: { orgId: org.id },
+        select: { status: true, lastSyncedAt: true, errorReason: true }
+      })
+    ]);
 
-    // Get meetings today
-    const meetingsToday = await prisma.calendarEvent.count({
-      where: {
-        orgId: org.id,
-        start: { gte: today, lt: tomorrow }
-      }
-    });
-
-    // Get token health
-    const emailAccounts = await prisma.emailAccount.findMany({
-      where: { orgId: org.id },
-      select: { status: true, lastSyncedAt: true, errorReason: true }
-    });
-
+    const totalLeads = leadsData.reduce((sum, group) => sum + group._count.id, 0);
     const healthyAccounts = emailAccounts.filter(acc => acc.status === 'connected').length;
     const totalAccounts = emailAccounts.length;
 
@@ -148,8 +155,9 @@ export const appRouter = router({
         if (input.status) where.status = input.status;
         if (input.search) {
           where.OR = [
-            { title: { contains: input.search, mode: 'insensitive' } },
-            { contact: { nameEnc: { not: null } } }
+            { title: { contains: input.search, mode: 'insensitive' } }
+            // Note: Can't search encrypted contact fields directly
+            // { contact: { nameEnc: { not: null } } }
           ];
         }
 
@@ -362,15 +370,13 @@ export const appRouter = router({
         const org = await getCurrentUserOrg();
         
         const where: any = { orgId: org.id };
-        if (input.search) {
-          where.OR = [
-            { subjectEnc: { not: null } },
-            { participantsEnc: { not: null } }
-          ];
-        }
+        
+        // Filter by status
         if (input.status === 'unread') where.unread = true;
         if (input.status === 'read') where.unread = false;
-        if (input.from) where.participantsEnc = { not: null };
+        if (input.status === 'archived') where.labels = { has: 'archived' };
+        
+        // Filter by attachments
         if (input.hasAttachments) {
           where.messages = {
             some: {
@@ -391,6 +397,15 @@ export const appRouter = router({
             },
             _count: {
               select: { messages: true }
+            },
+            lead: {
+              include: {
+                contact: true,
+                stage: true,
+                assignedTo: {
+                  include: { user: true }
+                }
+              }
             }
           },
           orderBy: { updatedAt: 'desc' },
@@ -466,7 +481,8 @@ export const appRouter = router({
         const where: any = { orgId: org.id };
         if (input.start) where.start = { gte: input.start };
         if (input.end) where.end = { lte: input.end };
-        if (input.search) where.titleIndex = { contains: input.search };
+        // Note: Can't search encrypted titleEnc field directly
+        // if (input.search) where.titleEnc = { contains: input.search };
 
         const events = await prisma.calendarEvent.findMany({
           where,
@@ -491,7 +507,6 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         const org = await getCurrentUserOrg();
-        const user = await getCurrentUser();
         
         // Get the first calendar account for this org
         const calendarAccount = await prisma.calendarAccount.findFirst({
@@ -504,8 +519,8 @@ export const appRouter = router({
 
         return await prisma.calendarEvent.create({
           data: {
-            titleIndex: input.title,
-            locationIndex: input.location || '',
+            titleEnc: input.title ? Buffer.from(input.title, 'utf8') : null, // In real implementation, this would be encrypted
+            locationEnc: input.location ? Buffer.from(input.location, 'utf8') : null, // In real implementation, this would be encrypted
             notesEnc: input.notes ? Buffer.from(input.notes, 'utf8') : null, // In real implementation, this would be encrypted
             attendeesEnc: input.attendees ? Buffer.from(JSON.stringify(input.attendees), 'utf8') : null, // In real implementation, this would be encrypted
             start: input.start,
@@ -531,13 +546,16 @@ export const appRouter = router({
         const org = await getCurrentUserOrg();
         
         const where: any = { orgId: org.id };
-        if (input.search) {
-          where.OR = [
-            { nameEnc: { not: null } },
-            { emailEnc: { not: null } },
-            { companyEnc: { not: null } }
-          ];
-        }
+        
+        // Note: Can't search encrypted fields directly
+        // if (input.search) {
+        //   where.OR = [
+        //     { nameEnc: { not: null } },
+        //     { emailEnc: { not: null } },
+        //     { companyEnc: { not: null } }
+        //   ];
+        // }
+        
         if (input.hasLeads) where.leads = { some: {} };
         if (input.lastActivity) {
           const days = parseInt(input.lastActivity);
