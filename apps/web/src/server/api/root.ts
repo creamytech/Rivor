@@ -463,6 +463,17 @@ export const appRouter = router({
           where: { id: input.id, orgId: org.id },
           data: { labels: { push: 'archived' } }
         });
+      }),
+
+    star: protectedProcedure
+      .input(z.object({ id: z.string(), starred: z.boolean() }))
+      .mutation(async ({ input }) => {
+        const org = await getCurrentUserOrg();
+        
+        return await prisma.emailThread.update({
+          where: { id: input.id, orgId: org.id },
+          data: { starred: input.starred }
+        });
       })
   },
 

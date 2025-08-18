@@ -82,7 +82,7 @@ export default function EnhancedInbox({ className = '' }: EnhancedInboxProps) {
   // Fetch real data from tRPC
   const { data: threadsData, isLoading: threadsLoading, refetch: refetchThreads } = trpc.emailThreads.list.useQuery({
     search: searchQuery || undefined,
-    status: activeTab === 'leads' ? 'unread' : activeTab === 'review' ? 'read' : undefined,
+    status: activeTab === 'leads' ? 'unread' : activeTab === 'review' ? 'read' : activeTab === 'other' ? 'archived' : undefined,
     limit: 50
   });
 
@@ -97,6 +97,10 @@ export default function EnhancedInbox({ className = '' }: EnhancedInboxProps) {
   });
 
   const archiveMutation = trpc.emailThreads.archive.useMutation({
+    onSuccess: () => refetchThreads()
+  });
+
+  const starMutation = trpc.emailThreads.star.useMutation({
     onSuccess: () => refetchThreads()
   });
 
@@ -136,14 +140,20 @@ export default function EnhancedInbox({ className = '' }: EnhancedInboxProps) {
     }
   };
 
-  const handleBulkAction = (action: 'archive' | 'delete' | 'promote') => {
+  const handleBulkAction = (action: 'archive' | 'delete' | 'promote' | 'markAsRead') => {
     selectedThreads.forEach(threadId => {
       if (action === 'archive') {
         archiveMutation.mutate({ id: threadId });
+      } else if (action === 'markAsRead') {
+        markAsReadMutation.mutate({ id: threadId });
       }
       // Add other bulk actions as needed
     });
     setSelectedThreads(new Set());
+  };
+
+  const handleStarThread = (threadId: string, starred: boolean) => {
+    starMutation.mutate({ id: threadId, starred: !starred });
   };
 
   const handleThreadToggle = (threadId: string) => {
@@ -237,38 +247,38 @@ export default function EnhancedInbox({ className = '' }: EnhancedInboxProps) {
             ))}
           </div>
 
-          {/* Bulk Actions */}
-          {selectedThreads.size > 0 && (
-            <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <span className="text-sm text-blue-700 dark:text-blue-300">
-                {selectedThreads.size} selected
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleBulkAction('promote')}
-              >
-                <ArrowUp className="h-4 w-4 mr-1" />
-                Promote
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleBulkAction('archive')}
-              >
-                <Archive className="h-4 w-4 mr-1" />
-                Archive
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleBulkAction('delete')}
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                Delete
-              </Button>
-            </div>
-          )}
+                     {/* Bulk Actions */}
+           {selectedThreads.size > 0 && (
+             <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+               <span className="text-sm text-blue-700 dark:text-blue-300">
+                 {selectedThreads.size} selected
+               </span>
+               <Button
+                 variant="outline"
+                 size="sm"
+                 onClick={() => handleBulkAction('markAsRead')}
+               >
+                 <Eye className="h-4 w-4 mr-1" />
+                 Mark Read
+               </Button>
+               <Button
+                 variant="outline"
+                 size="sm"
+                 onClick={() => handleBulkAction('archive')}
+               >
+                 <Archive className="h-4 w-4 mr-1" />
+                 Archive
+               </Button>
+               <Button
+                 variant="outline"
+                 size="sm"
+                 onClick={() => setSelectedThreads(new Set())}
+               >
+                 <X className="h-4 w-4 mr-1" />
+                 Clear
+               </Button>
+             </div>
+           )}
         </div>
 
         {/* Main Content */}
@@ -388,35 +398,46 @@ export default function EnhancedInbox({ className = '' }: EnhancedInboxProps) {
                                  )}
                               </div>
 
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                  <div className="flex items-center gap-1 text-xs text-slate-500">
-                                    <MessageSquare className="h-3 w-3" />
-                                    {thread._count.messages} messages
-                                  </div>
-                                  {thread.lead?.contact && (
-                                    <div className="text-xs text-slate-500">
-                                      <User className="h-3 w-3 inline mr-1" />
-                                      Contact
-                                    </div>
-                                  )}
-                                </div>
+                                                             <div className="flex items-center justify-between">
+                                 <div className="flex items-center gap-4">
+                                   {thread.lead?.contact && (
+                                     <div className="text-xs text-slate-500">
+                                       <User className="h-3 w-3 inline mr-1" />
+                                       Contact
+                                     </div>
+                                   )}
+                                   <div className="text-xs text-slate-500">
+                                     {thread._count.messages} messages
+                                   </div>
+                                 </div>
 
-                                <div className="flex items-center gap-1">
-                                  <Button variant="ghost" size="sm" className="h-8 px-2 text-xs">
-                                    <Reply className="h-3 w-3 mr-1" />
-                                    Reply
-                                  </Button>
-                                  <Button variant="ghost" size="sm" className="h-8 px-2 text-xs">
-                                    <ArrowUp className="h-3 w-3 mr-1" />
-                                    Promote
-                                  </Button>
-                                  <Button variant="ghost" size="sm" className="h-8 px-2 text-xs">
-                                    <Archive className="h-3 w-3 mr-1" />
-                                    Archive
-                                  </Button>
-                                </div>
-                              </div>
+                                 <div className="flex items-center gap-1">
+                                   <Button 
+                                     variant="ghost" 
+                                     size="sm" 
+                                     className="h-8 px-2 text-xs"
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       handleStarThread(thread.id, thread.starred);
+                                     }}
+                                   >
+                                     {thread.starred ? <Star className="h-3 w-3 mr-1 fill-yellow-400" /> : <StarOff className="h-3 w-3 mr-1" />}
+                                     {thread.starred ? 'Starred' : 'Star'}
+                                   </Button>
+                                   <Button 
+                                     variant="ghost" 
+                                     size="sm" 
+                                     className="h-8 px-2 text-xs"
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       archiveMutation.mutate({ id: thread.id });
+                                     }}
+                                   >
+                                     <Archive className="h-3 w-3 mr-1" />
+                                     Archive
+                                   </Button>
+                                 </div>
+                               </div>
                             </div>
                           </div>
                         </div>

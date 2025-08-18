@@ -1,5 +1,6 @@
 "use client";
 import { useState } from 'react';
+import { trpc } from '@/lib/trpc';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +22,10 @@ interface HealthWidgetProps {
 
 export default function HealthWidget({ integrations = [], onFix, onReauth }: HealthWidgetProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // tRPC mutations
+  const fixMutation = trpc.integrations.fix.useMutation();
+  const reauthMutation = trpc.integrations.reauth.useMutation();
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -133,8 +138,9 @@ export default function HealthWidget({ integrations = [], onFix, onReauth }: Hea
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onFix(integration.id)}
+                    onClick={() => fixMutation.mutate({ id: integration.id, type: integration.provider.includes('email') ? 'email' : 'calendar' })}
                     className="text-xs"
+                    disabled={fixMutation.isLoading}
                   >
                     <RefreshCw className="h-3 w-3 mr-1" />
                     Fix
@@ -144,8 +150,9 @@ export default function HealthWidget({ integrations = [], onFix, onReauth }: Hea
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onReauth(integration.id)}
+                    onClick={() => reauthMutation.mutate({ id: integration.id, type: integration.provider.includes('email') ? 'email' : 'calendar' })}
                     className="text-xs"
+                    disabled={reauthMutation.isLoading}
                   >
                     <Wifi className="h-3 w-3 mr-1" />
                     Reauth

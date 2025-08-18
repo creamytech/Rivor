@@ -333,7 +333,10 @@ export default function EnhancedContacts({ className = '' }: EnhancedContactsPro
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
-              <Button size="sm">
+              <Button 
+                size="sm"
+                onClick={() => window.location.href = '/contacts/create'}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Contact
               </Button>

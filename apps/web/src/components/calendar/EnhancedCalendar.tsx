@@ -66,6 +66,13 @@ export default function EnhancedCalendar({ className = '' }: EnhancedCalendarPro
     outlook: true,
     ics: true
   });
+  const [createEventData, setCreateEventData] = useState({
+    title: '',
+    start: '',
+    end: '',
+    location: '',
+    notes: ''
+  });
 
   // Fetch real data from tRPC
   const { data: eventsData, isLoading: eventsLoading, refetch: refetchEvents } = trpc.calendarEvents.list.useQuery({
@@ -687,85 +694,110 @@ export default function EnhancedCalendar({ className = '' }: EnhancedCalendarPro
           </div>
         </div>
 
-        {/* Create Event Modal */}
-        {showCreateModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <GlassCard className="w-full max-w-md">
-              <GlassCardHeader>
-                <GlassCardTitle>Create New Event</GlassCardTitle>
-              </GlassCardHeader>
-              <GlassCardContent>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                      Event Title
-                    </label>
-                    <Input
-                      placeholder="Enter event title"
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        Start Date
-                      </label>
-                      <Input
-                        type="datetime-local"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        End Date
-                      </label>
-                      <Input
-                        type="datetime-local"
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                      Location
-                    </label>
-                    <Input
-                      placeholder="Enter location"
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                      Notes
-                    </label>
-                    <Input
-                      placeholder="Enter notes"
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <div className="flex items-center gap-2 pt-4">
-                    <Button
-                      onClick={() => setShowCreateModal(false)}
-                      className="flex-1"
-                    >
-                      Create Event
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowCreateModal(false)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              </GlassCardContent>
-            </GlassCard>
-          </div>
-        )}
+                 {/* Create Event Modal */}
+         {showCreateModal && (
+           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+             <GlassCard className="w-full max-w-md">
+               <GlassCardHeader>
+                 <GlassCardTitle>Create New Event</GlassCardTitle>
+               </GlassCardHeader>
+               <GlassCardContent>
+                 <div className="space-y-4">
+                   <div>
+                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                       Event Title
+                     </label>
+                     <Input
+                       placeholder="Enter event title"
+                       value={createEventData.title}
+                       onChange={(e) => setCreateEventData(prev => ({ ...prev, title: e.target.value }))}
+                       className="mt-1"
+                     />
+                   </div>
+                   
+                   <div className="grid grid-cols-2 gap-4">
+                     <div>
+                       <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                         Start Date
+                       </label>
+                       <Input
+                         type="datetime-local"
+                         value={createEventData.start}
+                         onChange={(e) => setCreateEventData(prev => ({ ...prev, start: e.target.value }))}
+                         className="mt-1"
+                       />
+                     </div>
+                     <div>
+                       <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                         End Date
+                       </label>
+                       <Input
+                         type="datetime-local"
+                         value={createEventData.end}
+                         onChange={(e) => setCreateEventData(prev => ({ ...prev, end: e.target.value }))}
+                         className="mt-1"
+                       />
+                     </div>
+                   </div>
+                   
+                   <div>
+                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                       Location
+                     </label>
+                     <Input
+                       placeholder="Enter location"
+                       value={createEventData.location}
+                       onChange={(e) => setCreateEventData(prev => ({ ...prev, location: e.target.value }))}
+                       className="mt-1"
+                     />
+                   </div>
+                   
+                   <div>
+                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                       Notes
+                     </label>
+                     <Input
+                       placeholder="Enter notes"
+                       value={createEventData.notes}
+                       onChange={(e) => setCreateEventData(prev => ({ ...prev, notes: e.target.value }))}
+                       className="mt-1"
+                     />
+                   </div>
+                   
+                   <div className="flex items-center gap-2 pt-4">
+                     <Button
+                       onClick={async () => {
+                         if (createEventData.title && createEventData.start && createEventData.end) {
+                           await handleCreateEvent({
+                             title: createEventData.title,
+                             start: new Date(createEventData.start),
+                             end: new Date(createEventData.end),
+                             location: createEventData.location || undefined,
+                             notes: createEventData.notes || undefined
+                           });
+                           setCreateEventData({ title: '', start: '', end: '', location: '', notes: '' });
+                         }
+                       }}
+                       className="flex-1"
+                       disabled={!createEventData.title || !createEventData.start || !createEventData.end}
+                     >
+                       Create Event
+                     </Button>
+                     <Button
+                       variant="outline"
+                       onClick={() => {
+                         setShowCreateModal(false);
+                         setCreateEventData({ title: '', start: '', end: '', location: '', notes: '' });
+                       }}
+                     >
+                       Cancel
+                     </Button>
+                   </div>
+                 </div>
+               </GlassCardContent>
+             </GlassCard>
+           </div>
+         )}
 
         {/* Event Detail Modal */}
         {selectedEvent && (
