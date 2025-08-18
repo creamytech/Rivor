@@ -164,31 +164,50 @@ export default function HealthWidget({ integrations = [], onFix, onReauth }: Hea
           ))}
         </div>
 
-        {integrations.length === 0 && (
-          <div className="flex-1 flex items-center justify-center">
-            <EmptyState
-              icon={<WifiOff className="h-6 w-6" />}
-              title="No integrations configured"
-              description="Connect your email and calendar accounts to start syncing data and detecting leads automatically."
-              illustration="waves"
-              size="md"
-              actions={[
-                {
-                  label: "Connect Gmail",
-                  onClick: () => console.log('Connect Gmail'),
-                  variant: 'default',
-                  icon: <Mail className="h-4 w-4" />
-                },
-                {
-                  label: "Connect Calendar",
-                  onClick: () => console.log('Connect Calendar'),
-                  variant: 'outline',
-                  icon: <Calendar className="h-4 w-4" />
-                }
-              ]}
-            />
-          </div>
-        )}
+                 {integrations.length === 0 && (
+           <div className="flex-1 flex items-center justify-center p-6">
+             <div className="text-center space-y-4">
+               {/* Illustrated onboarding card */}
+               <div className="relative">
+                 <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-full flex items-center justify-center">
+                   <WifiOff className="h-8 w-8 text-blue-500" />
+                 </div>
+                 <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+                   <span className="text-xs font-bold text-yellow-600 dark:text-yellow-400">!</span>
+                 </div>
+               </div>
+               
+               <div className="space-y-2">
+                 <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+                   Connect Your Integrations
+                 </h3>
+                 <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xs">
+                   Link your email and calendar to start detecting leads and syncing data automatically.
+                 </p>
+               </div>
+               
+               <div className="flex flex-col gap-2">
+                 <Button
+                   size="sm"
+                   onClick={() => console.log('Connect Gmail')}
+                   className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
+                 >
+                   <Mail className="h-4 w-4 mr-2" />
+                   Connect Gmail
+                 </Button>
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   onClick={() => console.log('Connect Calendar')}
+                   className="w-full"
+                 >
+                   <Calendar className="h-4 w-4 mr-2" />
+                   Connect Calendar
+                 </Button>
+               </div>
+             </div>
+           </div>
+         )}
       </GlassCardContent>
     </GlassCard>
   );

@@ -164,31 +164,59 @@ export default function MiniPipelineSparkline({
           </div>
         </div>
 
-        {sortedStages.length === 0 && (
-          <div className="flex-1 flex items-center justify-center">
-            <EmptyState
-              icon={<BarChart3 className="h-6 w-6" />}
-              title="No pipeline stages"
-              description="Create pipeline stages to track your leads through the sales process. This helps visualize your funnel and identify bottlenecks."
-              illustration="dots"
-              size="md"
-              actions={[
-                {
-                  label: "Create Pipeline",
-                  onClick: () => window.location.href = '/app/settings',
-                  variant: 'default',
-                  icon: <Plus className="h-4 w-4" />
-                },
-                {
-                  label: "View Settings",
-                  onClick: () => window.location.href = '/app/settings',
-                  variant: 'outline',
-                  icon: <Settings className="h-4 w-4" />
-                }
-              ]}
-            />
-          </div>
-        )}
+                 {sortedStages.length === 0 && (
+           <div className="flex-1 flex items-center justify-center p-6">
+             <div className="text-center space-y-4 w-full">
+               {/* Visual funnel placeholder */}
+               <div className="relative mx-auto w-32 h-20">
+                 {/* Funnel shape with ghosted appearance */}
+                 <div className="absolute inset-0 opacity-20">
+                   <div className="w-full h-4 bg-gradient-to-r from-blue-200 to-cyan-200 dark:from-blue-800 dark:to-cyan-800 rounded-t-lg"></div>
+                   <div className="w-3/4 h-4 bg-gradient-to-r from-blue-200 to-cyan-200 dark:from-blue-800 dark:to-cyan-800 mx-auto"></div>
+                   <div className="w-1/2 h-4 bg-gradient-to-r from-blue-200 to-cyan-200 dark:from-blue-800 dark:to-cyan-800 mx-auto"></div>
+                   <div className="w-1/4 h-4 bg-gradient-to-r from-blue-200 to-cyan-200 dark:from-blue-800 dark:to-cyan-800 mx-auto"></div>
+                 </div>
+                 
+                 {/* Stage labels */}
+                 <div className="absolute inset-0 flex flex-col justify-between text-xs text-slate-400 dark:text-slate-500">
+                   <div className="text-center">0 leads</div>
+                   <div className="text-center">0 leads</div>
+                   <div className="text-center">0 leads</div>
+                   <div className="text-center">0 leads</div>
+                 </div>
+               </div>
+               
+               <div className="space-y-2">
+                 <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+                   Set Up Your Pipeline
+                 </h3>
+                 <p className="text-sm text-slate-600 dark:text-slate-400">
+                   Create stages to visualize your sales funnel and track lead progression.
+                 </p>
+               </div>
+               
+               <div className="flex flex-col gap-2">
+                 <Button
+                   size="sm"
+                   onClick={() => window.location.href = '/app/settings'}
+                   className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white"
+                 >
+                   <Plus className="h-4 w-4 mr-2" />
+                   Create Pipeline
+                 </Button>
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   onClick={() => window.location.href = '/app/settings'}
+                   className="w-full"
+                 >
+                   <Settings className="h-4 w-4 mr-2" />
+                   View Settings
+                 </Button>
+               </div>
+             </div>
+           </div>
+         )}
       </GlassCardContent>
     </GlassCard>
   );

@@ -134,6 +134,19 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
       .slice(0, 2);
   };
 
+  const getActiveItemPosition = () => {
+    // Calculate position based on active item
+    const activeItem = navItems.find(item => isActive(item));
+    if (!activeItem) return 80; // Default position after header
+    
+    const itemIndex = navItems.findIndex(item => isActive(item));
+    const headerHeight = 56; // h-14
+    const itemHeight = 40; // h-10
+    const searchHeight = 72; // p-3 + input height
+    
+    return headerHeight + searchHeight + (itemIndex * itemHeight) + 8; // 8px offset
+  };
+
   return (
     <TooltipProvider>
       <aside className={`
@@ -143,11 +156,31 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
         ${isCollapsed ? 'w-16' : 'w-64'}
         relative overflow-hidden
       `}>
-        {/* River Flow Background Effect */}
-        <div className="absolute inset-0 opacity-5">
+        {/* Enhanced River Flow Background Effect */}
+        <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-blue-400 via-cyan-400 to-teal-400 animate-pulse"></div>
           <div className="absolute inset-y-0 left-4 w-0.5 bg-gradient-to-b from-transparent via-blue-300 to-transparent animate-pulse" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute inset-y-0 left-8 w-0.25 bg-gradient-to-b from-transparent via-cyan-300 to-transparent animate-pulse" style={{ animationDelay: '2s' }}></div>
         </div>
+        
+        {/* Active Section Glow Effect */}
+        <AnimatePresence>
+          {pathname && (
+            <motion.div
+              key={pathname}
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="absolute left-0 w-1 h-8 bg-gradient-to-b from-blue-400 to-cyan-400 rounded-r-full shadow-lg"
+              style={{
+                top: `${getActiveItemPosition()}px`,
+                filter: 'blur(1px)',
+                boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)'
+              }}
+            />
+          )}
+        </AnimatePresence>
 
         {/* Header with Logo */}
         <div className="relative z-10 h-14 flex items-center px-4 border-b border-[var(--border)]">

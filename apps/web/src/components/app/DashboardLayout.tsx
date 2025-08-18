@@ -438,9 +438,18 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
       
       const newOrder = arrayMove(visibleCards, oldIndex, newIndex);
       // Update the visible cards order
-      // Note: This is a simplified implementation - in a full implementation,
-      // you'd want to persist this order to the database
-      console.log('Cards reordered:', newOrder);
+      setVisibleCards(newOrder);
+      
+      // Save the new order to the database
+      if (session?.user?.id) {
+        saveLayoutMutation.mutate({
+          userId: session.user.id,
+          layouts: layouts,
+          hiddenCardIds: hiddenCards,
+          activePreset,
+          cardOrder: newOrder
+        });
+      }
     }
     
     setIsDragging(false);
@@ -487,8 +496,8 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
     );
   };
 
-  const visibleCards = Object.keys(DASHBOARD_CARDS).filter(
-    cardId => !hiddenCards.includes(cardId)
+  const [visibleCards, setVisibleCards] = useState<string[]>(
+    Object.keys(DASHBOARD_CARDS).filter(cardId => !hiddenCards.includes(cardId))
   );
 
   return (

@@ -109,6 +109,24 @@ export default function ActivityFeed({ className = '' }: ActivityFeedProps) {
     }
   };
 
+  const getActivityColor = (type: ActivityItem['type']) => {
+    switch (type) {
+      case 'email': return 'bg-blue-100 dark:bg-blue-900/20 text-blue-600';
+      case 'meeting': return 'bg-purple-100 dark:bg-purple-900/20 text-purple-600';
+      case 'lead': return 'bg-green-100 dark:bg-green-900/20 text-green-600';
+      case 'chat': return 'bg-cyan-100 dark:bg-cyan-900/20 text-cyan-600';
+      case 'task': return 'bg-orange-100 dark:bg-orange-900/20 text-orange-600';
+      default: return 'bg-gray-100 dark:bg-gray-900/20 text-gray-600';
+    }
+  };
+
+  const getActivityAvatar = (type: ActivityItem['type']) => {
+    const colors = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-cyan-500', 'bg-orange-500'];
+    const initials = ['E', 'M', 'L', 'C', 'T'];
+    const index = ['email', 'meeting', 'lead', 'chat', 'task'].indexOf(type);
+    return { color: colors[index] || 'bg-gray-500', initial: initials[index] || 'A' };
+  };
+
   const getStatusColor = (status: ActivityItem['status']) => {
     switch (status) {
       case 'urgent': return 'text-red-600 bg-red-100 dark:bg-red-900/20';
@@ -160,8 +178,16 @@ export default function ActivityFeed({ className = '' }: ActivityFeedProps) {
                 className="flex items-start gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors"
               >
                 <div className="flex-shrink-0 mt-1">
-                  <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/20 text-blue-600">
-                    {getActivityIcon(activity.type)}
+                  <div className="relative">
+                    {/* Activity icon with colored background */}
+                    <div className={`p-2 rounded-lg ${getActivityColor(activity.type)}`}>
+                      {getActivityIcon(activity.type)}
+                    </div>
+                    
+                    {/* Small avatar indicator */}
+                    <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full ${getActivityAvatar(activity.type).color} flex items-center justify-center text-white text-xs font-bold border-2 border-white dark:border-slate-800`}>
+                      {getActivityAvatar(activity.type).initial}
+                    </div>
                   </div>
                 </div>
                 
