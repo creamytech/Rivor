@@ -9,6 +9,7 @@ import MiniPipelineSparkline from './MiniPipelineSparkline';
 import StickyActionStrip from './StickyActionStrip';
 import ActivityFeed from './ActivityFeed';
 import CommandPalette from '../common/CommandPalette';
+import { CurvedDivider } from '@/components/ui/curved-divider';
 import { Button } from '@/components/ui/button';
 import { Search, Plus, Calendar, Mail, MessageSquare } from 'lucide-react';
 
@@ -72,6 +73,9 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
         )}
       </div>
 
+      {/* Curved Divider */}
+      <CurvedDivider variant="flow" direction="down" color="cyan" className="mb-2" />
+
       {/* Compact Sync Progress - Reduced prominence */}
       <div className="px-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -100,6 +104,9 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
           />
         </div>
       </div>
+
+      {/* Curved Divider */}
+      <CurvedDivider variant="wave" direction="down" color="blue" className="mb-2" />
 
       {/* Main Dashboard Grid */}
       <div className="px-6 pb-20">

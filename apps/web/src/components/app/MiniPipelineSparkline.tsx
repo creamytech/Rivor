@@ -54,7 +54,7 @@ export default function MiniPipelineSparkline({
   };
 
   return (
-    <GlassCard variant="gradient" intensity="medium" className="h-full">
+    <GlassCard variant="river-flow" intensity="medium" flowDirection="left" className="h-full">
       <GlassCardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

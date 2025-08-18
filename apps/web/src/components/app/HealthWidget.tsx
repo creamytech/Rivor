@@ -70,7 +70,7 @@ export default function HealthWidget({ integrations = [], onFix, onReauth }: Hea
   const totalErrors = integrations.filter(integration => integration.errorReason).length;
 
   return (
-    <GlassCard variant="gradient" intensity="medium" className="h-full">
+    <GlassCard variant="river-flow" intensity="medium" flowDirection="up" className="h-full">
       <GlassCardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

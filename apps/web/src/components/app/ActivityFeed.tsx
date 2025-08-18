@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
 import { 
   Activity, 
   Mail, 
@@ -130,13 +130,13 @@ export default function ActivityFeed({ className = '' }: ActivityFeedProps) {
   const displayedActivities = isExpanded ? activities : activities.slice(0, 3);
 
   return (
-    <Card className={`${className}`}>
-      <CardHeader className="pb-3">
+    <GlassCard variant="river-flow" intensity="medium" flowDirection="right" className={`${className}`}>
+      <GlassCardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+          <GlassCardTitle className="text-lg font-semibold flex items-center gap-2">
             <Activity className="h-5 w-5 text-blue-600" />
             Live Activity
-          </CardTitle>
+          </GlassCardTitle>
           <Button
             variant="ghost"
             size="sm"
@@ -146,8 +146,8 @@ export default function ActivityFeed({ className = '' }: ActivityFeedProps) {
             {isExpanded ? 'Show Less' : `Show All (${activities.length})`}
           </Button>
         </div>
-      </CardHeader>
-      <CardContent className="pt-0">
+      </GlassCardHeader>
+      <GlassCardContent className="pt-0">
         <div className="space-y-3">
           <AnimatePresence>
             {displayedActivities.map((activity, index) => (
@@ -157,7 +157,7 @@ export default function ActivityFeed({ className = '' }: ActivityFeedProps) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ delay: index * 0.1 }}
-                className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                className="flex items-start gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors"
               >
                 <div className="flex-shrink-0 mt-1">
                   <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/20 text-blue-600">
@@ -168,10 +168,10 @@ export default function ActivityFeed({ className = '' }: ActivityFeedProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
-                      <h4 className="font-medium text-sm leading-tight">
+                      <h4 className="font-medium text-sm leading-tight text-slate-900 dark:text-slate-100">
                         {activity.title}
                       </h4>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                         {activity.description}
                       </p>
                       <div className="flex items-center gap-2 mt-2">
@@ -182,7 +182,7 @@ export default function ActivityFeed({ className = '' }: ActivityFeedProps) {
                           {getStatusIcon(activity.status)}
                           <span className="ml-1 capitalize">{activity.status}</span>
                         </Badge>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
                           {activity.timestamp}
                         </span>
                       </div>
@@ -207,7 +207,7 @@ export default function ActivityFeed({ className = '' }: ActivityFeedProps) {
         </div>
         
         {!isExpanded && activities.length > 3 && (
-          <div className="mt-3 pt-3 border-t">
+          <div className="mt-3 pt-3 border-t border-white/20">
             <Button
               variant="ghost"
               size="sm"
@@ -218,7 +218,7 @@ export default function ActivityFeed({ className = '' }: ActivityFeedProps) {
             </Button>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </GlassCardContent>
+    </GlassCard>
   );
 }

@@ -79,8 +79,9 @@ export default function TodayAtAGlance({
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       {/* Leads Card */}
       <GlassCard
-        variant="gradient"
+        variant="river-flow"
         intensity="medium"
+        flowDirection="right"
         className="group hover:scale-105 transition-transform duration-300 cursor-pointer"
       >
         <GlassCardContent className="p-4">
@@ -102,8 +103,9 @@ export default function TodayAtAGlance({
 
       {/* Replies Card */}
       <GlassCard
-        variant="gradient"
+        variant="river-flow"
         intensity="medium"
+        flowDirection="down"
         className="group hover:scale-105 transition-transform duration-300 cursor-pointer"
       >
         <GlassCardContent className="p-4">
@@ -125,8 +127,9 @@ export default function TodayAtAGlance({
 
       {/* Meetings Card */}
       <GlassCard
-        variant="gradient"
+        variant="river-flow"
         intensity="medium"
+        flowDirection="left"
         className="group hover:scale-105 transition-transform duration-300 cursor-pointer"
       >
         <GlassCardContent className="p-4">
@@ -148,8 +151,9 @@ export default function TodayAtAGlance({
 
       {/* Token Health Card */}
       <GlassCard
-        variant="gradient"
+        variant="river-flow"
         intensity="medium"
+        flowDirection="up"
         className="group hover:scale-105 transition-transform duration-300 cursor-pointer"
       >
         <GlassCardContent className="p-4">

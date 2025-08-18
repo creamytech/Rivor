@@ -183,7 +183,7 @@ export default function LeadFeed({ leads = [], reviewItems = [] }: LeadFeedProps
   };
 
   return (
-    <GlassCard variant="gradient" intensity="medium" className="h-full">
+    <GlassCard variant="river-flow" intensity="medium" flowDirection="down" className="h-full">
       <GlassCardHeader className="pb-3">
         <GlassCardTitle className="text-lg">Lead Feed</GlassCardTitle>
       </GlassCardHeader>

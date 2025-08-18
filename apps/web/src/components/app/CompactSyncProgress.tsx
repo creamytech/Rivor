@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
+import { LiquidProgress } from '@/components/ui/liquid-progress';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Clock, FileText, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 
 interface CompactSyncProgressProps {
@@ -68,15 +68,23 @@ export default function CompactSyncProgress({
   };
 
   const getProgressColor = () => {
-    if (status === 'error') return 'bg-red-500';
-    if (status === 'completed') return 'bg-green-500';
-    return 'bg-blue-500';
+    if (status === 'error') return 'red';
+    if (status === 'completed') return 'green';
+    if (status === 'paused') return 'yellow';
+    return 'blue';
+  };
+
+  const getProgressVariant = () => {
+    if (status === 'running') return 'river';
+    if (status === 'completed') return 'wave';
+    return 'default';
   };
 
   return (
     <GlassCard 
-      variant="gradient" 
+      variant="river-flow" 
       intensity="light" 
+      flowDirection="right"
       className="transition-all duration-300 hover:shadow-lg"
     >
       <GlassCardContent className="p-4">
@@ -105,7 +113,7 @@ export default function CompactSyncProgress({
           </div>
         </div>
 
-        {/* Progress Bar */}
+        {/* Liquid Progress Bar */}
         <div className="mb-3">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-slate-600 dark:text-slate-400">
@@ -118,12 +126,14 @@ export default function CompactSyncProgress({
               {status === 'paused' && 'Paused'}
             </span>
           </div>
-          <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
-            <div 
-              className={`h-full transition-all duration-500 ease-out ${getProgressColor()}`}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
+          <LiquidProgress
+            value={progress}
+            max={100}
+            variant={getProgressVariant()}
+            color={getProgressColor()}
+            animated={status === 'running'}
+            className="h-2"
+          />
         </div>
 
         {/* Expanded Details */}
