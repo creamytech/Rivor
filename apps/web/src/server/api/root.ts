@@ -331,22 +331,29 @@ export const appRouter = router({
             { participantsEnc: { not: null } }
           ];
         }
-        if (input.status) where.status = input.status;
+        if (input.status === 'unread') where.unread = true;
+        if (input.status === 'read') where.unread = false;
         if (input.from) where.participantsEnc = { not: null };
-        if (input.hasAttachments) where.attachments = { some: {} };
+        if (input.hasAttachments) {
+          where.messages = {
+            some: {
+              attachments: { not: null }
+            }
+          };
+        }
 
         const threads = await prisma.emailThread.findMany({
           where,
           include: {
             messages: {
               orderBy: { createdAt: 'desc' },
-              take: 1
-            },
-            attachments: {
-              take: 3
+              take: 1,
+              include: {
+                attachments: true
+              }
             },
             _count: {
-              select: { messages: true, attachments: true }
+              select: { messages: true }
             }
           },
           orderBy: { updatedAt: 'desc' },
@@ -391,7 +398,7 @@ export const appRouter = router({
         
         return await prisma.emailThread.update({
           where: { id: input.id, orgId: org.id },
-          data: { status: 'read' }
+          data: { unread: false }
         });
       }),
 
@@ -402,7 +409,7 @@ export const appRouter = router({
         
         return await prisma.emailThread.update({
           where: { id: input.id, orgId: org.id },
-          data: { status: 'archived' }
+          data: { labels: { push: 'archived' } }
         });
       })
   },

@@ -35,25 +35,22 @@ interface EmailThread {
   id: string;
   subjectEnc: any;
   participantsEnc: any;
-  status: string;
+  unread: boolean;
+  starred: boolean;
+  labels: string[];
   createdAt: string;
   updatedAt: string;
   messages: Array<{
     id: string;
-    contentEnc: any;
     sentAt: string;
     fromEnc: any;
     toEnc: any;
-  }>;
-  attachments: Array<{
-    id: string;
-    filename: string;
-    contentType: string;
-    size: number;
+    subjectEnc: any;
+    snippetEnc: any;
+    attachments: any;
   }>;
   _count: {
     messages: number;
-    attachments: number;
   };
   lead?: {
     id: string;
@@ -134,7 +131,7 @@ export default function EnhancedInbox({ className = '' }: EnhancedInboxProps) {
 
   const handleThreadSelect = (thread: EmailThread) => {
     setSelectedThread(thread);
-    if (thread.status === 'unread') {
+    if (thread.unread) {
       markAsReadMutation.mutate({ id: thread.id });
     }
   };
@@ -317,7 +314,7 @@ export default function EnhancedInbox({ className = '' }: EnhancedInboxProps) {
                           key={thread.id}
                           className={`p-4 border-b border-white/20 last:border-b-0 hover:bg-white/5 transition-colors cursor-pointer ${
                             isActive ? 'bg-blue-50/50 dark:bg-blue-900/20' : ''
-                          } ${thread.status === 'unread' ? 'bg-yellow-50/50 dark:bg-yellow-900/20' : ''}`}
+                          } ${thread.unread ? 'bg-yellow-50/50 dark:bg-yellow-900/20' : ''}`}
                           onClick={() => handleThreadSelect(thread)}
                         >
                           <div className="flex items-start gap-3">
@@ -493,34 +490,36 @@ export default function EnhancedInbox({ className = '' }: EnhancedInboxProps) {
               </GlassCard>
 
               {/* Attachments */}
-              {selectedThread.attachments.length > 0 && (
+              {selectedThread.messages.some(msg => msg.attachments && msg.attachments.length > 0) && (
                 <GlassCard variant="gradient" intensity="medium">
                   <GlassCardHeader>
                     <GlassCardTitle>Attachments</GlassCardTitle>
                   </GlassCardHeader>
                   <GlassCardContent>
                     <div className="space-y-2">
-                      {selectedThread.attachments.map((attachment) => (
-                        <div
-                          key={attachment.id}
-                          className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors"
-                        >
-                          <div className="flex items-center gap-2">
-                            {getFileIcon(attachment.contentType)}
-                            <span className="text-sm text-slate-900 dark:text-slate-100">
-                              {attachment.filename}
-                            </span>
+                      {selectedThread.messages.flatMap(msg => 
+                        msg.attachments ? msg.attachments.map((attachment: any, index: number) => (
+                          <div
+                            key={`${msg.id}_${index}`}
+                            className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              {getFileIcon(attachment.contentType || 'application/octet-stream')}
+                              <span className="text-sm text-slate-900 dark:text-slate-100">
+                                {attachment.filename || 'Unknown file'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-slate-500">
+                                {attachment.size ? `${(attachment.size / 1024).toFixed(1)} KB` : 'Unknown size'}
+                              </span>
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                <Download className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-500">
-                              {(attachment.size / 1024).toFixed(1)} KB
-                            </span>
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                              <Download className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                        )) : []
+                      )}
                     </div>
                   </GlassCardContent>
                 </GlassCard>
