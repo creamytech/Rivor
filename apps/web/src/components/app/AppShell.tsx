@@ -1,176 +1,114 @@
-import React from 'react'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Search } from '@/components/ui/search'
-import { 
-  Home, 
-  Inbox, 
-  Users, 
-  Calendar, 
-  BarChart3, 
-  Settings,
-  MessageSquare,
-  TrendingUp,
-  Building2,
-  ChevronLeft,
-  Menu
-} from 'lucide-react'
+"use client";
 
-interface AppShellProps {
-  children: React.ReactNode
-  title?: string
-  subtitle?: string
-  showSearch?: boolean
-  primaryAction?: {
-    label: string
-    onClick: () => void
-    icon?: React.ReactNode
-  }
-}
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import Logo from "@/components/branding/Logo";
+import { useEffect, useState } from "react";
+import { Search, Bell, HelpCircle, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Toaster } from "@/components/ui/toaster";
 
-const navigation = [
-  { name: 'Dashboard', href: '/app', icon: Home, count: null },
-  { name: 'Inbox', href: '/app/inbox', icon: Inbox, count: 12 },
-  { name: 'Pipeline', href: '/app/pipeline', icon: TrendingUp, count: 8 },
-  { name: 'Contacts', href: '/app/contacts', icon: Users, count: null },
-  { name: 'Calendar', href: '/app/calendar', icon: Calendar, count: 3 },
-  { name: 'Analytics', href: '/app/analytics', icon: BarChart3, count: null },
-  { name: 'Chat', href: '/app/chat', icon: MessageSquare, count: 5 },
-  { name: 'Settings', href: '/app/settings', icon: Settings, count: null },
-]
+type AppShellProps = {
+  children: React.ReactNode;
+  rightDrawer?: React.ReactNode;
+};
 
-export function AppShell({ 
-  children, 
-  title = "Dashboard",
-  subtitle = "Here's what's flowing today",
-  showSearch = true,
-  primaryAction
-}: AppShellProps) {
-  const [isNavCollapsed, setIsNavCollapsed] = React.useState(false)
-  const [isScrolled, setIsScrolled] = React.useState(false)
+const nav = [
+  { href: "/app", label: "App", icon: "📊", exactMatch: true },
+  { href: "/app/inbox", label: "Inbox", icon: "📥" },
+  { href: "/app/pipeline", label: "Pipeline", icon: "🗂️" },
+  { href: "/app/calendar", label: "Calendar", icon: "🗓️" },
+  { href: "/app/contacts", label: "Contacts", icon: "👤" },
+  { href: "/app/chat", label: "Chat", icon: "💬" },
+  { href: "/app/settings", label: "Settings", icon: "⚙️" },
+];
 
-  React.useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+export default function AppShell({ children, rightDrawer }: AppShellProps) {
+  const pathname = usePathname();
+  const [query, setQuery] = useState("");
+  const [showDrawer, setShowDrawer] = useState(Boolean(rightDrawer));
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  
+  useEffect(() => setShowDrawer(Boolean(rightDrawer)), [rightDrawer]);
+  
+
 
   return (
-    <div className="min-h-screen bg-depth-0">
-      {/* App Bar */}
-      <header className={cn(
-        "sticky top-0 z-50 glass border-b border-foam-20 transition-all duration-300",
-        isScrolled ? "py-2" : "py-4"
-      )}>
-        <div className="container flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsNavCollapsed(!isNavCollapsed)}
-              className="lg:hidden"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-            
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-2xl currentDrift" />
-              <div className="hidden sm:block">
-                <h1 className={cn(
-                  "font-semibold gradient-text transition-all duration-300",
-                  isScrolled ? "text-lg" : "text-xl"
-                )}>
-                  {title}
-                </h1>
-                {!isScrolled && subtitle && (
-                  <p className="text-sm text-foam-60">{subtitle}</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {showSearch && (
-              <div className="hidden md:block w-64">
-                <Search placeholder="Search anything..." />
-              </div>
-            )}
-            
-            {primaryAction && (
-              <Button onClick={primaryAction.onClick} className="currentDrift">
-                {primaryAction.icon}
-                {primaryAction.label}
-              </Button>
-            )}
-          </div>
+    <div className="grid grid-cols-[64px_1fr] md:grid-cols-[240px_1fr] min-h-screen">
+      <aside className="sticky top-0 h-screen hidden md:flex md:flex-col border-r border-[var(--border)] bg-[var(--muted)]">
+        <div className="h-14 flex items-center px-4 border-b border-[var(--border)]">
+          <Logo href="/app/inbox" />
         </div>
-      </header>
-
-      <div className="flex">
-        {/* Left Navigation */}
-        <nav className={cn(
-          "fixed left-0 top-0 z-40 h-full glass border-r border-foam-20 transition-all duration-300 lg:relative",
-          isNavCollapsed ? "w-16" : "w-64",
-          "lg:translate-x-0",
-          isNavCollapsed ? "-translate-x-full lg:translate-x-0" : "translate-x-0"
-        )}>
-          <div className="flex h-full flex-col">
-            <div className="flex-1 space-y-1 p-4">
-              {navigation.map((item) => {
-                const isActive = window.location.pathname === item.href
-                return (
-                  <a
-                    key={item.name}
-                    href={item.href}
-                    className={cn(
-                      "group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium transition-all duration-200",
-                      "hover:bg-depth-200/50 hover:text-foreground",
-                      isActive 
-                        ? "bg-current-500/10 text-current-500 border-l-2 border-current-500" 
-                        : "text-foam-60"
-                    )}
-                  >
-                    <item.icon className="h-5 w-5 shrink-0" />
-                    {!isNavCollapsed && (
-                      <>
-                        <span className="flex-1">{item.name}</span>
-                        {item.count !== null && (
-                          <span className="chip text-xs">
-                            {item.count}
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </a>
-                )
-              })}
+        <nav className="flex-1 py-4">
+          {nav.map((item) => {
+            const active = item.exactMatch 
+              ? pathname === item.href 
+              : pathname === item.href || pathname.startsWith(item.href + '/');
+            return (
+              <Link key={item.href} href={item.href} className={`flex items-center gap-3 px-4 py-2 text-sm hover:bg-[var(--background)] transition-colors rounded-md mx-2 ${active ? "bg-[var(--background)] text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}`}>
+                <span aria-hidden>{item.icon}</span>
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      </aside>
+      <div className="grid grid-rows-[56px_1fr]">
+        <header className="sticky top-0 z-30 h-14 border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--background)92%,transparent)] backdrop-blur flex items-center">
+          <div className="px-3 md:px-4 w-full flex items-center gap-3">
+            <div className="md:hidden"><Logo href="/app/inbox" size="sm" /></div>
+            
+            {/* Command Palette Trigger */}
+            <div className="flex-1 relative">
+              <button
+                onClick={() => setShowCommandPalette(true)}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--muted)] text-sm text-[var(--muted-foreground)] hover:bg-[var(--background)] transition-colors"
+              >
+                <Search className="h-4 w-4" />
+                <span>Search or run a command...</span>
+                <div className="ml-auto text-xs bg-[var(--border)] px-1.5 py-0.5 rounded">
+                  ⌘K
+                </div>
+              </button>
             </div>
             
-            <div className="p-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsNavCollapsed(!isNavCollapsed)}
-                className="hidden lg:flex w-full justify-center"
-              >
-                <ChevronLeft className={cn(
-                  "h-4 w-4 transition-transform duration-200",
-                  isNavCollapsed && "rotate-180"
-                )} />
+            {/* Right side actions */}
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/app/help" aria-label="Help">
+                  <HelpCircle className="h-4 w-4" />
+                </Link>
+              </Button>
+              
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/app/notifications" aria-label="Notifications">
+                  <Bell className="h-4 w-4" />
+                </Link>
+              </Button>
+              
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/app/settings" aria-label="User menu">
+                  <User className="h-4 w-4" />
+                </Link>
               </Button>
             </div>
           </div>
-        </nav>
-
-        {/* Main Content */}
-        <main className="flex-1 min-h-screen">
-          {children}
-        </main>
+        </header>
+        <div className="relative">
+          <main className={`h-full ${rightDrawer ? "md:mr-[360px]" : ""}`}>{children}</main>
+          {rightDrawer ? (
+            <aside className={`fixed md:static right-0 top-14 md:top-0 w-[360px] h-[calc(100vh-56px)] md:h-full border-l border-[var(--border)] bg-[var(--muted)] ${showDrawer ? "" : "hidden"}`}>
+              {rightDrawer}
+            </aside>
+          ) : null}
+        </div>
       </div>
+      
+      {/* Command Palette */}
+      {/* <EnhancedCommandPalette isOpen={showCommandPalette} setIsOpen={setShowCommandPalette} /> */}
+      <Toaster />
     </div>
-  )
+  );
 }
 
 
