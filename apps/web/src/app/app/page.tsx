@@ -1,11 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import PageHeader from "@/components/app/PageHeader";
 import QuickActions from "@/components/app/QuickActions";
 import FloatingQuickAdd from "@/components/app/FloatingQuickAdd";
-import { TrendingUp, TrendingDown, BarChart3, Trophy, Target, Zap } from "lucide-react";
+import { BarChart3, Trophy, Target, Zap } from "lucide-react";
 
 // Dynamically import components to avoid SSR issues
 const AppShell = dynamic(() => import("@/components/app/AppShell"), {
@@ -17,7 +16,7 @@ const AppShell = dynamic(() => import("@/components/app/AppShell"), {
   )
 });
 
-const DashboardContent = dynamic(() => import("@/components/app/DashboardContent"), {
+const DashboardLayout = dynamic(() => import("@/components/app/DashboardLayout"), {
   ssr: false,
   loading: () => (
     <div className="min-h-screen flex items-center justify-center">
@@ -28,35 +27,8 @@ const DashboardContent = dynamic(() => import("@/components/app/DashboardContent
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
-  const [dashboardData, setDashboardData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (status === "loading") return;
-    
-    if (!session) {
-      setLoading(false);
-      return;
-    }
-
-    const fetchDashboardData = async () => {
-      try {
-        const response = await fetch('/api/dashboard');
-        if (response.ok) {
-          const data = await response.json();
-          setDashboardData(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, [session, status]);
-
-  if (status === "loading" || loading) {
+  if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -82,22 +54,7 @@ export default function DashboardPage() {
     );
   }
 
-  // Default data if API fails
-  const defaultData = {
-    userName: session.user?.name || session.user?.email?.split('@')[0] || 'there',
-    showOnboarding: true,
-    hasEmailIntegration: false,
-    hasCalendarIntegration: false,
-    unreadCount: 0,
-    recentThreads: [],
-    upcomingEvents: [],
-    calendarStats: { todayCount: 0, upcomingCount: 0 },
-    pipelineStats: [],
-    totalActiveLeads: 0,
-    tokenHealth: []
-  };
-
-  const data = dashboardData || defaultData;
+  const userName = session.user?.name || session.user?.email?.split('@')[0] || 'there';
 
   // Enhanced 7-day deltas with trends
   const sevenDayDeltas = [
@@ -127,7 +84,6 @@ export default function DashboardPage() {
   // Personalized greeting based on time and user data
   const getPersonalizedGreeting = () => {
     const hour = new Date().getHours();
-    const userName = data.userName;
     
     if (hour < 12) return `Good morning, ${userName}`;
     if (hour < 18) return `Good afternoon, ${userName}`;
@@ -156,7 +112,7 @@ export default function DashboardPage() {
           to: "to-purple-600/12"
         }}
       />
-      <DashboardContent {...data} />
+      <DashboardLayout />
       <QuickActions />
       <FloatingQuickAdd />
     </AppShell>

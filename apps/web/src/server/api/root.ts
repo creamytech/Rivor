@@ -135,6 +135,88 @@ export const appRouter = router({
     };
   }),
 
+  // Dashboard layout management
+  saveLayout: protectedProcedure
+    .input(z.object({
+      userId: z.string(),
+      layouts: z.record(z.string(), z.array(z.object({
+        i: z.string(),
+        x: z.number(),
+        y: z.number(),
+        w: z.number(),
+        h: z.number(),
+        minW: z.number().optional(),
+        minH: z.number().optional(),
+        maxW: z.number().optional(),
+        maxH: z.number().optional(),
+        static: z.boolean().optional()
+      }))),
+      hiddenCardIds: z.array(z.string()),
+      activePreset: z.string()
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        // For now, we'll store this in a simple way
+        // In a real implementation, you'd want to store this in the database
+        console.log('Saving layout for user:', input.userId, {
+          layouts: input.layouts,
+          hiddenCardIds: input.hiddenCardIds,
+          activePreset: input.activePreset
+        });
+        
+        return { success: true };
+      } catch (error) {
+        console.error('Error saving layout:', error);
+        throw new Error('Failed to save layout');
+      }
+    }),
+
+  loadLayout: protectedProcedure
+    .input(z.object({
+      userId: z.string()
+    }))
+    .query(async ({ input }) => {
+      try {
+        // For now, return default layout
+        // In a real implementation, you'd load from the database
+        console.log('Loading layout for user:', input.userId);
+        
+        return {
+          layouts: {
+            lg: [
+              { i: 'todayAtGlance', x: 0, y: 0, w: 12, h: 2 },
+              { i: 'syncProgress', x: 0, y: 2, w: 4, h: 2 },
+              { i: 'leadFeed', x: 4, y: 2, w: 8, h: 6 },
+              { i: 'activityFeed', x: 0, y: 4, w: 4, h: 4 },
+              { i: 'healthWidget', x: 8, y: 2, w: 4, h: 2 },
+              { i: 'pipelineSparkline', x: 0, y: 8, w: 6, h: 2 }
+            ],
+            md: [
+              { i: 'todayAtGlance', x: 0, y: 0, w: 8, h: 2 },
+              { i: 'syncProgress', x: 0, y: 2, w: 4, h: 2 },
+              { i: 'leadFeed', x: 0, y: 4, w: 8, h: 6 },
+              { i: 'activityFeed', x: 0, y: 10, w: 8, h: 4 },
+              { i: 'healthWidget', x: 4, y: 2, w: 4, h: 2 },
+              { i: 'pipelineSparkline', x: 0, y: 14, w: 8, h: 2 }
+            ],
+            sm: [
+              { i: 'todayAtGlance', x: 0, y: 0, w: 4, h: 2 },
+              { i: 'syncProgress', x: 0, y: 2, w: 4, h: 2 },
+              { i: 'leadFeed', x: 0, y: 4, w: 4, h: 6 },
+              { i: 'activityFeed', x: 0, y: 10, w: 4, h: 4 },
+              { i: 'healthWidget', x: 0, y: 14, w: 4, h: 2 },
+              { i: 'pipelineSparkline', x: 0, y: 16, w: 4, h: 2 }
+            ]
+          },
+          hiddenCardIds: [],
+          activePreset: 'default'
+        };
+      } catch (error) {
+        console.error('Error loading layout:', error);
+        throw new Error('Failed to load layout');
+      }
+    }),
+
   // Lead Management
   leads: {
     list: protectedProcedure
@@ -1074,6 +1156,8 @@ export const appRouter = router({
         return { success: true, message: 'Appearance settings updated successfully' };
       })
   },
+
+
 
   // AI Chat
   chat: {

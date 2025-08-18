@@ -1,0 +1,461 @@
+"use client";
+
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Responsive, WidthProvider } from 'react-grid-layout';
+import 'react-grid-layout/css/styles.css';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Settings,
+  Save,
+  RotateCcw,
+  Plus,
+  Eye,
+  EyeOff,
+  Grid3X3,
+  Lock,
+  Unlock
+} from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { trpc } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
+
+// Import dashboard cards
+import TodayAtAGlance from './TodayAtAGlance';
+import CompactSyncProgress from './CompactSyncProgress';
+import LeadFeed from './LeadFeed';
+import ActivityFeed from './ActivityFeed';
+import HealthWidget from './HealthWidget';
+import MiniPipelineSparkline from './MiniPipelineSparkline';
+
+const ResponsiveGridLayout = WidthProvider(Responsive);
+
+interface DashboardLayoutProps {
+  className?: string;
+}
+
+// Dashboard card registry
+const DASHBOARD_CARDS = {
+  todayAtGlance: {
+    id: 'todayAtGlance',
+    title: 'Today at a Glance',
+    component: TodayAtAGlance,
+    minW: 8,
+    minH: 2,
+    defaultW: 12,
+    defaultH: 2,
+    pinned: false,
+    description: 'Key metrics and stats for today',
+    category: 'analytics'
+  },
+  syncProgress: {
+    id: 'syncProgress',
+    title: 'Sync Progress',
+    component: CompactSyncProgress,
+    minW: 3,
+    minH: 2,
+    defaultW: 4,
+    defaultH: 2,
+    pinned: false,
+    description: 'Integration sync status and progress',
+    category: 'integrations'
+  },
+  leadFeed: {
+    id: 'leadFeed',
+    title: 'Lead Feed',
+    component: LeadFeed,
+    minW: 6,
+    minH: 4,
+    defaultW: 8,
+    defaultH: 6,
+    pinned: false,
+    description: 'Recent leads and opportunities',
+    category: 'leads'
+  },
+  activityFeed: {
+    id: 'activityFeed',
+    title: 'Live Activity',
+    component: ActivityFeed,
+    minW: 3,
+    minH: 3,
+    defaultW: 4,
+    defaultH: 4,
+    pinned: false,
+    description: 'Real-time activity stream',
+    category: 'activity'
+  },
+  healthWidget: {
+    id: 'healthWidget',
+    title: 'System Health',
+    component: HealthWidget,
+    minW: 3,
+    minH: 2,
+    defaultW: 4,
+    defaultH: 2,
+    pinned: true,
+    description: 'Integration health and alerts',
+    category: 'integrations'
+  },
+  pipelineSparkline: {
+    id: 'pipelineSparkline',
+    title: 'Pipeline Overview',
+    component: MiniPipelineSparkline,
+    minW: 4,
+    minH: 2,
+    defaultW: 6,
+    defaultH: 2,
+    pinned: false,
+    description: 'Pipeline performance and trends',
+    category: 'analytics'
+  }
+};
+
+// Layout presets
+const LAYOUT_PRESETS = {
+  default: {
+    name: 'Default',
+    description: 'Standard dashboard layout',
+    layouts: {
+      lg: [
+        { i: 'todayAtGlance', x: 0, y: 0, w: 12, h: 2 },
+        { i: 'syncProgress', x: 0, y: 2, w: 4, h: 2 },
+        { i: 'leadFeed', x: 4, y: 2, w: 8, h: 6 },
+        { i: 'activityFeed', x: 0, y: 4, w: 4, h: 4 },
+        { i: 'healthWidget', x: 8, y: 2, w: 4, h: 2 },
+        { i: 'pipelineSparkline', x: 0, y: 8, w: 6, h: 2 }
+      ],
+      md: [
+        { i: 'todayAtGlance', x: 0, y: 0, w: 8, h: 2 },
+        { i: 'syncProgress', x: 0, y: 2, w: 4, h: 2 },
+        { i: 'leadFeed', x: 0, y: 4, w: 8, h: 6 },
+        { i: 'activityFeed', x: 0, y: 10, w: 8, h: 4 },
+        { i: 'healthWidget', x: 4, y: 2, w: 4, h: 2 },
+        { i: 'pipelineSparkline', x: 0, y: 14, w: 8, h: 2 }
+      ],
+      sm: [
+        { i: 'todayAtGlance', x: 0, y: 0, w: 4, h: 2 },
+        { i: 'syncProgress', x: 0, y: 2, w: 4, h: 2 },
+        { i: 'leadFeed', x: 0, y: 4, w: 4, h: 6 },
+        { i: 'activityFeed', x: 0, y: 10, w: 4, h: 4 },
+        { i: 'healthWidget', x: 0, y: 14, w: 4, h: 2 },
+        { i: 'pipelineSparkline', x: 0, y: 16, w: 4, h: 2 }
+      ]
+    }
+  },
+  agent: {
+    name: 'Agent',
+    description: 'Focused on lead management and activity',
+    layouts: {
+      lg: [
+        { i: 'leadFeed', x: 0, y: 0, w: 8, h: 8 },
+        { i: 'activityFeed', x: 8, y: 0, w: 4, h: 6 },
+        { i: 'todayAtGlance', x: 8, y: 6, w: 4, h: 2 },
+        { i: 'healthWidget', x: 0, y: 8, w: 4, h: 2 },
+        { i: 'pipelineSparkline', x: 4, y: 8, w: 4, h: 2 }
+      ],
+      md: [
+        { i: 'leadFeed', x: 0, y: 0, w: 8, h: 8 },
+        { i: 'activityFeed', x: 0, y: 8, w: 8, h: 4 },
+        { i: 'todayAtGlance', x: 0, y: 12, w: 4, h: 2 },
+        { i: 'healthWidget', x: 4, y: 12, w: 4, h: 2 }
+      ],
+      sm: [
+        { i: 'leadFeed', x: 0, y: 0, w: 4, h: 8 },
+        { i: 'activityFeed', x: 0, y: 8, w: 4, h: 4 },
+        { i: 'todayAtGlance', x: 0, y: 12, w: 4, h: 2 },
+        { i: 'healthWidget', x: 0, y: 14, w: 4, h: 2 }
+      ]
+    }
+  },
+  teamLead: {
+    name: 'Team Lead',
+    description: 'Analytics and team overview focused',
+    layouts: {
+      lg: [
+        { i: 'todayAtGlance', x: 0, y: 0, w: 12, h: 2 },
+        { i: 'pipelineSparkline', x: 0, y: 2, w: 6, h: 3 },
+        { i: 'leadFeed', x: 6, y: 2, w: 6, h: 6 },
+        { i: 'activityFeed', x: 0, y: 5, w: 6, h: 4 },
+        { i: 'healthWidget', x: 0, y: 9, w: 4, h: 2 },
+        { i: 'syncProgress', x: 4, y: 9, w: 4, h: 2 }
+      ],
+      md: [
+        { i: 'todayAtGlance', x: 0, y: 0, w: 8, h: 2 },
+        { i: 'pipelineSparkline', x: 0, y: 2, w: 8, h: 3 },
+        { i: 'leadFeed', x: 0, y: 5, w: 8, h: 6 },
+        { i: 'activityFeed', x: 0, y: 11, w: 8, h: 4 },
+        { i: 'healthWidget', x: 0, y: 15, w: 4, h: 2 },
+        { i: 'syncProgress', x: 4, y: 15, w: 4, h: 2 }
+      ],
+      sm: [
+        { i: 'todayAtGlance', x: 0, y: 0, w: 4, h: 2 },
+        { i: 'pipelineSparkline', x: 0, y: 2, w: 4, h: 3 },
+        { i: 'leadFeed', x: 0, y: 5, w: 4, h: 6 },
+        { i: 'activityFeed', x: 0, y: 11, w: 4, h: 4 },
+        { i: 'healthWidget', x: 0, y: 15, w: 4, h: 2 },
+        { i: 'syncProgress', x: 0, y: 17, w: 4, h: 2 }
+      ]
+    }
+  },
+  ops: {
+    name: 'Operations',
+    description: 'System health and integrations focused',
+    layouts: {
+      lg: [
+        { i: 'healthWidget', x: 0, y: 0, w: 6, h: 3 },
+        { i: 'syncProgress', x: 6, y: 0, w: 6, h: 3 },
+        { i: 'activityFeed', x: 0, y: 3, w: 4, h: 6 },
+        { i: 'leadFeed', x: 4, y: 3, w: 8, h: 6 },
+        { i: 'todayAtGlance', x: 0, y: 9, w: 6, h: 2 },
+        { i: 'pipelineSparkline', x: 6, y: 9, w: 6, h: 2 }
+      ],
+      md: [
+        { i: 'healthWidget', x: 0, y: 0, w: 4, h: 3 },
+        { i: 'syncProgress', x: 4, y: 0, w: 4, h: 3 },
+        { i: 'activityFeed', x: 0, y: 3, w: 8, h: 4 },
+        { i: 'leadFeed', x: 0, y: 7, w: 8, h: 6 },
+        { i: 'todayAtGlance', x: 0, y: 13, w: 4, h: 2 },
+        { i: 'pipelineSparkline', x: 4, y: 13, w: 4, h: 2 }
+      ],
+      sm: [
+        { i: 'healthWidget', x: 0, y: 0, w: 4, h: 3 },
+        { i: 'syncProgress', x: 0, y: 3, w: 4, h: 3 },
+        { i: 'activityFeed', x: 0, y: 6, w: 4, h: 4 },
+        { i: 'leadFeed', x: 0, y: 10, w: 4, h: 6 },
+        { i: 'todayAtGlance', x: 0, y: 16, w: 4, h: 2 },
+        { i: 'pipelineSparkline', x: 0, y: 18, w: 4, h: 2 }
+      ]
+    }
+  }
+};
+
+export default function DashboardLayout({ className = '' }: DashboardLayoutProps) {
+  const { data: session } = useSession();
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [layouts, setLayouts] = useState(LAYOUT_PRESETS.default.layouts);
+  const [hiddenCards, setHiddenCards] = useState<string[]>([]);
+  const [activePreset, setActivePreset] = useState('default');
+  const [showCardDrawer, setShowCardDrawer] = useState(false);
+  const [showPresetDrawer, setShowPresetDrawer] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const saveLayoutMutation = trpc.saveLayout.useMutation();
+  const loadLayoutMutation = trpc.loadLayout.useQuery(
+    { userId: session?.user?.id || '' },
+    { enabled: !!session?.user?.id }
+  );
+
+  // Load saved layout on mount
+  useEffect(() => {
+    if (loadLayoutMutation.data) {
+      setLayouts(loadLayoutMutation.data.layouts);
+      setHiddenCards(loadLayoutMutation.data.hiddenCardIds);
+      setActivePreset(loadLayoutMutation.data.activePreset);
+    }
+  }, [loadLayoutMutation.data]);
+
+  // Save layout when it changes
+  const handleLayoutChange = useCallback((currentLayout: any, allLayouts: any) => {
+    setLayouts(allLayouts);
+    
+    // Debounced save
+    const timeoutId = setTimeout(() => {
+      if (session?.user?.id) {
+        saveLayoutMutation.mutate({
+          userId: session.user.id,
+          layouts: allLayouts,
+          hiddenCardIds: hiddenCards,
+          activePreset
+        });
+      }
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [session?.user?.id, hiddenCards, activePreset, saveLayoutMutation]);
+
+  const handleDragStart = () => {
+    setIsDragging(true);
+  };
+
+  const handleDragStop = () => {
+    setIsDragging(false);
+  };
+
+  const toggleCardVisibility = (cardId: string) => {
+    setHiddenCards(prev => 
+      prev.includes(cardId) 
+        ? prev.filter(id => id !== cardId)
+        : [...prev, cardId]
+    );
+  };
+
+  const applyPreset = (presetName: string) => {
+    const preset = LAYOUT_PRESETS[presetName as keyof typeof LAYOUT_PRESETS];
+    if (preset) {
+      setLayouts(preset.layouts);
+      setActivePreset(presetName);
+      setShowPresetDrawer(false);
+    }
+  };
+
+  const resetToDefault = () => {
+    setLayouts(LAYOUT_PRESETS.default.layouts);
+    setHiddenCards([]);
+    setActivePreset('default');
+  };
+
+  const renderCard = (cardId: string) => {
+    const cardConfig = DASHBOARD_CARDS[cardId as keyof typeof DASHBOARD_CARDS];
+    if (!cardConfig) return null;
+
+    const Component = cardConfig.component;
+    return (
+      <div key={cardId} className="h-full w-full">
+        <Component />
+      </div>
+    );
+  };
+
+  const visibleCards = Object.keys(DASHBOARD_CARDS).filter(
+    cardId => !hiddenCards.includes(cardId)
+  );
+
+  return (
+    <div className={cn("relative", className)}>
+      {/* Edit Mode Toolbar */}
+      <AnimatePresence>
+        {isEditMode && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-slate-200 dark:bg-slate-900/80 dark:border-slate-700 p-4"
+          >
+            <div className="flex items-center justify-between max-w-7xl mx-auto">
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Grid3X3 className="h-3 w-3" />
+                  Edit Mode
+                </Badge>
+                <span className="text-sm text-slate-600 dark:text-slate-400">
+                  Drag cards to rearrange • Resize corners to adjust size
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowCardDrawer(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Cards
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPresetDrawer(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  Presets
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={resetToDefault}
+                  className="flex items-center gap-2"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Reset
+                </Button>
+                
+                <Button
+                  size="sm"
+                  onClick={() => setIsEditMode(false)}
+                  className="flex items-center gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  Save & Exit
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Dashboard Grid */}
+      <div className="p-6">
+        <ResponsiveGridLayout
+          className="layout dashboard-grid"
+          layouts={layouts}
+          breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+          cols={{ lg: 12, md: 8, sm: 4, xs: 4, xxs: 2 }}
+          rowHeight={80}
+          isDraggable={isEditMode}
+          isResizable={isEditMode}
+          onLayoutChange={handleLayoutChange}
+          onDragStart={handleDragStart}
+          onDragStop={handleDragStop}
+          onResizeStart={handleDragStart}
+          onResizeStop={handleDragStop}
+          margin={[16, 16]}
+          containerPadding={[0, 0]}
+          useCSSTransforms={true}
+          preventCollision={false}
+          compactType="vertical"
+        >
+          {visibleCards.map(cardId => (
+            <div key={cardId} className="relative">
+              {renderCard(cardId)}
+            </div>
+          ))}
+        </ResponsiveGridLayout>
+      </div>
+
+      {/* Edit Mode Toggle Button */}
+      {!isEditMode && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="fixed bottom-6 right-6 z-50"
+        >
+          <Button
+            onClick={() => setIsEditMode(true)}
+            className="rounded-full shadow-lg bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white"
+            size="lg"
+          >
+            <Settings className="h-5 w-5 mr-2" />
+            Customize
+          </Button>
+        </motion.div>
+      )}
+
+      {/* Card Management Drawer */}
+      <CardManagementDrawer
+        isOpen={showCardDrawer}
+        onClose={() => setShowCardDrawer(false)}
+        hiddenCards={hiddenCards}
+        onToggleCard={toggleCardVisibility}
+        cards={DASHBOARD_CARDS}
+      />
+
+      {/* Preset Management Drawer */}
+      <PresetManagementDrawer
+        isOpen={showPresetDrawer}
+        onClose={() => setShowPresetDrawer(false)}
+        presets={LAYOUT_PRESETS}
+        activePreset={activePreset}
+        onApplyPreset={applyPreset}
+      />
+    </div>
+  );
+}
+
+// Import the drawer components
+import CardManagementDrawer from './CardManagementDrawer';
+import PresetManagementDrawer from './PresetManagementDrawer';
