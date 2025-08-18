@@ -833,32 +833,63 @@ export const appRouter = router({
     getLeadRules: protectedProcedure.query(async () => {
       const org = await getCurrentUserOrg();
       
-      // This would typically come from a settings table
-      // For now, return default rules
-      return {
-        aliases: ['buy', 'sell', 'rent', 'purchase'],
-        thresholds: {
-          high: 80,
-          medium: 50
+      // Return array of lead rules to match component interface
+      return [
+        {
+          id: '1',
+          name: 'High Confidence Buyers',
+          description: 'Automatically promote leads with high confidence scores',
+          enabled: true,
+          conditions: [
+            { field: 'confidence', operator: 'greater_than', value: '80' },
+            { field: 'intent', operator: 'contains', value: 'buy' }
+          ],
+          actions: [
+            { type: 'promote', value: 'qualified' },
+            { type: 'assign', value: 'sales-team' }
+          ],
+          priority: 1,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         },
-        positiveKeywords: ['interested', 'looking', 'available', 'price'],
-        negativeKeywords: ['not interested', 'unsubscribe', 'spam'],
-        blockedDomains: ['noreply.com', 'donotreply.com'],
-        retentionWindow: 30
-      };
+        {
+          id: '2',
+          name: 'Newsletter Filter',
+          description: 'Filter out newsletter and marketing emails',
+          enabled: true,
+          conditions: [
+            { field: 'domain', operator: 'contains', value: 'newsletter' }
+          ],
+          actions: [
+            { type: 'dismiss', value: 'newsletter' }
+          ],
+          priority: 2,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
     }),
 
     updateLeadRules: protectedProcedure
       .input(z.object({
-        aliases: z.array(z.string()).optional(),
-        thresholds: z.object({
-          high: z.number(),
-          medium: z.number()
-        }).optional(),
-        positiveKeywords: z.array(z.string()).optional(),
-        negativeKeywords: z.array(z.string()).optional(),
-        blockedDomains: z.array(z.string()).optional(),
-        retentionWindow: z.number().optional()
+        rules: z.array(z.object({
+          id: z.string(),
+          name: z.string(),
+          description: z.string(),
+          enabled: z.boolean(),
+          conditions: z.array(z.object({
+            field: z.string(),
+            operator: z.string(),
+            value: z.string()
+          })),
+          actions: z.array(z.object({
+            type: z.string(),
+            value: z.string()
+          })),
+          priority: z.number(),
+          createdAt: z.string(),
+          updatedAt: z.string()
+        }))
       }))
       .mutation(async ({ input }) => {
         const org = await getCurrentUserOrg();
@@ -871,21 +902,57 @@ export const appRouter = router({
     getNotifications: protectedProcedure.query(async () => {
       const user = await getCurrentUser();
       
-      // This would typically come from user preferences
-      return {
-        inApp: true,
-        emailDigests: 'daily',
-        emailNotifications: true,
-        pushNotifications: false
-      };
+      // Return array of notification settings to match component interface
+      return [
+        {
+          id: '1',
+          type: 'New Lead Detected',
+          enabled: true,
+          channels: {
+            email: true,
+            push: false,
+            inApp: true
+          },
+          frequency: 'immediate'
+        },
+        {
+          id: '2',
+          type: 'High Priority Reply Due',
+          enabled: true,
+          channels: {
+            email: false,
+            push: true,
+            inApp: true
+          },
+          frequency: 'immediate'
+        },
+        {
+          id: '3',
+          type: 'Weekly Lead Summary',
+          enabled: true,
+          channels: {
+            email: true,
+            push: false,
+            inApp: false
+          },
+          frequency: 'weekly'
+        }
+      ];
     }),
 
     updateNotifications: protectedProcedure
       .input(z.object({
-        inApp: z.boolean().optional(),
-        emailDigests: z.enum(['none', 'daily', 'weekly']).optional(),
-        emailNotifications: z.boolean().optional(),
-        pushNotifications: z.boolean().optional()
+        notifications: z.array(z.object({
+          id: z.string(),
+          type: z.string(),
+          enabled: z.boolean(),
+          channels: z.object({
+            email: z.boolean(),
+            push: z.boolean(),
+            inApp: z.boolean()
+          }),
+          frequency: z.enum(['immediate', 'daily', 'weekly'])
+        }))
       }))
       .mutation(async ({ input }) => {
         const user = await getCurrentUser();
@@ -897,21 +964,23 @@ export const appRouter = router({
     getAppearance: protectedProcedure.query(async () => {
       const user = await getCurrentUser();
       
-      // This would typically come from user preferences
+      // Return appearance settings to match component interface
       return {
+        theme: 'system',
         accentColor: 'blue',
         glassIntensity: 'medium',
-        highContrastMode: false,
-        theme: 'system'
+        highContrast: false,
+        animations: true
       };
     }),
 
     updateAppearance: protectedProcedure
       .input(z.object({
+        theme: z.enum(['light', 'dark', 'system']).optional(),
         accentColor: z.string().optional(),
         glassIntensity: z.enum(['low', 'medium', 'high']).optional(),
-        highContrastMode: z.boolean().optional(),
-        theme: z.enum(['light', 'dark', 'system']).optional()
+        highContrast: z.boolean().optional(),
+        animations: z.boolean().optional()
       }))
       .mutation(async ({ input }) => {
         const user = await getCurrentUser();
