@@ -41,8 +41,10 @@ const DASHBOARD_CARDS = {
     id: 'todayAtGlance',
     title: 'Today at a Glance',
     component: TodayAtAGlance,
-    minW: 8,
+    minW: 6,
     minH: 2,
+    maxW: 12,
+    maxH: 3,
     defaultW: 12,
     defaultH: 2,
     pinned: false,
@@ -55,6 +57,8 @@ const DASHBOARD_CARDS = {
     component: CompactSyncProgress,
     minW: 3,
     minH: 2,
+    maxW: 6,
+    maxH: 3,
     defaultW: 4,
     defaultH: 2,
     pinned: false,
@@ -65,8 +69,10 @@ const DASHBOARD_CARDS = {
     id: 'leadFeed',
     title: 'Lead Feed',
     component: LeadFeed,
-    minW: 6,
+    minW: 4,
     minH: 4,
+    maxW: 12,
+    maxH: 8,
     defaultW: 8,
     defaultH: 6,
     pinned: false,
@@ -79,6 +85,8 @@ const DASHBOARD_CARDS = {
     component: ActivityFeed,
     minW: 3,
     minH: 3,
+    maxW: 8,
+    maxH: 6,
     defaultW: 4,
     defaultH: 4,
     pinned: false,
@@ -91,6 +99,8 @@ const DASHBOARD_CARDS = {
     component: HealthWidget,
     minW: 3,
     minH: 2,
+    maxW: 6,
+    maxH: 3,
     defaultW: 4,
     defaultH: 2,
     pinned: true,
@@ -103,6 +113,8 @@ const DASHBOARD_CARDS = {
     component: MiniPipelineSparkline,
     minW: 4,
     minH: 2,
+    maxW: 8,
+    maxH: 3,
     defaultW: 6,
     defaultH: 2,
     pinned: false,
@@ -257,14 +269,26 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
 
   // Save layout when it changes
   const handleLayoutChange = useCallback((currentLayout: any, allLayouts: any) => {
-    setLayouts(allLayouts);
+    // Ensure all items snap to grid properly
+    const snappedLayouts = Object.keys(allLayouts).reduce((acc, breakpoint) => {
+      acc[breakpoint] = allLayouts[breakpoint].map((item: any) => ({
+        ...item,
+        x: Math.round(item.x),
+        y: Math.round(item.y),
+        w: Math.max(1, Math.round(item.w)),
+        h: Math.max(1, Math.round(item.h))
+      }));
+      return acc;
+    }, {} as any);
+    
+    setLayouts(snappedLayouts);
     
     // Debounced save
     const timeoutId = setTimeout(() => {
       if (session?.user?.id) {
         saveLayoutMutation.mutate({
           userId: session.user.id,
-          layouts: allLayouts,
+          layouts: snappedLayouts,
           hiddenCardIds: hiddenCards,
           activePreset
         });
@@ -311,7 +335,7 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
 
     const Component = cardConfig.component;
     return (
-      <div key={cardId} className="h-full w-full">
+      <div key={cardId} className="h-full w-full overflow-hidden">
         <Component />
       </div>
     );
@@ -403,14 +427,16 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
           onDragStop={handleDragStop}
           onResizeStart={handleDragStart}
           onResizeStop={handleDragStop}
-          margin={[16, 16]}
-          containerPadding={[0, 0]}
+          margin={[8, 8]}
+          containerPadding={[8, 8]}
           useCSSTransforms={true}
           preventCollision={false}
           compactType="vertical"
+          isBounded={true}
+          transformScale={1}
         >
           {visibleCards.map(cardId => (
-            <div key={cardId} className="relative">
+            <div key={cardId} className="relative w-full h-full">
               {renderCard(cardId)}
             </div>
           ))}

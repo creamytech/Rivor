@@ -1009,6 +1009,14 @@ body {
 /* Custom styles for dashboard grid */
 .dashboard-grid {
   background: transparent;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 400px;
+}
+
+.dashboard-grid .react-grid-layout {
+  width: 100% !important;
+  min-height: 400px;
 }
 
 .dashboard-grid .react-grid-item {
@@ -1019,6 +1027,15 @@ body {
   backdrop-filter: blur(8px);
   box-shadow: 0 4px 20px color-mix(in oklab, var(--rivor-deep) 8%, transparent);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-grid .react-grid-item > div {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex;
+  flex-direction: column;
 }
 
 .dashboard-grid .react-grid-item:hover {
@@ -1036,4 +1053,27 @@ body {
   opacity: 0.3;
   border-radius: 12px;
   border: 2px dashed var(--rivor-teal);
+}
+
+/* Ensure grid items snap properly */
+.react-grid-layout {
+  position: relative;
+  transition: height 200ms ease;
+  width: 100% !important;
+}
+
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: left, top, width, height;
+  box-sizing: border-box;
+}
+
+.react-grid-item.cssTransforms {
+  transition-property: transform, width, height;
+}
+
+/* Ensure proper grid item sizing */
+.react-grid-layout .react-grid-item {
+  position: absolute;
+  box-sizing: border-box;
 }
