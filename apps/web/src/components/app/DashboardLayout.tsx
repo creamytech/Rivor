@@ -335,7 +335,7 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
 
     const Component = cardConfig.component;
     return (
-      <div key={cardId} className="h-full w-full overflow-hidden">
+      <div key={cardId} className="h-full w-full overflow-hidden flex flex-col">
         <Component />
       </div>
     );
@@ -413,7 +413,7 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
       </AnimatePresence>
 
       {/* Main Dashboard Grid */}
-      <div className="p-6">
+      <div className="p-4">
         <ResponsiveGridLayout
           className="layout dashboard-grid"
           layouts={layouts}
@@ -427,8 +427,8 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
           onDragStop={handleDragStop}
           onResizeStart={handleDragStart}
           onResizeStop={handleDragStop}
-          margin={[8, 8]}
-          containerPadding={[8, 8]}
+          margin={[0, 0]}
+          containerPadding={[0, 0]}
           useCSSTransforms={true}
           preventCollision={false}
           compactType="vertical"
@@ -436,7 +436,7 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
           transformScale={1}
         >
           {visibleCards.map(cardId => (
-            <div key={cardId} className="relative w-full h-full">
+            <div key={cardId} className="relative w-full h-full p-2">
               {renderCard(cardId)}
             </div>
           ))}
