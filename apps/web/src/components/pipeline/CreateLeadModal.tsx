@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -61,7 +62,25 @@ export default function CreateLeadModal({
   
   const [tagInput, setTagInput] = useState('');
   const [creating, setCreating] = useState(false);
-  const [stages, setStages] = useState<Array<{ id: string; name: string }>>([]);
+
+  // Fetch stages using tRPC
+  const { data: stagesData } = trpc.pipelineStages.list.useQuery();
+  const stages = stagesData || [];
+
+  // Create lead mutation
+  const createLeadMutation = trpc.leads.create.useMutation({
+    onSuccess: (newLead) => {
+      if (onLeadCreated) {
+        onLeadCreated(newLead);
+      }
+      onOpenChange(false);
+      setCreating(false);
+    },
+    onError: (error) => {
+      console.error('Failed to create lead:', error);
+      setCreating(false);
+    }
+  });
 
   useEffect(() => {
     if (threadData) {
@@ -76,53 +95,29 @@ export default function CreateLeadModal({
     }
   }, [threadData]);
 
-  useEffect(() => {
-    fetchStages();
-  }, []);
-
-  const fetchStages = async () => {
-    try {
-      const response = await fetch('/api/pipeline/stages');
-      if (response.ok) {
-        const data = await response.json();
-        setStages(data.stages || []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch stages:', error);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreating(true);
 
     try {
       const leadData = {
-        ...formData,
+        title: formData.title,
+        company: formData.company,
+        contact: formData.contact,
+        email: formData.email,
         value: parseFloat(formData.value) || 0,
-        probability: parseInt(formData.probability),
+        probabilityPercent: parseInt(formData.probability),
+        stageId: formData.stage,
+        priority: formData.priority,
+        source: formData.source,
+        description: formData.description,
+        tags: formData.tags,
         threadId: threadData?.threadId
       };
 
-      const response = await fetch('/api/pipeline/leads', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(leadData)
-      });
-
-      if (response.ok) {
-        const createdLead = await response.json();
-        onLeadCreated?.(createdLead);
-        onOpenChange(false);
-        resetForm();
-      } else {
-        throw new Error('Failed to create lead');
-      }
+      createLeadMutation.mutate(leadData);
     } catch (error) {
       console.error('Failed to create lead:', error);
-    } finally {
       setCreating(false);
     }
   };

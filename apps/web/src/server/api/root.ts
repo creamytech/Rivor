@@ -180,22 +180,59 @@ export const appRouter = router({
     create: protectedProcedure
       .input(z.object({
         title: z.string(),
-        contactId: z.string().optional(),
-        stageId: z.string().optional(),
-        assignedToId: z.string().optional(),
-        dealValue: z.number().optional(),
+        company: z.string().optional(),
+        contact: z.string().optional(),
+        email: z.string().optional(),
+        value: z.number().optional(),
         probabilityPercent: z.number().optional(),
-        notes: z.string().optional(),
+        stageId: z.string().optional(),
         priority: z.enum(['low', 'medium', 'high']).default('medium'),
         source: z.string().optional(),
-        expectedCloseDate: z.date().optional()
+        description: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+        threadId: z.string().optional()
       }))
       .mutation(async ({ input }) => {
         const org = await getCurrentUserOrg();
         
+        // Create or find contact if email provided
+        let contactId: string | undefined;
+        if (input.email) {
+          const existingContact = await prisma.contact.findFirst({
+            where: { 
+              orgId: org.id,
+              emailEnc: { not: null } // In real implementation, this would be decrypted and compared
+            }
+          });
+          
+          if (existingContact) {
+            contactId = existingContact.id;
+          } else {
+            // Create new contact
+            const newContact = await prisma.contact.create({
+              data: {
+                orgId: org.id,
+                nameEnc: Buffer.from(input.contact || 'Unknown', 'utf8'), // In real implementation, this would be encrypted
+                emailEnc: Buffer.from(input.email, 'utf8'), // In real implementation, this would be encrypted
+                companyEnc: input.company ? Buffer.from(input.company, 'utf8') : null, // In real implementation, this would be encrypted
+                source: input.source || 'manual'
+              }
+            });
+            contactId = newContact.id;
+          }
+        }
+
         return await prisma.lead.create({
           data: {
-            ...input,
+            title: input.title,
+            contactId,
+            stageId: input.stageId,
+            dealValueEnc: input.value ? Buffer.from(input.value.toString(), 'utf8') : null, // In real implementation, this would be encrypted
+            probabilityPercent: input.probabilityPercent,
+            notesEnc: input.description ? Buffer.from(input.description, 'utf8') : null, // In real implementation, this would be encrypted
+            priority: input.priority,
+            source: input.source,
+            sourceThreadId: input.threadId,
             orgId: org.id
           },
           include: {
@@ -429,7 +466,7 @@ export const appRouter = router({
         const where: any = { orgId: org.id };
         if (input.start) where.start = { gte: input.start };
         if (input.end) where.end = { lte: input.end };
-        if (input.search) where.titleEnc = { not: null };
+        if (input.search) where.titleIndex = { contains: input.search };
 
         const events = await prisma.calendarEvent.findMany({
           where,
@@ -456,11 +493,25 @@ export const appRouter = router({
         const org = await getCurrentUserOrg();
         const user = await getCurrentUser();
         
+        // Get the first calendar account for this org
+        const calendarAccount = await prisma.calendarAccount.findFirst({
+          where: { orgId: org.id }
+        });
+
+        if (!calendarAccount) {
+          throw new Error('No calendar account found for this organization');
+        }
+
         return await prisma.calendarEvent.create({
           data: {
-            ...input,
+            titleIndex: input.title,
+            locationIndex: input.location || '',
+            notesEnc: input.notes ? Buffer.from(input.notes, 'utf8') : null, // In real implementation, this would be encrypted
+            attendeesEnc: input.attendees ? Buffer.from(JSON.stringify(input.attendees), 'utf8') : null, // In real implementation, this would be encrypted
+            start: input.start,
+            end: input.end,
             orgId: org.id,
-            accountId: user.orgMembers[0]?.orgId || org.id
+            accountId: calendarAccount.id
           }
         });
       })

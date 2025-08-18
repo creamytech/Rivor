@@ -186,20 +186,20 @@ export default function EnhancedInbox({ className = '' }: EnhancedInboxProps) {
           </p>
         </div>
 
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-          <TabsList className="grid w-full grid-cols-3 bg-white/10">
-            <TabsTrigger value="leads" className="text-sm">
-              Leads ({threads.filter(t => t.status === 'unread').length})
-            </TabsTrigger>
-            <TabsTrigger value="review" className="text-sm">
-              Review ({threads.filter(t => t.status === 'read').length})
-            </TabsTrigger>
-            <TabsTrigger value="other" className="text-sm">
-              Other ({threads.filter(t => t.status === 'archived').length})
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+                 {/* Tabs */}
+         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+           <TabsList className="grid w-full grid-cols-3 bg-white/10">
+             <TabsTrigger value="leads" className="text-sm">
+               Leads ({threads.filter(t => t.unread).length})
+             </TabsTrigger>
+             <TabsTrigger value="review" className="text-sm">
+               Review ({threads.filter(t => !t.unread && !t.labels.includes('archived')).length})
+             </TabsTrigger>
+             <TabsTrigger value="other" className="text-sm">
+               Other ({threads.filter(t => t.labels.includes('archived')).length})
+             </TabsTrigger>
+           </TabsList>
+         </Tabs>
 
         {/* Search and Filters */}
         <div className="mb-6 space-y-4">
@@ -307,7 +307,7 @@ export default function EnhancedInbox({ className = '' }: EnhancedInboxProps) {
                       const isSelected = selectedThreads.has(thread.id);
                       const isActive = selectedThread?.id === thread.id;
                       const latestMessage = thread.messages[0];
-                      const hasAttachments = thread._count.attachments > 0;
+                                             const hasAttachments = thread.messages.some(msg => msg.attachments && msg.attachments.length > 0);
 
                       return (
                         <div
@@ -381,11 +381,11 @@ export default function EnhancedInbox({ className = '' }: EnhancedInboxProps) {
                                 <Badge variant="outline" className="text-xs">
                                   {thread._count.messages} messages
                                 </Badge>
-                                {hasAttachments && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {thread._count.attachments} attachments
-                                  </Badge>
-                                )}
+                                                                 {hasAttachments && (
+                                   <Badge variant="outline" className="text-xs">
+                                     {thread.messages.reduce((count, msg) => count + (msg.attachments?.length || 0), 0)} attachments
+                                   </Badge>
+                                 )}
                               </div>
 
                               <div className="flex items-center justify-between">
