@@ -71,7 +71,7 @@ export default function HealthWidget({ integrations = [], onFix, onReauth }: Hea
   const totalErrors = integrations.filter(integration => integration.errorReason).length;
 
   return (
-    <GlassCard variant="river-flow" intensity="medium" flowDirection="up" className="h-full">
+    <GlassCard variant="river-flow" intensity="medium" flowDirection="up" className="h-full flex flex-col">
       <GlassCardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -95,7 +95,7 @@ export default function HealthWidget({ integrations = [], onFix, onReauth }: Hea
           </div>
         </div>
       </GlassCardHeader>
-      <GlassCardContent className="p-0">
+      <GlassCardContent className="p-0 flex-1 flex flex-col">
         <div className="space-y-3">
           {integrations.map((integration) => (
             <div
@@ -165,27 +165,29 @@ export default function HealthWidget({ integrations = [], onFix, onReauth }: Hea
         </div>
 
         {integrations.length === 0 && (
-          <EmptyState
-            icon={<WifiOff className="h-6 w-6" />}
-            title="No integrations configured"
-            description="Connect your email and calendar accounts to start syncing data and detecting leads automatically."
-            illustration="waves"
-            size="md"
-            actions={[
-              {
-                label: "Connect Gmail",
-                onClick: () => console.log('Connect Gmail'),
-                variant: 'default',
-                icon: <Mail className="h-4 w-4" />
-              },
-              {
-                label: "Connect Calendar",
-                onClick: () => console.log('Connect Calendar'),
-                variant: 'outline',
-                icon: <Calendar className="h-4 w-4" />
-              }
-            ]}
-          />
+          <div className="flex-1 flex items-center justify-center">
+            <EmptyState
+              icon={<WifiOff className="h-6 w-6" />}
+              title="No integrations configured"
+              description="Connect your email and calendar accounts to start syncing data and detecting leads automatically."
+              illustration="waves"
+              size="md"
+              actions={[
+                {
+                  label: "Connect Gmail",
+                  onClick: () => console.log('Connect Gmail'),
+                  variant: 'default',
+                  icon: <Mail className="h-4 w-4" />
+                },
+                {
+                  label: "Connect Calendar",
+                  onClick: () => console.log('Connect Calendar'),
+                  variant: 'outline',
+                  icon: <Calendar className="h-4 w-4" />
+                }
+              ]}
+            />
+          </div>
         )}
       </GlassCardContent>
     </GlassCard>

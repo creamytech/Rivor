@@ -76,28 +76,30 @@ export default function TodayAtAGlance({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
       {/* Leads Card */}
       <GlassCard
         variant="river-flow"
         intensity="medium"
         flowDirection="right"
-        className="group hover:scale-105 transition-transform duration-300 cursor-pointer"
+        className="group hover:scale-105 transition-transform duration-300 cursor-pointer h-full flex flex-col"
       >
-        <GlassCardContent className="p-4">
+        <GlassCardContent className="p-4 flex flex-col justify-between h-full">
           <div className="flex items-center justify-between mb-2">
             <Users className="h-5 w-5 text-blue-500" />
             {leadsData && getTrendIcon(leadsData.trend)}
           </div>
-          <GlassCardTitle className="text-2xl font-bold mb-1">
-            {leadsData?.new || 0}
-          </GlassCardTitle>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            New leads today
-          </p>
-          <p className="text-xs text-slate-500 mt-1">
-            {leadsData?.total || 0} total active
-          </p>
+          <div className="flex-1 flex flex-col justify-center">
+            <GlassCardTitle className="text-2xl font-bold mb-1">
+              {leadsData?.new || 0}
+            </GlassCardTitle>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              New leads today
+            </p>
+            <p className="text-xs text-slate-500 mt-1">
+              {leadsData?.total || 0} total active
+            </p>
+          </div>
         </GlassCardContent>
       </GlassCard>
 
@@ -106,22 +108,24 @@ export default function TodayAtAGlance({
         variant="river-flow"
         intensity="medium"
         flowDirection="down"
-        className="group hover:scale-105 transition-transform duration-300 cursor-pointer"
+        className="group hover:scale-105 transition-transform duration-300 cursor-pointer h-full flex flex-col"
       >
-        <GlassCardContent className="p-4">
+        <GlassCardContent className="p-4 flex flex-col justify-between h-full">
           <div className="flex items-center justify-between mb-2">
             <MessageSquare className="h-5 w-5 text-green-500" />
             {repliesData && getTrendIcon(repliesData.trend)}
           </div>
-          <GlassCardTitle className="text-2xl font-bold mb-1">
-            {repliesData?.due || 0}
-          </GlassCardTitle>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Replies due today
-          </p>
-          <p className="text-xs text-slate-500 mt-1">
-            {repliesData?.due || 0} pending
-          </p>
+          <div className="flex-1 flex flex-col justify-center">
+            <GlassCardTitle className="text-2xl font-bold mb-1">
+              {repliesData?.due || 0}
+            </GlassCardTitle>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Replies due today
+            </p>
+            <p className="text-xs text-slate-500 mt-1">
+              {repliesData?.due || 0} pending
+            </p>
+          </div>
         </GlassCardContent>
       </GlassCard>
 
@@ -130,22 +134,24 @@ export default function TodayAtAGlance({
         variant="river-flow"
         intensity="medium"
         flowDirection="left"
-        className="group hover:scale-105 transition-transform duration-300 cursor-pointer"
+        className="group hover:scale-105 transition-transform duration-300 cursor-pointer h-full flex flex-col"
       >
-        <GlassCardContent className="p-4">
+        <GlassCardContent className="p-4 flex flex-col justify-between h-full">
           <div className="flex items-center justify-between mb-2">
             <Calendar className="h-5 w-5 text-purple-500" />
             {meetingsData && getTrendIcon(meetingsData.trend)}
           </div>
-          <GlassCardTitle className="text-2xl font-bold mb-1">
-            {meetingsData?.today || 0}
-          </GlassCardTitle>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Meetings today
-          </p>
-          <p className="text-xs text-slate-500 mt-1">
-            {meetingsData?.today || 0} scheduled
-          </p>
+          <div className="flex-1 flex flex-col justify-center">
+            <GlassCardTitle className="text-2xl font-bold mb-1">
+              {meetingsData?.today || 0}
+            </GlassCardTitle>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Meetings today
+            </p>
+            <p className="text-xs text-slate-500 mt-1">
+              {meetingsData?.today || 0} scheduled
+            </p>
+          </div>
         </GlassCardContent>
       </GlassCard>
 
@@ -154,22 +160,24 @@ export default function TodayAtAGlance({
         variant="river-flow"
         intensity="medium"
         flowDirection="up"
-        className="group hover:scale-105 transition-transform duration-300 cursor-pointer"
+        className="group hover:scale-105 transition-transform duration-300 cursor-pointer h-full flex flex-col"
       >
-        <GlassCardContent className="p-4">
+        <GlassCardContent className="p-4 flex flex-col justify-between h-full">
           <div className="flex items-center justify-between mb-2">
             <Shield className="h-5 w-5 text-teal-500" />
             {tokenHealthData && getStatusIcon(tokenHealthData.status)}
           </div>
-          <GlassCardTitle className="text-2xl font-bold mb-1">
-            {tokenHealthData?.healthy || 0}/{tokenHealthData?.total || 0}
-          </GlassCardTitle>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Token health
-          </p>
-          <p className="text-xs text-slate-500 mt-1">
-            {tokenHealthData?.status || 'unknown'} status
-          </p>
+          <div className="flex-1 flex flex-col justify-center">
+            <GlassCardTitle className="text-2xl font-bold mb-1">
+              {tokenHealthData?.healthy || 0}/{tokenHealthData?.total || 0}
+            </GlassCardTitle>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Token health
+            </p>
+            <p className="text-xs text-slate-500 mt-1">
+              {tokenHealthData?.status || 'unknown'} status
+            </p>
+          </div>
         </GlassCardContent>
       </GlassCard>
     </div>

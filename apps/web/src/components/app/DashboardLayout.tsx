@@ -402,7 +402,9 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
         className="h-full w-full overflow-hidden flex flex-col"
         data-card-id={cardId}
       >
-        <Component />
+        <div className="h-full w-full flex flex-col">
+          <Component />
+        </div>
       </div>
     );
   };
@@ -479,10 +481,10 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
       </AnimatePresence>
 
       {/* Main Dashboard Grid - Temporarily simplified */}
-      <div className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="p-4 h-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 h-full">
           {visibleCards.map(cardId => (
-            <div key={cardId} className="relative w-full h-64 p-2">
+            <div key={cardId} className="relative w-full h-full min-h-[200px] p-2">
               {renderCard(cardId)}
             </div>
           ))}

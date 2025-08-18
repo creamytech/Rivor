@@ -55,7 +55,7 @@ export default function MiniPipelineSparkline({
   };
 
   return (
-    <GlassCard variant="river-flow" intensity="medium" flowDirection="left" className="h-full">
+    <GlassCard variant="river-flow" intensity="medium" flowDirection="left" className="h-full flex flex-col">
       <GlassCardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -67,7 +67,7 @@ export default function MiniPipelineSparkline({
           </Badge>
         </div>
       </GlassCardHeader>
-      <GlassCardContent className="p-0">
+      <GlassCardContent className="p-0 flex-1 flex flex-col">
         <div className="space-y-4">
           {/* Sparkline Chart */}
           <div className="flex items-end justify-between gap-2 h-20 px-2">
@@ -165,27 +165,29 @@ export default function MiniPipelineSparkline({
         </div>
 
         {sortedStages.length === 0 && (
-          <EmptyState
-            icon={<BarChart3 className="h-6 w-6" />}
-            title="No pipeline stages"
-            description="Create pipeline stages to track your leads through the sales process. This helps visualize your funnel and identify bottlenecks."
-            illustration="dots"
-            size="md"
-            actions={[
-              {
-                label: "Create Pipeline",
-                onClick: () => window.location.href = '/app/settings',
-                variant: 'default',
-                icon: <Plus className="h-4 w-4" />
-              },
-              {
-                label: "View Settings",
-                onClick: () => window.location.href = '/app/settings',
-                variant: 'outline',
-                icon: <Settings className="h-4 w-4" />
-              }
-            ]}
-          />
+          <div className="flex-1 flex items-center justify-center">
+            <EmptyState
+              icon={<BarChart3 className="h-6 w-6" />}
+              title="No pipeline stages"
+              description="Create pipeline stages to track your leads through the sales process. This helps visualize your funnel and identify bottlenecks."
+              illustration="dots"
+              size="md"
+              actions={[
+                {
+                  label: "Create Pipeline",
+                  onClick: () => window.location.href = '/app/settings',
+                  variant: 'default',
+                  icon: <Plus className="h-4 w-4" />
+                },
+                {
+                  label: "View Settings",
+                  onClick: () => window.location.href = '/app/settings',
+                  variant: 'outline',
+                  icon: <Settings className="h-4 w-4" />
+                }
+              ]}
+            />
+          </div>
         )}
       </GlassCardContent>
     </GlassCard>
