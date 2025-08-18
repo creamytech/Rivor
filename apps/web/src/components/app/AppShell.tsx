@@ -3,10 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Search, Bell, HelpCircle, User } from "lucide-react";
+import { Search, Bell, HelpCircle, User, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import EnhancedSidebar from "./EnhancedSidebar";
+import ChatAgent from "./ChatAgent";
+import NotificationsPanel from "./NotificationsPanel";
+import UserProfileDropdown from "./UserProfileDropdown";
+import QuickActionsMenu from "./QuickActionsMenu";
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -17,11 +22,54 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
   const [showDrawer, setShowDrawer] = useState(Boolean(rightDrawer));
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [showChatAgent, setShowChatAgent] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [showQuickActions, setShowQuickActions] = useState(false);
   
   useEffect(() => setShowDrawer(Boolean(rightDrawer)), [rightDrawer]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd/Ctrl + K for quick actions
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowQuickActions(true);
+      }
+      
+      // Cmd/Ctrl + H for help
+      if ((e.metaKey || e.ctrlKey) && e.key === 'h') {
+        e.preventDefault();
+        setShowChatAgent(true);
+      }
+      
+      // Cmd/Ctrl + N for notifications
+      if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+        e.preventDefault();
+        setShowNotifications(!showNotifications);
+      }
+      
+      // Escape to close modals
+      if (e.key === 'Escape') {
+        setShowQuickActions(false);
+        setShowChatAgent(false);
+        setShowNotifications(false);
+        setShowUserProfile(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showNotifications]);
+
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
+
+  const getUserInitials = () => {
+    // This would come from session in a real app
+    return "U";
   };
 
   return (
@@ -54,7 +102,9 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                 <input
                   type="text"
                   placeholder="Search leads, emails, or run commands..."
-                  className="w-full pl-9 pr-8 py-2 text-sm bg-[var(--background)] border border-[var(--border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full pl-9 pr-8 py-2 text-sm bg-[var(--background)] border border-[var(--border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
+                  onClick={() => setShowQuickActions(true)}
+                  readOnly
                 />
                 <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs bg-[var(--border)] px-1.5 py-0.5 rounded text-[var(--muted-foreground)]">
                   ⌘K
@@ -64,23 +114,49 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
             
             {/* Right side actions */}
             <div className="flex items-center gap-1 ml-auto">
-              <Button variant="ghost" size="icon" asChild>
-                <Link href="/app/help" aria-label="Help">
-                  <HelpCircle className="h-4 w-4" />
-                </Link>
+              {/* Chat Agent Button */}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setShowChatAgent(true)}
+                aria-label="Help & Chat Agent"
+                className="relative"
+              >
+                <HelpCircle className="h-4 w-4" />
               </Button>
               
-              <Button variant="ghost" size="icon" asChild>
-                <Link href="/app/notifications" aria-label="Notifications">
+              {/* Notifications Button */}
+              <div className="relative">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  aria-label="Notifications"
+                  className="relative"
+                >
                   <Bell className="h-4 w-4" />
-                </Link>
-              </Button>
+                  {/* Notification badge */}
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
+                </Button>
+              </div>
               
-              <Button variant="ghost" size="icon" asChild>
-                <Link href="/app/settings" aria-label="User menu">
-                  <User className="h-4 w-4" />
-                </Link>
-              </Button>
+              {/* User Profile Button */}
+              <div className="relative">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setShowUserProfile(!showUserProfile)}
+                  aria-label="User menu"
+                  className="flex items-center gap-2 px-2"
+                >
+                  <Avatar className="h-6 w-6">
+                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white text-xs font-semibold">
+                      {getUserInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </div>
             </div>
           </div>
         </header>
@@ -99,6 +175,31 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       
       {/* Command Palette */}
       {/* <EnhancedCommandPalette isOpen={showCommandPalette} setIsOpen={setShowCommandPalette} /> */}
+      
+      {/* Chat Agent Modal */}
+      <ChatAgent 
+        isOpen={showChatAgent} 
+        onClose={() => setShowChatAgent(false)} 
+      />
+      
+      {/* Notifications Panel */}
+      <NotificationsPanel 
+        isOpen={showNotifications} 
+        onClose={() => setShowNotifications(false)} 
+      />
+      
+      {/* User Profile Dropdown */}
+      <UserProfileDropdown 
+        isOpen={showUserProfile} 
+        onClose={() => setShowUserProfile(false)} 
+      />
+      
+      {/* Quick Actions Menu */}
+      <QuickActionsMenu 
+        isOpen={showQuickActions} 
+        onClose={() => setShowQuickActions(false)} 
+      />
+      
       <Toaster />
     </div>
   );
