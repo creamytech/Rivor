@@ -508,9 +508,7 @@ export const appRouter = router({
           skip: input.offset
         });
 
-        const total = await prisma.contact.count({ where });
-
-        return { contacts, total };
+        return contacts;
       }),
 
     get: protectedProcedure
