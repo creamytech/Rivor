@@ -113,7 +113,7 @@ export default function EnhancedContacts({ className = '' }: EnhancedContactsPro
     { enabled: !!selectedContact?.id }
   );
 
-  const contacts = contactsData || [];
+  const contacts = Array.isArray(contactsData) ? contactsData : [];
 
   // Mock data for duplicates and segments (these would come from tRPC in a real implementation)
   const duplicateGroups: DuplicateGroup[] = [
