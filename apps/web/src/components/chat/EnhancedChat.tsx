@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
-import { trpc } from '@/lib/trpc';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -53,37 +52,7 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showReasoning, setShowReasoning] = useState(false);
-  const [currentThreadId, setCurrentThreadId] = useState<string>('default');
-  const [isInitialized, setIsInitialized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Initialize component safely
-  useEffect(() => {
-    setIsInitialized(true);
-  }, []);
-
-  // tRPC mutations - only initialize after component is mounted
-  const sendMessageMutation = trpc.chat.sendMessage.useMutation();
-  const executeActionMutation = trpc.chat.executeAction.useMutation();
-
-  // Get thread data - only after initialization
-  const { data: threadData } = trpc.chat.getThread.useQuery(
-    { threadId: currentThreadId },
-    { 
-      enabled: isInitialized && !!currentThreadId,
-      retry: false,
-      onError: (error) => {
-        console.error('Thread data error:', error);
-      }
-    }
-  );
-
-  // Initialize messages from thread data
-  useEffect(() => {
-    if (threadData?.messages && Array.isArray(threadData.messages)) {
-      setMessages(threadData.messages);
-    }
-  }, [threadData]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -91,7 +60,7 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim() || isLoading || !isInitialized) return;
+    if (!inputMessage.trim() || isLoading) return;
 
     const userMessage: ChatMessage = {
       id: `user_${Date.now()}`,
@@ -104,74 +73,44 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
     setInputMessage('');
     setIsLoading(true);
 
-    try {
-      const response = await sendMessageMutation.mutateAsync({
-        message: inputMessage,
-        threadId: currentThreadId,
-        context: context || undefined
-      });
-
-      if (response && typeof response === 'object' && response.id && response.content) {
-        setMessages(prev => [...prev, response]);
-      } else {
-        // Handle invalid response
-        const fallbackMessage: ChatMessage = {
-          id: `assistant_${Date.now()}`,
-          content: 'I received your message but encountered an issue processing it. Please try again.',
-          role: 'assistant',
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, fallbackMessage]);
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      const errorMessage: ChatMessage = {
-        id: `error_${Date.now()}`,
-        content: 'Sorry, I encountered an error while processing your message. Please try again.',
+    // Simulate AI response
+    setTimeout(() => {
+      const aiMessage: ChatMessage = {
+        id: `assistant_${Date.now()}`,
+        content: `I received your message: "${inputMessage}". This is a simulated response while we work on connecting the AI service.`,
         role: 'assistant',
-        timestamp: new Date()
+        timestamp: new Date(),
+        reasoning: 'This is a placeholder response while the AI service is being configured.',
+        actions: [
+          {
+            type: 'create_task',
+            label: 'Create follow-up task'
+          },
+          {
+            type: 'schedule_meeting',
+            label: 'Schedule meeting'
+          }
+        ]
       };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
+      setMessages(prev => [...prev, aiMessage]);
       setIsLoading(false);
-    }
+    }, 1000);
   };
 
   const handleActionClick = async (action: { type: string; label: string; data?: any }) => {
-    if (!action || !action.type || !action.label || !isInitialized) {
+    if (!action || !action.type || !action.label) {
       console.error('Invalid action object:', action);
       return;
     }
 
-    try {
-      const result = await executeActionMutation.mutateAsync({
-        actionType: action.type,
-        context: context || undefined,
-        actionData: action.data || undefined
-      });
+    const actionMessage: ChatMessage = {
+      id: `action_${Date.now()}`,
+      content: `Action "${action.label}" would be executed here. This is a placeholder while we connect the action system.`,
+      role: 'assistant',
+      timestamp: new Date()
+    };
 
-      // Add the action result as a system message
-      const actionMessage: ChatMessage = {
-        id: `action_${Date.now()}`,
-        content: result?.result || result || 'Action executed successfully',
-        role: 'assistant',
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, actionMessage]);
-    } catch (error) {
-      console.error('Error executing action:', error);
-      
-      // Add error message
-      const errorMessage: ChatMessage = {
-        id: `error_${Date.now()}`,
-        content: 'Sorry, I encountered an error while executing that action. Please try again.',
-        role: 'assistant',
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, errorMessage]);
-    }
+    setMessages(prev => [...prev, actionMessage]);
   };
 
   const getActionIcon = (actionType: string) => {
@@ -195,18 +134,6 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
       default: return 'General Assistant';
     }
   };
-
-  // Don't render until initialized
-  if (!isInitialized) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-slate-600 dark:text-slate-400">Loading AI Assistant...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
