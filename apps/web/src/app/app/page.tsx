@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import PageHeader from "@/components/app/PageHeader";
 import QuickActions from "@/components/app/QuickActions";
+import FloatingQuickAdd from "@/components/app/FloatingQuickAdd";
 import { TrendingUp, TrendingDown, BarChart3, Trophy, Target, Zap } from "lucide-react";
 
 // Dynamically import components to avoid SSR issues
@@ -157,6 +158,7 @@ export default function DashboardPage() {
       />
       <DashboardContent {...data} />
       <QuickActions />
+      <FloatingQuickAdd />
     </AppShell>
   );
 }
