@@ -15,6 +15,7 @@ interface ChatContext {
 
 interface ChatMessage {
   id: string;
+  threadId: string;
   content: string;
   role: 'user' | 'assistant';
   timestamp: Date;
@@ -260,18 +261,58 @@ ORGANIZATION CONTEXT:
     threadId?: string,
     context?: ChatContext
   ): Promise<ChatMessage> {
+    let thread: { id: string } | null = null;
     try {
-      // Gather context from database
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.email) {
+        throw new Error('Not authenticated');
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        include: {
+          orgMembers: { include: { org: true } }
+        }
+      });
+
+      const org = user?.orgMembers?.[0]?.org;
+      if (!user || !org) {
+        throw new Error('No organization found');
+      }
+
+      if (threadId) {
+        thread = await prisma.chatThread.findFirst({
+          where: { id: threadId, orgId: org.id }
+        });
+      }
+      if (!thread) {
+        thread = await prisma.chatThread.create({
+          data: {
+            orgId: org.id,
+            userId: user.id,
+            contextType: context?.type,
+            contextId: context?.id
+          }
+        });
+      }
+
+      await prisma.chatMessage.create({
+        data: {
+          threadId: thread.id,
+          role: 'user',
+          content: message
+        }
+      });
+
       const contextData = await this.gatherContext(context);
       const availableActions = await this.getAvailableActions();
 
-      // Create system prompt with context and capabilities
       const systemPrompt = `You are an AI assistant for a real estate CRM system called Rivor. You have access to:
 
 ${contextData}
 
 AVAILABLE ACTIONS:
-${availableActions.map(action => `- ${action.label} (${action.type})`).join('\n')}
+${availableActions.map(action => `- ${action.label} (${action.type})`).join('\\n')}
 
 CAPABILITIES:
 - Access to leads, contacts, email threads, calendar events, and tasks
@@ -289,37 +330,51 @@ Current user message: "${message}"
 
 Respond as a helpful AI assistant with access to the CRM data.`;
 
-      // Call OpenAI API
       const completion = await openai.chat.completions.create({
-        model: "gpt-4",
+        model: 'gpt-4',
         messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: message }
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: message }
         ],
         max_tokens: 1000,
-        temperature: 0.7,
+        temperature: 0.7
       });
 
-      const aiResponse = completion.choices[0]?.message?.content || 'I apologize, but I encountered an error processing your request.';
+      const aiResponse =
+        completion.choices[0]?.message?.content ||
+        'I apologize, but I encountered an error processing your request.';
 
-      // Analyze response for potential actions
-      const suggestedActions = this.analyzeResponseForActions(aiResponse, availableActions, context);
+      const suggestedActions = this.analyzeResponseForActions(
+        aiResponse,
+        availableActions,
+        context
+      );
+
+      const savedMessage = await prisma.chatMessage.create({
+        data: {
+          threadId: thread.id,
+          role: 'assistant',
+          content: aiResponse,
+          reasoning: `Analyzed user request in context of ${context?.type || 'general'} data. Suggested ${suggestedActions.length} relevant actions.`
+        }
+      });
 
       return {
-        id: `msg_${Date.now()}`,
-        content: aiResponse,
+        id: savedMessage.id,
+        threadId: thread.id,
+        content: savedMessage.content,
         role: 'assistant',
-        timestamp: new Date(),
-        reasoning: `Analyzed user request in context of ${context?.type || 'general'} data. Suggested ${suggestedActions.length} relevant actions.`,
+        timestamp: savedMessage.createdAt,
+        reasoning: savedMessage.reasoning || undefined,
         actions: suggestedActions
       };
-
     } catch (error) {
       console.error('AI Service Error:', error);
-      
       return {
         id: `msg_${Date.now()}`,
-        content: 'I apologize, but I encountered an error while processing your request. Please try again or contact support if the issue persists.',
+        threadId: threadId || thread?.id || 'unknown',
+        content:
+          'I apologize, but I encountered an error while processing your request. Please try again or contact support if the issue persists.',
         role: 'assistant',
         timestamp: new Date(),
         reasoning: 'Error occurred during AI processing',
@@ -387,22 +442,26 @@ Respond as a helpful AI assistant with access to the CRM data.`;
     messages: ChatMessage[];
     context?: ChatContext;
   }> {
-    // This would typically fetch from a chat history table
-    // For now, return a basic structure
+    const thread = await prisma.chatThread.findUnique({
+      where: { id: threadId },
+      include: { messages: { orderBy: { createdAt: 'asc' } } }
+    });
+    if (!thread) {
+      throw new Error('Thread not found');
+    }
     return {
-      id: threadId,
-      messages: [
-        {
-          id: 'msg_1',
-          content: 'Hello! I\'m your AI assistant for Rivor. I can help you manage leads, contacts, schedule meetings, and more. What would you like to work on today?',
-          role: 'assistant',
-          timestamp: new Date(Date.now() - 60000)
-        }
-      ],
-      context: {
-        type: 'lead',
-        id: 'lead_123'
-      }
+      id: thread.id,
+      messages: thread.messages.map(m => ({
+        id: m.id,
+        threadId: thread.id,
+        content: m.content,
+        role: m.role as 'user' | 'assistant',
+        timestamp: m.createdAt,
+        reasoning: m.reasoning || undefined,
+      })),
+      context: thread.contextType
+        ? { type: thread.contextType as ChatContext['type'], id: thread.contextId || undefined }
+        : undefined,
     };
   }
 
