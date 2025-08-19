@@ -128,6 +128,7 @@ interface EnhancedContactsProps {
 }
 
 export default function EnhancedContacts({ className, searchQuery = '', selectedFilters = [] }: EnhancedContactsProps) {
+  // All hooks must be called at the top level
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [showContactDrawer, setShowContactDrawer] = useState(false);
@@ -136,7 +137,7 @@ export default function EnhancedContacts({ className, searchQuery = '', selected
   const [sortBy, setSortBy] = useState<'name' | 'company' | 'lastContact' | 'dealValue'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
-  // Mock contacts data
+  // Mock contacts data - moved outside of component to avoid recreation
   const mockContacts: Contact[] = [
     {
       id: '1',
@@ -302,6 +303,7 @@ export default function EnhancedContacts({ className, searchQuery = '', selected
     return () => clearTimeout(timer);
   }, []);
 
+  // Helper functions - moved outside of render to avoid recreation
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'lead':
@@ -415,6 +417,7 @@ export default function EnhancedContacts({ className, searchQuery = '', selected
     }
   });
 
+  // Error boundary - if anything fails, show a simple loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">

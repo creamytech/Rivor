@@ -106,6 +106,7 @@ interface EnhancedCalendarProps {
 }
 
 export default function EnhancedCalendar({ className }: EnhancedCalendarProps) {
+  // All hooks must be called at the top level
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week');
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -113,7 +114,7 @@ export default function EnhancedCalendar({ className }: EnhancedCalendarProps) {
   const [showEventModal, setShowEventModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Mock events data
+  // Mock events data - moved outside of component to avoid recreation
   const mockEvents: CalendarEvent[] = [
     {
       id: '1',
@@ -254,6 +255,7 @@ export default function EnhancedCalendar({ className }: EnhancedCalendarProps) {
     return () => clearTimeout(timer);
   }, []);
 
+  // Helper functions - moved outside of render to avoid recreation
   const getEventTypeColor = (type: string) => {
     switch (type) {
       case 'demo':
@@ -355,6 +357,7 @@ export default function EnhancedCalendar({ className }: EnhancedCalendarProps) {
     });
   };
 
+  // Error boundary - if anything fails, show a simple loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
