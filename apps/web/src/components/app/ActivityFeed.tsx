@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
-import { 
-  Activity, 
-  Mail, 
-  Calendar, 
-  UserPlus, 
+import {
+  Activity,
+  Mail,
+  Calendar,
+  UserPlus,
   MessageSquare,
   ArrowRight,
   Clock,
@@ -16,6 +16,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface ActivityItem {
   id: string;
@@ -34,7 +35,7 @@ interface ActivityFeedProps {
   className?: string;
 }
 
-export default function ActivityFeed({ className = '' }: ActivityFeedProps) {
+export default function ActivityFeed({ className }: ActivityFeedProps) {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -148,7 +149,7 @@ export default function ActivityFeed({ className = '' }: ActivityFeedProps) {
   const displayedActivities = isExpanded ? activities : activities.slice(0, 3);
 
   return (
-    <GlassCard variant="river-flow" intensity="medium" flowDirection="right" className={`${className}`}>
+    <GlassCard variant="river-flow" intensity="medium" flowDirection="right" className={cn(className)}>
       <GlassCardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <GlassCardTitle className="text-lg font-semibold flex items-center gap-2">

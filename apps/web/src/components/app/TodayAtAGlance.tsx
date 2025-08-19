@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
 import { TrendingUp, TrendingDown, Clock, AlertTriangle, CheckCircle, Users, MessageSquare, Calendar, Shield } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface LeadsData {
   new: number;
@@ -30,13 +31,15 @@ interface TodayAtAGlanceProps {
   repliesData?: RepliesData;
   meetingsData?: MeetingsData;
   tokenHealthData?: TokenHealthData;
+  className?: string;
 }
 
-export default function TodayAtAGlance({ 
-  leadsData, 
-  repliesData, 
-  meetingsData, 
-  tokenHealthData 
+export default function TodayAtAGlance({
+  leadsData,
+  repliesData,
+  meetingsData,
+  tokenHealthData,
+  className
 }: TodayAtAGlanceProps) {
   const [isLoading, setIsLoading] = useState(true);
 
@@ -67,7 +70,7 @@ export default function TodayAtAGlance({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6", className)}>
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="h-32 bg-slate-200 dark:bg-slate-700 rounded-lg animate-pulse"></div>
         ))}
@@ -76,7 +79,7 @@ export default function TodayAtAGlance({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
+    <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-full", className)}>
       {/* Leads Card */}
       <GlassCard
         variant="river-flow"

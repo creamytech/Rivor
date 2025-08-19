@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { TrendingUp, TrendingDown, BarChart3, Users, Clock, Plus, Settings } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface PipelineStage {
   id: string;
@@ -20,12 +21,14 @@ interface MiniPipelineSparklineProps {
   stages: PipelineStage[];
   totalLeads: number;
   conversionRate: number;
+  className?: string;
 }
 
-export default function MiniPipelineSparkline({ 
-  stages = [], 
-  totalLeads = 0, 
-  conversionRate = 0 
+export default function MiniPipelineSparkline({
+  stages = [],
+  totalLeads = 0,
+  conversionRate = 0,
+  className
 }: MiniPipelineSparklineProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -56,7 +59,7 @@ export default function MiniPipelineSparkline({
   };
 
   return (
-    <GlassCard variant="river-flow" intensity="medium" flowDirection="left" className="h-full flex flex-col">
+    <GlassCard variant="river-flow" intensity="medium" flowDirection="left" className={cn('h-full flex flex-col', className)}>
       <GlassCardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

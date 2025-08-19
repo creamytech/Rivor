@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmptyState } from '@/components/ui/empty-state';
 import { MessageSquare, ArrowUp, Calendar, MoreHorizontal, User, Building, Home, Clock, Star, Eye, Plus, TrendingUp, Filter } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Lead {
   id: string;
@@ -47,9 +48,10 @@ interface Lead {
 interface LeadFeedProps {
   leads: Lead[];
   reviewItems?: any[];
+  className?: string;
 }
 
-export default function LeadFeed({ leads = [], reviewItems = [] }: LeadFeedProps) {
+export default function LeadFeed({ leads = [], reviewItems = [], className }: LeadFeedProps) {
   const [activeTab, setActiveTab] = useState('leads');
 
   const getIntentFromTitle = (title: string | null): 'buyer' | 'seller' | 'renter' => {
@@ -184,7 +186,7 @@ export default function LeadFeed({ leads = [], reviewItems = [] }: LeadFeedProps
   };
 
   return (
-    <GlassCard variant="river-flow" intensity="medium" flowDirection="down" className="h-full">
+    <GlassCard variant="river-flow" intensity="medium" flowDirection="down" className={cn('h-full', className)}>
       <GlassCardHeader className="pb-3">
         <GlassCardTitle className="text-lg">Lead Feed</GlassCardTitle>
       </GlassCardHeader>

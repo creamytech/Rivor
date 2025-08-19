@@ -4,6 +4,7 @@ import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/
 import { LiquidProgress } from '@/components/ui/liquid-progress';
 import { Button } from '@/components/ui/button';
 import { Clock, FileText, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface CompactSyncProgressProps {
   syncType: 'email' | 'calendar' | 'contacts';
@@ -15,6 +16,7 @@ interface CompactSyncProgressProps {
   errorCount?: number;
   onViewLogs?: () => void;
   onRetry?: () => void;
+  className?: string;
 }
 
 export default function CompactSyncProgress({
@@ -26,7 +28,8 @@ export default function CompactSyncProgress({
   processedItems,
   errorCount = 0,
   onViewLogs,
-  onRetry
+  onRetry,
+  className
 }: CompactSyncProgressProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -81,11 +84,11 @@ export default function CompactSyncProgress({
   };
 
   return (
-    <GlassCard 
-      variant="river-flow" 
-      intensity="light" 
+    <GlassCard
+      variant="river-flow"
+      intensity="light"
       flowDirection="right"
-      className="transition-all duration-300 hover:shadow-lg"
+      className={cn('transition-all duration-300 hover:shadow-lg', className)}
     >
       <GlassCardContent className="p-4">
         <div className="flex items-center justify-between mb-3">

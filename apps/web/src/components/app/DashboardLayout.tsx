@@ -38,6 +38,7 @@ import {
 import { useSession } from 'next-auth/react';
 import { trpc } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
+import DashboardCard from './DashboardCard';
 
 // Import dashboard cards
 import TodayAtAGlance from './TodayAtAGlance';
@@ -488,15 +489,9 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
 
     const Component = cardConfig.component;
     return (
-      <div 
-        key={cardId} 
-        className="h-full w-full overflow-hidden flex flex-col"
-        data-card-id={cardId}
-      >
-        <div className="h-full w-full flex flex-col">
-          <Component />
-        </div>
-      </div>
+      <DashboardCard key={cardId} data-card-id={cardId} className="h-full w-full">
+        <Component className="h-full" />
+      </DashboardCard>
     );
   };
 

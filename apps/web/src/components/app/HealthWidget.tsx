@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { CheckCircle, AlertTriangle, XCircle, RefreshCw, Wifi, WifiOff, Settings, Clock, Zap, Mail, Calendar } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Integration {
   id: string;
@@ -19,9 +20,10 @@ interface HealthWidgetProps {
   integrations: Integration[];
   onFix: (id: string) => void;
   onReauth: (id: string) => void;
+  className?: string;
 }
 
-export default function HealthWidget({ integrations = [], onFix, onReauth }: HealthWidgetProps) {
+export default function HealthWidget({ integrations = [], onFix, onReauth, className }: HealthWidgetProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   // tRPC mutations
@@ -71,7 +73,7 @@ export default function HealthWidget({ integrations = [], onFix, onReauth }: Hea
   const totalErrors = integrations.filter(integration => integration.errorReason).length;
 
   return (
-    <GlassCard variant="river-flow" intensity="medium" flowDirection="up" className="h-full flex flex-col">
+    <GlassCard variant="river-flow" intensity="medium" flowDirection="up" className={cn('h-full flex flex-col', className)}>
       <GlassCardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
