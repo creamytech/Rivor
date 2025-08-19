@@ -12,7 +12,20 @@ export async function GET() {
     return new Response('Unauthorized', { status: 401 });
   }
 
+  const orgId = (session as { orgId?: string }).orgId;
+  if (!orgId || orgId === 'default' || orgId === 'unknown') {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
   try {
+    const membership = await prisma.orgMember.findFirst({
+      where: { orgId, user: { email: session.user.email } }
+    });
+
+    if (!membership) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
     // For now, return default notification preferences
     // In a real implementation, you'd store these in the database
     const defaultPreferences = {
@@ -37,7 +50,20 @@ export async function PUT(request: NextRequest) {
     return new Response('Unauthorized', { status: 401 });
   }
 
+  const orgId = (session as { orgId?: string }).orgId;
+  if (!orgId || orgId === 'default' || orgId === 'unknown') {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
   try {
+    const membership = await prisma.orgMember.findFirst({
+      where: { orgId, user: { email: session.user.email } }
+    });
+
+    if (!membership) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
     const body = await request.json();
     const { emailDigest, newLeads, taskReminders, meetingReminders, systemUpdates, marketingEmails } = body;
 
