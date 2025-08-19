@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
+import { logger } from '@/lib/logger';
 import { 
   Activity, 
   Mail, 
@@ -50,7 +51,7 @@ export default function ActivityFeed({ className = '' }: ActivityFeedProps) {
         status: 'urgent',
         action: {
           label: 'Review',
-          onClick: () => console.log('Review lead')
+          onClick: () => logger.info('Activity action', { action: 'review-lead' })
         }
       },
       {
@@ -62,7 +63,7 @@ export default function ActivityFeed({ className = '' }: ActivityFeedProps) {
         status: 'pending',
         action: {
           label: 'View',
-          onClick: () => console.log('View meeting')
+          onClick: () => logger.info('Activity action', { action: 'view-meeting' })
         }
       },
       {
@@ -82,7 +83,7 @@ export default function ActivityFeed({ className = '' }: ActivityFeedProps) {
         status: 'completed',
         action: {
           label: 'Review',
-          onClick: () => console.log('Review response')
+          onClick: () => logger.info('Activity action', { action: 'review-response' })
         }
       },
       {

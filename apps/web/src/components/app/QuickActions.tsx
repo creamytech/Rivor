@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { logger } from '@/lib/logger';
 import { 
   Mail, 
   Calendar, 
@@ -37,7 +38,7 @@ export default function QuickActions({ className = '' }: QuickActionsProps) {
       id: 'compose-email',
       label: 'Compose Email',
       icon: <Mail className="h-4 w-4" />,
-      onClick: () => console.log('Compose email'),
+      onClick: () => logger.info('Quick action', { action: 'compose-email' }),
       color: 'blue',
       shortcut: '⌘E'
     },
@@ -45,7 +46,7 @@ export default function QuickActions({ className = '' }: QuickActionsProps) {
       id: 'schedule-meeting',
       label: 'Schedule Meeting',
       icon: <Calendar className="h-4 w-4" />,
-      onClick: () => console.log('Schedule meeting'),
+      onClick: () => logger.info('Quick action', { action: 'schedule-meeting' }),
       color: 'green',
       shortcut: '⌘M'
     },
@@ -53,7 +54,7 @@ export default function QuickActions({ className = '' }: QuickActionsProps) {
       id: 'add-lead',
       label: 'Add Lead',
       icon: <UserPlus className="h-4 w-4" />,
-      onClick: () => console.log('Add lead'),
+      onClick: () => logger.info('Quick action', { action: 'add-lead' }),
       color: 'purple',
       shortcut: '⌘L'
     },
@@ -61,7 +62,7 @@ export default function QuickActions({ className = '' }: QuickActionsProps) {
       id: 'start-chat',
       label: 'Start Chat',
       icon: <MessageSquare className="h-4 w-4" />,
-      onClick: () => console.log('Start chat'),
+      onClick: () => logger.info('Quick action', { action: 'start-chat' }),
       color: 'teal',
       shortcut: '⌘C'
     },
@@ -69,7 +70,7 @@ export default function QuickActions({ className = '' }: QuickActionsProps) {
       id: 'create-note',
       label: 'Create Note',
       icon: <FileText className="h-4 w-4" />,
-      onClick: () => console.log('Create note'),
+      onClick: () => logger.info('Quick action', { action: 'create-note' }),
       color: 'orange',
       shortcut: '⌘N'
     }

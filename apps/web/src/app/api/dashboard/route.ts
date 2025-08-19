@@ -23,17 +23,12 @@ export async function GET(_req: NextRequest) {
     // Log dashboard access
     logger.userAction('dashboard_access', userEmail || 'unknown', orgId || 'unknown');
 
-    console.log('=== DASHBOARD DEBUG START ===');
-    console.log('orgId:', orgId);
-    console.log('userEmail:', userEmail);
-
     // Fetch real email data
     let unreadCount = 0;
     let recentThreads: any[] = [];
     
     if (orgId) {
       try {
-        console.log('Fetching email data for orgId:', orgId);
         
         // Get unread count
         unreadCount = await prisma.emailMessage.count({
@@ -41,13 +36,11 @@ export async function GET(_req: NextRequest) {
             orgId
           }
         });
-        console.log('Unread count:', unreadCount);
 
         // Check total threads first
         const totalThreads = await prisma.emailThread.count({
           where: { orgId }
         });
-        console.log('Total threads in database:', totalThreads);
 
         // Get recent threads with decrypted data
         const threads = await prisma.emailThread.findMany({
@@ -60,8 +53,6 @@ export async function GET(_req: NextRequest) {
           orderBy: { updatedAt: 'desc' },
           take: 20
         });
-        console.log('Found threads:', threads.length);
-        console.log('First thread sample:', threads[0] ? {
           id: threads[0].id,
           subjectEnc: !!threads[0].subjectEnc,
           participantsEnc: !!threads[0].participantsEnc,
@@ -119,14 +110,12 @@ export async function GET(_req: NextRequest) {
             };
           }
         }));
-        console.log('Processed threads:', recentThreads.length);
       } catch (error) {
         console.error('Failed to fetch email data:', error);
         unreadCount = 0;
         recentThreads = [];
       }
     } else {
-      console.log('No orgId found for user:', userEmail);
     }
 
     // Fetch calendar data
@@ -143,7 +132,6 @@ export async function GET(_req: NextRequest) {
         const totalEvents = await prisma.calendarEvent.count({
           where: { orgId }
         });
-        console.log('Total calendar events in database:', totalEvents);
 
         // Get today's events
         const todayEvents = await prisma.calendarEvent.count({
@@ -192,9 +180,6 @@ export async function GET(_req: NextRequest) {
             take: 10
           });
         }
-
-        console.log('Found upcoming events:', events.length);
-        console.log('First event sample:', events[0] ? {
           id: events[0].id,
           titleEnc: !!events[0].titleEnc,
           locationEnc: !!events[0].locationEnc,
@@ -251,9 +236,6 @@ export async function GET(_req: NextRequest) {
           todayCount: todayEvents,
           upcomingCount: upcomingEventsCount
         };
-
-        console.log('Calendar stats:', calendarStats);
-        console.log('Upcoming events:', upcomingEvents.length);
       } catch (error) {
         console.error('Failed to fetch calendar data:', error);
         upcomingEvents = [];
@@ -276,15 +258,10 @@ export async function GET(_req: NextRequest) {
           where: { orgId, status: 'connected' }
         });
         hasCalendarAccounts = calendarAccounts > 0;
-        
-        console.log('Connected email accounts:', emailAccounts);
-        console.log('Connected calendar accounts:', calendarAccounts);
       } catch (error) {
         console.error('Failed to check accounts:', error);
       }
     }
-
-    console.log('=== DASHBOARD DEBUG END ===');
 
     // Return data with real information
     return Response.json({

@@ -340,7 +340,8 @@ async function processMessage(gmail: any, orgId: string, emailAccountId: string,
     });
 
     // Log the message details for debugging
-    console.log(`Processed message: ${subject}`, {
+    logger.info('Processed message', {
+      subject,
       from,
       to,
       hasHtmlBody: !!htmlBody,

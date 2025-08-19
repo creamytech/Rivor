@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@/server/auth';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -50,7 +51,10 @@ export async function PUT(request: NextRequest) {
 
     // In a real implementation, you'd store these preferences in the database
     // For now, we'll just return success
-    console.log('Appearance preferences updated for user:', session.user.email, preferences);
+    logger.info('Appearance preferences updated', {
+      userId: session.user.email,
+      preferences
+    });
 
     return Response.json({ success: true, preferences });
   } catch (error) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/server/auth";
 import { prisma } from "@/server/db";
+import { logger } from "@/lib/logger";
 
 /**
  * Debug endpoint to manually create OAuthAccount record for JWT strategy
@@ -35,8 +36,8 @@ export async function POST(req: NextRequest) {
 
     const emailAccount = user.emailAccounts[0]; // Get first account (Google)
     
-    console.log('🔧 Creating OAuthAccount for background workers', {
-      userEmail: session.user.email,
+    logger.info('Creating OAuthAccount for background workers', {
+      userId: session.user.email,
       provider: emailAccount.provider,
       timestamp: new Date().toISOString()
     });

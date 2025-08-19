@@ -6,6 +6,7 @@ import { CheckCircle, AlertCircle, RefreshCw, Mail, Calendar, X, Plus } from "lu
 import { signIn, signOut } from "next-auth/react";
 import { useState } from "react";
 import { TokenHealth } from "@/server/oauth";
+import { logger } from "@/lib/logger";
 
 interface ConnectedAccountsPanelProps {
   tokenHealth: TokenHealth[];
@@ -113,8 +114,8 @@ export default function ConnectedAccountsPanel({
     return false;
   };
 
-  // Debug logging for integration detection
-  console.log('ConnectedAccountsPanel debug:', {
+  // Structured logging for integration detection
+  logger.info('ConnectedAccountsPanel debug', {
     tokenHealthCount: tokenHealth?.length || 0,
     tokenHealth: tokenHealth?.map(t => ({
       provider: t.provider,
@@ -128,7 +129,7 @@ export default function ConnectedAccountsPanel({
   const googleAccount = connectedAccounts.find(t => t.provider === 'google');
   const microsoftAccount = connectedAccounts.find(t => t.provider === 'azure-ad');
 
-  console.log('ConnectedAccountsPanel accounts:', {
+  logger.info('ConnectedAccountsPanel accounts', {
     connectedCount: connectedAccounts.length,
     hasGoogle: !!googleAccount,
     hasMicrosoft: !!microsoftAccount,

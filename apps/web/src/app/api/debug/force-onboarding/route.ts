@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/server/auth";
 import { handleOAuthCallback, type OAuthCallbackData } from "@/server/onboarding";
+import { logger } from "@/lib/logger";
 
 /**
  * Debug endpoint to manually trigger OAuth onboarding
@@ -22,8 +23,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const provider = body.provider || 'google';
     
-    console.log('🔧 Force onboarding triggered', {
-      userEmail: session.user.email,
+    logger.info('Force onboarding triggered', {
+      userId: session.user.email,
       provider,
       timestamp: new Date().toISOString()
     });

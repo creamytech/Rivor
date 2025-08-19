@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { CheckCircle, AlertTriangle, XCircle, RefreshCw, Wifi, WifiOff, Settings, Clock, Zap, Mail, Calendar } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface Integration {
   id: string;
@@ -189,7 +190,7 @@ export default function HealthWidget({ integrations = [], onFix, onReauth }: Hea
                <div className="flex flex-col gap-2">
                  <Button
                    size="sm"
-                   onClick={() => console.log('Connect Gmail')}
+                  onClick={() => logger.info('Health widget action', { action: 'connect-gmail' })}
                    className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
                  >
                    <Mail className="h-4 w-4 mr-2" />
@@ -198,7 +199,7 @@ export default function HealthWidget({ integrations = [], onFix, onReauth }: Hea
                  <Button
                    variant="outline"
                    size="sm"
-                   onClick={() => console.log('Connect Calendar')}
+                  onClick={() => logger.info('Health widget action', { action: 'connect-calendar' })}
                    className="w-full"
                  >
                    <Calendar className="h-4 w-4 mr-2" />

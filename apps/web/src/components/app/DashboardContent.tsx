@@ -12,6 +12,7 @@ import CommandPalette from '../common/CommandPalette';
 import { CurvedDivider } from '@/components/ui/curved-divider';
 import { Button } from '@/components/ui/button';
 import { Search, Plus, Calendar, Mail, MessageSquare } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface DashboardContentProps {
   className?: string;
@@ -132,10 +133,10 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
             {integrationsLoading ? (
               <div className="h-48 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
             ) : (
-              <HealthWidget 
-                integrations={integrationsData?.emailAccounts || []} 
-                onFix={(id) => console.log('Fix integration:', id)} 
-                onReauth={(id) => console.log('Reauth integration:', id)} 
+              <HealthWidget
+                integrations={integrationsData?.emailAccounts || []}
+                onFix={(id) => logger.info('Dashboard integration action', { action: 'fix', id })}
+                onReauth={(id) => logger.info('Dashboard integration action', { action: 'reauth', id })}
               />
             )}
             
