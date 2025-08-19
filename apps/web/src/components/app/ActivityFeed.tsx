@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
@@ -35,68 +37,41 @@ interface ActivityFeedProps {
 }
 
 export default function ActivityFeed({ className = '' }: ActivityFeedProps) {
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(false);
 
-  useEffect(() => {
-    // Simulate real-time activity updates
-    const mockActivities: ActivityItem[] = [
-      {
-        id: '1',
-        type: 'email',
-        title: 'New lead detected from email',
-        description: 'Sarah Johnson from TechCorp inquired about enterprise pricing',
-        timestamp: '2 min ago',
-        status: 'urgent',
-        action: {
-          label: 'Review',
-          onClick: () => console.log('Review lead')
-        }
-      },
-      {
-        id: '2',
-        type: 'meeting',
-        title: 'Meeting scheduled for tomorrow',
-        description: 'Product demo with Acme Corp at 2:00 PM',
-        timestamp: '5 min ago',
-        status: 'pending',
-        action: {
-          label: 'View',
-          onClick: () => console.log('View meeting')
-        }
-      },
-      {
-        id: '3',
-        type: 'lead',
-        title: 'Pipeline stage updated',
-        description: 'Lead "John Smith" moved to Proposal stage',
-        timestamp: '8 min ago',
-        status: 'completed'
-      },
-      {
-        id: '4',
-        type: 'chat',
-        title: 'AI assistant responded',
-        description: 'Generated follow-up email for recent inquiry',
-        timestamp: '12 min ago',
-        status: 'completed',
-        action: {
-          label: 'Review',
-          onClick: () => console.log('Review response')
-        }
-      },
-      {
-        id: '5',
-        type: 'task',
-        title: 'Task completed: Follow up call',
-        description: 'Successfully contacted 3 prospects',
-        timestamp: '15 min ago',
-        status: 'completed'
-      }
-    ];
+  const { data: fetchedActivities = [] } = useQuery<ActivityItem[]>({
+    queryKey: ['activity-feed'],
+    queryFn: async () => {
+      const res = await fetch('/api/activity');
+      if (!res.ok) throw new Error('Failed to fetch activity');
+      const data = await res.json();
+      return data.activities as ActivityItem[];
+    },
+    refetchInterval: 30000,
+  });
 
-    setActivities(mockActivities);
-  }, []);
+  const activities = fetchedActivities.map(activity => ({
+    ...activity,
+    action: getActivityAction(activity.type, activity.id),
+  }));
+
+  function getActivityAction(type: ActivityItem['type'], id: string) {
+    switch (type) {
+      case 'email':
+        return { label: 'Open', onClick: () => router.push('/app/inbox') };
+      case 'meeting':
+        return { label: 'View', onClick: () => router.push('/app/calendar') };
+      case 'lead':
+        return { label: 'View', onClick: () => router.push('/app/pipeline') };
+      case 'chat':
+        return { label: 'Open', onClick: () => router.push('/app/chat') };
+      case 'task':
+        return { label: 'View', onClick: () => router.push('/app/tasks') };
+      default:
+        return undefined;
+    }
+  }
 
   const getActivityIcon = (type: ActivityItem['type']) => {
     switch (type) {
