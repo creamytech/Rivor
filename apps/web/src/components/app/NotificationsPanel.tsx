@@ -43,49 +43,44 @@ export default function NotificationsPanel({ isOpen, onClose }: NotificationsPan
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread' | 'high'>('all');
 
-  const createAction = useCallback((n: any) => {
-    switch (n.type) {
-      case 'lead':
-        return {
-          label: 'View Lead',
-          onClick: () => router.push(`/app/pipeline/leads/${n.entityId || ''}`)
-        };
-      case 'email':
-      case 'integration':
-      case 'system':
-        return {
-          label: 'View Settings',
-          onClick: () => router.push('/app/settings')
-        };
-      case 'meeting':
-        return {
-          label: 'View Calendar',
-          onClick: () => router.push('/app/calendar')
-        };
-      default:
-        return undefined;
-    }
-  }, [router]);
-
+<<<<<<< HEAD
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
         const res = await fetch('/api/notifications');
-        if (!res.ok) throw new Error('Failed to fetch notifications');
-        const data = await res.json();
-        const mapped = data.map((n: any) => ({
-          ...n,
-          timestamp: new Date(n.timestamp),
-          action: createAction(n)
-        }));
-        setNotifications(mapped);
-      } catch (error) {
-        console.error('Failed to fetch notifications:', error);
+        if (res.ok) {
+          const data = await res.json();
+          setNotifications(
+            data.notifications.map((n: any) => ({
+              ...n,
+              timestamp: new Date(n.timestamp),
+            }))
+          );
+        }
+      } catch (err) {
+        console.error('Failed to fetch notifications', err);
       }
     };
 
     fetchNotifications();
-  }, [createAction]);
+
+    const es = new EventSource('/api/notifications/stream');
+    es.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        setNotifications((prev) => [
+          { ...data, timestamp: new Date(data.timestamp) },
+          ...prev,
+        ]);
+      } catch (error) {
+        console.error('Failed to parse notification', error);
+      }
+    };
+
+    return () => {
+      es.close();
+    };
+  }, []);
 
   const getNotificationIcon = (type: Notification['type']) => {
     switch (type) {
@@ -143,25 +138,22 @@ export default function NotificationsPanel({ isOpen, onClose }: NotificationsPan
   const highPriorityCount = notifications.filter(n => n.priority === 'high' && !n.isRead).length;
 
   const markAsRead = async (id: string) => {
-    setNotifications(prev =>
-      prev.map(n => n.id === id ? { ...n, isRead: true } : n)
-    );
     try {
-      await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
-    } catch (error) {
-      console.error('Failed to persist read state:', error);
+      await fetch(`/api/notifications/${id}/read`, { method: 'PATCH' });
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+      );
+    } catch (err) {
+      console.error('Failed to mark notification as read', err);
     }
   };
 
   const markAllAsRead = async () => {
-    const unread = notifications.filter(n => !n.isRead);
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
     try {
-      await Promise.all(
-        unread.map(n => fetch(`/api/notifications/${n.id}/read`, { method: 'POST' }))
-      );
-    } catch (error) {
-      console.error('Failed to mark all as read:', error);
+      await fetch('/api/notifications/read', { method: 'PATCH' });
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    } catch (err) {
+      console.error('Failed to mark all notifications as read', err);
     }
   };
 
