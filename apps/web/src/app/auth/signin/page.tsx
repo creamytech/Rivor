@@ -191,6 +191,11 @@ export default function SignInPage() {
             )}
           </div>
 
+          <div className="flex items-center justify-center text-xs text-muted-foreground space-x-2 animate-fade-up-delay-4">
+            <Shield className="w-4 h-4" aria-hidden="true" />
+            <span>We use OAuth 2.0 and never store your password.</span>
+          </div>
+
           <div className="text-center animate-fade-up-delay-4">
             <p className="text-xs text-muted-foreground leading-relaxed">
               By continuing you agree to our{" "}
