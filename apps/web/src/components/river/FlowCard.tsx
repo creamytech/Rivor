@@ -25,19 +25,19 @@ export default function FlowCard({
     : false;
 
   const variantClasses = {
-    default: 'bg-white dark:bg-slate-800 shadow-sm',
-    elevated: 'bg-white dark:bg-slate-800 shadow-lg',
-    hero: 'bg-gradient-to-br from-white/95 to-slate-50/95 dark:from-slate-800/95 dark:to-slate-900/95 shadow-xl backdrop-blur-sm'
+    default: 'bg-[var(--color-navy-50)] dark:bg-[var(--color-navy-800)] shadow-sm',
+    elevated: 'bg-[var(--color-navy-50)] dark:bg-[var(--color-navy-800)] shadow-lg',
+    hero: 'bg-gradient-to-br from-[var(--color-navy-50)]/95 to-[var(--color-navy-100)]/95 dark:from-[var(--color-navy-800)]/95 dark:to-[var(--color-navy-900)]/95 shadow-xl backdrop-blur-sm'
   };
 
-  const glassyClasses = glassy 
-    ? 'backdrop-blur-md bg-white/80 dark:bg-slate-800/80 border border-white/20'
+  const glassyClasses = glassy
+    ? 'backdrop-blur-md bg-[var(--color-navy-50)]/80 dark:bg-[var(--color-navy-800)]/80 border border-white/20'
     : '';
 
   return (
     <motion.div
       className={cn(
-        'rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden',
+        'rounded-[var(--radius-2xl)] border border-[var(--color-navy-200)] dark:border-[var(--color-navy-700)] overflow-hidden',
         variantClasses[variant],
         glassyClasses,
         hoverable && 'cursor-pointer',
@@ -57,7 +57,7 @@ export default function FlowCard({
             }
           : hoverable && !prefersReducedMotion
           ? {
-              borderColor: 'rgb(20, 184, 166)',
+              borderColor: 'var(--color-teal-500)',
               transition: { duration: 0.2 }
             }
           : {}
@@ -84,7 +84,7 @@ export default function FlowCard({
       {/* Flowing border accent */}
       {variant === 'hero' && !prefersReducedMotion && (
         <motion.div
-          className="absolute inset-0 rounded-2xl"
+          className="absolute inset-0 rounded-[var(--radius-2xl)]"
           style={{
             background: 'linear-gradient(90deg, transparent, rgba(20, 184, 166, 0.3), transparent)',
             backgroundSize: '200% 100%'

@@ -72,7 +72,10 @@ export default function TodayAtAGlance({
     return (
       <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6", className)}>
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-32 bg-slate-200 dark:bg-slate-700 rounded-lg animate-pulse"></div>
+          <div
+            key={i}
+            className="h-32 bg-[var(--color-navy-200)] dark:bg-[var(--color-navy-700)] rounded-[var(--radius-lg)] animate-pulse"
+          ></div>
         ))}
       </div>
     );
@@ -96,10 +99,10 @@ export default function TodayAtAGlance({
             <GlassCardTitle className="text-2xl font-bold mb-1">
               {leadsData?.new || 0}
             </GlassCardTitle>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-[var(--color-navy-600)] dark:text-[var(--color-navy-400)]">
               New leads today
             </p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-[var(--color-navy-500)] mt-1">
               {leadsData?.total || 0} total active
             </p>
           </div>
@@ -122,10 +125,10 @@ export default function TodayAtAGlance({
             <GlassCardTitle className="text-2xl font-bold mb-1">
               {repliesData?.due || 0}
             </GlassCardTitle>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-[var(--color-navy-600)] dark:text-[var(--color-navy-400)]">
               Replies due today
             </p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-[var(--color-navy-500)] mt-1">
               {repliesData?.due || 0} pending
             </p>
           </div>
@@ -148,10 +151,10 @@ export default function TodayAtAGlance({
             <GlassCardTitle className="text-2xl font-bold mb-1">
               {meetingsData?.today || 0}
             </GlassCardTitle>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-[var(--color-navy-600)] dark:text-[var(--color-navy-400)]">
               Meetings today
             </p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-[var(--color-navy-500)] mt-1">
               {meetingsData?.today || 0} scheduled
             </p>
           </div>
@@ -174,10 +177,10 @@ export default function TodayAtAGlance({
             <GlassCardTitle className="text-2xl font-bold mb-1">
               {tokenHealthData?.healthy || 0}/{tokenHealthData?.total || 0}
             </GlassCardTitle>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-[var(--color-navy-600)] dark:text-[var(--color-navy-400)]">
               Token health
             </p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-[var(--color-navy-500)] mt-1">
               {tokenHealthData?.status || 'unknown'} status
             </p>
           </div>

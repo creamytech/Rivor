@@ -168,3 +168,27 @@ export const riverTheme = {
 } as const;
 
 export type RiverTheme = typeof riverTheme;
+
+// Generate CSS variable mappings for theme tokens
+export const riverCSSVariables: Record<string, string> = {
+  // Color variables
+  ...Object.fromEntries(
+    Object.entries(riverColors).flatMap(([color, shades]) =>
+      Object.entries(shades).map(([shade, value]) => [`--color-${color}-${shade}`, value])
+    )
+  ),
+  // Spacing variables
+  ...Object.fromEntries(
+    Object.entries(spacing).map(([key, value]) => [`--space-${key}`, value])
+  ),
+  // Radius variables
+  ...Object.fromEntries(
+    Object.entries(radius).map(([key, value]) => [`--radius-${key}`, value])
+  ),
+  // Typography variables
+  ...Object.fromEntries([
+    ...Object.entries(typography.scale).map(([key, value]) => [`--font-size-${key}`, value]),
+    ...Object.entries(typography.weights).map(([key, value]) => [`--font-weight-${key}`, value]),
+    ...Object.entries(typography.families).map(([key, value]) => [`--font-family-${key}`, value])
+  ])
+};
