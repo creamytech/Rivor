@@ -1,6 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { TrendingUp, TrendingDown, BarChart3, Users, Clock, Plus, Settings } from 'lucide-react';
