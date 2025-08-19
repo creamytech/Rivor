@@ -127,6 +127,163 @@ interface EnhancedContactsProps {
   selectedFilters?: string[];
 }
 
+// Mock contacts data - moved outside component to prevent recreation
+const mockContacts: Contact[] = [
+  {
+    id: '1',
+    firstName: 'Sarah',
+    lastName: 'Johnson',
+    email: 'sarah.johnson@techcorp.com',
+    phone: '+1 (555) 123-4567',
+    company: 'TechCorp Inc.',
+    title: 'VP of Engineering',
+    location: 'San Francisco, CA',
+    avatar: '/api/avatar/sarah',
+    status: 'lead',
+    tags: ['enterprise', 'tech', 'decision-maker'],
+    notes: 'Interested in enterprise features. Prefers technical demos.',
+    lastContact: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+    nextFollowUp: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+    dealValue: 50000,
+    dealStage: 'Proposal',
+    emailVerified: true,
+    phoneVerified: true,
+    gdprOptIn: true,
+    source: 'website',
+    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    health: {
+      emailHealth: 'good',
+      phoneHealth: 'good',
+      engagementScore: 85,
+      lastActivity: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+    },
+    activities: [
+      {
+        id: 'act1',
+        type: 'email',
+        title: 'Product Demo Follow-up',
+        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+        description: 'Sent demo recording and pricing information'
+      },
+      {
+        id: 'act2',
+        type: 'meeting',
+        title: 'Product Demo',
+        date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+        description: '45-minute demo of enterprise features'
+      }
+    ],
+    deals: [
+      {
+        id: 'deal1',
+        title: 'TechCorp Enterprise License',
+        value: 50000,
+        stage: 'Proposal',
+        probability: 75,
+        expectedClose: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      }
+    ]
+  },
+  {
+    id: '2',
+    firstName: 'Mike',
+    lastName: 'Chen',
+    email: 'mike@startupxyz.com',
+    phone: '+1 (555) 987-6543',
+    company: 'StartupXYZ',
+    title: 'Founder & CEO',
+    location: 'Austin, TX',
+    avatar: '/api/avatar/mike',
+    status: 'customer',
+    tags: ['startup', 'founder', 'early-adopter'],
+    notes: 'Early customer. Very satisfied with the product.',
+    lastContact: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 1 week ago
+    dealValue: 15000,
+    dealStage: 'Closed Won',
+    emailVerified: true,
+    phoneVerified: false,
+    gdprOptIn: true,
+    source: 'referral',
+    createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
+    updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    health: {
+      emailHealth: 'good',
+      phoneHealth: 'warning',
+      engagementScore: 92,
+      lastActivity: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    },
+    activities: [
+      {
+        id: 'act3',
+        type: 'call',
+        title: 'Quarterly Check-in',
+        date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        description: 'Discussed upcoming features and renewal'
+      }
+    ],
+    deals: [
+      {
+        id: 'deal2',
+        title: 'StartupXYZ Annual License',
+        value: 15000,
+        stage: 'Closed Won',
+        probability: 100,
+        expectedClose: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      }
+    ]
+  },
+  {
+    id: '3',
+    firstName: 'Emily',
+    lastName: 'Davis',
+    email: 'emily.davis@bigcorp.com',
+    phone: '+1 (555) 456-7890',
+    company: 'BigCorp Solutions',
+    title: 'Director of Operations',
+    location: 'New York, NY',
+    avatar: '/api/avatar/emily',
+    status: 'prospect',
+    tags: ['enterprise', 'operations', 'evaluating'],
+    notes: 'Currently evaluating our solution against competitors.',
+    lastContact: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+    nextFollowUp: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
+    dealValue: 75000,
+    dealStage: 'Evaluation',
+    emailVerified: true,
+    phoneVerified: true,
+    gdprOptIn: false,
+    source: 'event',
+    createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    health: {
+      emailHealth: 'good',
+      phoneHealth: 'good',
+      engagementScore: 78,
+      lastActivity: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
+    },
+    activities: [
+      {
+        id: 'act4',
+        type: 'email',
+        title: 'Trial Extension Request',
+        date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+        description: 'Requested additional time for evaluation'
+      }
+    ],
+    deals: [
+      {
+        id: 'deal3',
+        title: 'BigCorp Enterprise Deployment',
+        value: 75000,
+        stage: 'Evaluation',
+        probability: 60,
+        expectedClose: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000)
+      }
+    ]
+  }
+];
+
 export default function EnhancedContacts({ className, searchQuery = '', selectedFilters = [] }: EnhancedContactsProps) {
   // All hooks must be called at the top level
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -136,163 +293,6 @@ export default function EnhancedContacts({ className, searchQuery = '', selected
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [sortBy, setSortBy] = useState<'name' | 'company' | 'lastContact' | 'dealValue'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-
-  // Mock contacts data - moved outside of component to avoid recreation
-  const mockContacts: Contact[] = [
-    {
-      id: '1',
-      firstName: 'Sarah',
-      lastName: 'Johnson',
-      email: 'sarah.johnson@techcorp.com',
-      phone: '+1 (555) 123-4567',
-      company: 'TechCorp Inc.',
-      title: 'VP of Engineering',
-      location: 'San Francisco, CA',
-      avatar: '/api/avatar/sarah',
-      status: 'lead',
-      tags: ['enterprise', 'tech', 'decision-maker'],
-      notes: 'Interested in enterprise features. Prefers technical demos.',
-      lastContact: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-      nextFollowUp: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
-      dealValue: 50000,
-      dealStage: 'Proposal',
-      emailVerified: true,
-      phoneVerified: true,
-      gdprOptIn: true,
-      source: 'website',
-      createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      health: {
-        emailHealth: 'good',
-        phoneHealth: 'good',
-        engagementScore: 85,
-        lastActivity: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-      },
-      activities: [
-        {
-          id: 'act1',
-          type: 'email',
-          title: 'Product Demo Follow-up',
-          date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-          description: 'Sent demo recording and pricing information'
-        },
-        {
-          id: 'act2',
-          type: 'meeting',
-          title: 'Product Demo',
-          date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-          description: '45-minute demo of enterprise features'
-        }
-      ],
-      deals: [
-        {
-          id: 'deal1',
-          title: 'TechCorp Enterprise License',
-          value: 50000,
-          stage: 'Proposal',
-          probability: 75,
-          expectedClose: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        }
-      ]
-    },
-    {
-      id: '2',
-      firstName: 'Mike',
-      lastName: 'Chen',
-      email: 'mike@startupxyz.com',
-      phone: '+1 (555) 987-6543',
-      company: 'StartupXYZ',
-      title: 'Founder & CEO',
-      location: 'Austin, TX',
-      avatar: '/api/avatar/mike',
-      status: 'customer',
-      tags: ['startup', 'founder', 'early-adopter'],
-      notes: 'Early customer. Very satisfied with the product.',
-      lastContact: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 1 week ago
-      dealValue: 15000,
-      dealStage: 'Closed Won',
-      emailVerified: true,
-      phoneVerified: false,
-      gdprOptIn: true,
-      source: 'referral',
-      createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      health: {
-        emailHealth: 'good',
-        phoneHealth: 'warning',
-        engagementScore: 92,
-        lastActivity: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-      },
-      activities: [
-        {
-          id: 'act3',
-          type: 'call',
-          title: 'Quarterly Check-in',
-          date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-          description: 'Discussed upcoming features and renewal'
-        }
-      ],
-      deals: [
-        {
-          id: 'deal2',
-          title: 'StartupXYZ Annual License',
-          value: 15000,
-          stage: 'Closed Won',
-          probability: 100,
-          expectedClose: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-        }
-      ]
-    },
-    {
-      id: '3',
-      firstName: 'Emily',
-      lastName: 'Davis',
-      email: 'emily.davis@bigcorp.com',
-      phone: '+1 (555) 456-7890',
-      company: 'BigCorp Solutions',
-      title: 'Director of Operations',
-      location: 'New York, NY',
-      avatar: '/api/avatar/emily',
-      status: 'prospect',
-      tags: ['enterprise', 'operations', 'evaluating'],
-      notes: 'Currently evaluating our solution against competitors.',
-      lastContact: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
-      nextFollowUp: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
-      dealValue: 75000,
-      dealStage: 'Evaluation',
-      emailVerified: true,
-      phoneVerified: true,
-      gdprOptIn: false,
-      source: 'event',
-      createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-      health: {
-        emailHealth: 'good',
-        phoneHealth: 'good',
-        engagementScore: 78,
-        lastActivity: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
-      },
-      activities: [
-        {
-          id: 'act4',
-          type: 'email',
-          title: 'Trial Extension Request',
-          date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-          description: 'Requested additional time for evaluation'
-        }
-      ],
-      deals: [
-        {
-          id: 'deal3',
-          title: 'BigCorp Enterprise Deployment',
-          value: 75000,
-          stage: 'Evaluation',
-          probability: 60,
-          expectedClose: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000)
-        }
-      ]
-    }
-  ];
 
   useEffect(() => {
     // Simulate loading

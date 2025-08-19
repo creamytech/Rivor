@@ -105,6 +105,138 @@ interface EnhancedCalendarProps {
   className?: string;
 }
 
+// Mock events data - moved outside component to prevent recreation
+const mockEvents: CalendarEvent[] = [
+  {
+    id: '1',
+    title: 'Product Demo - TechCorp',
+    description: 'Showcase enterprise features and answer technical questions',
+    start: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
+    end: new Date(Date.now() + 3 * 60 * 60 * 1000), // 3 hours from now
+    location: 'Google Meet',
+    type: 'demo',
+    status: 'confirmed',
+    attendees: [
+      {
+        id: 'attendee1',
+        name: 'Sarah Johnson',
+        email: 'sarah@techcorp.com',
+        avatar: '/api/avatar/sarah',
+        company: 'TechCorp Inc.',
+        title: 'VP of Engineering',
+        response: 'accepted'
+      },
+      {
+        id: 'attendee2',
+        name: 'David Wilson',
+        email: 'david@techcorp.com',
+        avatar: '/api/avatar/david',
+        company: 'TechCorp Inc.',
+        title: 'CTO',
+        response: 'accepted'
+      }
+    ],
+    organizer: {
+      id: 'organizer1',
+      name: 'John Doe',
+      email: 'john@company.com',
+      avatar: '/api/avatar/john'
+    },
+    relatedTo: {
+      type: 'lead',
+      id: 'lead1',
+      title: 'TechCorp Enterprise Deal'
+    },
+    notes: 'Focus on scalability and integration capabilities',
+    videoUrl: 'https://meet.google.com/abc-defg-hij',
+    tags: ['demo', 'enterprise', 'tech'],
+    priority: 'high',
+    isRecurring: false,
+    reminders: [
+      { type: 'popup', minutes: 15 },
+      { type: 'email', minutes: 60 }
+    ]
+  },
+  {
+    id: '2',
+    title: 'Follow-up Call - StartupXYZ',
+    description: 'Discuss proposal feedback and next steps',
+    start: new Date(Date.now() + 5 * 60 * 60 * 1000), // 5 hours from now
+    end: new Date(Date.now() + 5.5 * 60 * 60 * 1000), // 5.5 hours from now
+    location: 'Phone',
+    type: 'call',
+    status: 'scheduled',
+    attendees: [
+      {
+        id: 'attendee3',
+        name: 'Mike Chen',
+        email: 'mike@startupxyz.com',
+        avatar: '/api/avatar/mike',
+        company: 'StartupXYZ',
+        title: 'Founder',
+        response: 'pending'
+      }
+    ],
+    organizer: {
+      id: 'organizer1',
+      name: 'John Doe',
+      email: 'john@company.com',
+      avatar: '/api/avatar/john'
+    },
+    relatedTo: {
+      type: 'deal',
+      id: 'deal1',
+      title: 'StartupXYZ Contract'
+    },
+    phoneNumber: '+1 (555) 123-4567',
+    tags: ['follow-up', 'proposal', 'startup'],
+    priority: 'medium',
+    isRecurring: false,
+    reminders: [
+      { type: 'popup', minutes: 10 }
+    ]
+  },
+  {
+    id: '3',
+    title: 'Weekly Team Standup',
+    description: 'Review progress and plan for the week',
+    start: new Date(Date.now() + 24 * 60 * 60 * 1000), // tomorrow
+    end: new Date(Date.now() + 24 * 60 * 60 * 1000 + 30 * 60 * 1000), // tomorrow + 30 min
+    location: 'Conference Room A',
+    type: 'meeting',
+    status: 'confirmed',
+    attendees: [
+      {
+        id: 'attendee4',
+        name: 'Jane Smith',
+        email: 'jane@company.com',
+        avatar: '/api/avatar/jane',
+        response: 'accepted'
+      },
+      {
+        id: 'attendee5',
+        name: 'Bob Wilson',
+        email: 'bob@company.com',
+        avatar: '/api/avatar/bob',
+        response: 'accepted'
+      }
+    ],
+    organizer: {
+      id: 'organizer1',
+      name: 'John Doe',
+      email: 'john@company.com',
+      avatar: '/api/avatar/john'
+    },
+    tags: ['team', 'standup', 'weekly'],
+    priority: 'low',
+    isRecurring: true,
+    recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO',
+    reminders: [
+      { type: 'popup', minutes: 5 }
+    ]
+  }
+];
+
 export default function EnhancedCalendar({ className }: EnhancedCalendarProps) {
   // All hooks must be called at the top level
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -113,138 +245,6 @@ export default function EnhancedCalendar({ className }: EnhancedCalendarProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [showEventModal, setShowEventModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Mock events data - moved outside of component to avoid recreation
-  const mockEvents: CalendarEvent[] = [
-    {
-      id: '1',
-      title: 'Product Demo - TechCorp',
-      description: 'Showcase enterprise features and answer technical questions',
-      start: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
-      end: new Date(Date.now() + 3 * 60 * 60 * 1000), // 3 hours from now
-      location: 'Google Meet',
-      type: 'demo',
-      status: 'confirmed',
-      attendees: [
-        {
-          id: 'attendee1',
-          name: 'Sarah Johnson',
-          email: 'sarah@techcorp.com',
-          avatar: '/api/avatar/sarah',
-          company: 'TechCorp Inc.',
-          title: 'VP of Engineering',
-          response: 'accepted'
-        },
-        {
-          id: 'attendee2',
-          name: 'David Wilson',
-          email: 'david@techcorp.com',
-          avatar: '/api/avatar/david',
-          company: 'TechCorp Inc.',
-          title: 'CTO',
-          response: 'accepted'
-        }
-      ],
-      organizer: {
-        id: 'organizer1',
-        name: 'John Doe',
-        email: 'john@company.com',
-        avatar: '/api/avatar/john'
-      },
-      relatedTo: {
-        type: 'lead',
-        id: 'lead1',
-        title: 'TechCorp Enterprise Deal'
-      },
-      notes: 'Focus on scalability and integration capabilities',
-      videoUrl: 'https://meet.google.com/abc-defg-hij',
-      tags: ['demo', 'enterprise', 'tech'],
-      priority: 'high',
-      isRecurring: false,
-      reminders: [
-        { type: 'popup', minutes: 15 },
-        { type: 'email', minutes: 60 }
-      ]
-    },
-    {
-      id: '2',
-      title: 'Follow-up Call - StartupXYZ',
-      description: 'Discuss proposal feedback and next steps',
-      start: new Date(Date.now() + 5 * 60 * 60 * 1000), // 5 hours from now
-      end: new Date(Date.now() + 5.5 * 60 * 60 * 1000), // 5.5 hours from now
-      location: 'Phone',
-      type: 'call',
-      status: 'scheduled',
-      attendees: [
-        {
-          id: 'attendee3',
-          name: 'Mike Chen',
-          email: 'mike@startupxyz.com',
-          avatar: '/api/avatar/mike',
-          company: 'StartupXYZ',
-          title: 'Founder',
-          response: 'pending'
-        }
-      ],
-      organizer: {
-        id: 'organizer1',
-        name: 'John Doe',
-        email: 'john@company.com',
-        avatar: '/api/avatar/john'
-      },
-      relatedTo: {
-        type: 'deal',
-        id: 'deal1',
-        title: 'StartupXYZ Contract'
-      },
-      phoneNumber: '+1 (555) 123-4567',
-      tags: ['follow-up', 'proposal', 'startup'],
-      priority: 'medium',
-      isRecurring: false,
-      reminders: [
-        { type: 'popup', minutes: 10 }
-      ]
-    },
-    {
-      id: '3',
-      title: 'Weekly Team Standup',
-      description: 'Review progress and plan for the week',
-      start: new Date(Date.now() + 24 * 60 * 60 * 1000), // tomorrow
-      end: new Date(Date.now() + 24 * 60 * 60 * 1000 + 30 * 60 * 1000), // tomorrow + 30 min
-      location: 'Conference Room A',
-      type: 'meeting',
-      status: 'confirmed',
-      attendees: [
-        {
-          id: 'attendee4',
-          name: 'Jane Smith',
-          email: 'jane@company.com',
-          avatar: '/api/avatar/jane',
-          response: 'accepted'
-        },
-        {
-          id: 'attendee5',
-          name: 'Bob Wilson',
-          email: 'bob@company.com',
-          avatar: '/api/avatar/bob',
-          response: 'accepted'
-        }
-      ],
-      organizer: {
-        id: 'organizer1',
-        name: 'John Doe',
-        email: 'john@company.com',
-        avatar: '/api/avatar/john'
-      },
-      tags: ['team', 'standup', 'weekly'],
-      priority: 'low',
-      isRecurring: true,
-      recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO',
-      reminders: [
-        { type: 'popup', minutes: 5 }
-      ]
-    }
-  ];
 
   useEffect(() => {
     // Simulate loading
