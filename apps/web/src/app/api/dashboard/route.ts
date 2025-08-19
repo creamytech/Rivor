@@ -11,14 +11,31 @@ export const fetchCache = 'force-no-store';
 export async function GET(_req: NextRequest) {
   try {
     const session = await auth();
-    
-    if (!session) {
+
+    if (!session?.user?.email) {
       return new Response('Unauthorized', { status: 401 });
     }
 
     const orgId = (session as { orgId?: string }).orgId;
-    const userName = session.user?.name || session.user?.email?.split('@')[0] || 'there';
-    const userEmail = session.user?.email;
+    if (!orgId) {
+      return new Response('Organization not found', { status: 403 });
+    }
+
+    // Verify the user is a member of this organization
+    const membership = await prisma.orgMember.findFirst({
+      where: {
+        orgId,
+        user: { email: session.user.email }
+      },
+      select: { role: true }
+    });
+
+    if (!membership) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
+    const userName = session.user.name || session.user.email.split('@')[0] || 'there';
+    const userEmail = session.user.email;
 
     // Log dashboard access
     logger.userAction('dashboard_access', userEmail || 'unknown', orgId || 'unknown');
