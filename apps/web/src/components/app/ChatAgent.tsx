@@ -5,19 +5,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { 
-  MessageSquare, 
-  X, 
-  Send, 
-  Bot, 
-  User, 
+import {
+  X,
+  Send,
+  Bot,
+  User,
   Sparkles,
   Lightbulb,
   BookOpen,
-  Zap,
-  ArrowRight,
-  ChevronDown
+  Zap
 } from 'lucide-react';
 
 interface Message {
@@ -41,63 +37,6 @@ interface ChatAgentProps {
   onClose: () => void;
 }
 
-// Knowledge base for the chat agent
-const KNOWLEDGE_BASE = {
-  dashboard: {
-    title: "Dashboard Overview",
-    content: "The dashboard is your command center. You can customize it by clicking the 'Customize' button to rearrange cards, add new ones, or change layouts. Each card shows different insights about your leads, pipeline, and system health.",
-    tips: [
-      "Drag cards to rearrange them in edit mode",
-      "Click the gear icon on cards for quick actions",
-      "Use the search bar to find specific information"
-    ]
-  },
-  inbox: {
-    title: "Inbox Management",
-    content: "Your inbox automatically detects leads from emails and organizes them. You can compose new emails, set up auto-responses, and track email engagement.",
-    tips: [
-      "Set up email integrations to automatically detect leads",
-      "Use AI to draft follow-up emails",
-      "Create email templates for common responses"
-    ]
-  },
-  pipeline: {
-    title: "Pipeline Management",
-    content: "The pipeline helps you track leads through your sales process. Create stages, move leads between them, and analyze conversion rates.",
-    tips: [
-      "Create custom stages that match your sales process",
-      "Use the pipeline view to see all leads at once",
-      "Set up automated actions when leads move stages"
-    ]
-  },
-  calendar: {
-    title: "Calendar Integration",
-    content: "Connect your calendar to automatically detect meetings and create leads from attendees. Schedule follow-ups and track meeting outcomes.",
-    tips: [
-      "Connect Google Calendar or Outlook",
-      "Set up meeting templates",
-      "Automatically create leads from meeting attendees"
-    ]
-  },
-  contacts: {
-    title: "Contact Management",
-    content: "Manage all your contacts in one place. Import contacts, track interactions, and maintain detailed profiles.",
-    tips: [
-      "Import contacts from CSV or other CRM systems",
-      "Add custom fields to track important information",
-      "Use tags to organize contacts"
-    ]
-  },
-  chat: {
-    title: "AI Chat Assistant",
-    content: "The AI chat helps you draft emails, analyze leads, and get insights about your sales process.",
-    tips: [
-      "Ask the AI to draft follow-up emails",
-      "Get suggestions for lead qualification",
-      "Request analysis of your pipeline performance"
-    ]
-  }
-};
 
 export default function ChatAgent({ isOpen, onClose }: ChatAgentProps) {
   const [messages, setMessages] = useState<Message[]>([
@@ -159,13 +98,14 @@ export default function ChatAgent({ isOpen, onClose }: ChatAgentProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
+  const handleSendMessage = async (contentOverride?: string) => {
+    const content = contentOverride ?? inputValue;
+    if (!content.trim()) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
-      content: inputValue,
+      content,
       timestamp: new Date()
     };
 
@@ -173,103 +113,75 @@ export default function ChatAgent({ isOpen, onClose }: ChatAgentProps) {
     setInputValue('');
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const response = generateResponse(inputValue);
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'assistant',
-        content: response.content,
-        timestamp: new Date(),
-        suggestions: response.suggestions
-      };
+    const assistantId = (Date.now() + 1).toString();
+    const assistantMessage: Message = {
+      id: assistantId,
+      type: 'assistant',
+      content: '',
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, assistantMessage]);
 
-      setMessages(prev => [...prev, assistantMessage]);
+    try {
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: content })
+      });
+
+      if (!response.body) throw new Error('No response body');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+      let buffer = '';
+
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const data = JSON.parse(line);
+            if (data.token) {
+              assistantMessage.content += data.token;
+            } else if (typeof data === 'string') {
+              assistantMessage.content += data;
+            }
+            if (data.suggestions) {
+              assistantMessage.suggestions = data.suggestions;
+            }
+          } catch {
+            assistantMessage.content += line;
+          }
+          setMessages(prev =>
+            prev.map(m => (m.id === assistantId ? { ...assistantMessage } : m))
+          );
+        }
+      }
+    } catch (err) {
+      assistantMessage.content = 'Sorry, something went wrong.';
+      setMessages(prev =>
+        prev.map(m => (m.id === assistantId ? { ...assistantMessage } : m))
+      );
+    } finally {
       setIsTyping(false);
-    }, 1000);
+    }
   };
 
   const handleQuickAction = (actionId: string) => {
     const action = quickActions.find(a => a.id === actionId);
     if (!action) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: action.title,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setIsTyping(true);
-
-    setTimeout(() => {
-      const response = generateResponse(action.title);
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'assistant',
-        content: response.content,
-        timestamp: new Date(),
-        suggestions: response.suggestions
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
-      setIsTyping(false);
-    }, 800);
-  };
-
-  const generateResponse = (query: string): { content: string; suggestions?: string[] } => {
-    const lowerQuery = query.toLowerCase();
-    
-    // Check knowledge base
-    for (const [key, info] of Object.entries(KNOWLEDGE_BASE)) {
-      if (lowerQuery.includes(key) || info.title.toLowerCase().includes(lowerQuery)) {
-        return {
-          content: `${info.title}\n\n${info.content}\n\n💡 **Quick Tips:**\n${info.tips.map(tip => `• ${tip}`).join('\n')}`,
-          suggestions: ['Dashboard', 'Inbox', 'Pipeline', 'Calendar', 'Contacts', 'Chat']
-        };
-      }
-    }
-
-    // Handle specific queries
-    if (lowerQuery.includes('customize') || lowerQuery.includes('dashboard')) {
-      return {
-        content: "To customize your dashboard:\n\n1. Click the 'Customize' button (bottom right)\n2. Drag cards to rearrange them\n3. Use the 'Add Cards' button to add new widgets\n4. Choose from different layout presets\n5. Click 'Save & Exit' when done",
-        suggestions: ['Pipeline', 'Inbox', 'Integrations']
-      };
-    }
-
-    if (lowerQuery.includes('integrations') || lowerQuery.includes('setup')) {
-      return {
-        content: "To set up integrations:\n\n1. Go to Settings → Integrations\n2. Click 'Connect Gmail' or 'Connect Calendar'\n3. Follow the OAuth flow\n4. Grant necessary permissions\n5. Your data will start syncing automatically",
-        suggestions: ['Dashboard', 'Pipeline', 'Calendar']
-      };
-    }
-
-    if (lowerQuery.includes('pipeline') || lowerQuery.includes('stages')) {
-      return {
-        content: "To create your pipeline:\n\n1. Go to Settings → Pipeline\n2. Click 'Add Stage' to create new stages\n3. Drag stages to reorder them\n4. Set colors and names for each stage\n5. Add automation rules if needed",
-        suggestions: ['Dashboard', 'Leads', 'Analytics']
-      };
-    }
-
-    if (lowerQuery.includes('ai') || lowerQuery.includes('features')) {
-      return {
-        content: "Rivor's AI features include:\n\n🤖 **Email Drafting**: AI helps compose follow-up emails\n📊 **Lead Analysis**: Get insights about lead quality\n📈 **Pipeline Optimization**: AI suggests improvements\n💬 **Smart Responses**: Auto-generate contextual replies\n📋 **Task Automation**: AI creates tasks based on interactions",
-        suggestions: ['Dashboard', 'Inbox', 'Pipeline']
-      };
-    }
-
-    // Default response
-    return {
-      content: "I can help you with:\n\n• Dashboard customization and navigation\n• Setting up email and calendar integrations\n• Creating and managing your sales pipeline\n• Using AI features for lead management\n• Understanding analytics and reports\n\nWhat specific area would you like to learn more about?",
-      suggestions: ['Dashboard', 'Integrations', 'Pipeline', 'AI Features']
-    };
+    handleSendMessage(action.title);
   };
 
   const handleSuggestionClick = (suggestion: string) => {
-    setInputValue(suggestion);
-    handleSendMessage();
+    handleSendMessage(suggestion);
   };
 
   return (
