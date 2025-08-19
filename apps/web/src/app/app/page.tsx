@@ -4,7 +4,11 @@ import dynamic from "next/dynamic";
 import PageHeader from "@/components/app/PageHeader";
 import QuickActions from "@/components/app/QuickActions";
 import FloatingQuickAdd from "@/components/app/FloatingQuickAdd";
-import { BarChart3, Trophy, Target, Zap } from "lucide-react";
+import KPIStrip from "@/components/app/KPIStrip";
+import GlobalSearch from "@/components/app/GlobalSearch";
+import TasksWidget from "@/components/app/TasksWidget";
+import QuickActionsWidget from "@/components/app/QuickActionsWidget";
+import { BarChart3, Trophy, Target, Zap, Search, Command } from "lucide-react";
 
 // Dynamically import components to avoid SSR issues
 const AppShell = dynamic(() => import("@/components/app/AppShell"), {
@@ -112,7 +116,49 @@ export default function DashboardPage() {
           to: "to-purple-600/12"
         }}
       />
-      <DashboardLayout />
+
+      {/* Global Search Bar */}
+      <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto">
+          <GlobalSearch 
+            placeholder="Search leads, deals, contacts, emails, or use ⌘K for quick actions..."
+            className="w-full"
+          />
+        </div>
+      </div>
+
+      {/* KPI Strip */}
+      <div className="px-6 py-6">
+        <div className="max-w-7xl mx-auto">
+          <KPIStrip className="mb-8" />
+        </div>
+      </div>
+
+      {/* Main Dashboard Content */}
+      <div className="px-6 pb-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column - Main Dashboard */}
+            <div className="lg:col-span-2">
+              <DashboardLayout />
+            </div>
+
+            {/* Right Column - Quick Actions & Tasks */}
+            <div className="space-y-6">
+              <QuickActionsWidget 
+                className="sticky top-6"
+                compact={true}
+                showCategories={false}
+              />
+              <TasksWidget 
+                className="sticky top-6"
+                maxTasks={6}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       <QuickActions />
       <FloatingQuickAdd />
     </AppShell>

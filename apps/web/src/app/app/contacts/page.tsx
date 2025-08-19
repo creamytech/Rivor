@@ -1,227 +1,303 @@
 "use client";
-import AppShell from "@/components/app/AppShell";
-import EnhancedContacts from "@/components/contacts/EnhancedContacts";
-import PageHeader from "@/components/app/PageHeader";
-import { Button } from "@/components/ui/button";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { PageHeader } from '@/components/app/PageHeader';
+import { AppShell } from '@/components/app/AppShell';
+import EnhancedContacts from '@/components/contacts/EnhancedContacts';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { 
   Users, 
-  ChevronDown, 
-  Tag, 
   Search, 
-  Plus,
-  X,
-  AlertTriangle,
+  Filter, 
+  Plus, 
+  Settings, 
+  Download, 
+  Upload,
+  Tag,
+  Building,
+  MapPin,
+  Calendar,
+  Clock,
+  Target,
+  Zap,
+  Sparkles,
   CheckCircle,
-  Clock
-} from "lucide-react";
-import { useState } from "react";
+  XCircle,
+  Eye,
+  EyeOff,
+  Phone,
+  Mail,
+  MessageSquare,
+  CheckSquare,
+  Star,
+  AlertTriangle,
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  Copy,
+  ExternalLink,
+  Phone as PhoneIcon,
+  Mail as MailIcon,
+  MapPin as MapPinIcon,
+  Calendar as CalendarIcon,
+  MessageSquare as MessageIcon,
+  CheckSquare as TaskIcon,
+  Star as StarIcon,
+  AlertTriangle as AlertIcon,
+  MoreHorizontal as MoreIcon,
+  Edit as EditIcon,
+  Trash2 as TrashIcon,
+  Copy as CopyIcon,
+  ExternalLink as ExternalLinkIcon,
+  Tag as TagIcon,
+  Building as BuildingIcon,
+  Clock as ClockIcon,
+  Target as TargetIcon,
+  Zap as ZapIcon,
+  Sparkles as SparklesIcon,
+  CheckCircle as CheckCircleIcon,
+  XCircle as XCircleIcon,
+  Eye as EyeIcon,
+  EyeOff as EyeOffIcon
+} from 'lucide-react';
 
 export default function ContactsPage() {
-  const [selectedSegment, setSelectedSegment] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showMergeBanner, setShowMergeBanner] = useState(true);
-  const [mergeProgress, setMergeProgress] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<'all' | 'leads' | 'customers' | 'prospects'>('all');
+  const [lifecycleStage, setLifecycleStage] = useState<'all' | 'new' | 'engaged' | 'qualified' | 'customer'>('all');
 
-  const segments = [
-    { value: "all", label: "All Contacts", count: 1247 },
-    { value: "hot-leads", label: "Hot Leads", count: 45 },
-    { value: "clients", label: "Clients", count: 234 },
-    { value: "prospects", label: "Prospects", count: 567 },
-    { value: "vendors", label: "Vendors", count: 89 }
+  const availableFilters = [
+    { id: 'enterprise', label: 'Enterprise', icon: BuildingIcon },
+    { id: 'startup', label: 'Startup', icon: TargetIcon },
+    { id: 'tech', label: 'Tech', icon: ZapIcon },
+    { id: 'decision-maker', label: 'Decision Maker', icon: StarIcon },
+    { id: 'verified-email', label: 'Verified Email', icon: CheckCircleIcon },
+    { id: 'verified-phone', label: 'Verified Phone', icon: PhoneIcon },
+    { id: 'high-engagement', label: 'High Engagement', icon: SparklesIcon },
+    { id: 'needs-follow-up', label: 'Needs Follow-up', icon: AlertIcon },
   ];
 
-  const quickFilters = [
-    { label: "Recently Added", count: 23, active: false },
-    { label: "No Email", count: 45, active: false },
-    { label: "No Phone", count: 67, active: false },
-    { label: "Unassigned", count: 12, active: false }
+  const lifecycleStages = [
+    { id: 'all', label: 'All Stages', icon: Users },
+    { id: 'new', label: 'New', icon: Plus },
+    { id: 'engaged', label: 'Engaged', icon: MessageIcon },
+    { id: 'qualified', label: 'Qualified', icon: TargetIcon },
+    { id: 'customer', label: 'Customer', icon: CheckCircleIcon },
   ];
 
-  const handleMergeReview = () => {
-    setMergeProgress(25);
-    // Simulate merge review process
-    setTimeout(() => setMergeProgress(50), 1000);
-    setTimeout(() => setMergeProgress(75), 2000);
-    setTimeout(() => {
-      setMergeProgress(100);
-      setTimeout(() => setShowMergeBanner(false), 1000);
-    }, 3000);
+  const toggleFilter = (filterId: string) => {
+    setSelectedFilters(prev => 
+      prev.includes(filterId) 
+        ? prev.filter(id => id !== filterId)
+        : [...prev, filterId]
+    );
   };
 
-  const handleDismissMerge = () => {
-    setShowMergeBanner(false);
+  const getPersonalizedGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
   };
+
+  const getGreetingSubtitle = () => {
+    const totalContacts = 1247; // Mock data
+    const newThisWeek = 23; // Mock data
+    return `${totalContacts} total contacts • ${newThisWeek} new this week`;
+  };
+
+  const sevenDayDeltas = [
+    { label: 'Total Contacts', value: '1,247', color: 'blue' },
+    { label: 'New This Week', value: '23', color: 'green' },
+    { label: 'Needs Follow-up', value: '12', color: 'red' },
+  ];
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-amber-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      <AppShell>
-        <PageHeader
-          title="Contact Flow"
-          subtitle="Manage your contacts with smart organization and enrichment"
-          icon={<Users className="h-6 w-6" />}
-          metaChips={[
-            { label: "Total contacts", value: "1,247", color: "orange" },
-            { label: "Last sync", value: "1h ago", color: "blue" }
-          ]}
-          primaryAction={{
-            label: "Add Contact",
-            onClick: () => console.log("Add contact"),
-            icon: <Plus className="h-4 w-4" />
-          }}
-          gradientColors={{
-            from: "from-orange-600/12",
-            via: "via-amber-600/12",
-            to: "to-yellow-600/12"
-          }}
-        />
+    <AppShell>
+      <PageHeader
+        title="Contacts"
+        subtitle="Manage your contacts and relationships"
+        icon={<Users className="h-6 w-6" />}
+        metaChips={sevenDayDeltas.map(delta => ({
+          label: delta.label,
+          value: delta.value,
+          color: delta.color
+        }))}
+        gradientColors={{
+          from: "from-emerald-600/12",
+          via: "via-teal-600/12",
+          to: "to-cyan-600/12"
+        }}
+      />
 
-        {/* Enhanced Search and Filter Bar */}
-        <div className="px-6 py-4 border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--background)98%,transparent)]">
+      {/* Search and Filter Bar */}
+      <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
-            {/* Segments Select */}
-            <div className="w-48">
-              <Select value={selectedSegment} onValueChange={setSelectedSegment}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Contacts" />
-                </SelectTrigger>
-                <SelectContent>
-                  {segments.map((segment) => (
-                    <SelectItem key={segment.value} value={segment.value}>
-                      <div className="flex items-center justify-between w-full">
-                        <span>{segment.label}</span>
-                        <span className="text-xs text-muted-foreground ml-2">
-                          ({segment.count})
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Search */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Search contacts, companies, or emails..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
             </div>
 
-            {/* Search Bar */}
-            <div className="flex-1 max-w-md">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search contacts, companies, or tags..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-background border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+              <Button
+                variant={viewMode === 'all' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('all')}
+                className="text-xs"
+              >
+                All
+              </Button>
+              <Button
+                variant={viewMode === 'leads' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('leads')}
+                className="text-xs"
+              >
+                Leads
+              </Button>
+              <Button
+                variant={viewMode === 'prospects' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('prospects')}
+                className="text-xs"
+              >
+                Prospects
+              </Button>
+              <Button
+                variant={viewMode === 'customers' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('customers')}
+                className="text-xs"
+              >
+                Customers
+              </Button>
+            </div>
+
+            {/* Lifecycle Stage Filter */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-600 dark:text-slate-400">Stage:</span>
+              <div className="flex items-center gap-1">
+                {lifecycleStages.map(stage => (
+                  <Button
+                    key={stage.id}
+                    variant={lifecycleStage === stage.id ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setLifecycleStage(stage.id as any)}
+                    className="text-xs h-8"
                   >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
+                    <stage.icon className="h-3 w-3 mr-1" />
+                    {stage.label}
+                  </Button>
+                ))}
               </div>
             </div>
 
             {/* Quick Actions */}
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
-                <Tag className="h-4 w-4 mr-2" />
-                Tags
+              <Button size="sm" variant="outline">
+                <Upload className="h-4 w-4 mr-2" />
+                Import
               </Button>
-              <Button variant="outline" size="sm">
+              <Button size="sm" variant="outline">
+                <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
-            </div>
-          </div>
-
-          {/* Quick Filters */}
-          <div className="flex items-center gap-2 mt-3">
-            <span className="text-sm text-muted-foreground mr-2">Quick filters:</span>
-            {quickFilters.map((filter, index) => (
-              <Button
-                key={index}
-                variant={filter.active ? "default" : "outline"}
-                size="sm"
-                onClick={() => console.log(`Apply filter: ${filter.label}`)}
-                className="text-xs h-7"
-              >
-                {filter.label}
-                <span className="ml-1 text-xs opacity-70">({filter.count})</span>
+              <Button size="sm" variant="outline">
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
               </Button>
-            ))}
-          </div>
-        </div>
-
-        {/* Enhanced Merge Banner */}
-        {showMergeBanner && (
-          <div className="px-6 py-3 bg-orange-50 dark:bg-orange-900/20 border-b border-orange-200 dark:border-orange-800">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-orange-600" />
-                  <span className="text-sm font-medium text-orange-800 dark:text-orange-200">
-                    3 possible contact merges detected
-                  </span>
-                </div>
-                
-                {mergeProgress > 0 && mergeProgress < 100 && (
-                  <div className="flex items-center gap-2">
-                    <div className="w-16 bg-orange-200 rounded-full h-1.5">
-                      <div 
-                        className="bg-orange-600 h-1.5 rounded-full transition-all duration-300"
-                        style={{ width: `${mergeProgress}%` }}
-                      />
-                    </div>
-                    <span className="text-xs text-orange-600">{mergeProgress}%</span>
-                  </div>
-                )}
-                
-                {mergeProgress === 100 && (
-                  <div className="flex items-center gap-1 text-green-600">
-                    <CheckCircle className="h-4 w-4" />
-                    <span className="text-xs">Completed</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex items-center gap-2">
-                {mergeProgress === 0 && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleMergeReview}
-                    className="text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-700"
-                  >
-                    Review
-                  </Button>
-                )}
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleDismissMerge}
-                  className="text-orange-600 hover:text-orange-800"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
             </div>
           </div>
-        )}
 
-        {/* Enhanced Contacts Component */}
-        <div className="px-6 pb-8">
-          <EnhancedContacts 
-            selectedSegment={selectedSegment}
-            searchQuery={searchQuery}
-          />
+          {/* Filter Chips */}
+          <div className="flex items-center gap-2 mt-3">
+            <span className="text-sm text-slate-600 dark:text-slate-400">Filters:</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              {availableFilters.map(filter => (
+                <Button
+                  key={filter.id}
+                  variant={selectedFilters.includes(filter.id) ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => toggleFilter(filter.id)}
+                  className="text-xs h-7"
+                >
+                  <filter.icon className="h-3 w-3 mr-1" />
+                  {filter.label}
+                </Button>
+              ))}
+            </div>
+            {selectedFilters.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedFilters([])}
+                className="text-xs h-7 text-slate-500 hover:text-slate-700"
+              >
+                Clear all
+              </Button>
+            )}
+          </div>
         </div>
-      </AppShell>
-    </div>
+      </div>
+
+      {/* Smart Suggestions */}
+      <div className="px-6 py-3 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-b border-slate-200 dark:border-slate-700">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-emerald-600" />
+              <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                Smart Suggestions
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-sm">
+              <div className="flex items-center gap-1">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-green-700 dark:text-green-300">
+                  12 contacts need follow-up
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Target className="h-4 w-4 text-orange-600" />
+                <span className="text-orange-700 dark:text-orange-300">
+                  5 duplicate suggestions
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Zap className="h-4 w-4 text-purple-600" />
+                <span className="text-purple-700 dark:text-purple-300">
+                  Auto-enrichment available
+                </span>
+              </div>
+            </div>
+            <Button size="sm" variant="outline" className="ml-auto">
+              <Sparkles className="h-4 w-4 mr-2" />
+              Enrich All
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Contacts Component */}
+      <div className="flex-1 overflow-hidden">
+        <EnhancedContacts 
+          className="h-full" 
+          searchQuery={searchQuery}
+          selectedFilters={selectedFilters}
+        />
+      </div>
+    </AppShell>
   );
 }

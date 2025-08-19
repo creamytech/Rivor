@@ -1,554 +1,596 @@
 "use client";
-import { useState, useEffect } from 'react';
-import { trpc } from '@/lib/trpc';
-import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
+
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
 import { 
-  Search, 
-  Filter, 
   Mail, 
-  Eye, 
-  Archive, 
-  Trash2, 
-  Reply, 
-  ArrowUp, 
+  Star, 
+  Clock, 
+  AlertTriangle, 
+  CheckCircle, 
   MoreHorizontal,
-  Paperclip,
-  Clock,
+  Reply,
+  ReplyAll,
+  Forward,
+  Archive,
+  Trash2,
+  Pin,
+  Snooze,
+  Tag,
   User,
   Building,
+  Phone,
+  MapPin,
   Calendar,
   MessageSquare,
-  Star,
-  StarOff,
-  Download,
   FileText,
-  Image,
-  File
+  Download,
+  Eye,
+  EyeOff,
+  Filter,
+  Search,
+  ChevronRight,
+  ChevronLeft,
+  Send,
+  Edit,
+  Plus,
+  Sparkles,
+  Zap,
+  Target,
+  Briefcase,
+  CheckSquare
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface EmailThread {
   id: string;
-  subjectEnc: any;
-  participantsEnc: any;
+  subject: string;
+  participants: {
+    name: string;
+    email: string;
+    avatar?: string;
+  }[];
+  lastMessage: {
+    content: string;
+    timestamp: Date;
+    from: string;
+  };
   unread: boolean;
   starred: boolean;
+  snoozed: boolean;
   labels: string[];
-  createdAt: string;
-  updatedAt: string;
-  messages: Array<{
-    id: string;
-    sentAt: string;
-    fromEnc: any;
-    toEnc: any;
-    subjectEnc: any;
-    snippetEnc: any;
-    attachments: any;
-  }>;
-  _count: {
-    messages: number;
+  intent: {
+    score: number;
+    type: 'lead' | 'deal' | 'support' | 'general';
+    confidence: number;
   };
-  lead?: {
+  priority: 'high' | 'medium' | 'low';
+  stage?: 'prospect' | 'qualified' | 'proposal' | 'negotiation' | 'closed';
+  tags: string[];
+  attachments: number;
+  threadLength: number;
+}
+
+interface Contact {
+  id: string;
+  name: string;
+  email: string;
+  company: string;
+  title: string;
+  phone?: string;
+  avatar?: string;
+  lastContact: Date;
+  dealHistory: {
     id: string;
-    title: string | null;
+    title: string;
+    value: number;
     status: string;
-    stage?: {
-      name: string;
-      color: string | null;
-    } | null;
-    contact?: {
-      nameEnc: any;
-      emailEnc: any;
-      companyEnc: any;
-    } | null;
-  } | null;
+  }[];
+  notes: string[];
+  tags: string[];
+  intent: number;
 }
 
 interface EnhancedInboxProps {
-  className?: string;
+  activeTab: string;
+  searchQuery: string;
+  selectedFilter: string | null;
 }
 
-export default function EnhancedInbox({ className = '' }: EnhancedInboxProps) {
-  const [activeTab, setActiveTab] = useState('leads');
-  const [searchQuery, setSearchQuery] = useState('');
+export default function EnhancedInbox({ 
+  activeTab, 
+  searchQuery, 
+  selectedFilter 
+}: EnhancedInboxProps) {
+  const [threads, setThreads] = useState<EmailThread[]>([]);
   const [selectedThread, setSelectedThread] = useState<EmailThread | null>(null);
-  const [selectedThreads, setSelectedThreads] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<'list' | 'split'>('split');
+  const [contact, setContact] = useState<Contact | null>(null);
+  const [showContactPanel, setShowContactPanel] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'split' | 'thread'>('split');
 
-  // Fetch real data from tRPC
-  const { data: threadsData, isLoading: threadsLoading, refetch: refetchThreads } = trpc.emailThreads.list.useQuery({
-    search: searchQuery || undefined,
-    status: activeTab === 'leads' ? 'unread' : activeTab === 'review' ? 'read' : activeTab === 'other' ? 'archived' : undefined,
-    limit: 50
-  });
-
-  const { data: selectedThreadData, isLoading: selectedThreadLoading } = trpc.emailThreads.get.useQuery(
-    { id: selectedThread?.id || '' },
-    { enabled: !!selectedThread?.id }
-  );
-
-  // Mutations
-  const markAsReadMutation = trpc.emailThreads.markAsRead.useMutation({
-    onSuccess: () => refetchThreads()
-  });
-
-  const archiveMutation = trpc.emailThreads.archive.useMutation({
-    onSuccess: () => refetchThreads()
-  });
-
-  const starMutation = trpc.emailThreads.star.useMutation({
-    onSuccess: () => refetchThreads()
-  });
-
-  const threads = threadsData?.threads || [];
-  const selectedThreadDetails = selectedThreadData;
-
-  // Search chips
-  const searchChips = [
-    { label: 'from:john@example.com', value: 'from:john@example.com' },
-    { label: 'has:attachment', value: 'has:attachment' },
-    { label: 'stage:qualified', value: 'stage:qualified' },
-    { label: 'confidence:>80', value: 'confidence:>80' }
+  // Mock data
+  const mockThreads: EmailThread[] = [
+    {
+      id: '1',
+      subject: 'Proposal Discussion - TechCorp Enterprise Deal',
+      participants: [
+        { name: 'Sarah Johnson', email: 'sarah@techcorp.com', avatar: '/api/avatar/sarah' },
+        { name: 'John Doe', email: 'john@company.com' }
+      ],
+      lastMessage: {
+        content: 'Hi John, I\'ve reviewed the proposal and have some questions about the implementation timeline...',
+        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        from: 'sarah@techcorp.com'
+      },
+      unread: true,
+      starred: true,
+      snoozed: false,
+      labels: ['leads', 'proposal'],
+      intent: {
+        score: 0.85,
+        type: 'lead',
+        confidence: 0.92
+      },
+      priority: 'high',
+      stage: 'proposal',
+      tags: ['enterprise', 'tech', 'proposal'],
+      attachments: 2,
+      threadLength: 8
+    },
+    {
+      id: '2',
+      subject: 'Contract Review - StartupXYZ',
+      participants: [
+        { name: 'Mike Chen', email: 'mike@startupxyz.com', avatar: '/api/avatar/mike' },
+        { name: 'John Doe', email: 'john@company.com' }
+      ],
+      lastMessage: {
+        content: 'The contract looks good overall. Can we discuss the payment terms?',
+        timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000),
+        from: 'mike@startupxyz.com'
+      },
+      unread: false,
+      starred: false,
+      snoozed: false,
+      labels: ['deals', 'contract'],
+      intent: {
+        score: 0.78,
+        type: 'deal',
+        confidence: 0.85
+      },
+      priority: 'medium',
+      stage: 'negotiation',
+      tags: ['startup', 'contract', 'payment'],
+      attachments: 1,
+      threadLength: 12
+    },
+    {
+      id: '3',
+      subject: 'Product Demo Request',
+      participants: [
+        { name: 'David Wilson', email: 'david@acmecorp.com', avatar: '/api/avatar/david' },
+        { name: 'John Doe', email: 'john@company.com' }
+      ],
+      lastMessage: {
+        content: 'We\'re interested in seeing a demo of your platform. When would be a good time?',
+        timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
+        from: 'david@acmecorp.com'
+      },
+      unread: true,
+      starred: false,
+      snoozed: false,
+      labels: ['leads', 'demo'],
+      intent: {
+        score: 0.72,
+        type: 'lead',
+        confidence: 0.78
+      },
+      priority: 'medium',
+      stage: 'prospect',
+      tags: ['demo', 'acme', 'interest'],
+      attachments: 0,
+      threadLength: 3
+    }
   ];
 
-  const getTimeAgo = (dateString: string): string => {
-    const date = new Date(dateString);
+  const mockContact: Contact = {
+    id: '1',
+    name: 'Sarah Johnson',
+    email: 'sarah@techcorp.com',
+    company: 'TechCorp Inc.',
+    title: 'VP of Engineering',
+    phone: '+1 (555) 123-4567',
+    avatar: '/api/avatar/sarah',
+    lastContact: new Date(Date.now() - 2 * 60 * 60 * 1000),
+    dealHistory: [
+      { id: '1', title: 'Enterprise License', value: 250000, status: 'In Progress' },
+      { id: '2', title: 'Professional Services', value: 50000, status: 'Completed' }
+    ],
+    notes: [
+      'Interested in enterprise features',
+      'Decision maker for technical purchases',
+      'Prefers technical demos over sales pitches'
+    ],
+    tags: ['enterprise', 'technical', 'decision-maker'],
+    intent: 85
+  };
+
+  useEffect(() => {
+    // Simulate loading
+    const timer = setTimeout(() => {
+      setThreads(mockThreads);
+      setSelectedThread(mockThreads[0]);
+      setContact(mockContact);
+      setIsLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const getIntentColor = (score: number) => {
+    if (score >= 0.8) return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';
+    if (score >= 0.6) return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400';
+    return 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400';
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400';
+      default:
+        return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';
+    }
+  };
+
+  const getStageColor = (stage?: string) => {
+    switch (stage) {
+      case 'prospect':
+        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'qualified':
+        return 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400';
+      case 'proposal':
+        return 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400';
+      case 'negotiation':
+        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'closed':
+        return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';
+      default:
+        return 'bg-slate-100 text-slate-700 dark:bg-slate-900/20 dark:text-slate-400';
+    }
+  };
+
+  const formatTime = (date: Date) => {
     const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    const diff = now.getTime() - date.getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(hours / 24);
 
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `${diffInDays}d ago`;
-    return `${Math.floor(diffInDays / 7)}w ago`;
+    if (days > 0) return `${days}d`;
+    if (hours > 0) return `${hours}h`;
+    return 'now';
   };
 
-  const getFileIcon = (contentType: string) => {
-    if (contentType.startsWith('image/')) return <Image className="h-4 w-4" />;
-    if (contentType === 'application/pdf') return <FileText className="h-4 w-4" />;
-    return <File className="h-4 w-4" />;
-  };
-
-  const handleThreadSelect = (thread: EmailThread) => {
-    setSelectedThread(thread);
-    if (thread.unread) {
-      markAsReadMutation.mutate({ id: thread.id });
-    }
-  };
-
-  const handleBulkAction = (action: 'archive' | 'delete' | 'promote' | 'markAsRead') => {
-    selectedThreads.forEach(threadId => {
-      if (action === 'archive') {
-        archiveMutation.mutate({ id: threadId });
-      } else if (action === 'markAsRead') {
-        markAsReadMutation.mutate({ id: threadId });
-      }
-      // Add other bulk actions as needed
-    });
-    setSelectedThreads(new Set());
-  };
-
-  const handleStarThread = (threadId: string, starred: boolean) => {
-    starMutation.mutate({ id: threadId, starred: !starred });
-  };
-
-  const handleThreadToggle = (threadId: string) => {
-    const newSelected = new Set(selectedThreads);
-    if (newSelected.has(threadId)) {
-      newSelected.delete(threadId);
-    } else {
-      newSelected.add(threadId);
-    }
-    setSelectedThreads(newSelected);
-  };
-
-  if (threadsLoading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-        <div className="p-6">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-1/4"></div>
-            <div className="h-12 bg-slate-200 dark:bg-slate-700 rounded"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 h-96 bg-slate-200 dark:bg-slate-700 rounded"></div>
-              <div className="h-96 bg-slate-200 dark:bg-slate-700 rounded"></div>
-            </div>
-          </div>
-        </div>
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      <div className="p-6">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-            Inbox
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400">
-            Manage your email threads and leads
-          </p>
-        </div>
-
-                 {/* Tabs */}
-         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-           <TabsList className="grid w-full grid-cols-3 bg-white/10">
-             <TabsTrigger value="leads" className="text-sm">
-               Leads ({threads.filter(t => t.unread).length})
-             </TabsTrigger>
-             <TabsTrigger value="review" className="text-sm">
-               Review ({threads.filter(t => !t.unread && !t.labels.includes('archived')).length})
-             </TabsTrigger>
-             <TabsTrigger value="other" className="text-sm">
-               Other ({threads.filter(t => t.labels.includes('archived')).length})
-             </TabsTrigger>
-           </TabsList>
-         </Tabs>
-
-        {/* Search and Filters */}
-        <div className="mb-6 space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                placeholder="Search threads, contacts, or content..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-white/20"
-              />
-            </div>
-            <Button variant="outline" size="sm">
-              <Filter className="h-4 w-4 mr-2" />
-              Filters
-            </Button>
-            <Button variant="outline" size="sm">
-              <Mail className="h-4 w-4 mr-2" />
-              Smart Templates
-            </Button>
-          </div>
-
-          {/* Search Chips */}
-          <div className="flex flex-wrap gap-2">
-            {searchChips.map((chip) => (
-              <Badge
-                key={chip.value}
-                variant="secondary"
-                className="cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700"
-                onClick={() => setSearchQuery(chip.value)}
+    <div className="h-full flex">
+      {/* Thread List */}
+      <div className={cn(
+        "border-r border-slate-200 dark:border-slate-700",
+        viewMode === 'split' ? 'w-1/3' : 'w-full'
+      )}>
+        <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Inbox</h2>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewMode(viewMode === 'split' ? 'thread' : 'split')}
               >
-                {chip.label}
-              </Badge>
-            ))}
+                {viewMode === 'split' ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
 
-                     {/* Bulk Actions */}
-           {selectedThreads.size > 0 && (
-             <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-               <span className="text-sm text-blue-700 dark:text-blue-300">
-                 {selectedThreads.size} selected
-               </span>
-               <Button
-                 variant="outline"
-                 size="sm"
-                 onClick={() => handleBulkAction('markAsRead')}
-               >
-                 <Eye className="h-4 w-4 mr-1" />
-                 Mark Read
-               </Button>
-               <Button
-                 variant="outline"
-                 size="sm"
-                 onClick={() => handleBulkAction('archive')}
-               >
-                 <Archive className="h-4 w-4 mr-1" />
-                 Archive
-               </Button>
-               <Button
-                 variant="outline"
-                 size="sm"
-                 onClick={() => setSelectedThreads(new Set())}
-               >
-                 <X className="h-4 w-4 mr-1" />
-                 Clear
-               </Button>
-             </div>
-           )}
+          {/* Quick Actions */}
+          <div className="flex items-center gap-2 mb-4">
+            <Button size="sm" className="flex items-center gap-2">
+              <Reply className="h-4 w-4" />
+              Reply
+            </Button>
+            <Button size="sm" variant="outline" className="flex items-center gap-2">
+              <Archive className="h-4 w-4" />
+              Archive
+            </Button>
+            <Button size="sm" variant="outline" className="flex items-center gap-2">
+              <Tag className="h-4 w-4" />
+              Tag
+            </Button>
+          </div>
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Thread List */}
-          <div className="lg:col-span-2">
-            <GlassCard variant="gradient" intensity="medium" className="h-full">
-              <GlassCardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <GlassCardTitle>Email Threads</GlassCardTitle>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setViewMode(viewMode === 'list' ? 'split' : 'list')}
+        {/* Thread List */}
+        <div className="overflow-y-auto h-[calc(100vh-200px)]">
+          {threads.map((thread) => (
+            <motion.div
+              key={thread.id}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className={cn(
+                "p-4 border-b border-slate-100 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors",
+                selectedThread?.id === thread.id && "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+              )}
+              onClick={() => setSelectedThread(thread)}
+            >
+              <div className="flex items-start gap-3">
+                {/* Avatar */}
+                <Avatar className="h-10 w-10 flex-shrink-0">
+                  <AvatarImage src={thread.participants[0].avatar} />
+                  <AvatarFallback>
+                    {thread.participants[0].name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-medium text-sm truncate">
+                      {thread.participants[0].name}
+                    </span>
+                    {thread.starred && <Star className="h-3 w-3 text-yellow-500 fill-current" />}
+                    {thread.unread && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
+                  </div>
+
+                  <h3 className={cn(
+                    "text-sm font-medium mb-1 line-clamp-1",
+                    thread.unread ? "text-slate-900 dark:text-slate-100" : "text-slate-700 dark:text-slate-300"
+                  )}>
+                    {thread.subject}
+                  </h3>
+
+                  <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 mb-2">
+                    {thread.lastMessage.content}
+                  </p>
+
+                  {/* Badges */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge 
+                      variant="secondary" 
+                      className={cn("text-xs", getIntentColor(thread.intent.score))}
                     >
-                      {viewMode === 'list' ? 'Split View' : 'List View'}
-                    </Button>
+                      {Math.round(thread.intent.score * 100)}% Intent
+                    </Badge>
+                    
+                    <Badge 
+                      variant="secondary" 
+                      className={cn("text-xs", getPriorityColor(thread.priority))}
+                    >
+                      {thread.priority}
+                    </Badge>
+
+                    {thread.stage && (
+                      <Badge 
+                        variant="secondary" 
+                        className={cn("text-xs", getStageColor(thread.stage))}
+                      >
+                        {thread.stage}
+                      </Badge>
+                    )}
+
+                    {thread.attachments > 0 && (
+                      <Badge variant="outline" className="text-xs">
+                        📎 {thread.attachments}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Meta */}
+                  <div className="flex items-center justify-between mt-2 text-xs text-slate-500 dark:text-slate-400">
+                    <span>{formatTime(thread.lastMessage.timestamp)}</span>
+                    <span>{thread.threadLength} messages</span>
                   </div>
                 </div>
-              </GlassCardHeader>
-              <GlassCardContent className="p-0">
-                {threads.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <Mail className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
-                      No threads found
-                    </h3>
-                    <p className="text-slate-600 dark:text-slate-400">
-                      {searchQuery ? 'Try adjusting your search criteria' : 'Threads will appear here as they are synced'}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Thread Panel */}
+      {viewMode === 'split' && selectedThread && (
+        <div className="flex-1 flex">
+          {/* Email Content */}
+          <div className="flex-1 flex flex-col">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">{selectedThread.subject}</h2>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline">
+                    <Reply className="h-4 w-4 mr-2" />
+                    Reply
+                  </Button>
+                  <Button size="sm" variant="outline">
+                    <ReplyAll className="h-4 w-4 mr-2" />
+                    Reply All
+                  </Button>
+                  <Button size="sm" variant="outline">
+                    <Forward className="h-4 w-4 mr-2" />
+                    Forward
+                  </Button>
+                </div>
+              </div>
+
+              {/* AI Summary */}
+              <Card className="mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="h-4 w-4 text-blue-500" />
+                    <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                      AI Summary
+                    </span>
+                  </div>
+                  <p className="text-sm text-blue-600 dark:text-blue-400">
+                    This thread shows high intent (85%) for a lead opportunity. Sarah is interested in the enterprise proposal 
+                    and has questions about implementation timeline. Recommended next action: Schedule a technical demo.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Email Content */}
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={selectedThread.participants[0].avatar} />
+                    <AvatarFallback>
+                      {selectedThread.participants[0].name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-sm">{selectedThread.participants[0].name}</span>
+                      <span className="text-xs text-slate-500">{selectedThread.participants[0].email}</span>
+                      <span className="text-xs text-slate-400">{formatTime(selectedThread.lastMessage.timestamp)}</span>
+                    </div>
+                    <p className="text-sm text-slate-700 dark:text-slate-300">
+                      {selectedThread.lastMessage.content}
                     </p>
                   </div>
-                ) : (
-                  <div className="max-h-[600px] overflow-y-auto">
-                    {threads.map((thread) => {
-                      const isSelected = selectedThreads.has(thread.id);
-                      const isActive = selectedThread?.id === thread.id;
-                      const latestMessage = thread.messages[0];
-                                             const hasAttachments = thread.messages.some(msg => msg.attachments && msg.attachments.length > 0);
-
-                      return (
-                        <div
-                          key={thread.id}
-                          className={`p-4 border-b border-white/20 last:border-b-0 hover:bg-white/5 transition-colors cursor-pointer ${
-                            isActive ? 'bg-blue-50/50 dark:bg-blue-900/20' : ''
-                          } ${thread.unread ? 'bg-yellow-50/50 dark:bg-yellow-900/20' : ''}`}
-                          onClick={() => handleThreadSelect(thread)}
-                        >
-                          <div className="flex items-start gap-3">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                handleThreadToggle(thread.id);
-                              }}
-                              className="mt-1"
-                            />
-                            
-                            <Avatar className="h-10 w-10">
-                              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                                {latestMessage?.fromEnc ? 'U' : '?'}
-                              </AvatarFallback>
-                            </Avatar>
-
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between mb-2">
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-medium text-slate-900 dark:text-slate-100 truncate">
-                                    {thread.subjectEnc ? 'Email Subject' : 'No Subject'}
-                                  </h4>
-                                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                                    {latestMessage?.fromEnc ? 'From: Contact' : 'Unknown sender'}
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-2 ml-2">
-                                  {hasAttachments && (
-                                    <Paperclip className="h-4 w-4 text-slate-400" />
-                                  )}
-                                  <div className="flex items-center gap-1 text-xs text-slate-500">
-                                    <Clock className="h-3 w-3" />
-                                    {getTimeAgo(thread.updatedAt)}
-                                  </div>
-                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-2 mb-3">
-                                {thread.lead && (
-                                  <>
-                                    <Badge variant="default" className="text-xs">
-                                      Lead
-                                    </Badge>
-                                    {thread.lead.stage && (
-                                      <Badge
-                                        variant="outline"
-                                        className="text-xs"
-                                        style={{
-                                          borderColor: thread.lead.stage.color || undefined,
-                                          color: thread.lead.stage.color || undefined
-                                        }}
-                                      >
-                                        {thread.lead.stage.name}
-                                      </Badge>
-                                    )}
-                                  </>
-                                )}
-                                <Badge variant="outline" className="text-xs">
-                                  {thread._count.messages} messages
-                                </Badge>
-                                                                 {hasAttachments && (
-                                   <Badge variant="outline" className="text-xs">
-                                     {thread.messages.reduce((count, msg) => count + (msg.attachments?.length || 0), 0)} attachments
-                                   </Badge>
-                                 )}
-                              </div>
-
-                                                             <div className="flex items-center justify-between">
-                                 <div className="flex items-center gap-4">
-                                   {thread.lead?.contact && (
-                                     <div className="text-xs text-slate-500">
-                                       <User className="h-3 w-3 inline mr-1" />
-                                       Contact
-                                     </div>
-                                   )}
-                                   <div className="text-xs text-slate-500">
-                                     {thread._count.messages} messages
-                                   </div>
-                                 </div>
-
-                                 <div className="flex items-center gap-1">
-                                   <Button 
-                                     variant="ghost" 
-                                     size="sm" 
-                                     className="h-8 px-2 text-xs"
-                                     onClick={(e) => {
-                                       e.stopPropagation();
-                                       handleStarThread(thread.id, thread.starred);
-                                     }}
-                                   >
-                                     {thread.starred ? <Star className="h-3 w-3 mr-1 fill-yellow-400" /> : <StarOff className="h-3 w-3 mr-1" />}
-                                     {thread.starred ? 'Starred' : 'Star'}
-                                   </Button>
-                                   <Button 
-                                     variant="ghost" 
-                                     size="sm" 
-                                     className="h-8 px-2 text-xs"
-                                     onClick={(e) => {
-                                       e.stopPropagation();
-                                       archiveMutation.mutate({ id: thread.id });
-                                     }}
-                                   >
-                                     <Archive className="h-3 w-3 mr-1" />
-                                     Archive
-                                   </Button>
-                                 </div>
-                               </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </GlassCardContent>
-            </GlassCard>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Lead Summary Panel */}
-          {viewMode === 'split' && selectedThread && (
-            <div className="space-y-6">
-              <GlassCard variant="gradient" intensity="medium">
-                <GlassCardHeader>
-                  <GlassCardTitle>Lead Summary</GlassCardTitle>
-                </GlassCardHeader>
-                <GlassCardContent>
-                  {selectedThread.lead ? (
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">
-                          {selectedThread.lead.title || 'Untitled Lead'}
-                        </h4>
-                        <p className="text-sm text-slate-600 dark:text-slate-400">
-                          Status: {selectedThread.lead.status}
-                        </p>
-                        {selectedThread.lead.stage && (
-                          <p className="text-sm text-slate-600 dark:text-slate-400">
-                            Stage: {selectedThread.lead.stage.name}
-                          </p>
-                        )}
-                      </div>
+          {/* Contact Panel */}
+          {showContactPanel && contact && (
+            <div className="w-80 border-l border-slate-200 dark:border-slate-700">
+              <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold">Contact</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowContactPanel(false)}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
 
-                      {selectedThread.lead.contact && (
-                        <div>
-                          <h5 className="font-medium text-slate-900 dark:text-slate-100 mb-2">
-                            Contact Information
-                          </h5>
-                          <div className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
-                            <p><User className="h-3 w-3 inline mr-1" /> Contact Name</p>
-                            <p><Mail className="h-3 w-3 inline mr-1" /> contact@example.com</p>
-                            <p><Building className="h-3 w-3 inline mr-1" /> Company Name</p>
-                          </div>
-                        </div>
-                      )}
+              <div className="p-4 space-y-4">
+                {/* Contact Info */}
+                <div className="text-center">
+                  <Avatar className="h-16 w-16 mx-auto mb-3">
+                    <AvatarImage src={contact.avatar} />
+                    <AvatarFallback className="text-lg">
+                      {contact.name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <h4 className="font-semibold">{contact.name}</h4>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">{contact.title}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">{contact.company}</p>
+                </div>
 
-                      <div>
-                        <h5 className="font-medium text-slate-900 dark:text-slate-100 mb-2">
-                          Why Lead
-                        </h5>
-                        <div className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
-                          <p>• Contains buying intent keywords</p>
-                          <p>• Has valid contact information</p>
-                          <p>• Recent activity within 24h</p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-4">
-                      <p className="text-slate-600 dark:text-slate-400">
-                        No lead associated with this thread
-                      </p>
-                      <Button variant="outline" size="sm" className="mt-2">
-                        Create Lead
-                      </Button>
+                {/* Contact Details */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Mail className="h-4 w-4 text-slate-400" />
+                    <span>{contact.email}</span>
+                  </div>
+                  {contact.phone && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="h-4 w-4 text-slate-400" />
+                      <span>{contact.phone}</span>
                     </div>
                   )}
-                </GlassCardContent>
-              </GlassCard>
+                </div>
 
-              {/* Attachments */}
-              {selectedThread.messages.some(msg => msg.attachments && msg.attachments.length > 0) && (
-                <GlassCard variant="gradient" intensity="medium">
-                  <GlassCardHeader>
-                    <GlassCardTitle>Attachments</GlassCardTitle>
-                  </GlassCardHeader>
-                  <GlassCardContent>
-                    <div className="space-y-2">
-                      {selectedThread.messages.flatMap(msg => 
-                        msg.attachments ? msg.attachments.map((attachment: any, index: number) => (
-                          <div
-                            key={`${msg.id}_${index}`}
-                            className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors"
-                          >
-                            <div className="flex items-center gap-2">
-                              {getFileIcon(attachment.contentType || 'application/octet-stream')}
-                              <span className="text-sm text-slate-900 dark:text-slate-100">
-                                {attachment.filename || 'Unknown file'}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-slate-500">
-                                {attachment.size ? `${(attachment.size / 1024).toFixed(1)} KB` : 'Unknown size'}
-                              </span>
-                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                <Download className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        )) : []
-                      )}
-                    </div>
-                  </GlassCardContent>
-                </GlassCard>
-              )}
+                {/* Intent Score */}
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">Intent Score</span>
+                    <span className="text-sm font-bold text-green-600">{contact.intent}%</span>
+                  </div>
+                  <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                    <div 
+                      className="bg-green-500 h-2 rounded-full transition-all"
+                      style={{ width: `${contact.intent}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Deal History */}
+                <div>
+                  <h5 className="font-medium mb-2">Deal History</h5>
+                  <div className="space-y-2">
+                    {contact.dealHistory.map((deal) => (
+                      <div key={deal.id} className="p-2 bg-slate-50 dark:bg-slate-800/50 rounded text-sm">
+                        <div className="font-medium">{deal.title}</div>
+                        <div className="text-slate-600 dark:text-slate-400">
+                          ${deal.value.toLocaleString()} • {deal.status}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <h5 className="font-medium mb-2">Notes</h5>
+                  <div className="space-y-1">
+                    {contact.notes.map((note, index) => (
+                      <div key={index} className="text-sm text-slate-600 dark:text-slate-400">
+                        • {note}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <h5 className="font-medium mb-2">Tags</h5>
+                  <div className="flex flex-wrap gap-1">
+                    {contact.tags.map((tag) => (
+                      <Badge key={tag} variant="outline" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="space-y-2">
+                  <Button size="sm" className="w-full justify-start">
+                    <Mail className="h-4 w-4 mr-2" />
+                    Send Email
+                  </Button>
+                  <Button size="sm" variant="outline" className="w-full justify-start">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Schedule Meeting
+                  </Button>
+                  <Button size="sm" variant="outline" className="w-full justify-start">
+                    <CheckSquare className="h-4 w-4 mr-2" />
+                    Create Task
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
