@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
-  Search, 
   BarChart3, 
   Inbox, 
   GitBranch, 
@@ -46,7 +45,7 @@ interface EnhancedSidebarProps {
 export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: EnhancedSidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [showQuickActionsMenu, setShowQuickActionsMenu] = useState(false);
 
   // Navigation items with proper grouping and icons
   const navItems: NavItem[] = [
@@ -118,10 +117,14 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
     utilities: navItems.filter(item => item.group === 'utilities'),
   };
 
+  // Fixed route matching logic
   const isActive = (item: NavItem) => {
-    return item.exactMatch 
-      ? pathname === item.href 
-      : pathname === item.href || pathname.startsWith(item.href + '/');
+    if (item.exactMatch) {
+      return pathname === item.href;
+    }
+    // For nested routes, check if pathname starts with href + '/'
+    // But never activate on partials (e.g., /inbox-archive shouldn't activate /inbox)
+    return pathname === item.href || pathname.startsWith(item.href + '/');
   };
 
   const getUserInitials = () => {
@@ -134,26 +137,13 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
       .slice(0, 2);
   };
 
-  const getActiveItemPosition = () => {
-    // Calculate position based on active item
-    const activeItem = navItems.find(item => isActive(item));
-    if (!activeItem) return 80; // Default position after header
-    
-    const itemIndex = navItems.findIndex(item => isActive(item));
-    const headerHeight = 56; // h-14
-    const itemHeight = 40; // h-10
-    const searchHeight = 72; // p-3 + input height
-    
-    return headerHeight + searchHeight + (itemIndex * itemHeight) + 8; // 8px offset
-  };
-
   return (
     <TooltipProvider>
       <aside className={`
         sticky top-0 h-screen hidden md:flex md:flex-col 
         border-r border-[var(--border)] bg-[var(--muted)] z-40
         transition-all duration-300 ease-in-out
-        ${isCollapsed ? 'w-16' : 'w-64'}
+        ${isCollapsed ? 'w-[72px]' : 'w-64'}
         relative overflow-hidden
       `}>
         {/* Enhanced River Flow Background Effect */}
@@ -162,261 +152,235 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
           <div className="absolute inset-y-0 left-4 w-0.5 bg-gradient-to-b from-transparent via-blue-300 to-transparent animate-pulse" style={{ animationDelay: '1s' }}></div>
           <div className="absolute inset-y-0 left-8 w-0.25 bg-gradient-to-b from-transparent via-cyan-300 to-transparent animate-pulse" style={{ animationDelay: '2s' }}></div>
         </div>
-        
-        {/* Active Section Glow Effect */}
-        <AnimatePresence>
-          {pathname && (
-            <motion.div
-              key={pathname}
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="absolute left-0 w-1 h-8 bg-gradient-to-b from-blue-400 to-cyan-400 rounded-r-full shadow-lg"
-              style={{
-                top: `${getActiveItemPosition()}px`,
-                filter: 'blur(1px)',
-                boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)'
-              }}
-            />
-          )}
-        </AnimatePresence>
 
-        {/* Header with Logo */}
+        {/* Header with Logo and Collapse Toggle */}
         <div className="relative z-10 h-14 flex items-center px-4 border-b border-[var(--border)]">
           {!isCollapsed && (
-            <Link href="/app" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">R</span>
-              </div>
-              <span className="font-semibold text-lg bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent">
-                Rivor
-              </span>
-            </Link>
+            <div className="flex items-center gap-2 flex-1">
+              <Link href="/app" className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">R</span>
+                </div>
+                <span className="font-semibold text-lg bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent">
+                  Rivor
+                </span>
+              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onToggleCollapse}
+                className="h-6 w-6 ml-auto"
+              >
+                <ChevronLeft className="h-3 w-3" />
+              </Button>
+            </div>
           )}
           {isCollapsed && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link href="/app" className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-lg flex items-center justify-center mx-auto">
-                  <span className="text-white font-bold text-sm">R</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Rivor</TooltipContent>
-            </Tooltip>
+            <div className="flex items-center justify-center w-full">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link href="/app" className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-lg flex items-center justify-center">
+                    <span className="text-white font-bold text-sm">R</span>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right">Rivor</TooltipContent>
+              </Tooltip>
+            </div>
           )}
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onToggleCollapse}
-            className="absolute right-2 h-8 w-8"
-          >
-            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </Button>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative z-10 p-3 border-b border-[var(--border)]">
-          {!isCollapsed ? (
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />
-              <input
-                type="text"
-                placeholder="Search or run command..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm bg-[var(--background)] border border-[var(--border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              />
-              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs bg-[var(--border)] px-1.5 py-0.5 rounded">
-                ⌘K
+        {/* Scrollable Navigation Container with Fade Masks */}
+        <div className="flex-1 relative overflow-hidden">
+          {/* Top Fade Mask */}
+          <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[var(--muted)] to-transparent z-10 pointer-events-none" />
+          
+          {/* Bottom Fade Mask */}
+          <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[var(--muted)] to-transparent z-10 pointer-events-none" />
+          
+          {/* Scrollable Content */}
+          <nav className="h-full overflow-y-auto py-4 space-y-4 relative z-0 scrollbar-thin scrollbar-thumb-[var(--border)] scrollbar-track-transparent">
+            {/* Core Workflows */}
+            <div>
+              {!isCollapsed && (
+                <div className="px-4 mb-1">
+                  <span className="text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider">
+                    Core Workflows
+                  </span>
+                </div>
+              )}
+              <div className="space-y-0.5">
+                {groupedItems.core.map((item) => {
+                  const active = isActive(item);
+                  return (
+                    <Tooltip key={item.href} disableHoverableContent={!isCollapsed}>
+                      <TooltipTrigger asChild>
+                        <Link 
+                          href={item.href} 
+                          aria-current={active ? "page" : undefined}
+                          className={`
+                            flex items-center gap-3 px-4 py-2.5 text-sm 
+                            hover:bg-[var(--background)] transition-all duration-200 
+                            rounded-md mx-2 relative group
+                            ${active 
+                              ? "bg-gradient-to-r from-blue-500/15 to-teal-500/15 text-blue-600 dark:text-blue-400 border-l-2 border-blue-500" 
+                              : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                            }
+                          `}
+                        >
+                          {/* Active State Glow Effect */}
+                          {active && (
+                            <motion.div
+                              className="absolute inset-0 bg-gradient-to-r from-blue-500/8 to-teal-500/8 rounded-md"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ duration: 0.3 }}
+                            />
+                          )}
+                          
+                          <div className="relative z-10 flex items-center gap-3">
+                            <span className={`transition-colors ${active ? 'text-blue-500' : ''}`}>
+                              {item.icon}
+                            </span>
+                            {!isCollapsed && <span>{item.label}</span>}
+                          </div>
+                          
+                          {/* Badge - only show if count > 0 */}
+                          {item.badge && item.badge > 0 && (
+                            <Badge 
+                              variant="destructive" 
+                              className={`
+                                ml-auto text-xs px-1.5 py-0.5 min-w-[20px] h-5
+                                ${isCollapsed ? 'absolute -top-1 -right-1' : ''}
+                              `}
+                              aria-label={`${item.badge} new in ${item.label}`}
+                            >
+                              {item.badge}
+                            </Badge>
+                          )}
+                        </Link>
+                      </TooltipTrigger>
+                      {isCollapsed && (
+                        <TooltipContent side="right">
+                          <div className="flex items-center gap-2">
+                            {item.icon}
+                            <span>{item.label}</span>
+                            {item.badge && item.badge > 0 && (
+                              <Badge variant="destructive" className="text-xs px-1 py-0.5">
+                                {item.badge}
+                              </Badge>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  );
+                })}
               </div>
             </div>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="w-full h-10">
-                  <Search className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">Search</TooltipContent>
-            </Tooltip>
-          )}
-        </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 py-4 space-y-6 relative z-10">
-          {/* Core Workflows */}
-          <div>
+            {/* Quick Actions - Compact when expanded, floating + when collapsed */}
             {!isCollapsed && (
-              <div className="px-4 mb-2">
-                <span className="text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider">
-                  Core Workflows
-                </span>
+              <div>
+                <div className="px-4 mb-1">
+                  <span className="text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider">
+                    Quick Actions
+                  </span>
+                </div>
+                <div className="space-y-0.5">
+                  {quickActions.map((action, index) => (
+                    <Tooltip key={index} disableHoverableContent={!isCollapsed}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={action.action}
+                          className="w-full justify-start px-4 py-2.5 text-sm hover:bg-[var(--background)] transition-all duration-200 rounded-md mx-2"
+                        >
+                          <span className="text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]">
+                            {action.icon}
+                          </span>
+                          <span className="ml-3">{action.label}</span>
+                        </Button>
+                      </TooltipTrigger>
+                    </Tooltip>
+                  ))}
+                </div>
               </div>
             )}
-            <div className="space-y-1">
-              {groupedItems.core.map((item) => {
-                const active = isActive(item);
-                return (
-                  <Tooltip key={item.href} disableHoverableContent={!isCollapsed}>
-                    <TooltipTrigger asChild>
-                      <Link 
-                        href={item.href} 
-                        className={`
-                          flex items-center gap-3 px-4 py-2.5 text-sm 
-                          hover:bg-[var(--background)] transition-all duration-200 
-                          rounded-md mx-2 relative group
-                          ${active 
-                            ? "bg-gradient-to-r from-blue-500/10 to-teal-500/10 text-blue-600 dark:text-blue-400 border-r-2 border-blue-500" 
-                            : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-                          }
-                        `}
-                      >
-                        {/* Active State Glow Effect */}
-                        {active && (
-                          <motion.div
-                            className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-teal-500/5 rounded-md"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.3 }}
-                          />
-                        )}
-                        
-                        <div className="relative z-10 flex items-center gap-3">
+
+            {/* Utilities */}
+            <div>
+              {!isCollapsed && (
+                <div className="px-4 mb-1">
+                  <span className="text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider">
+                    Utilities
+                  </span>
+                </div>
+              )}
+              <div className="space-y-0.5">
+                {groupedItems.utilities.map((item) => {
+                  const active = isActive(item);
+                  return (
+                    <Tooltip key={item.href} disableHoverableContent={!isCollapsed}>
+                      <TooltipTrigger asChild>
+                        <Link 
+                          href={item.href} 
+                          aria-current={active ? "page" : undefined}
+                          className={`
+                            flex items-center gap-3 px-4 py-2.5 text-sm 
+                            hover:bg-[var(--background)] transition-all duration-200 
+                            rounded-md mx-2
+                            ${active 
+                              ? "bg-gradient-to-r from-blue-500/15 to-teal-500/15 text-blue-600 dark:text-blue-400 border-l-2 border-blue-500" 
+                              : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                            }
+                          `}
+                        >
                           <span className={`transition-colors ${active ? 'text-blue-500' : ''}`}>
                             {item.icon}
                           </span>
                           {!isCollapsed && <span>{item.label}</span>}
-                        </div>
-                        
-                        {/* Badge */}
-                        {item.badge && (
-                          <Badge 
-                            variant="destructive" 
-                            className={`
-                              ml-auto text-xs px-1.5 py-0.5 min-w-[20px] h-5
-                              ${isCollapsed ? 'absolute -top-1 -right-1' : ''}
-                            `}
-                          >
-                            {item.badge}
-                          </Badge>
-                        )}
-                      </Link>
-                    </TooltipTrigger>
-                    {isCollapsed && (
-                      <TooltipContent side="right">
-                        <div className="flex items-center gap-2">
-                          {item.icon}
-                          <span>{item.label}</span>
-                          {item.badge && (
-                            <Badge variant="destructive" className="text-xs px-1 py-0.5">
-                              {item.badge}
-                            </Badge>
-                          )}
-                        </div>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div>
-            {!isCollapsed && (
-              <div className="px-4 mb-2">
-                <span className="text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider">
-                  Quick Actions
-                </span>
+                        </Link>
+                      </TooltipTrigger>
+                      {isCollapsed && (
+                        <TooltipContent side="right">
+                          <div className="flex items-center gap-2">
+                            {item.icon}
+                            <span>{item.label}</span>
+                          </div>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  );
+                })}
               </div>
-            )}
-            <div className="space-y-1">
-              {quickActions.map((action, index) => (
-                <Tooltip key={index} disableHoverableContent={!isCollapsed}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={action.action}
-                      className={`
-                        w-full justify-start px-4 py-2.5 text-sm
-                        hover:bg-[var(--background)] transition-all duration-200
-                        rounded-md mx-2
-                        ${isCollapsed ? 'px-2' : ''}
-                      `}
-                    >
-                      <span className="text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]">
-                        {action.icon}
-                      </span>
-                      {!isCollapsed && <span className="ml-3">{action.label}</span>}
-                    </Button>
-                  </TooltipTrigger>
-                  {isCollapsed && (
-                    <TooltipContent side="right">
-                      <div className="flex items-center gap-2">
-                        {action.icon}
-                        <span>{action.label}</span>
-                      </div>
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              ))}
             </div>
-          </div>
+          </nav>
+        </div>
 
-          {/* Utilities */}
-          <div>
-            {!isCollapsed && (
-              <div className="px-4 mb-2">
-                <span className="text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider">
-                  Utilities
-                </span>
-              </div>
-            )}
-            <div className="space-y-1">
-              {groupedItems.utilities.map((item) => {
-                const active = isActive(item);
-                return (
-                  <Tooltip key={item.href} disableHoverableContent={!isCollapsed}>
-                    <TooltipTrigger asChild>
-                      <Link 
-                        href={item.href} 
-                        className={`
-                          flex items-center gap-3 px-4 py-2.5 text-sm 
-                          hover:bg-[var(--background)] transition-all duration-200 
-                          rounded-md mx-2
-                          ${active 
-                            ? "bg-gradient-to-r from-blue-500/10 to-teal-500/10 text-blue-600 dark:text-blue-400 border-r-2 border-blue-500" 
-                            : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-                          }
-                        `}
-                      >
-                        <span className={`transition-colors ${active ? 'text-blue-500' : ''}`}>
-                          {item.icon}
-                        </span>
-                        {!isCollapsed && <span>{item.label}</span>}
-                      </Link>
-                    </TooltipTrigger>
-                    {isCollapsed && (
-                      <TooltipContent side="right">
-                        <div className="flex items-center gap-2">
-                          {item.icon}
-                          <span>{item.label}</span>
-                        </div>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                );
-              })}
-            </div>
+        {/* Floating Quick Actions Button (when collapsed) */}
+        {isCollapsed && (
+          <div className="relative z-10 p-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="default"
+                  size="icon"
+                  onClick={() => setShowQuickActionsMenu(true)}
+                  className="w-full h-10 bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Quick Actions</TooltipContent>
+            </Tooltip>
           </div>
-        </nav>
+        )}
 
         {/* User Profile Section */}
         <div className="relative z-10 p-3 border-t border-[var(--border)]">
           {!isCollapsed ? (
-            <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--background)] transition-colors">
+            <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--background)] transition-colors cursor-pointer">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={session?.user?.image || ''} />
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-teal-500 text-white text-sm">
@@ -459,6 +423,37 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
             </div>
           )}
         </div>
+
+        {/* Quick Actions Menu Modal (when collapsed) */}
+        <AnimatePresence>
+          {showQuickActionsMenu && isCollapsed && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="absolute bottom-20 left-2 right-2 bg-[var(--background)] border border-[var(--border)] rounded-lg shadow-lg z-50 p-2"
+            >
+              <div className="space-y-1">
+                {quickActions.map((action, index) => (
+                  <Button
+                    key={index}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      action.action();
+                      setShowQuickActionsMenu(false);
+                    }}
+                    className="w-full justify-start text-sm"
+                  >
+                    {action.icon}
+                    <span className="ml-2">{action.label}</span>
+                  </Button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </aside>
     </TooltipProvider>
   );

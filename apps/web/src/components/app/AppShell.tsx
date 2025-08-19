@@ -74,7 +74,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
 
   return (
     <div className={`grid min-h-screen transition-all duration-300 ease-in-out ${
-      isSidebarCollapsed ? 'grid-cols-[64px_1fr]' : 'grid-cols-[256px_1fr]'
+      isSidebarCollapsed ? 'grid-cols-[72px_1fr]' : 'grid-cols-[256px_1fr]'
     }`}>
       {/* Enhanced Sidebar */}
       <EnhancedSidebar 

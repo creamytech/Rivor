@@ -95,6 +95,28 @@ body {
   transition: box-shadow 0.2s ease;
 }
 
+/* Custom scrollbar styles */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--border) 80%, var(--foreground));
+}
+
 /* High contrast mode support */
 @media (prefers-contrast: high) {
   :where(button, a, input, textarea, select, [tabindex]):focus-visible{
