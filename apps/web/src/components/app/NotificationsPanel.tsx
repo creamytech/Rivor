@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +29,7 @@ interface Notification {
   entityId?: string;
   action?: {
     label: string;
-    onClick: () => void;
+    href: string;
   };
 }
 
@@ -43,43 +43,20 @@ export default function NotificationsPanel({ isOpen, onClose }: NotificationsPan
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread' | 'high'>('all');
 
-<<<<<<< HEAD
   useEffect(() => {
-    const fetchNotifications = async () => {
+    const loadNotifications = async () => {
       try {
         const res = await fetch('/api/notifications');
-        if (res.ok) {
-          const data = await res.json();
-          setNotifications(
-            data.notifications.map((n: any) => ({
-              ...n,
-              timestamp: new Date(n.timestamp),
-            }))
-          );
-        }
+        if (!res.ok) throw new Error('Failed to fetch notifications');
+        const data = await res.json();
+        const parsed = data.map((n: any) => ({ ...n, timestamp: new Date(n.timestamp) }));
+        setNotifications(parsed);
       } catch (err) {
-        console.error('Failed to fetch notifications', err);
+        console.error('Error loading notifications', err);
       }
     };
 
-    fetchNotifications();
-
-    const es = new EventSource('/api/notifications/stream');
-    es.onmessage = (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        setNotifications((prev) => [
-          { ...data, timestamp: new Date(data.timestamp) },
-          ...prev,
-        ]);
-      } catch (error) {
-        console.error('Failed to parse notification', error);
-      }
-    };
-
-    return () => {
-      es.close();
-    };
+    loadNotifications();
   }, []);
 
   const getNotificationIcon = (type: Notification['type']) => {
@@ -137,24 +114,36 @@ export default function NotificationsPanel({ isOpen, onClose }: NotificationsPan
   const unreadCount = notifications.filter(n => !n.isRead).length;
   const highPriorityCount = notifications.filter(n => n.priority === 'high' && !n.isRead).length;
 
-  const markAsRead = async (id: string) => {
+  const updateReadStatus = async (id: string, isRead: boolean) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead } : n));
     try {
-      await fetch(`/api/notifications/${id}/read`, { method: 'PATCH' });
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-      );
+      await fetch(`/api/notifications/${id}/read`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ read: isRead })
+      });
     } catch (err) {
-      console.error('Failed to mark notification as read', err);
+      console.error('Failed to update notification', err);
     }
   };
 
-  const markAllAsRead = async () => {
-    try {
-      await fetch('/api/notifications/read', { method: 'PATCH' });
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    } catch (err) {
-      console.error('Failed to mark all notifications as read', err);
-    }
+  const toggleRead = (id: string) => {
+    const notif = notifications.find(n => n.id === id);
+    if (!notif) return;
+    updateReadStatus(id, !notif.isRead);
+  };
+
+  const markAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    notifications.forEach(n => {
+      if (!n.isRead) {
+        fetch(`/api/notifications/${n.id}/read`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ read: true })
+        }).catch(err => console.error('Failed to update notification', err));
+      }
+    });
   };
 
   return (
@@ -243,7 +232,7 @@ export default function NotificationsPanel({ isOpen, onClose }: NotificationsPan
                           ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'
                           : 'bg-white dark:bg-slate-800 border-blue-200 dark:border-blue-800 shadow-sm'
                       }`}
-                      onClick={() => markAsRead(notification.id)}
+                      onClick={() => toggleRead(notification.id)}
                     >
                       <div className="flex items-start gap-3">
                         <div className="relative">
@@ -284,8 +273,7 @@ export default function NotificationsPanel({ isOpen, onClose }: NotificationsPan
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  markAsRead(notification.id);
-                                  notification.action?.onClick();
+                                  router.push(notification.action.href);
                                 }}
                                 className="text-xs h-7 px-2"
                               >
