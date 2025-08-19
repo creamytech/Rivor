@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +41,7 @@ interface QuickActionsMenuProps {
 export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const router = useRouter();
 
   const quickActions: QuickAction[] = [
     // Create Actions
@@ -50,7 +52,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <UserPlus className="h-4 w-4" />,
       shortcut: '⌘L',
       category: 'create',
-      action: () => window.location.href = '/app/pipeline/create'
+      action: () => router.push('/app/pipeline?action=create')
     },
     {
       id: 'compose-email',
@@ -59,7 +61,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <Mail className="h-4 w-4" />,
       shortcut: '⌘E',
       category: 'create',
-      action: () => window.location.href = '/app/inbox/compose'
+      action: () => router.push('/app/inbox?compose=true')
     },
     {
       id: 'schedule-meeting',
@@ -68,7 +70,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <Calendar className="h-4 w-4" />,
       shortcut: '⌘M',
       category: 'create',
-      action: () => window.location.href = '/app/calendar/create'
+      action: () => router.push('/app/calendar?action=create')
     },
     {
       id: 'new-task',
@@ -77,7 +79,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <Clock className="h-4 w-4" />,
       shortcut: '⌘T',
       category: 'create',
-      action: () => console.log('Create task')
+      action: () => router.push('/app/tasks?action=create')
     },
 
     // Navigate Actions
@@ -88,7 +90,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <BarChart3 className="h-4 w-4" />,
       shortcut: '⌘D',
       category: 'navigate',
-      action: () => window.location.href = '/app'
+      action: () => router.push('/app')
     },
     {
       id: 'inbox',
@@ -97,7 +99,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <Mail className="h-4 w-4" />,
       shortcut: '⌘I',
       category: 'navigate',
-      action: () => window.location.href = '/app/inbox'
+      action: () => router.push('/app/inbox')
     },
     {
       id: 'pipeline',
@@ -106,7 +108,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <Users className="h-4 w-4" />,
       shortcut: '⌘P',
       category: 'navigate',
-      action: () => window.location.href = '/app/pipeline'
+      action: () => router.push('/app/pipeline')
     },
     {
       id: 'calendar',
@@ -115,7 +117,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <Calendar className="h-4 w-4" />,
       shortcut: '⌘C',
       category: 'navigate',
-      action: () => window.location.href = '/app/calendar'
+      action: () => router.push('/app/calendar')
     },
 
     // Tools Actions
@@ -126,7 +128,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <Settings className="h-4 w-4" />,
       shortcut: '⌘,',
       category: 'tools',
-      action: () => window.location.href = '/app/settings'
+      action: () => router.push('/app/settings')
     },
     {
       id: 'integrations',
@@ -135,7 +137,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <Zap className="h-4 w-4" />,
       shortcut: '⌘J',
       category: 'tools',
-      action: () => window.location.href = '/app/settings/integrations'
+      action: () => router.push('/app/settings/integrations')
     },
     {
       id: 'reports',
@@ -144,7 +146,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <FileText className="h-4 w-4" />,
       shortcut: '⌘R',
       category: 'tools',
-      action: () => window.location.href = '/app/analytics'
+      action: () => router.push('/app/analytics')
     },
     {
       id: 'chat',
@@ -153,7 +155,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <MessageSquare className="h-4 w-4" />,
       shortcut: '⌘H',
       category: 'tools',
-      action: () => console.log('Open chat assistant')
+      action: () => router.push('/app/chat')
     }
   ];
 
