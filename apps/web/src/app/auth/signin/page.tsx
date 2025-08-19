@@ -59,6 +59,18 @@ export default function SignInPage() {
     return "Secure SSO via Google or Microsoft";
   };
 
+  const getErrorMessage = (code: string | null) => {
+    if (!code) return '';
+    const messages: Record<string, string> = {
+      OAuthCallback: "We couldn't complete sign-in. Try again or use a different provider.",
+      AccessDenied: 'Access was denied. Please check your permissions and try again.',
+      Configuration: 'Provider unavailable. Please try again later.',
+      Verification: 'Email verification required. Check your inbox.',
+      RateLimited: 'Too many sign-in attempts. Please wait a few minutes before trying again.',
+    };
+    return messages[code] || 'An error occurred during sign-in. Please try again.';
+  };
+
   return (
     <div className="min-h-screen relative overflow-hidden" role="main">
       <div className="absolute inset-0 wave-gradient" aria-hidden="true" />
@@ -82,28 +94,32 @@ export default function SignInPage() {
           </div>
 
           {error && (
-            <div 
-              className="card-subtle border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/20 p-4 animate-fade-up-delay-1"
+            <div
+              className="card-subtle border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900 p-4 animate-fade-up-delay-1"
               role="alert"
-              aria-live="polite"
+              aria-live="assertive"
             >
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                  <svg className="h-5 w-5 text-red-600" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-sm font-medium text-red-800 dark:text-red-200 mb-1">
+                  <h3 className="text-sm font-medium text-red-800 dark:text-red-100 mb-1">
                     Sign-in failed
                   </h3>
-                  <div id="error-description" className="text-sm text-red-700 dark:text-red-300">
-                    {error === 'OAuthCallback' ? 'We couldn\'t complete sign-in. Try again or use a different provider.' : 
-                     error === 'AccessDenied' ? 'Access was denied. Please check your permissions and try again.' :
-                     error === 'Configuration' ? 'Provider unavailable. Please try again later.' :
-                     error === 'Verification' ? 'Email verification required. Check your inbox.' :
-                     error === 'RateLimited' ? 'Too many sign-in attempts. Please wait a few minutes before trying again.' :
-                     'An error occurred during sign-in. Please try again.'}
+                  <div id="error-description" className="text-sm text-red-700 dark:text-red-200">
+                    {getErrorMessage(error)}{' '}
+                    If the problem persists,
+                    {' '}
+                    <a
+                      href="mailto:support@rivor.app"
+                      className="underline text-red-800 dark:text-red-100"
+                    >
+                      Contact support
+                    </a>
+                    .
                   </div>
                 </div>
               </div>
