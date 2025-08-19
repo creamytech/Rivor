@@ -9,23 +9,25 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { 
-  BarChart3, 
-  Inbox, 
-  GitBranch, 
-  Calendar, 
-  Users, 
-  MessageSquare, 
-  Settings, 
-  Plus, 
-  ChevronLeft, 
+import {
+  BarChart3,
+  Inbox,
+  GitBranch,
+  Calendar,
+  Building2,
+  Users,
+  MessageSquare,
+  Settings,
+  Plus,
+  ChevronLeft,
   ChevronRight,
   Zap,
   LogOut,
   User,
   Bell,
   HelpCircle,
-  ExternalLink
+  ExternalLink,
+  TrendingUp
 } from "lucide-react";
 
 interface NavItem {
@@ -64,24 +66,36 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
       badge: 3, // Example badge
       group: 'core' 
     },
-    { 
-      href: "/app/pipeline", 
-      label: "Pipeline", 
-      icon: <GitBranch className="h-4 w-4" />, 
+    {
+      href: "/app/pipeline",
+      label: "Pipeline",
+      icon: <GitBranch className="h-4 w-4" />,
       badge: 2, // Example badge
-      group: 'core' 
+      group: 'core'
     },
-    { 
-      href: "/app/calendar", 
-      label: "Calendar", 
-      icon: <Calendar className="h-4 w-4" />, 
-      group: 'core' 
+    {
+      href: "/app/properties",
+      label: "Properties",
+      icon: <Building2 className="h-4 w-4" />,
+      group: 'core'
     },
-    { 
-      href: "/app/contacts", 
-      label: "Contacts", 
-      icon: <Users className="h-4 w-4" />, 
-      group: 'core' 
+    {
+      href: "/app/showings",
+      label: "Showings",
+      icon: <Calendar className="h-4 w-4" />,
+      group: 'core'
+    },
+    {
+      href: "/app/insights",
+      label: "Market Insights",
+      icon: <TrendingUp className="h-4 w-4" />,
+      group: 'core'
+    },
+    {
+      href: "/app/contacts",
+      label: "Contacts",
+      icon: <Users className="h-4 w-4" />,
+      group: 'core'
     },
     { 
       href: "/app/chat", 
@@ -170,6 +184,7 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
                 size="icon"
                 onClick={onToggleCollapse}
                 className="h-6 w-6 ml-auto"
+                aria-label="Collapse sidebar"
               >
                 <ChevronLeft className="h-3 w-3" />
               </Button>
@@ -179,11 +194,17 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
             <div className="flex items-center justify-center w-full">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Link href="/app" className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">R</span>
-                  </Link>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onToggleCollapse}
+                    aria-label="Expand sidebar"
+                    className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-lg flex items-center justify-center"
+                  >
+                    <ChevronRight className="h-3 w-3 text-white" />
+                  </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right">Rivor</TooltipContent>
+                <TooltipContent side="right">Expand</TooltipContent>
               </Tooltip>
             </div>
           )}
@@ -198,7 +219,10 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
           <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[var(--muted)] to-transparent z-10 pointer-events-none" />
           
           {/* Scrollable Content */}
-          <nav className="h-full overflow-y-auto py-4 space-y-4 relative z-0 scrollbar-thin scrollbar-thumb-[var(--border)] scrollbar-track-transparent">
+          <nav
+            className="h-full overflow-y-auto py-4 space-y-4 relative z-0 scrollbar-thin scrollbar-thumb-[var(--border)] scrollbar-track-transparent"
+            aria-label="Main"
+          >
             {/* Core Workflows */}
             <div>
               {!isCollapsed && (

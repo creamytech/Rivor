@@ -1,17 +1,14 @@
 /**
- * River Theme Design System
- * "Where Deals Flow Seamlessly"
- * 
- * Deep navy canvas with subtle flowing gradients
- * River palette: teal, azure, jade
+ * Real Estate Brand Theme
+ * Trusted blues with warm gold accents
  */
 
-// Core Color Palette - River Inspired
+// Core Color Palette
 export const riverColors = {
-  // Deep navy canvas
-  navy: {
+  // Neutral foundation
+  neutral: {
     50: '#f8fafc',
-    100: '#f1f5f9', 
+    100: '#f1f5f9',
     200: '#e2e8f0',
     300: '#cbd5e1',
     400: '#94a3b8',
@@ -19,80 +16,80 @@ export const riverColors = {
     600: '#475569',
     700: '#334155',
     800: '#1e293b',
-    900: '#0f172a', // Primary canvas
+    900: '#0f172a',
     950: '#020617'
   },
-  
-  // Teal accent
-  teal: {
-    50: '#f0fdfa',
-    100: '#ccfbf1',
-    200: '#99f6e4',
-    300: '#5eead4',
-    400: '#2dd4bf', // Primary accent
-    500: '#14b8a6',
-    600: '#0d9488',
-    700: '#0f766e',
-    800: '#115e59',
-    900: '#134e4a',
-    950: '#042f2e'
+
+  // Brand blue
+  blue: {
+    50: '#eff6ff',
+    100: '#dbeafe',
+    200: '#bfdbfe',
+    300: '#93c5fd',
+    400: '#60a5fa',
+    500: '#3b82f6',
+    600: '#2563eb',
+    700: '#1d4ed8',
+    800: '#1e40af',
+    900: '#1e3a8a',
+    950: '#172554'
   },
-  
-  // Azure accent
-  azure: {
-    50: '#f0f9ff',
-    100: '#e0f2fe',
-    200: '#bae6fd',
-    300: '#7dd3fc',
-    400: '#38bdf8', // Secondary accent
-    500: '#0ea5e9',
-    600: '#0284c7',
-    700: '#0369a1',
-    800: '#075985',
-    900: '#0c4a6e',
-    950: '#082f49'
+
+  // Accent gold
+  gold: {
+    50: '#fffbeb',
+    100: '#fef3c7',
+    200: '#fde68a',
+    300: '#fcd34d',
+    400: '#fbbf24',
+    500: '#f59e0b',
+    600: '#d97706',
+    700: '#b45309',
+    800: '#92400e',
+    900: '#78350f',
+    950: '#451a03'
   },
-  
-  // Jade accent
-  jade: {
-    50: '#f0fdf4',
-    100: '#dcfce7',
-    200: '#bbf7d0',
-    300: '#86efac',
-    400: '#4ade80', // Tertiary accent
-    500: '#22c55e',
-    600: '#16a34a',
-    700: '#15803d',
-    800: '#166534',
-    900: '#14532d',
-    950: '#052e16'
+
+  // Success green
+  green: {
+    50: '#ecfdf5',
+    100: '#d1fae5',
+    200: '#a7f3d0',
+    300: '#6ee7b7',
+    400: '#34d399',
+    500: '#10b981',
+    600: '#059669',
+    700: '#047857',
+    800: '#065f46',
+    900: '#064e3b',
+    950: '#022c22'
   }
 } as const;
 
 // Typography Scale
 export const typography = {
   scale: {
-    xs: '0.75rem',    // 12px
-    sm: '0.875rem',   // 14px
-    base: '1rem',     // 16px
-    lg: '1.125rem',   // 18px
-    xl: '1.25rem',    // 20px
-    '2xl': '1.5rem',  // 24px
-    '3xl': '2rem',    // 32px
-    '4xl': '2.5rem',  // 40px
-    '5xl': '3rem'     // 48px
+    xs: '0.75rem',
+    sm: '0.875rem',
+    base: '1rem',
+    lg: '1.125rem',
+    xl: '1.25rem',
+    '2xl': '1.5rem',
+    '3xl': '2rem',
+    '4xl': '2.5rem',
+    '5xl': '3rem'
   },
-  
+
   weights: {
     normal: '400',
     medium: '500',
     semibold: '600',
     bold: '700'
   },
-  
+
   families: {
-    ui: 'Inter, system-ui, -apple-system, sans-serif',
-    display: 'Inter, system-ui, -apple-system, sans-serif'
+    ui: 'Poppins, system-ui, -apple-system, sans-serif',
+    display: '"Playfair Display", serif'
   }
 } as const;
 
