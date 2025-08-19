@@ -3,10 +3,10 @@ import { prisma } from '@/server/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth';
 
-// Initialize OpenAI client
-const openai = new OpenAI({
+// Initialize OpenAI client conditionally
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-});
+}) : null;
 
 interface ChatContext {
   type?:
@@ -392,19 +392,23 @@ Current user message: "${message}"
 
 Respond as a helpful AI assistant with access to the CRM data.`;
 
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
-        ],
-        max_tokens: 1000,
-        temperature: 0.7
-      });
+      let aiResponse = 'I apologize, but I encountered an error processing your request.';
+      
+      if (openai) {
+        const completion = await openai.chat.completions.create({
+          model: 'gpt-4',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: message }
+          ],
+          max_tokens: 1000,
+          temperature: 0.7
+        });
 
-      const aiResponse =
-        completion.choices[0]?.message?.content ||
-        'I apologize, but I encountered an error processing your request.';
+        aiResponse = completion.choices[0]?.message?.content || aiResponse;
+      } else {
+        aiResponse = 'AI service is currently unavailable. Please check your configuration.';
+      }
 
       const suggestedActions = this.analyzeResponseForActions(
         aiResponse,
