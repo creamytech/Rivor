@@ -74,16 +74,16 @@ export function HeroSection() {
 
           {/* Primary/Secondary CTAs with enhanced styling */}
           <div className="animate-on-scroll flex flex-col sm:flex-row gap-4">
-            <Link 
-              href="/auth/signin" 
+            <Link
+              href="/auth/signin"
               onClick={() => trackCTA("Start Free Trial", "hero", "/auth/signin")}
-              className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-gradient-to-r from-rivor-teal to-rivor-aqua text-white font-semibold hover:from-rivor-aqua hover:to-rivor-teal hover-lift focus-visible:ring-2 focus-visible:ring-rivor-teal btn-primary shadow-lg shadow-rivor-teal/25"
-              data-tooltip="Start your free 14-day trial"
+              className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-gradient-to-r from-rivor-teal to-rivor-aqua text-white font-semibold hover:from-rivor-aqua hover:to-rivor-teal hover-lift focus-visible:ring-2 focus-visible:ring-rivor-teal btn-primary shadow-lg shadow-rivor-teal/25 w-full sm:w-auto"
+              data-tooltip="Start 14-day free trial – no credit card"
             >
-              Start Free Trial →
+              Start 14-day free trial – no credit card
             </Link>
-            <Link 
-              href="/demo" 
+            <Link
+              href="/demo"
               onClick={() => trackCTA("See Features", "hero", "/demo")}
               className="inline-flex items-center justify-center px-8 py-4 rounded-xl border-2 border-rivor-teal/30 bg-surface/80 backdrop-blur hover:bg-rivor-teal/10 hover:border-rivor-teal hover-lift focus-visible:ring-2 focus-visible:ring-rivor-teal transition-all duration-300"
               data-tooltip="See Rivor in action"
