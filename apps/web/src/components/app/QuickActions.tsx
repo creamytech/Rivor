@@ -1,20 +1,80 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Mail, 
-  Calendar, 
-  Plus, 
-  MessageSquare, 
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Mail,
+  Calendar,
+  MessageSquare,
   UserPlus,
   FileText,
-  Settings,
   ChevronUp,
   ChevronDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+const ChatAgent = dynamic(() => import('./ChatAgent'), { ssr: false });
+
+/**
+ * Floating quick actions menu.
+ *
+ * Keyboard shortcuts:
+ *  - ⌘E: Compose Email
+ *  - ⌘M: Schedule Meeting
+ *  - ⌘L: Add Lead
+ *  - ⌘C: Start Chat
+ *  - ⌘N: Create Note
+ */
+export function useQuickActionCallbacks() {
+  const router = useRouter();
+  const [chatOpen, setChatOpen] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
+
+  const composeEmail = useCallback(() => {
+    router.push('/app/inbox/compose');
+  }, [router]);
+
+  const scheduleMeeting = useCallback(() => {
+    router.push('/app/calendar');
+  }, [router]);
+
+  const addLead = useCallback(() => {
+    router.push('/app/pipeline/create');
+  }, [router]);
+
+  const startChat = useCallback(() => setChatOpen(true), []);
+  const createNote = useCallback(() => setNoteOpen(true), []);
+
+  const chatModal = (
+    <ChatAgent isOpen={chatOpen} onClose={() => setChatOpen(false)} />
+  );
+
+  const noteModal = (
+    <Dialog open={noteOpen} onOpenChange={setNoteOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create Note</DialogTitle>
+        </DialogHeader>
+        <div className="text-sm text-muted-foreground">
+          Note creation coming soon.
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
+  return {
+    composeEmail,
+    scheduleMeeting,
+    addLead,
+    startChat,
+    createNote,
+    chatModal,
+    noteModal
+  };
+}
 
 interface QuickAction {
   id: string;
@@ -31,13 +91,22 @@ interface QuickActionsProps {
 
 export default function QuickActions({ className = '' }: QuickActionsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const {
+    composeEmail,
+    scheduleMeeting,
+    addLead,
+    startChat,
+    createNote,
+    chatModal,
+    noteModal
+  } = useQuickActionCallbacks();
 
   const quickActions: QuickAction[] = [
     {
       id: 'compose-email',
       label: 'Compose Email',
       icon: <Mail className="h-4 w-4" />,
-      onClick: () => console.log('Compose email'),
+      onClick: composeEmail,
       color: 'blue',
       shortcut: '⌘E'
     },
@@ -45,7 +114,7 @@ export default function QuickActions({ className = '' }: QuickActionsProps) {
       id: 'schedule-meeting',
       label: 'Schedule Meeting',
       icon: <Calendar className="h-4 w-4" />,
-      onClick: () => console.log('Schedule meeting'),
+      onClick: scheduleMeeting,
       color: 'green',
       shortcut: '⌘M'
     },
@@ -53,7 +122,7 @@ export default function QuickActions({ className = '' }: QuickActionsProps) {
       id: 'add-lead',
       label: 'Add Lead',
       icon: <UserPlus className="h-4 w-4" />,
-      onClick: () => console.log('Add lead'),
+      onClick: addLead,
       color: 'purple',
       shortcut: '⌘L'
     },
@@ -61,7 +130,7 @@ export default function QuickActions({ className = '' }: QuickActionsProps) {
       id: 'start-chat',
       label: 'Start Chat',
       icon: <MessageSquare className="h-4 w-4" />,
-      onClick: () => console.log('Start chat'),
+      onClick: startChat,
       color: 'teal',
       shortcut: '⌘C'
     },
@@ -69,7 +138,7 @@ export default function QuickActions({ className = '' }: QuickActionsProps) {
       id: 'create-note',
       label: 'Create Note',
       icon: <FileText className="h-4 w-4" />,
-      onClick: () => console.log('Create note'),
+      onClick: createNote,
       color: 'orange',
       shortcut: '⌘N'
     }
@@ -85,6 +154,8 @@ export default function QuickActions({ className = '' }: QuickActionsProps) {
 
   return (
     <div className={`fixed bottom-6 right-6 z-50 ${className}`}>
+      {chatModal}
+      {noteModal}
       <AnimatePresence>
         {isExpanded && (
           <motion.div
