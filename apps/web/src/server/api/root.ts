@@ -1,4 +1,5 @@
 ﻿import { router } from "./trpc";
+import { showingsRouter } from "../showings";
 import { z } from "zod";
 import { publicProcedure, protectedProcedure } from "./trpc";
 import { prisma } from "@/server/db";
@@ -54,6 +55,7 @@ async function getCurrentUser() {
 export const appRouter = router({
   health: publicProcedure.query(() => ({ ok: true })),
   echo: publicProcedure.input(z.object({ text: z.string() })).mutation(({ input }) => ({ text: input.text })),
+  showings: showingsRouter,
 
   // Dashboard Data
   dashboard: protectedProcedure.query(async () => {
