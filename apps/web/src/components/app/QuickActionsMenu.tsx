@@ -22,6 +22,14 @@ import {
   ArrowRight
 } from 'lucide-react';
 
+export const createTask = () => {
+  window.location.href = '/app/tasks/create';
+};
+
+export const openChatAgent = () => {
+  window.dispatchEvent(new Event('chat-agent:open'));
+};
+
 interface QuickAction {
   id: string;
   title: string;
@@ -77,7 +85,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <Clock className="h-4 w-4" />,
       shortcut: '⌘T',
       category: 'create',
-      action: () => console.log('Create task')
+      action: createTask
     },
 
     // Navigate Actions
@@ -153,7 +161,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <MessageSquare className="h-4 w-4" />,
       shortcut: '⌘H',
       category: 'tools',
-      action: () => console.log('Open chat assistant')
+      action: openChatAgent
     }
   ];
 
