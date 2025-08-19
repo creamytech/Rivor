@@ -24,6 +24,7 @@ export type Env = {
   POSTHOG_HOST?: string;
   OPENAI_API_KEY?: string;
   OPENAI_BASE_URL?: string;
+  AI_API_KEY?: string;
   KMS_PROVIDER?: 'gcp'|'aws'|'azure';
   KMS_KEY_ID?: string;
   ENCRYPTION_CACHE_TTL_SECONDS: number;
@@ -60,6 +61,7 @@ export function getEnv(): Env {
     POSTHOG_HOST: env.POSTHOG_HOST,
     OPENAI_API_KEY: env.OPENAI_API_KEY,
     OPENAI_BASE_URL: env.OPENAI_BASE_URL,
+    AI_API_KEY: env.AI_API_KEY,
     KMS_PROVIDER: env.KMS_PROVIDER as Env['KMS_PROVIDER'],
     KMS_KEY_ID: env.KMS_KEY_ID,
     ENCRYPTION_CACHE_TTL_SECONDS: Number(env.ENCRYPTION_CACHE_TTL_SECONDS ?? 60),

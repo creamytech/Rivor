@@ -44,9 +44,10 @@ if not exist "%ENV_FILE%" (
         echo REDIS_URL=redis://localhost:6379
         echo.
         echo # =============================================================================
-        echo # AI INTEGRATION - FILL THIS IN FROM OPENAI
+        echo # AI INTEGRATION - FILL THESE IN
         echo # =============================================================================
         echo OPENAI_API_KEY=sk-your-openai-api-key-here
+        echo AI_API_KEY=your-ai-api-key
         echo.
         echo # =============================================================================
         echo # ENCRYPTION ^(local development^)
@@ -60,6 +61,7 @@ if not exist "%ENV_FILE%" (
     echo ⚠️  You still need to fill in:
     echo    - GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET
     echo    - OPENAI_API_KEY
+    echo    - AI_API_KEY
 ) else (
     echo ✅ %ENV_FILE% already exists
 )

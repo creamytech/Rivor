@@ -70,6 +70,8 @@ REDIS_URL=redis://localhost:6379
 
 # Get from https://platform.openai.com/api-keys
 OPENAI_API_KEY=sk-your-openai-api-key-here
+# Generic AI key for hosted LLM
+AI_API_KEY=your-ai-api-key
 
 # =============================================================================
 # ENCRYPTION & SECURITY (simplified for local dev)

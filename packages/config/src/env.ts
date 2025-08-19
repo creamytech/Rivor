@@ -27,6 +27,7 @@ export const EnvSchema = z.object({
   POSTHOG_HOST: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_BASE_URL: z.string().optional(),
+  AI_API_KEY: z.string().optional(),
   KMS_PROVIDER: z.enum(['gcp','aws','azure']).optional(),
   KMS_KEY_ID: z.string().optional(),
   ENCRYPTION_CACHE_TTL_SECONDS: z.coerce.number().default(60),
