@@ -220,12 +220,13 @@ export function getRequiredScopes(provider: string): string[] {
         'email', 
         'profile', 
         'https://www.googleapis.com/auth/gmail.readonly',
+        'https://www.googleapis.com/auth/gmail.send',
         'https://www.googleapis.com/auth/calendar.readonly'
       ];
-    case 'azure-ad':
+    case 'microsoft':
       return [
         'openid',
-        'email', 
+        'email',
         'profile',
         'offline_access',
         'https://graph.microsoft.com/Mail.Read',
