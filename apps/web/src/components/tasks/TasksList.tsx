@@ -236,45 +236,7 @@ export default function TasksList({ className }: TasksListProps) {
   return (
     <FlowCard className={className}>
       <div className="flex flex-col h-full">
-        {/* Header */}
-        <div className="p-6 border-b border-slate-200 dark:border-slate-700">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                Tasks
-              </h2>
-              <p className="text-slate-600 dark:text-slate-400">
-                Manage your tasks and stay organized
-              </p>
-            </div>
-            
-            <Button className="bg-gradient-to-r from-teal-500 to-azure-500 hover:from-teal-600 hover:to-azure-600 text-white">
-              <Plus className="h-4 w-4 mr-2" />
-              New Task
-            </Button>
-          </div>
 
-          {/* Search */}
-          <div className="flex gap-3 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                type="text"
-                placeholder="Search tasks..."
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-
-          {/* Filters */}
-          <PillFilter
-            options={filters}
-            value={currentFilter}
-            onChange={setCurrentFilter}
-          />
-        </div>
 
         {/* Tasks List */}
         <div className="flex-1 overflow-auto p-6">

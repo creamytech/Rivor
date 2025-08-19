@@ -59,15 +59,7 @@ export default function DashboardPage() {
 
   return (
     <AppShell>
-      {/* Global Search Bar */}
-      <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto">
-          <GlobalSearch 
-            placeholder="Search leads, deals, contacts, emails, or use ⌘K for quick actions..."
-            className="w-full"
-          />
-        </div>
-      </div>
+
 
       {/* KPI Strip */}
       <div className="px-6 py-6">

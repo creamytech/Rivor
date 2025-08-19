@@ -260,59 +260,7 @@ export default function EnhancedPipelineBoard({
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="p-6 border-b border-slate-200 dark:border-slate-700">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Pipeline</h1>
-            <p className="text-slate-600 dark:text-slate-400">
-              {leads.length} leads • {formatCurrency(leads.reduce((sum, lead) => sum + (lead.value || 0), 0))} total value
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </Button>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Lead
-            </Button>
-          </div>
-        </div>
 
-        {/* Search and Controls */}
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Search leads..."
-              className="pl-10"
-              value={searchQuery}
-              onChange={(e) => console.log('Search:', e.target.value)}
-            />
-          </div>
-          
-          <Select value={sortBy} onValueChange={(value: 'value' | 'date' | 'name') => setSortBy(value)}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="value">Value</SelectItem>
-              <SelectItem value="date">Date</SelectItem>
-              <SelectItem value="name">Name</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-          >
-            {sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
-        </div>
-      </div>
 
              {/* View Tabs */}
        <Tabs value={currentView} onValueChange={(value: string) => setCurrentView(value as 'board' | 'table' | 'analytics')} className="flex-1">

@@ -260,43 +260,7 @@ export default function EnhancedContacts({ className, searchQuery = '', selected
     <div className={cn("h-full flex", className)}>
       {/* Contact List */}
       <div className="flex-1 flex flex-col">
-        {/* List Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
-          <div className="flex items-center gap-4">
-            <h2 className="text-lg font-semibold">Contacts ({sortedContacts.length})</h2>
-            <div className="flex items-center gap-2">
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-              >
-                <UsersIcon className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('grid')}
-              >
-                <BriefcaseIcon className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline">
-              <UploadIcon className="h-4 w-4 mr-2" />
-              Import
-            </Button>
-            <Button size="sm" variant="outline">
-              <DownloadIcon className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-            <Button size="sm">
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Add Contact
-            </Button>
-          </div>
-        </div>
+
 
         {/* Contact List */}
         <div className="flex-1 overflow-y-auto">

@@ -207,36 +207,7 @@ export default function EnhancedInbox({ activeTab = 'all', searchQuery = '', sel
         "flex flex-col border-r border-slate-200 dark:border-slate-700",
         viewMode === 'split' ? "w-1/3" : "w-full"
       )}>
-        {/* Thread List Header */}
-        <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold">Inbox</h2>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setViewMode(viewMode === 'split' ? 'thread' : 'split')}
-              >
-                {viewMode === 'split' ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                placeholder="Search emails..."
-                className="pl-10"
-                value={searchQuery}
-                onChange={(e) => console.log('Search:', e.target.value)}
-              />
-            </div>
-            <Button variant="ghost" size="sm">
-              <Filter className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+
 
         {/* Thread List */}
         <div className="flex-1 overflow-y-auto">
