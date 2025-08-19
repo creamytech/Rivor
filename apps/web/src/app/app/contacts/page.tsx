@@ -68,6 +68,8 @@ export default function ContactsPage() {
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'all' | 'leads' | 'customers' | 'prospects'>('all');
   const [lifecycleStage, setLifecycleStage] = useState<'all' | 'new' | 'engaged' | 'qualified' | 'customer'>('all');
+  const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const availableFilters = [
     { id: 'enterprise', label: 'Enterprise', icon: BuildingIcon },
@@ -89,11 +91,40 @@ export default function ContactsPage() {
   ];
 
   const toggleFilter = (filterId: string) => {
-    setSelectedFilters(prev => 
-      prev.includes(filterId) 
+    setSelectedFilters(prev =>
+      prev.includes(filterId)
         ? prev.filter(id => id !== filterId)
         : [...prev, filterId]
     );
+  };
+
+  const handleImport = async () => {
+    try {
+      setImporting(true);
+      await fetch('/api/crm/import', { method: 'POST' });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      setExporting(true);
+      const res = await fetch('/api/crm/export');
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'contacts.json';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -170,13 +201,13 @@ export default function ContactsPage() {
 
             {/* Quick Actions */}
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" onClick={handleImport} disabled={importing}>
                 <Upload className="h-4 w-4 mr-2" />
-                Import
+                {importing ? 'Importing...' : 'Import'}
               </Button>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" onClick={handleExport} disabled={exporting}>
                 <Download className="h-4 w-4 mr-2" />
-                Export
+                {exporting ? 'Exporting...' : 'Export'}
               </Button>
               <Button size="sm" variant="outline">
                 <Settings className="h-4 w-4 mr-2" />

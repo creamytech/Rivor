@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -49,10 +49,29 @@ interface LeadFeedProps {
   leads: Lead[];
   reviewItems?: any[];
   className?: string;
+  crmSyncStatus?: string;
 }
 
-export default function LeadFeed({ leads = [], reviewItems = [], className }: LeadFeedProps) {
+export default function LeadFeed({ leads = [], reviewItems = [], className, crmSyncStatus }: LeadFeedProps) {
   const [activeTab, setActiveTab] = useState('leads');
+  const [syncStatus, setSyncStatus] = useState(crmSyncStatus || 'idle');
+
+  useEffect(() => {
+    async function fetchStatus() {
+      try {
+        const res = await fetch('/api/crm/status');
+        if (res.ok) {
+          const data = await res.json();
+          setSyncStatus(data.status);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch CRM sync status', err);
+      }
+    }
+    fetchStatus();
+    const id = setInterval(fetchStatus, 60000);
+    return () => clearInterval(id);
+  }, []);
 
   const getIntentFromTitle = (title: string | null): 'buyer' | 'seller' | 'renter' => {
     if (!title) return 'buyer';
@@ -186,9 +205,17 @@ export default function LeadFeed({ leads = [], reviewItems = [], className }: Le
   };
 
   return (
+<<<<<<< HEAD
     <GlassCard variant="river-flow" intensity="medium" flowDirection="down" className={cn('h-full', className)}>
       <GlassCardHeader className="pb-3">
+=======
+    <GlassCard variant="river-flow" intensity="medium" flowDirection="down" className="h-full">
+      <GlassCardHeader className="pb-3 flex items-center justify-between">
+>>>>>>> origin/codex/implement-crm-connectors-with-oauth
         <GlassCardTitle className="text-lg">Lead Feed</GlassCardTitle>
+        <Badge variant={syncStatus === 'syncing' ? 'secondary' : 'outline'} className="text-xs">
+          {syncStatus === 'syncing' ? 'Syncing…' : syncStatus === 'error' ? 'Sync Error' : 'Synced'}
+        </Badge>
       </GlassCardHeader>
       <GlassCardContent className="p-0">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
