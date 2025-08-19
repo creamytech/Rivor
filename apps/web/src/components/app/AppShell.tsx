@@ -63,6 +63,12 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [showNotifications]);
 
+  useEffect(() => {
+    const handler = () => setShowChatAgent(true);
+    window.addEventListener('chat-agent:open', handler);
+    return () => window.removeEventListener('chat-agent:open', handler);
+  }, []);
+
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };

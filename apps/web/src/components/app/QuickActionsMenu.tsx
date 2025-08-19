@@ -23,6 +23,14 @@ import {
 } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
+export const createTask = () => {
+  window.location.href = '/app/tasks/create';
+};
+
+export const openChatAgent = () => {
+  window.dispatchEvent(new Event('chat-agent:open'));
+};
+
 interface QuickAction {
   id: string;
   title: string;
@@ -78,7 +86,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <Clock className="h-4 w-4" />,
       shortcut: '⌘T',
       category: 'create',
-      action: () => logger.info('Quick menu action', { action: 'create-task' })
+      action: createTask
     },
 
     // Navigate Actions
@@ -154,7 +162,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <MessageSquare className="h-4 w-4" />,
       shortcut: '⌘H',
       category: 'tools',
-      action: () => logger.info('Quick menu action', { action: 'open-chat-assistant' })
+      action: openChatAgent
     }
   ];
 
