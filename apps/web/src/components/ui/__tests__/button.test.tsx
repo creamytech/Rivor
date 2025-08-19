@@ -24,9 +24,19 @@ describe('Button', () => {
     expect(button).toHaveClass('bg-gradient-to-r')
   })
 
-  it('can be disabled', () => {
-    render(<Button disabled>Disabled Button</Button>)
+  it('can be disabled', async () => {
+    const user = userEvent.setup()
+    const handleClick = vi.fn()
+
+    render(
+      <Button onClick={handleClick} disabled>
+        Disabled Button
+      </Button>
+    )
+
     const button = screen.getByRole('button')
+    await user.click(button)
+    expect(handleClick).not.toHaveBeenCalled()
     expect(button).toBeDisabled()
     expect(button).toHaveClass('disabled:pointer-events-none')
   })
