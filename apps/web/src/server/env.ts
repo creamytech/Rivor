@@ -25,6 +25,7 @@ export type Env = {
   OPENAI_API_KEY?: string;
   OPENAI_BASE_URL?: string;
   MLS_API_KEY?: string;
+  AI_API_KEY?: string;
   KMS_PROVIDER?: 'gcp'|'aws'|'azure';
   KMS_KEY_ID?: string;
   ENCRYPTION_CACHE_TTL_SECONDS: number;
@@ -62,6 +63,7 @@ export function getEnv(): Env {
     OPENAI_API_KEY: env.OPENAI_API_KEY,
     OPENAI_BASE_URL: env.OPENAI_BASE_URL,
     MLS_API_KEY: env.MLS_API_KEY,
+    AI_API_KEY: env.AI_API_KEY,
     KMS_PROVIDER: env.KMS_PROVIDER as Env['KMS_PROVIDER'],
     KMS_KEY_ID: env.KMS_KEY_ID,
     ENCRYPTION_CACHE_TTL_SECONDS: Number(env.ENCRYPTION_CACHE_TTL_SECONDS ?? 60),

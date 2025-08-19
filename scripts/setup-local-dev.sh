@@ -50,9 +50,10 @@ DATABASE_URL=postgresql://postgres:rivor123@localhost:5432/rivor_dev
 REDIS_URL=redis://localhost:6379
 
 # =============================================================================
-# AI INTEGRATION - FILL THIS IN FROM OPENAI
+# AI INTEGRATION - FILL THESE IN
 # =============================================================================
 OPENAI_API_KEY=sk-your-openai-api-key-here
+AI_API_KEY=your-ai-api-key
 
 # =============================================================================
 # ENCRYPTION (local development)
@@ -66,6 +67,7 @@ EOF
     echo "⚠️  You still need to fill in:"
     echo "   - GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET"
     echo "   - OPENAI_API_KEY"
+    echo "   - AI_API_KEY"
 else
     echo "✅ $ENV_FILE already exists"
 fi
