@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { TestimonialsCarousel } from "./TestimonialsCarousel";
 
 export function SocialProofSection() {
   const [hoveredLogo, setHoveredLogo] = useState<number | null>(null);
@@ -143,23 +144,7 @@ export function SocialProofSection() {
         </div>
       </div>
 
-      {/* Testimonial preview */}
-      <div className="mt-12 text-center animate-fade-up-delay-4">
-        <div className="card p-8 max-w-2xl mx-auto bg-gradient-to-br from-rivor-deep/20 to-rivor-indigo/20 border-rivor-teal/20">
-          <div className="text-lg text-muted-foreground mb-4">
-            "Rivor saves me 10+ hours per week. I never miss a client email."
-          </div>
-          <div className="flex items-center justify-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rivor-teal to-rivor-aqua flex items-center justify-center text-white font-bold">
-              J
-            </div>
-            <div className="text-left">
-              <div className="font-semibold">Jane D.</div>
-              <div className="text-sm text-muted-foreground">Realtor, Keller Williams</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <TestimonialsCarousel />
     </section>
   );
 }
