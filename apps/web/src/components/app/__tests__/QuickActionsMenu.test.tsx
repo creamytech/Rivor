@@ -1,41 +1,43 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import QuickActionsMenu from '../QuickActionsMenu'
+import { useRouter } from 'next/navigation'
 
-// helper to render menu
-const renderMenu = () => render(<QuickActionsMenu isOpen={true} onClose={() => {}} />)
+describe('QuickActionsMenu', () => {
+  const pushMock = vi.fn()
+  const routerMock = {
+    push: pushMock,
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn(),
+  } as any
+  vi.mocked(useRouter).mockReturnValue(routerMock)
 
-describe('QuickActionsMenu actions', () => {
-  it('navigates to task creation', async () => {
-    const user = userEvent.setup()
-    const originalLocation = window.location
-    // Mock location to allow assignment
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    delete window.location
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    window.location = { href: 'http://localhost' }
+  const actions = [
+    { label: 'Create New Lead', path: '/app/pipeline?action=create' },
+    { label: 'Compose Email', path: '/app/inbox?compose=true' },
+    { label: 'Schedule Meeting', path: '/app/calendar?action=create' },
+    { label: 'Create Task', path: '/app/tasks?action=create' },
+    { label: 'Go to Dashboard', path: '/app' },
+    { label: 'Open Inbox', path: '/app/inbox' },
+    { label: 'View Pipeline', path: '/app/pipeline' },
+    { label: 'Open Calendar', path: '/app/calendar' },
+    { label: 'Open Settings', path: '/app/settings' },
+    { label: 'Manage Integrations', path: '/app/settings/integrations' },
+    { label: 'View Reports', path: '/app/analytics' },
+    { label: 'AI Chat Assistant', path: '/app/chat' },
+  ]
 
-    renderMenu()
-    await user.click(screen.getByText('Create Task'))
-    expect(window.location.href).toContain('/app/tasks/create')
-
-    window.location = originalLocation
-  })
-
-  it('opens chat agent via event', async () => {
-    const user = userEvent.setup()
-    let opened = false
-    const handler = () => {
-      opened = true
-    }
-    window.addEventListener('chat-agent:open', handler)
-
-    renderMenu()
-    await user.click(screen.getByText('AI Chat Assistant'))
-    expect(opened).toBe(true)
-
-    window.removeEventListener('chat-agent:open', handler)
+  actions.forEach(({ label, path }) => {
+    it(`navigates to ${path} when selecting ${label}`, async () => {
+      const user = userEvent.setup()
+      render(<QuickActionsMenu isOpen={true} onClose={() => {}} />)
+      const button = screen.getByText(label).closest('button') as HTMLButtonElement
+      await user.click(button)
+      expect(pushMock).toHaveBeenCalledWith(path)
+      pushMock.mockClear()
+    })
   })
 })
