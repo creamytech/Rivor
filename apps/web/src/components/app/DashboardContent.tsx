@@ -11,6 +11,8 @@ import ActivityFeed from './ActivityFeed';
 import CommandPalette from '../common/CommandPalette';
 import { CurvedDivider } from '@/components/ui/curved-divider';
 import { Button } from '@/components/ui/button';
+import Skeleton from '@/components/ui/Skeleton';
+import DashboardCard from './DashboardCard';
 import { Search, Plus, Calendar, Mail, MessageSquare } from 'lucide-react';
 
 interface DashboardContentProps {
@@ -60,11 +62,11 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
         {dashboardLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-32 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+              <Skeleton key={i} className="h-32 rounded-lg" />
             ))}
           </div>
         ) : (
-          <TodayAtAGlance 
+          <TodayAtAGlance
             leadsData={dashboardData?.leadsData}
             repliesData={dashboardData?.repliesData}
             meetingsData={dashboardData?.meetingsData}
@@ -79,30 +81,36 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
       {/* Compact Sync Progress - Reduced prominence */}
       <div className="px-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <CompactSyncProgress 
-            syncType="email" 
-            progress={75} 
-            status="running" 
-            eta="15 min" 
-            totalItems={5000} 
-            processedItems={3750} 
-            errorCount={2} 
-          />
-          <CompactSyncProgress 
-            syncType="calendar" 
-            progress={100} 
-            status="completed" 
-            totalItems={200} 
-            processedItems={200} 
-          />
-          <CompactSyncProgress 
-            syncType="contacts" 
-            progress={45} 
-            status="paused" 
-            totalItems={1000} 
-            processedItems={450} 
-          />
-        </div>
+          <DashboardCard>
+            <CompactSyncProgress
+              syncType="email"
+              progress={75}
+              status="running"
+              eta="15 min"
+              totalItems={5000}
+              processedItems={3750}
+              errorCount={2}
+            />
+          </DashboardCard>
+          <DashboardCard>
+            <CompactSyncProgress
+              syncType="calendar"
+              progress={100}
+              status="completed"
+              totalItems={200}
+              processedItems={200}
+            />
+          </DashboardCard>
+          <DashboardCard>
+            <CompactSyncProgress
+              syncType="contacts"
+              progress={45}
+              status="paused"
+              totalItems={1000}
+              processedItems={450}
+            />
+          </DashboardCard>
+          </div>
       </div>
 
       {/* Curved Divider */}
@@ -114,40 +122,48 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
           {/* Lead Feed */}
           <div className="lg:col-span-2">
             {leadsLoading ? (
-              <div className="h-96 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+              <Skeleton className="h-96 rounded" />
             ) : (
-              <LeadFeed 
-                leads={leadsData?.leads || []} 
-                reviewItems={[]} 
-              />
+              <DashboardCard>
+                <LeadFeed
+                  leads={leadsData?.leads || []}
+                  reviewItems={[]}
+                />
+              </DashboardCard>
             )}
           </div>
           
           {/* Right Column - Enhanced with Activity Feed */}
           <div className="space-y-6">
             {/* Activity Feed - New prominent position */}
-            <ActivityFeed />
+            <DashboardCard>
+              <ActivityFeed />
+            </DashboardCard>
             
             {/* Health Widget */}
             {integrationsLoading ? (
-              <div className="h-48 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+              <Skeleton className="h-48 rounded" />
             ) : (
-              <HealthWidget 
-                integrations={integrationsData?.emailAccounts || []} 
-                onFix={(id) => console.log('Fix integration:', id)} 
-                onReauth={(id) => console.log('Reauth integration:', id)} 
-              />
+              <DashboardCard>
+                <HealthWidget
+                  integrations={integrationsData?.emailAccounts || []}
+                  onFix={(id) => console.log('Fix integration:', id)}
+                  onReauth={(id) => console.log('Reauth integration:', id)}
+                />
+              </DashboardCard>
             )}
             
             {/* Mini Pipeline Sparkline */}
             {pipelineLoading ? (
-              <div className="h-48 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+              <Skeleton className="h-48 rounded" />
             ) : (
-              <MiniPipelineSparkline 
-                stages={pipelineStagesData || []} 
-                totalLeads={leadsData?.total || 0} 
-                conversionRate={32} 
-              />
+              <DashboardCard>
+                <MiniPipelineSparkline
+                  stages={pipelineStagesData || []}
+                  totalLeads={leadsData?.total || 0}
+                  conversionRate={32}
+                />
+              </DashboardCard>
             )}
           </div>
         </div>
