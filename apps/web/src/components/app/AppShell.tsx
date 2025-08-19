@@ -84,8 +84,8 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       
       {/* Main Content Area */}
       <div className="grid grid-rows-[56px_1fr]">
-        <header className="sticky top-0 z-50 h-14 border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--background)95%,transparent)] backdrop-blur flex items-center">
-          <div className="px-3 md:px-4 w-full flex items-center gap-3">
+        <header className="sticky top-0 z-50 h-14 border-b border-[var(--border)] bg-gradient-to-r from-teal-500/80 to-azure-500/80 backdrop-blur flex items-center">
+          <div className="px-4 md:px-6 w-full flex items-center gap-4">
             {/* Mobile Logo (hidden on desktop) */}
             <div className="md:hidden">
               <Link href="/app" className="flex items-center gap-2">
@@ -94,57 +94,60 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                 </div>
               </Link>
             </div>
-            
+
+            {/* Breadcrumb / Page Title Placeholder */}
+            <div className="hidden md:block text-sm font-medium text-[var(--foreground)]">Page Title</div>
+
             {/* Sticky Search Bar */}
-            <div className="hidden md:flex flex-1 max-w-md mx-4">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />
+            <div className="hidden md:flex flex-1 max-w-md mx-6">
+              <div className="relative w-full flex items-center">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />
                 <input
                   type="text"
                   placeholder="Search leads, emails, or run commands..."
-                  className="w-full pl-9 pr-8 py-2 text-sm bg-[var(--background)] border border-[var(--border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
+                  className="w-full pl-9 pr-8 py-2.5 text-sm bg-[var(--background)] border border-[var(--border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
                   onClick={() => setShowQuickActions(true)}
                   readOnly
                 />
-                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs bg-[var(--border)] px-1.5 py-0.5 rounded text-[var(--muted-foreground)]">
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs bg-[var(--border)] px-1.5 py-0.5 rounded text-[var(--muted-foreground)]">
                   ⌘K
                 </div>
               </div>
             </div>
-            
+
             {/* Right side actions */}
-            <div className="flex items-center gap-1 ml-auto">
+            <div className="flex items-center gap-2 ml-auto">
               {/* Chat Agent Button */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setShowChatAgent(true)}
                 aria-label="Help & Chat Agent"
-                className="relative"
+                className="relative flex items-center justify-center"
               >
                 <HelpCircle className="h-4 w-4" />
               </Button>
-              
+
               {/* Notifications Button */}
               <div className="relative">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setShowNotifications(!showNotifications)}
                   aria-label="Notifications"
-                  className="relative"
+                  className="relative flex items-center justify-center"
                 >
                   <Bell className="h-4 w-4" />
                   {/* Notification badge */}
                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
                 </Button>
               </div>
-              
+
               {/* User Profile Button */}
               <div className="relative">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setShowUserProfile(!showUserProfile)}
                   aria-label="User menu"
                   className="flex items-center gap-2 px-2"
