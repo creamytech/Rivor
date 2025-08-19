@@ -18,7 +18,7 @@ import {
   User,
   Sparkles
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function PipelinePage() {
@@ -26,6 +26,13 @@ export default function PipelinePage() {
   const [groupBy, setGroupBy] = useState("stage");
   const [summary, setSummary] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [quickFilters, setQuickFilters] = useState([
+    { id: "high-value", key: "highValue", label: "High Value", count: 0, active: false },
+    { id: "overdue", key: "overdue", label: "Overdue", count: 0, active: false },
+    { id: "this-week", key: "thisWeek", label: "This Week", count: 0, active: false },
+    { id: "hot-leads", key: "hotLeads", label: "Hot Leads", count: 0, active: false }
+  ]);
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
 
   const fetchSummary = async () => {
     setLoading(true);
@@ -40,12 +47,30 @@ export default function PipelinePage() {
     }
   };
 
-  const quickFilters = [
-    { label: "High Value", count: 12, active: false },
-    { label: "Overdue", count: 3, active: false },
-    { label: "This Week", count: 8, active: false },
-    { label: "Hot Leads", count: 5, active: false }
-  ];
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch("/api/pipeline/stats");
+        if (response.ok) {
+          const data = await response.json();
+          setQuickFilters((prev) =>
+            prev.map((f) => ({ ...f, count: data[f.key] ?? 0 }))
+          );
+        }
+      } catch (error) {
+        console.error("Failed to fetch pipeline stats:", error);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  const handleQuickFilter = (id: string) => {
+    setQuickFilters((prev) =>
+      prev.map((f) => ({ ...f, active: f.id === id ? !f.active : false }))
+    );
+    setSelectedFilters((prev) => (prev[0] === id ? [] : [id]));
+  };
 
   const groupByOptions = [
     { value: "stage", label: "Stage", icon: <BarChart3 className="h-4 w-4" /> },
@@ -125,12 +150,12 @@ export default function PipelinePage() {
             {/* Quick Filters */}
             <div className="flex items-center gap-2 mt-3">
               <span className="text-sm text-muted-foreground mr-2">Quick filters:</span>
-              {quickFilters.map((filter, index) => (
+              {quickFilters.map((filter) => (
                 <Button
-                  key={index}
+                  key={filter.id}
                   variant={filter.active ? "default" : "outline"}
                   size="sm"
-                  onClick={() => console.log(`Apply filter: ${filter.label}`)}
+                  onClick={() => handleQuickFilter(filter.id)}
                   className="text-xs h-7"
                 >
                   {filter.label}
@@ -153,7 +178,10 @@ export default function PipelinePage() {
               </CardContent>
             </Card>
           )}
-          <EnhancedPipelineBoard searchQuery={searchQuery} groupBy={groupBy} />
+          <EnhancedPipelineBoard
+            searchQuery={searchQuery}
+            selectedFilters={selectedFilters}
+          />
         </div>
       </AppShell>
     </div>
