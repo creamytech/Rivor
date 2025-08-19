@@ -11,6 +11,7 @@ const globalQueues = globalThis as unknown as {
   cryptoRotateQueue?: Queue;
   retentionPurgeQueue?: Queue;
   indexRebuildQueue?: Queue;
+  crmSyncQueue?: Queue;
 };
 
 function getConnection() {
@@ -43,17 +44,26 @@ export async function enqueueEmailSync(orgId: string, emailAccountId: string) {
 export async function enqueueCalendarSync(orgId: string, calendarAccountId: string, daysPast = 30, daysFuture = 30) {
   try {
     const queue = getCalendarSyncQueue();
-    await queue.add("sync", { 
-      orgId, 
-      calendarAccountId, 
-      daysPastToSync: daysPast, 
-      daysFutureToSync: daysFuture 
-    }, { 
-      attempts: 3, 
-      backoff: { type: "exponential", delay: 1000 } 
+    await queue.add("sync", {
+      orgId,
+      calendarAccountId,
+      daysPastToSync: daysPast,
+      daysFutureToSync: daysFuture
+    }, {
+      attempts: 3,
+      backoff: { type: "exponential", delay: 1000 }
     });
   } catch (err) {
     console.warn("[queue] enqueueCalendarSync failed", err);
+  }
+}
+
+export async function enqueueCrmSync(orgId: string, provider: 'hubspot' | 'salesforce') {
+  try {
+    const queue = getCrmSyncQueue();
+    await queue.add('sync', { orgId, provider }, { attempts: 3, backoff: { type: 'exponential', delay: 1000 } });
+  } catch (err) {
+    console.warn('[queue] enqueueCrmSync failed', err);
   }
 }
 
@@ -129,6 +139,13 @@ export function getCalendarSyncQueue(): Queue {
     globalQueues.calendarSyncQueue = new Queue("calendar-sync", getConnection());
   }
   return globalQueues.calendarSyncQueue;
+}
+
+export function getCrmSyncQueue(): Queue {
+  if (!globalQueues.crmSyncQueue) {
+    globalQueues.crmSyncQueue = new Queue('crm-sync', getConnection());
+  }
+  return globalQueues.crmSyncQueue;
 }
 
 export function getWebhooksRenewQueue(): Queue {
