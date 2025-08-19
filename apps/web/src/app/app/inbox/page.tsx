@@ -32,8 +32,12 @@ export default function InboxPage() {
   const [activeTab, setActiveTab] = useState("leads");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
-  const [summary, setSummary] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [quickFilters, setQuickFilters] = useState([
+    { label: "Unread", count: 24, active: false },
+    { label: "High Priority", count: 8, active: false },
+    { label: "This Week", count: 45, active: false },
+    { label: "Overdue", count: 3, active: false }
+  ]);
 
   const fetchSummary = async () => {
     setLoading(true);
@@ -61,43 +65,15 @@ export default function InboxPage() {
     { id: "meeting-requests", label: "Meeting Requests", icon: <CheckCircle className="h-3 w-3" /> }
   ];
 
-  const [quickFilters, setQuickFilters] = useState([
-    { id: "unread", key: "unread", label: "Unread", count: 0, active: false },
-    { id: "high-priority", key: "highPriority", label: "High Priority", count: 0, active: false },
-    { id: "this-week", key: "thisWeek", label: "This Week", count: 0, active: false },
-    { id: "overdue", key: "overdue", label: "Overdue", count: 0, active: false }
-  ]);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await fetch("/api/inbox/stats");
-        if (response.ok) {
-          const data = await response.json();
-          if (data.tabs) {
-            setTabOptions((prev) =>
-              prev.map((t) => ({ ...t, count: data.tabs[t.value] ?? 0 }))
-            );
-          }
-          if (data.quickFilters) {
-            setQuickFilters((prev) =>
-              prev.map((f) => ({ ...f, count: data.quickFilters[f.key] ?? 0 }))
-            );
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch inbox stats:", error);
-      }
-    };
-
-    fetchStats();
-  }, []);
-
-  const handleQuickFilter = (id: string) => {
+  const handleQuickFilter = (label: string) => {
     setQuickFilters((prev) =>
-      prev.map((f) => ({ ...f, active: f.id === id ? !f.active : false }))
+      prev.map((filter) =>
+        filter.label === label
+          ? { ...filter, active: !filter.active }
+          : { ...filter, active: false }
+      )
     );
-    setSelectedFilter((prev) => (prev === id ? null : id));
+    setSelectedFilter((current) => (current === label ? null : label));
   };
 
   return (
@@ -136,45 +112,46 @@ export default function InboxPage() {
               </div>
             </div>
 
-          {/* Saved Filters Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <Filter className="h-4 w-4" />
-                Saved Filters
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Saved Filters</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {savedFilters.map((filter) => (
-                <DropdownMenuItem
-                  key={filter.id}
-                  onClick={() => setSelectedFilter(filter.id)}
-                  className="flex items-center gap-2"
-                >
-                  {filter.icon}
-                  {filter.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Button variant="outline" size="sm" onClick={fetchSummary} disabled={loading}>
-            <Sparkles className="h-4 w-4 mr-2" />
-            {loading ? 'Summarizing...' : 'AI Summary'}
-          </Button>
-        </div>
+<<<<<<< HEAD
+                      {/* Saved Filters Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  Saved Filters
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Saved Filters</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {savedFilters.map((filter) => (
+                  <DropdownMenuItem
+                    key={filter.id}
+                    onClick={() => {
+                      setSelectedFilter(filter.id);
+                      setQuickFilters((prev) =>
+                        prev.map((f) => ({ ...f, active: false }))
+                      );
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    {filter.icon}
+                    {filter.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
           {/* Quick Filters */}
           <div className="flex items-center gap-2 mt-3">
             <span className="text-sm text-muted-foreground mr-2">Quick filters:</span>
             {quickFilters.map((filter) => (
               <Button
-                key={filter.id}
+                key={filter.label}
                 variant={filter.active ? "default" : "outline"}
                 size="sm"
-                onClick={() => handleQuickFilter(filter.id)}
+                onClick={() => handleQuickFilter(filter.label)}
                 className="text-xs h-7"
               >
                 {filter.label}
@@ -186,20 +163,10 @@ export default function InboxPage() {
 
         {/* Enhanced Inbox Component */}
         <div className="px-6 pb-8">
-          {summary && (
-            <Card className="mb-4">
-              <CardHeader>
-                <CardTitle className="text-sm">AI Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm whitespace-pre-line">{summary}</p>
-              </CardContent>
-            </Card>
-          )}
           <EnhancedInbox
             activeTab={activeTab}
             searchQuery={searchQuery}
-            selectedFilter={selectedFilter}
+            selectedFilter={selectedFilter || ""}
           />
         </div>
       </AppShell>

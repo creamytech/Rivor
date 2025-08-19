@@ -24,53 +24,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function PipelinePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [groupBy, setGroupBy] = useState("stage");
-  const [summary, setSummary] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [quickFilters, setQuickFilters] = useState([
-    { id: "high-value", key: "highValue", label: "High Value", count: 0, active: false },
-    { id: "overdue", key: "overdue", label: "Overdue", count: 0, active: false },
-    { id: "this-week", key: "thisWeek", label: "This Week", count: 0, active: false },
-    { id: "hot-leads", key: "hotLeads", label: "Hot Leads", count: 0, active: false }
+    { label: "High Value", count: 12, active: false },
+    { label: "Overdue", count: 3, active: false },
+    { label: "This Week", count: 8, active: false },
+    { label: "Hot Leads", count: 5, active: false }
   ]);
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
 
-  const fetchSummary = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/ai/summary?context=pipeline');
-      const data = await res.json();
-      setSummary(data.summary);
-    } catch (err) {
-      setSummary('Failed to generate summary');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await fetch("/api/pipeline/stats");
-        if (response.ok) {
-          const data = await response.json();
-          setQuickFilters((prev) =>
-            prev.map((f) => ({ ...f, count: data[f.key] ?? 0 }))
-          );
-        }
-      } catch (error) {
-        console.error("Failed to fetch pipeline stats:", error);
-      }
-    };
-
-    fetchStats();
-  }, []);
-
-  const handleQuickFilter = (id: string) => {
+  const toggleFilter = (label: string) => {
     setQuickFilters((prev) =>
-      prev.map((f) => ({ ...f, active: f.id === id ? !f.active : false }))
+      prev.map((filter) =>
+        filter.label === label ? { ...filter, active: !filter.active } : filter
+      )
     );
-    setSelectedFilters((prev) => (prev[0] === id ? [] : [id]));
   };
+
+  const activeFilters = quickFilters
+    .filter((filter) => filter.active)
+    .map((filter) => filter.label);
 
   const groupByOptions = [
     { value: "stage", label: "Stage", icon: <BarChart3 className="h-4 w-4" /> },
@@ -118,12 +89,6 @@ export default function PipelinePage() {
               
               {/* Right Group - Actions */}
               <ToolbarGroup>
-                <ToolbarItem>
-                  <Button variant="outline" size="sm" onClick={fetchSummary} disabled={loading}>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    {loading ? 'Summarizing...' : 'AI Summary'}
-                  </Button>
-                </ToolbarItem>
 
                 <ToolbarItem>
                   <Button variant="outline" size="sm">
@@ -152,10 +117,10 @@ export default function PipelinePage() {
               <span className="text-sm text-muted-foreground mr-2">Quick filters:</span>
               {quickFilters.map((filter) => (
                 <Button
-                  key={filter.id}
+                  key={filter.label}
                   variant={filter.active ? "default" : "outline"}
                   size="sm"
-                  onClick={() => handleQuickFilter(filter.id)}
+                  onClick={() => toggleFilter(filter.label)}
                   className="text-xs h-7"
                 >
                   {filter.label}
@@ -168,19 +133,9 @@ export default function PipelinePage() {
 
         {/* Enhanced Pipeline Board */}
         <div className="px-6 pb-8">
-          {summary && (
-            <Card className="mb-4">
-              <CardHeader>
-                <CardTitle className="text-sm">AI Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm whitespace-pre-line">{summary}</p>
-              </CardContent>
-            </Card>
-          )}
           <EnhancedPipelineBoard
             searchQuery={searchQuery}
-            selectedFilters={selectedFilters}
+            selectedFilters={activeFilters}
           />
         </div>
       </AppShell>
