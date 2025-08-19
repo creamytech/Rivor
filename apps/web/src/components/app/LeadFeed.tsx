@@ -205,13 +205,8 @@ export default function LeadFeed({ leads = [], reviewItems = [], className, crmS
   };
 
   return (
-<<<<<<< HEAD
     <GlassCard variant="river-flow" intensity="medium" flowDirection="down" className={cn('h-full', className)}>
-      <GlassCardHeader className="pb-3">
-=======
-    <GlassCard variant="river-flow" intensity="medium" flowDirection="down" className="h-full">
       <GlassCardHeader className="pb-3 flex items-center justify-between">
->>>>>>> origin/codex/implement-crm-connectors-with-oauth
         <GlassCardTitle className="text-lg">Lead Feed</GlassCardTitle>
         <Badge variant={syncStatus === 'syncing' ? 'secondary' : 'outline'} className="text-xs">
           {syncStatus === 'syncing' ? 'Syncing…' : syncStatus === 'error' ? 'Sync Error' : 'Synced'}

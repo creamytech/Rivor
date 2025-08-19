@@ -112,8 +112,7 @@ export default function InboxPage() {
               </div>
             </div>
 
-<<<<<<< HEAD
-                      {/* Saved Filters Dropdown */}
+            {/* Saved Filters Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="flex items-center gap-2">

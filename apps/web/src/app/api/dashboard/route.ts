@@ -70,6 +70,8 @@ export async function GET(_req: NextRequest) {
           orderBy: { updatedAt: 'desc' },
           take: 20
         });
+        
+        console.log('Recent thread sample:', threads.length > 0 ? {
           id: threads[0].id,
           subjectEnc: !!threads[0].subjectEnc,
           participantsEnc: !!threads[0].participantsEnc,
@@ -197,6 +199,8 @@ export async function GET(_req: NextRequest) {
             take: 10
           });
         }
+        
+        console.log('Recent event sample:', events.length > 0 ? {
           id: events[0].id,
           titleEnc: !!events[0].titleEnc,
           locationEnc: !!events[0].locationEnc,
