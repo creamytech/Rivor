@@ -220,6 +220,36 @@ const LAYOUT_PRESETS = {
       ]
     }
   },
+  mobile: {
+    name: 'Mobile First',
+    description: 'Optimized ordering for phones',
+    layouts: {
+      lg: [
+        { i: 'todayAtGlance', x: 0, y: 0, w: 12, h: 2 },
+        { i: 'syncProgress', x: 0, y: 2, w: 4, h: 2 },
+        { i: 'leadFeed', x: 4, y: 2, w: 8, h: 6 },
+        { i: 'activityFeed', x: 0, y: 4, w: 4, h: 4 },
+        { i: 'healthWidget', x: 8, y: 2, w: 4, h: 2 },
+        { i: 'pipelineSparkline', x: 0, y: 8, w: 6, h: 2 }
+      ],
+      md: [
+        { i: 'todayAtGlance', x: 0, y: 0, w: 8, h: 2 },
+        { i: 'syncProgress', x: 0, y: 2, w: 4, h: 2 },
+        { i: 'leadFeed', x: 0, y: 4, w: 8, h: 6 },
+        { i: 'activityFeed', x: 0, y: 10, w: 8, h: 4 },
+        { i: 'healthWidget', x: 4, y: 2, w: 4, h: 2 },
+        { i: 'pipelineSparkline', x: 0, y: 14, w: 8, h: 2 }
+      ],
+      sm: [
+        { i: 'todayAtGlance', x: 0, y: 0, w: 4, h: 2 },
+        { i: 'pipelineSparkline', x: 0, y: 2, w: 4, h: 2 },
+        { i: 'leadFeed', x: 0, y: 4, w: 4, h: 6 },
+        { i: 'activityFeed', x: 0, y: 10, w: 4, h: 4 },
+        { i: 'syncProgress', x: 0, y: 14, w: 4, h: 2 },
+        { i: 'healthWidget', x: 0, y: 16, w: 4, h: 2 }
+      ]
+    }
+  },
   agent: {
     name: 'Agent',
     description: 'Focused on lead management and activity',
@@ -573,24 +603,26 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
 
       {/* Main Dashboard Grid with Drag & Drop */}
       <div className="p-4 h-full">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={visibleCards}
-            strategy={verticalListSortingStrategy}
+        <div className="max-w-7xl mx-auto px-6">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 h-full">
-              {visibleCards.map(cardId => (
-                <SortableCard key={cardId} id={cardId} isEditMode={isEditMode}>
-                  {renderCard(cardId)}
-                </SortableCard>
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
+            <SortableContext
+              items={visibleCards}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 h-full">
+                {visibleCards.map(cardId => (
+                  <SortableCard key={cardId} id={cardId} isEditMode={isEditMode}>
+                    {renderCard(cardId)}
+                  </SortableCard>
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        </div>
       </div>
 
              {/* Edit Mode Toggle Button */}
