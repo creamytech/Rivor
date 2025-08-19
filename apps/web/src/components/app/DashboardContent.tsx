@@ -38,6 +38,36 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
     refetchOnWindowFocus: false
   });
 
+  interface SyncStatus {
+    accountsTotal: number;
+    accountsConnected: number;
+    accountsBackfilling: number;
+    accountsError: number;
+    threadsTotal: number;
+    lastSyncAt?: string;
+    syncInProgress: boolean;
+  }
+
+  const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
+  const [syncLoading, setSyncLoading] = useState(true);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchSyncStatus = async () => {
+      try {
+        const res = await fetch('/api/sync/status');
+        if (!res.ok) throw new Error('Failed to fetch sync status');
+        const data = await res.json();
+        setSyncStatus(data);
+      } catch (err) {
+        setSyncError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setSyncLoading(false);
+      }
+    };
+    fetchSyncStatus();
+  }, []);
+
   // Handle Command+K
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -50,6 +80,31 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  const emailProgress = syncStatus
+    ? (syncStatus.accountsConnected / (syncStatus.accountsTotal || 1)) * 100
+    : 0;
+  const emailStatus: 'running' | 'completed' | 'error' | 'paused' = syncStatus
+    ? syncStatus.accountsError > 0
+      ? 'error'
+      : syncStatus.syncInProgress
+        ? 'running'
+        : 'completed'
+    : 'paused';
+  const emailErrorCount = syncStatus?.accountsError ?? 0;
+  const emailEta = syncStatus && syncStatus.syncInProgress
+    ? `${syncStatus.accountsBackfilling * 2} min`
+    : undefined;
+
+  const calendarTotal = integrationsData?.calendarAccounts?.length ?? 0;
+  const calendarConnected = integrationsData?.calendarAccounts?.filter(acc => acc.status === 'connected').length ?? 0;
+  const calendarProgress = calendarTotal > 0 ? (calendarConnected / calendarTotal) * 100 : 0;
+  const calendarErrorCount = calendarTotal - calendarConnected;
+  const calendarStatus: 'running' | 'completed' | 'error' | 'paused' = calendarErrorCount > 0 ? 'error' : 'completed';
+
+  const contactsProgress = 0;
+  const contactsStatus: 'running' | 'completed' | 'error' | 'paused' = 'paused';
+  const contactsErrorCount = 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
@@ -78,31 +133,37 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
 
       {/* Compact Sync Progress - Reduced prominence */}
       <div className="px-6 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <CompactSyncProgress 
-            syncType="email" 
-            progress={75} 
-            status="running" 
-            eta="15 min" 
-            totalItems={5000} 
-            processedItems={3750} 
-            errorCount={2} 
-          />
-          <CompactSyncProgress 
-            syncType="calendar" 
-            progress={100} 
-            status="completed" 
-            totalItems={200} 
-            processedItems={200} 
-          />
-          <CompactSyncProgress 
-            syncType="contacts" 
-            progress={45} 
-            status="paused" 
-            totalItems={1000} 
-            processedItems={450} 
-          />
-        </div>
+        {syncLoading || integrationsLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-32 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+            ))}
+          </div>
+        ) : syncError ? (
+          <div className="text-sm text-red-600">Failed to load sync status</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <CompactSyncProgress
+              syncType="email"
+              progress={emailProgress}
+              status={emailStatus}
+              eta={emailEta}
+              errorCount={emailErrorCount}
+            />
+            <CompactSyncProgress
+              syncType="calendar"
+              progress={calendarProgress}
+              status={calendarStatus}
+              errorCount={calendarErrorCount}
+            />
+            <CompactSyncProgress
+              syncType="contacts"
+              progress={contactsProgress}
+              status={contactsStatus}
+              errorCount={contactsErrorCount}
+            />
+          </div>
+        )}
       </div>
 
       {/* Curved Divider */}
