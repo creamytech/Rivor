@@ -13,23 +13,40 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
-  Mail, 
-  Filter, 
-  Bookmark, 
-  Search, 
+import {
+  Mail,
+  Filter,
+  Bookmark,
+  Search,
   MoreHorizontal,
   Star,
   Clock,
   AlertTriangle,
   CheckCircle,
-  X
+  X,
+  Sparkles
 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function InboxPage() {
   const [activeTab, setActiveTab] = useState("leads");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const fetchSummary = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/ai/summary?context=inbox');
+      const data = await res.json();
+      setSummary(data.summary);
+    } catch (err) {
+      setSummary('Failed to generate summary');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const tabOptions = [
     { value: "leads", label: "Leads", count: 24, icon: <Star className="h-3 w-3" /> },
@@ -87,30 +104,35 @@ export default function InboxPage() {
               </div>
             </div>
 
-            {/* Saved Filters Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <Filter className="h-4 w-4" />
-                  Saved Filters
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Saved Filters</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {savedFilters.map((filter) => (
-                  <DropdownMenuItem 
-                    key={filter.id}
-                    onClick={() => setSelectedFilter(filter.id)}
-                    className="flex items-center gap-2"
-                  >
-                    {filter.icon}
-                    {filter.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          {/* Saved Filters Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                Saved Filters
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Saved Filters</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {savedFilters.map((filter) => (
+                <DropdownMenuItem
+                  key={filter.id}
+                  onClick={() => setSelectedFilter(filter.id)}
+                  className="flex items-center gap-2"
+                >
+                  {filter.icon}
+                  {filter.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button variant="outline" size="sm" onClick={fetchSummary} disabled={loading}>
+            <Sparkles className="h-4 w-4 mr-2" />
+            {loading ? 'Summarizing...' : 'AI Summary'}
+          </Button>
+        </div>
 
           {/* Quick Filters */}
           <div className="flex items-center gap-2 mt-3">
@@ -132,8 +154,18 @@ export default function InboxPage() {
 
         {/* Enhanced Inbox Component */}
         <div className="px-6 pb-8">
-          <EnhancedInbox 
-            activeTab={activeTab} 
+          {summary && (
+            <Card className="mb-4">
+              <CardHeader>
+                <CardTitle className="text-sm">AI Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm whitespace-pre-line">{summary}</p>
+              </CardContent>
+            </Card>
+          )}
+          <EnhancedInbox
+            activeTab={activeTab}
             searchQuery={searchQuery}
             selectedFilter={selectedFilter}
           />

@@ -3,25 +3,42 @@ import AppShell from "@/components/app/AppShell";
 import EnhancedPipelineBoard from "@/components/pipeline/EnhancedPipelineBoard";
 import Toolbar, { ToolbarGroup, ToolbarItem } from "@/components/app/Toolbar";
 import { Button } from "@/components/ui/button";
-import { 
-  Briefcase, 
-  Search, 
-  Filter, 
-  Group, 
-  Plus, 
+import {
+  Briefcase,
+  Search,
+  Filter,
+  Group,
+  Plus,
   Download,
   Upload,
   Settings,
   BarChart3,
   Calendar,
   DollarSign,
-  User
+  User,
+  Sparkles
 } from "lucide-react";
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function PipelinePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [groupBy, setGroupBy] = useState("stage");
+  const [summary, setSummary] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const fetchSummary = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/ai/summary?context=pipeline');
+      const data = await res.json();
+      setSummary(data.summary);
+    } catch (err) {
+      setSummary('Failed to generate summary');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const quickFilters = [
     { label: "High Value", count: 12, active: false },
@@ -77,19 +94,26 @@ export default function PipelinePage() {
               {/* Right Group - Actions */}
               <ToolbarGroup>
                 <ToolbarItem>
+                  <Button variant="outline" size="sm" onClick={fetchSummary} disabled={loading}>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    {loading ? 'Summarizing...' : 'AI Summary'}
+                  </Button>
+                </ToolbarItem>
+
+                <ToolbarItem>
                   <Button variant="outline" size="sm">
                     <Download className="h-4 w-4 mr-2" />
                     Export
                   </Button>
                 </ToolbarItem>
-                
+
                 <ToolbarItem>
                   <Button variant="outline" size="sm">
                     <Upload className="h-4 w-4 mr-2" />
                     Import
                   </Button>
                 </ToolbarItem>
-                
+
                 <ToolbarItem>
                   <Button variant="outline" size="sm">
                     <Settings className="h-4 w-4" />
@@ -119,10 +143,17 @@ export default function PipelinePage() {
 
         {/* Enhanced Pipeline Board */}
         <div className="px-6 pb-8">
-          <EnhancedPipelineBoard 
-            searchQuery={searchQuery}
-            groupBy={groupBy}
-          />
+          {summary && (
+            <Card className="mb-4">
+              <CardHeader>
+                <CardTitle className="text-sm">AI Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm whitespace-pre-line">{summary}</p>
+              </CardContent>
+            </Card>
+          )}
+          <EnhancedPipelineBoard searchQuery={searchQuery} groupBy={groupBy} />
         </div>
       </AppShell>
     </div>
