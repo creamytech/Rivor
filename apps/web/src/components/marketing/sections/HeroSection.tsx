@@ -49,26 +49,24 @@ export function HeroSection() {
       className="relative container pt-24 pb-16 md:pt-32 md:pb-24"
       onMouseMove={handleParallax}
     >
-      {/* Hero Layout: Left (headline w/ gradient-highlight word "Flow", subhead, primary/secondary CTAs). Right (animated hero visual) */}
+      {/* Hero Layout: Left (headline with gradient-highlighted phrase, subhead, primary/secondary CTAs). Right (animated hero visual) */}
       <div className="grid gap-12 lg:gap-16 lg:grid-cols-2 items-center">
         
         {/* Left: Content */}
         <div className="space-y-8">
           <div className="space-y-6">
-            {/* Headline with gradient-highlighted "Flow" and flowing underline */}
+            {/* Headline with gradient-highlighted "AI-powered inbox" and flowing underline */}
             <h1 className="animate-on-scroll text-display-lg md:text-display-xl lg:text-display-2xl leading-tight">
-              Your AI Deal Assistant —{" "}
+              Close deals 2× faster with an{" "}
               <span className="gradient-text relative">
-                Flow
+                AI-powered inbox
                 <div className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-rivor-aqua via-rivor-teal to-rivor-indigo rounded-full animate-flow-underline"></div>
-              </span>{" "}
-              from Inbox to Closed in Half the Time
+              </span>
             </h1>
-            
+
             {/* Subhead */}
             <p className="animate-on-scroll text-body-lg text-muted-foreground max-w-lg">
-              Rivor unifies your inbox, calendar, and pipeline with AI-powered insights. 
-              Turn email chaos into closed deals with effortless automation.
+              Rivor merges email, calendar, and pipeline into one smart workspace.
             </p>
           </div>
 
