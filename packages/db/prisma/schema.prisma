@@ -21,6 +21,7 @@ model User {
   oauthAccounts OAuthAccount[]
   orgMembers    OrgMember[]
   sessions      Session[]
+  chatThreads   ChatThread[]
 }
 
 model Account {
@@ -90,6 +91,7 @@ model Org {
   subscriptions        Subscription[]
   tasks                Task[]
   webhookSubscriptions WebhookSubscription[]
+  chatThreads         ChatThread[]
 }
 
 model OrgMember {
@@ -399,6 +401,35 @@ model PushNotificationLog {
 
   @@index([emailAccountId, processedAt(sort: Desc)])
   @@index([orgId, processedAt(sort: Desc)])
+}
+
+model ChatThread {
+  id          String        @id @default(cuid())
+  orgId       String
+  userId      String
+  contextType String?
+  contextId   String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  messages    ChatMessage[]
+  org         Org           @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([userId])
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  threadId  String
+  role      String
+  content   String
+  reasoning String?
+  createdAt DateTime    @default(now())
+  thread    ChatThread  @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId])
+  @@index([createdAt])
 }
 
 enum ConnectionStatus {
