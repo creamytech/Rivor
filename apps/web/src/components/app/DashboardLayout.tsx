@@ -47,6 +47,7 @@ import LeadFeed from './LeadFeed';
 import ActivityFeed from './ActivityFeed';
 import HealthWidget from './HealthWidget';
 import MiniPipelineSparkline from './MiniPipelineSparkline';
+import PropertySearchWidget from './PropertySearchWidget';
 
 // Import drawer components
 import CardManagementDrawer from './CardManagementDrawer';
@@ -186,6 +187,20 @@ const DASHBOARD_CARDS = {
     pinned: false,
     description: 'Pipeline performance and trends',
     category: 'analytics'
+  },
+  propertySearch: {
+    id: 'propertySearch',
+    title: 'Property Search',
+    component: PropertySearchWidget,
+    minW: 4,
+    minH: 4,
+    maxW: 12,
+    maxH: 8,
+    defaultW: 6,
+    defaultH: 6,
+    pinned: false,
+    description: 'Search MLS listings',
+    category: 'leads'
   }
 };
 
@@ -201,7 +216,8 @@ const LAYOUT_PRESETS = {
         { i: 'leadFeed', x: 4, y: 2, w: 8, h: 6 },
         { i: 'activityFeed', x: 0, y: 4, w: 4, h: 4 },
         { i: 'healthWidget', x: 8, y: 2, w: 4, h: 2 },
-        { i: 'pipelineSparkline', x: 0, y: 8, w: 6, h: 2 }
+        { i: 'pipelineSparkline', x: 0, y: 8, w: 6, h: 2 },
+        { i: 'propertySearch', x: 6, y: 8, w: 6, h: 6 }
       ],
       md: [
         { i: 'todayAtGlance', x: 0, y: 0, w: 8, h: 2 },
@@ -209,7 +225,8 @@ const LAYOUT_PRESETS = {
         { i: 'leadFeed', x: 0, y: 4, w: 8, h: 6 },
         { i: 'activityFeed', x: 0, y: 10, w: 8, h: 4 },
         { i: 'healthWidget', x: 4, y: 2, w: 4, h: 2 },
-        { i: 'pipelineSparkline', x: 0, y: 14, w: 8, h: 2 }
+        { i: 'pipelineSparkline', x: 0, y: 14, w: 8, h: 2 },
+        { i: 'propertySearch', x: 0, y: 16, w: 8, h: 6 }
       ],
       sm: [
         { i: 'todayAtGlance', x: 0, y: 0, w: 4, h: 2 },
@@ -217,7 +234,8 @@ const LAYOUT_PRESETS = {
         { i: 'leadFeed', x: 0, y: 4, w: 4, h: 6 },
         { i: 'activityFeed', x: 0, y: 10, w: 4, h: 4 },
         { i: 'healthWidget', x: 0, y: 14, w: 4, h: 2 },
-        { i: 'pipelineSparkline', x: 0, y: 16, w: 4, h: 2 }
+        { i: 'pipelineSparkline', x: 0, y: 16, w: 4, h: 2 },
+        { i: 'propertySearch', x: 0, y: 18, w: 4, h: 6 }
       ]
     }
   },
