@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
+import { encryptForOrg, decryptForOrg } from '@/server/crypto';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * Create new lead
  */
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
@@ -22,22 +23,19 @@ export async function POST(_req: NextRequest) {
     const body = await req.json();
     const {
       title,
-      company,
-      contact,
-      email,
+      contactId,
+      stage,
       value,
       probability,
-      stage,
       priority,
       source,
       description,
-      tags,
       threadId
     } = body;
 
-    if (!title || !company || !contact) {
+    if (!title) {
       return NextResponse.json(
-        { error: 'Title, company, and contact are required' },
+        { error: 'Title is required' },
         { status: 400 }
       );
     }
@@ -54,22 +52,28 @@ export async function POST(_req: NextRequest) {
       );
     }
 
+    const dealValueEnc =
+      value !== undefined && value !== null
+        ? await encryptForOrg(orgId, value.toString(), 'lead:dealValue')
+        : null;
+    const notesEnc =
+      description
+        ? await encryptForOrg(orgId, description, 'lead:notes')
+        : null;
+
     // Create lead
     const lead = await prisma.lead.create({
       data: {
         orgId,
         title,
-        company,
-        contact,
-        email: email || null,
-        value: value || 0,
-        probability: probability || 50,
+        contactId: contactId || null,
         stageId: stage,
+        dealValueEnc,
+        probabilityPercent: probability || null,
+        notesEnc,
         priority: priority || 'medium',
         source: source || 'manual',
-        description: description || null,
-        tags: tags || [],
-        threadId: threadId || null,
+        sourceThreadId: threadId || null,
         status: 'active'
       }
     });
@@ -86,22 +90,39 @@ export async function POST(_req: NextRequest) {
     });
 
     // Transform to UI format
+    let decryptedValue: number | null = null;
+    if (lead.dealValueEnc) {
+      try {
+        const dec = await decryptForOrg(orgId, lead.dealValueEnc, 'lead:dealValue');
+        const valueStr = new TextDecoder().decode(dec);
+        decryptedValue = parseFloat(valueStr);
+      } catch {
+        decryptedValue = null;
+      }
+    }
+
+    let decryptedNotes: string | null = null;
+    if (lead.notesEnc) {
+      try {
+        const dec = await decryptForOrg(orgId, lead.notesEnc, 'lead:notes');
+        decryptedNotes = new TextDecoder().decode(dec);
+      } catch {
+        decryptedNotes = null;
+      }
+    }
+
     const leadFormatted = {
       id: lead.id,
       title: lead.title,
-      company: lead.company,
-      contact: lead.contact,
-      email: lead.email,
-      value: lead.value,
-      probability: lead.probability,
+      value: decryptedValue,
+      probability: lead.probabilityPercent,
       stage: lead.stageId,
       priority: lead.priority as 'low' | 'medium' | 'high',
       source: lead.source,
-      description: lead.description,
+      description: decryptedNotes,
       createdAt: lead.createdAt.toISOString(),
       updatedAt: lead.updatedAt.toISOString(),
-      tags: lead.tags || [],
-      threadId: lead.threadId,
+      threadId: lead.sourceThreadId,
       activities: []
     };
 
