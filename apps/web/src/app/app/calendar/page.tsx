@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { AppShell } from '@/components/app/AppShell';
-import EnhancedCalendar from '@/components/calendar/EnhancedCalendar';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import AppShell from "@/components/app/AppShell";
+import EnhancedCalendar from "@/components/calendar/EnhancedCalendar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { 
   Calendar, 
   Search, 
