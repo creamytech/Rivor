@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import Redis from 'ioredis';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
 
     // Test Redis connection
     const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
-    console.log('Testing Redis connection to:', redisUrl);
+    logger.info('Testing Redis connection', { redisUrl });
 
     const redis = new Redis(redisUrl, {
       connectTimeout: 5000,

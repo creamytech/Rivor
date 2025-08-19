@@ -70,7 +70,7 @@ class Logger {
 
   private log(level: LogLevel, message: string, context: LogContext = {}) {
     const entry = this.createLogEntry(level, message, this.redactSensitiveData(context));
-    
+
     // In development, use console with nice formatting
     if (this.environment === 'development') {
       const contextStr = Object.keys(context).length > 0 ? JSON.stringify(context, null, 2) : '';
@@ -78,6 +78,22 @@ class Logger {
     } else {
       // In production, log structured JSON for log aggregation
       console.log(JSON.stringify(entry));
+    }
+
+    void this.forwardToLogStore(entry);
+  }
+
+  private async forwardToLogStore(entry: LogEntry) {
+    const endpoint = process.env.AUDIT_LOG_URL;
+    if (!endpoint || typeof window !== 'undefined') return;
+    try {
+      await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry)
+      });
+    } catch (error) {
+      console.error('Failed to forward log entry', error);
     }
   }
 

@@ -36,7 +36,10 @@ export async function POST(req: NextRequest) {
     const syncJobs = [];
     for (const account of emailAccounts) {
       try {
-        console.log(`Triggering sync for account: ${account.id} (${account.email})`);
+        logger.info('Triggering sync for account', {
+          accountId: account.id,
+          emailAddress: account.email
+        });
         await enqueueEmailBackfill(orgId, account.id, 30); // Sync last 30 days
         syncJobs.push({
           accountId: account.id,

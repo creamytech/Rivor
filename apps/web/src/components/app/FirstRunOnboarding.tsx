@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Mail, Calendar, ArrowRight, CheckCircle } from "lucide-react";
 import { signIn, signOut } from "next-auth/react";
 import { useState } from "react";
+import { logger } from "@/lib/logger";
 
 interface FirstRunOnboardingProps {
   hasEmailIntegration: boolean;
@@ -21,7 +22,7 @@ export default function FirstRunOnboarding({
     try {
       // Force re-authentication to ensure we get the full scopes
       // by temporarily signing out and then signing back in
-      console.log(`Forcing re-authentication for ${provider} to upgrade scopes`);
+      logger.info('Forcing re-authentication to upgrade scopes', { provider });
       
       // Store the current provider in localStorage to handle the re-auth flow
       localStorage.setItem('pendingOAuthUpgrade', provider);

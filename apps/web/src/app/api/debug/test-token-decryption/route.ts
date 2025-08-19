@@ -26,13 +26,15 @@ export async function GET(req: NextRequest) {
     // Try to get orgId from database if not in session
     let orgId = session.user.orgId;
     if (!orgId) {
-      console.log('No orgId in session, looking up from database for:', session.user.email);
+      logger.info('No orgId in session, looking up from database', {
+        userId: session.user.email
+      });
       const org = await prisma.org.findFirst({ 
         where: { name: session.user.email } 
       });
       if (org) {
         orgId = org.id;
-        console.log('Found orgId from database:', orgId);
+        logger.info('Found orgId from database', { orgId });
       } else {
         return NextResponse.json({
           success: false,

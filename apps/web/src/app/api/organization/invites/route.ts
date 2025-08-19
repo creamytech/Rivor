@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -100,7 +101,11 @@ export async function POST(request: NextRequest) {
     // 3. Generate a unique invite link
 
     // For now, we'll just return success
-    console.log('Invitation would be sent to:', email, 'for role:', role, 'in org:', org.org.id);
+    logger.info('Invitation placeholder', {
+      emailAddress: email,
+      role,
+      orgId: org.org.id
+    });
 
     return Response.json({ 
       success: true, 

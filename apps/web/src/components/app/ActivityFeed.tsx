@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
-import {
-  Activity,
-  Mail,
-  Calendar,
-  UserPlus,
+import { logger } from '@/lib/logger';
+import { 
+  Activity, 
+  Mail, 
+  Calendar, 
+  UserPlus, 
   MessageSquare,
   ArrowRight,
   Clock,

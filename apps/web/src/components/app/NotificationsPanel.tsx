@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { logger } from '@/lib/logger';
 import { 
   Bell, 
   X, 
@@ -56,7 +57,7 @@ export default function NotificationsPanel({ isOpen, onClose }: NotificationsPan
         priority: 'high',
         action: {
           label: 'View Lead',
-          onClick: () => console.log('View lead')
+          onClick: () => logger.info('Notification action', { action: 'view-lead' })
         }
       },
       {
@@ -69,7 +70,7 @@ export default function NotificationsPanel({ isOpen, onClose }: NotificationsPan
         priority: 'medium',
         action: {
           label: 'View Settings',
-          onClick: () => console.log('View settings')
+          onClick: () => logger.info('Notification action', { action: 'view-settings' })
         }
       },
       {
@@ -82,7 +83,7 @@ export default function NotificationsPanel({ isOpen, onClose }: NotificationsPan
         priority: 'medium',
         action: {
           label: 'View Calendar',
-          onClick: () => console.log('View calendar')
+          onClick: () => logger.info('Notification action', { action: 'view-calendar' })
         }
       },
       {
@@ -113,7 +114,7 @@ export default function NotificationsPanel({ isOpen, onClose }: NotificationsPan
         priority: 'medium',
         action: {
           label: 'Fix Now',
-          onClick: () => console.log('Fix integration')
+          onClick: () => logger.info('Notification action', { action: 'fix-integration' })
         }
       }
     ];

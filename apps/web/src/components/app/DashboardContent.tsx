@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import Skeleton from '@/components/ui/Skeleton';
 import DashboardCard from './DashboardCard';
 import { Search, Plus, Calendar, Mail, MessageSquare } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface DashboardContentProps {
   className?: string;
@@ -147,8 +148,8 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
               <DashboardCard>
                 <HealthWidget
                   integrations={integrationsData?.emailAccounts || []}
-                  onFix={(id) => console.log('Fix integration:', id)}
-                  onReauth={(id) => console.log('Reauth integration:', id)}
+                  onFix={(id) => logger.info('Dashboard integration action', { action: 'fix', id })}
+                  onReauth={(id) => logger.info('Dashboard integration action', { action: 'reauth', id })}
                 />
               </DashboardCard>
             )}

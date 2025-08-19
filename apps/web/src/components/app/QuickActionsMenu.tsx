@@ -5,12 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  Search, 
-  Plus, 
-  Mail, 
-  Calendar, 
-  UserPlus, 
+import {
+  Search,
+  Plus,
+  Mail,
+  Calendar,
+  UserPlus,
   MessageSquare,
   Settings,
   Zap,
@@ -21,6 +21,7 @@ import {
   Star,
   ArrowRight
 } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface QuickAction {
   id: string;
@@ -77,7 +78,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <Clock className="h-4 w-4" />,
       shortcut: '⌘T',
       category: 'create',
-      action: () => console.log('Create task')
+      action: () => logger.info('Quick menu action', { action: 'create-task' })
     },
 
     // Navigate Actions
@@ -153,7 +154,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <MessageSquare className="h-4 w-4" />,
       shortcut: '⌘H',
       category: 'tools',
-      action: () => console.log('Open chat assistant')
+      action: () => logger.info('Quick menu action', { action: 'open-chat-assistant' })
     }
   ];
 
