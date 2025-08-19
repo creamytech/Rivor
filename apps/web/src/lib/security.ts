@@ -84,7 +84,7 @@ export function hasPermission(
       case 'write':
         return ['lead', 'contact', 'task', 'note'].includes(resource);
       case 'delete':
-        return ['task', 'note'].includes(resource); // Can only delete their own tasks/notes
+        return ['task', 'note'].includes(resource); // Can delete tasks and notes
       case 'admin':
         return false;
       default:
