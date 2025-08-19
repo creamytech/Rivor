@@ -49,14 +49,13 @@ export default function SignInPage() {
   };
 
   const getHeaderMessage = () => {
-    if (expired) return "Your session expired. Sign in again to continue.";
-    if (reauth) return "Please reconnect your account to continue.";
-    return "Sign in to Rivor";
+    if (expired) return "Welcome back! Your session expired—sign in to continue.";
+    if (reauth) return "Welcome back! Let's reconnect your account to keep going.";
+    return "Welcome back! Let's get you into Rivor.";
   };
 
   const getSubMessage = () => {
-    if (expired || reauth) return "Secure authentication via Google or Microsoft";
-    return "Secure SSO via Google or Microsoft";
+    return "Secure SSO via Google or Microsoft—no password stored.";
   };
 
   return (
