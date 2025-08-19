@@ -11,6 +11,7 @@ import {
   useSensors,
   DragEndEvent,
 } from '@dnd-kit/core';
+import type { KeyboardCoordinateGetter } from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
@@ -79,8 +80,10 @@ function SortableCard({ id, children, isEditMode }: SortableCardProps) {
     <div
       ref={setNodeRef}
       style={style}
+      role="listitem"
+      tabIndex={0}
       className={cn(
-        "relative w-full h-full min-h-[200px] p-2 transition-all duration-200",
+        "relative w-full h-full min-h-[200px] p-2 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500",
         isDragging && "opacity-50 scale-95"
       )}
     >
@@ -88,7 +91,7 @@ function SortableCard({ id, children, isEditMode }: SortableCardProps) {
         <div
           {...attributes}
           {...listeners}
-          className="absolute top-2 left-2 z-10 cursor-grab active:cursor-grabbing p-1 rounded bg-white/10 hover:bg-white/20 transition-colors"
+          className="absolute top-2 left-2 z-10 cursor-grab active:cursor-grabbing p-1 rounded bg-white/10 hover:bg-white/20 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
         >
           <GripVertical className="h-4 w-4 text-slate-400" />
         </div>
@@ -335,12 +338,21 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
   const [showCardDrawer, setShowCardDrawer] = useState(false);
   const [showPresetDrawer, setShowPresetDrawer] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  
+  const [announcement, setAnnouncement] = useState('');
+
+  const customKeyboardCoordinates: KeyboardCoordinateGetter = (event, context) => {
+    if (!isEditMode) return undefined;
+    if (event.altKey || event.ctrlKey || event.metaKey) {
+      return sortableKeyboardCoordinates(event, context);
+    }
+    return undefined;
+  };
+
   // DnD sensors
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
+      coordinateGetter: customKeyboardCoordinates,
     })
   );
 
@@ -358,6 +370,14 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
       setActivePreset(loadLayoutMutation.data.activePreset);
     }
   }, [loadLayoutMutation.data]);
+
+  useEffect(() => {
+    setAnnouncement(
+      isEditMode
+        ? 'Edit mode enabled. Use Alt plus arrow keys to move cards.'
+        : 'Edit mode disabled.'
+    );
+  }, [isEditMode]);
 
   // Temporarily disable card scaling to fix initialization error
   // TODO: Re-enable once the '$' initialization error is resolved
@@ -519,6 +539,9 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
 
   return (
     <div className={cn("relative", className)}>
+      <div aria-live="polite" className="sr-only">
+        {announcement}
+      </div>
       {/* Edit Mode Toolbar */}
       <AnimatePresence>
         {isEditMode && (
@@ -595,7 +618,11 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
             items={visibleCards}
             strategy={verticalListSortingStrategy}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 h-full">
+            <div
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 h-full"
+              role="list"
+              aria-label="Dashboard cards"
+            >
               {visibleCards.map(cardId => (
                 <SortableCard key={cardId} id={cardId} isEditMode={isEditMode}>
                   {renderCard(cardId)}
