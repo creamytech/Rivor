@@ -288,6 +288,9 @@ model Lead {
   source             String?
   assignedToId       String?
   sourceThreadId     String?
+  propertyAddress    String?
+  listingId          String?
+  propertyValue      Float?
   expectedCloseDate  DateTime?
   actualCloseDate    DateTime?
   createdAt          DateTime       @default(now())

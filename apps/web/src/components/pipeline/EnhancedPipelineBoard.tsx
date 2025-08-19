@@ -52,6 +52,9 @@ interface Lead {
   email?: string;
   phone?: string;
   value?: number;
+  propertyAddress?: string;
+  listingId?: string;
+  propertyValue?: number;
   stage: string;
   owner?: string;
   source?: string;
@@ -90,7 +93,7 @@ export default function EnhancedPipelineBoard({
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [currentView, setCurrentView] = useState<'board' | 'table' | 'analytics'>(viewMode);
-  const [sortBy, setSortBy] = useState<'value' | 'date' | 'name'>('value');
+  const [sortBy, setSortBy] = useState<'value' | 'propertyValue' | 'date' | 'name' | 'propertyAddress' | 'listingId'>('value');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
@@ -103,11 +106,23 @@ export default function EnhancedPipelineBoard({
         const response = await fetch(`/api/pipeline/leads?${params.toString()}`);
         if (response.ok) {
           const data = await response.json();
-          setLeads(data.leads || []);
-          
+          const fetchedLeads: Lead[] = data.leads || [];
+          const filteredLeads = searchQuery
+            ? fetchedLeads.filter((lead: Lead) => {
+                const q = searchQuery.toLowerCase();
+                return (
+                  lead.name.toLowerCase().includes(q) ||
+                  lead.company?.toLowerCase().includes(q) ||
+                  lead.propertyAddress?.toLowerCase().includes(q) ||
+                  lead.listingId?.toLowerCase().includes(q)
+                );
+              })
+            : fetchedLeads;
+          setLeads(filteredLeads);
+
           // Create stages from the leads data
           const stageMap = new Map<string, { count: number; value: number }>();
-          (data.leads || []).forEach((lead: Lead) => {
+          filteredLeads.forEach((lead: Lead) => {
             const stage = lead.stage || 'Unknown';
             const current = stageMap.get(stage) || { count: 0, value: 0 };
             stageMap.set(stage, {
@@ -124,7 +139,6 @@ export default function EnhancedPipelineBoard({
             leadCount: stats.count,
             totalValue: stats.value
           }));
-
           setStages(pipelineStages);
         } else {
           setLeads([]);
@@ -231,6 +245,10 @@ export default function EnhancedPipelineBoard({
         aValue = a.value || 0;
         bValue = b.value || 0;
         break;
+      case 'propertyValue':
+        aValue = a.propertyValue || 0;
+        bValue = b.propertyValue || 0;
+        break;
       case 'date':
         aValue = new Date(a.createdAt).getTime();
         bValue = new Date(b.createdAt).getTime();
@@ -238,6 +256,14 @@ export default function EnhancedPipelineBoard({
       case 'name':
         aValue = a.name.toLowerCase();
         bValue = b.name.toLowerCase();
+        break;
+      case 'propertyAddress':
+        aValue = (a.propertyAddress || '').toLowerCase();
+        bValue = (b.propertyAddress || '').toLowerCase();
+        break;
+      case 'listingId':
+        aValue = (a.listingId || '').toLowerCase();
+        bValue = (b.listingId || '').toLowerCase();
         break;
       default:
         return 0;
@@ -327,9 +353,20 @@ export default function EnhancedPipelineBoard({
                               {lead.name}
                             </h4>
                             {lead.company && (
-                              <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+                              <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">
                                 {lead.company}
                               </p>
+                            )}
+                            {lead.propertyAddress && (
+                              <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                                {lead.propertyAddress}
+                              </p>
+                            )}
+                            {(lead.listingId || lead.propertyValue) && (
+                              <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+                                {lead.listingId && <span>Listing {lead.listingId}</span>}
+                                {lead.propertyValue && <span>{formatCurrency(lead.propertyValue)}</span>}
+                              </div>
                             )}
                           </div>
                           <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
@@ -387,8 +424,11 @@ export default function EnhancedPipelineBoard({
                     <tr className="border-b border-slate-200 dark:border-slate-700">
                       <th className="text-left p-4 font-medium">Lead</th>
                       <th className="text-left p-4 font-medium">Company</th>
+                      <th className="text-left p-4 font-medium">Property</th>
+                      <th className="text-left p-4 font-medium">Listing ID</th>
                       <th className="text-left p-4 font-medium">Stage</th>
                       <th className="text-left p-4 font-medium">Value</th>
+                      <th className="text-left p-4 font-medium">Property Value</th>
                       <th className="text-left p-4 font-medium">Owner</th>
                       <th className="text-left p-4 font-medium">Created</th>
                       <th className="text-left p-4 font-medium">Actions</th>
@@ -409,12 +449,21 @@ export default function EnhancedPipelineBoard({
                           {lead.company || '-'}
                         </td>
                         <td className="p-4">
+                          {lead.propertyAddress || '-'}
+                        </td>
+                        <td className="p-4">
+                          {lead.listingId || '-'}
+                        </td>
+                        <td className="p-4">
                           <Badge className={cn("text-xs", getStageTextColor(lead.stage))}>
                             {lead.stage}
                           </Badge>
                         </td>
                         <td className="p-4 font-medium">
                           {formatCurrency(lead.value)}
+                        </td>
+                        <td className="p-4 font-medium">
+                          {formatCurrency(lead.propertyValue)}
                         </td>
                         <td className="p-4">
                           {lead.owner || '-'}
@@ -592,6 +641,18 @@ export default function EnhancedPipelineBoard({
                   <div>
                     <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Phone</label>
                     <p className="text-slate-900 dark:text-slate-100">{selectedLead.phone || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Property Address</label>
+                    <p className="text-slate-900 dark:text-slate-100">{selectedLead.propertyAddress || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Listing ID</label>
+                    <p className="text-slate-900 dark:text-slate-100">{selectedLead.listingId || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Property Value</label>
+                    <p className="text-slate-900 dark:text-slate-100 font-semibold">{formatCurrency(selectedLead.propertyValue)}</p>
                   </div>
                 </div>
 

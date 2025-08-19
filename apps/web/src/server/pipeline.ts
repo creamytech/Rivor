@@ -5,6 +5,9 @@ export type UiLead = {
   id: string;
   title: string;
   dealValue?: number;
+  propertyAddress?: string;
+  listingId?: string;
+  propertyValue?: number;
   stage?: string;
   status: string;
   priority: string;
@@ -80,7 +83,7 @@ export async function getRecentLeads(orgId: string, limit = 10): Promise<UiLead[
     },
     orderBy: { createdAt: 'desc' },
     take: limit,
-    select: { 
+    select: {
       id: true,
       title: true,
       dealValueEnc: true,
@@ -93,8 +96,11 @@ export async function getRecentLeads(orgId: string, limit = 10): Promise<UiLead[
       },
       contact: {
         select: { nameEnc: true }
-      }
-    },
+      },
+      propertyAddress: true,
+      listingId: true,
+      propertyValue: true,
+    } as any,
   });
 
   const leads: UiLead[] = [];
@@ -125,6 +131,9 @@ export async function getRecentLeads(orgId: string, limit = 10): Promise<UiLead[
       id: lead.id,
       title: lead.title || 'Untitled Lead',
       dealValue,
+      propertyAddress: (lead as any).propertyAddress || undefined,
+      listingId: (lead as any).listingId || undefined,
+      propertyValue: (lead as any).propertyValue || undefined,
       stage: lead.stage?.name,
       status: lead.status,
       priority: lead.priority,
