@@ -1,20 +1,18 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  Bell, 
-  X, 
-  Mail, 
-  Calendar, 
-  UserPlus, 
-  MessageSquare,
+import {
+  Bell,
+  X,
+  Mail,
+  Calendar,
+  UserPlus,
   CheckCircle,
-  AlertCircle,
-  Clock,
   Settings,
   Zap,
   ArrowRight
@@ -28,6 +26,7 @@ interface Notification {
   timestamp: Date;
   isRead: boolean;
   priority: 'low' | 'medium' | 'high';
+  entityId?: string;
   action?: {
     label: string;
     onClick: () => void;
@@ -40,86 +39,53 @@ interface NotificationsPanelProps {
 }
 
 export default function NotificationsPanel({ isOpen, onClose }: NotificationsPanelProps) {
+  const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread' | 'high'>('all');
 
-  useEffect(() => {
-    // Simulate real-time notifications
-    const mockNotifications: Notification[] = [
-      {
-        id: '1',
-        type: 'lead',
-        title: 'New Lead Detected',
-        message: 'Sarah Johnson from TechCorp inquired about enterprise pricing. Lead automatically created.',
-        timestamp: new Date(Date.now() - 2 * 60 * 1000), // 2 minutes ago
-        isRead: false,
-        priority: 'high',
-        action: {
+  const createAction = useCallback((n: any) => {
+    switch (n.type) {
+      case 'lead':
+        return {
           label: 'View Lead',
-          onClick: () => console.log('View lead')
-        }
-      },
-      {
-        id: '2',
-        type: 'email',
-        title: 'Email Integration Connected',
-        message: 'Gmail integration successfully connected. Syncing emails and detecting leads.',
-        timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
-        isRead: false,
-        priority: 'medium',
-        action: {
+          onClick: () => router.push(`/app/pipeline/leads/${n.entityId || ''}`)
+        };
+      case 'email':
+      case 'integration':
+      case 'system':
+        return {
           label: 'View Settings',
-          onClick: () => console.log('View settings')
-        }
-      },
-      {
-        id: '3',
-        type: 'meeting',
-        title: 'Meeting Scheduled',
-        message: 'Product demo with Acme Corp scheduled for tomorrow at 2:00 PM.',
-        timestamp: new Date(Date.now() - 10 * 60 * 1000), // 10 minutes ago
-        isRead: true,
-        priority: 'medium',
-        action: {
+          onClick: () => router.push('/app/settings')
+        };
+      case 'meeting':
+        return {
           label: 'View Calendar',
-          onClick: () => console.log('View calendar')
-        }
-      },
-      {
-        id: '4',
-        type: 'system',
-        title: 'System Update',
-        message: 'New features available: AI-powered email drafting and advanced analytics.',
-        timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-        isRead: true,
-        priority: 'low'
-      },
-      {
-        id: '5',
-        type: 'task',
-        title: 'Task Completed',
-        message: 'Follow-up call with John Smith completed successfully.',
-        timestamp: new Date(Date.now() - 45 * 60 * 1000), // 45 minutes ago
-        isRead: true,
-        priority: 'low'
-      },
-      {
-        id: '6',
-        type: 'integration',
-        title: 'Calendar Sync Issue',
-        message: 'Calendar sync temporarily paused. Will resume automatically.',
-        timestamp: new Date(Date.now() - 60 * 60 * 1000), // 1 hour ago
-        isRead: false,
-        priority: 'medium',
-        action: {
-          label: 'Fix Now',
-          onClick: () => console.log('Fix integration')
-        }
-      }
-    ];
+          onClick: () => router.push('/app/calendar')
+        };
+      default:
+        return undefined;
+    }
+  }, [router]);
 
-    setNotifications(mockNotifications);
-  }, []);
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const res = await fetch('/api/notifications');
+        if (!res.ok) throw new Error('Failed to fetch notifications');
+        const data = await res.json();
+        const mapped = data.map((n: any) => ({
+          ...n,
+          timestamp: new Date(n.timestamp),
+          action: createAction(n)
+        }));
+        setNotifications(mapped);
+      } catch (error) {
+        console.error('Failed to fetch notifications:', error);
+      }
+    };
+
+    fetchNotifications();
+  }, [createAction]);
 
   const getNotificationIcon = (type: Notification['type']) => {
     switch (type) {
@@ -176,16 +142,27 @@ export default function NotificationsPanel({ isOpen, onClose }: NotificationsPan
   const unreadCount = notifications.filter(n => !n.isRead).length;
   const highPriorityCount = notifications.filter(n => n.priority === 'high' && !n.isRead).length;
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
+  const markAsRead = async (id: string) => {
+    setNotifications(prev =>
       prev.map(n => n.id === id ? { ...n, isRead: true } : n)
     );
+    try {
+      await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
+    } catch (error) {
+      console.error('Failed to persist read state:', error);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(n => ({ ...n, isRead: true }))
-    );
+  const markAllAsRead = async () => {
+    const unread = notifications.filter(n => !n.isRead);
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    try {
+      await Promise.all(
+        unread.map(n => fetch(`/api/notifications/${n.id}/read`, { method: 'POST' }))
+      );
+    } catch (error) {
+      console.error('Failed to mark all as read:', error);
+    }
   };
 
   return (
@@ -315,6 +292,7 @@ export default function NotificationsPanel({ isOpen, onClose }: NotificationsPan
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  markAsRead(notification.id);
                                   notification.action?.onClick();
                                 }}
                                 className="text-xs h-7 px-2"
