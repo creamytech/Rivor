@@ -10,15 +10,27 @@ import StickyActionStrip from './StickyActionStrip';
 import ActivityFeed from './ActivityFeed';
 import CommandPalette from '../common/CommandPalette';
 import { CurvedDivider } from '@/components/ui/curved-divider';
-import { Button } from '@/components/ui/button';
-import { Search, Plus, Calendar, Mail, MessageSquare } from 'lucide-react';
 
 interface DashboardContentProps {
   className?: string;
 }
 
+interface SyncStatus {
+  accountsTotal: number;
+  accountsConnected: number;
+  accountsBackfilling: number;
+  accountsError: number;
+  threadsTotal: number;
+  lastSyncAt?: string;
+  syncInProgress: boolean;
+}
+
 export default function DashboardContent({ className = '' }: DashboardContentProps) {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
+  const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
+  const [syncLoading, setSyncLoading] = useState(true);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   // Fetch real data from tRPC - Independent queries for faster loading
   const { data: dashboardData, isLoading: dashboardLoading } = trpc.dashboard.useQuery(undefined, {
@@ -38,6 +50,24 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
     refetchOnWindowFocus: false
   });
 
+  useEffect(() => {
+    const fetchSyncStatus = async () => {
+      try {
+        setSyncLoading(true);
+        const res = await fetch('/api/sync/status');
+        if (!res.ok) throw new Error('Failed to fetch sync status');
+        const data = await res.json();
+        setSyncStatus(data);
+      } catch (err) {
+        setSyncError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setSyncLoading(false);
+      }
+    };
+
+    fetchSyncStatus();
+  }, []);
+
   // Handle Command+K
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -50,6 +80,36 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  const emailProgress = syncStatus?.accountsTotal
+    ? (syncStatus.accountsConnected / syncStatus.accountsTotal) * 100
+    : 0;
+  const emailStatus: 'running' | 'completed' | 'error' = syncStatus?.syncInProgress
+    ? 'running'
+    : syncStatus && syncStatus.accountsError > 0
+      ? 'error'
+      : 'completed';
+
+  const emailEta = syncStatus?.syncInProgress ? 'Calculating…' : undefined;
+
+  const emailErrorCount = syncStatus?.accountsError ?? 0;
+
+  const emailTotal = syncStatus?.accountsTotal;
+  const emailProcessed = syncStatus?.accountsConnected;
+
+  const calendarAccounts = integrationsData?.calendarAccounts || [];
+  const calendarTotal = calendarAccounts.length;
+  const calendarConnected = calendarAccounts.filter(acc => acc.status === 'connected').length;
+  const calendarErrors = calendarAccounts.filter(acc => acc.status !== 'connected').length;
+  const calendarProgress = calendarTotal ? (calendarConnected / calendarTotal) * 100 : 0;
+  const calendarStatus: 'running' | 'completed' | 'error' = calendarErrors > 0 ? 'error' : 'completed';
+
+  const contactsAccounts = integrationsData?.emailAccounts || [];
+  const contactsTotal = contactsAccounts.length;
+  const contactsConnected = contactsAccounts.filter(acc => acc.status === 'connected').length;
+  const contactsErrors = contactsAccounts.filter(acc => acc.status !== 'connected').length;
+  const contactsProgress = contactsTotal ? (contactsConnected / contactsTotal) * 100 : 0;
+  const contactsStatus: 'running' | 'completed' | 'error' = contactsErrors > 0 ? 'error' : 'completed';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
@@ -78,31 +138,43 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
 
       {/* Compact Sync Progress - Reduced prominence */}
       <div className="px-6 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <CompactSyncProgress 
-            syncType="email" 
-            progress={75} 
-            status="running" 
-            eta="15 min" 
-            totalItems={5000} 
-            processedItems={3750} 
-            errorCount={2} 
-          />
-          <CompactSyncProgress 
-            syncType="calendar" 
-            progress={100} 
-            status="completed" 
-            totalItems={200} 
-            processedItems={200} 
-          />
-          <CompactSyncProgress 
-            syncType="contacts" 
-            progress={45} 
-            status="paused" 
-            totalItems={1000} 
-            processedItems={450} 
-          />
-        </div>
+        {syncLoading || integrationsLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-32 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+            ))}
+          </div>
+        ) : syncError ? (
+          <div className="text-sm text-red-500">{syncError}</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <CompactSyncProgress
+              syncType="email"
+              progress={emailProgress}
+              status={emailStatus}
+              eta={emailEta}
+              totalItems={emailTotal}
+              processedItems={emailProcessed}
+              errorCount={emailErrorCount}
+            />
+            <CompactSyncProgress
+              syncType="calendar"
+              progress={calendarProgress}
+              status={calendarStatus}
+              totalItems={calendarTotal}
+              processedItems={calendarConnected}
+              errorCount={calendarErrors}
+            />
+            <CompactSyncProgress
+              syncType="contacts"
+              progress={contactsProgress}
+              status={contactsStatus}
+              totalItems={contactsTotal}
+              processedItems={contactsConnected}
+              errorCount={contactsErrors}
+            />
+          </div>
+        )}
       </div>
 
       {/* Curved Divider */}
