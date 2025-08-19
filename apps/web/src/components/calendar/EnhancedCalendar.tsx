@@ -105,138 +105,6 @@ interface EnhancedCalendarProps {
   className?: string;
 }
 
-// Mock events data - moved outside component to prevent recreation
-const mockEvents: CalendarEvent[] = [
-  {
-    id: '1',
-    title: 'Product Demo - TechCorp',
-    description: 'Showcase enterprise features and answer technical questions',
-    start: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
-    end: new Date(Date.now() + 3 * 60 * 60 * 1000), // 3 hours from now
-    location: 'Google Meet',
-    type: 'demo',
-    status: 'confirmed',
-    attendees: [
-      {
-        id: 'attendee1',
-        name: 'Sarah Johnson',
-        email: 'sarah@techcorp.com',
-        avatar: '/api/avatar/sarah',
-        company: 'TechCorp Inc.',
-        title: 'VP of Engineering',
-        response: 'accepted'
-      },
-      {
-        id: 'attendee2',
-        name: 'David Wilson',
-        email: 'david@techcorp.com',
-        avatar: '/api/avatar/david',
-        company: 'TechCorp Inc.',
-        title: 'CTO',
-        response: 'accepted'
-      }
-    ],
-    organizer: {
-      id: 'organizer1',
-      name: 'John Doe',
-      email: 'john@company.com',
-      avatar: '/api/avatar/john'
-    },
-    relatedTo: {
-      type: 'lead',
-      id: 'lead1',
-      title: 'TechCorp Enterprise Deal'
-    },
-    notes: 'Focus on scalability and integration capabilities',
-    videoUrl: 'https://meet.google.com/abc-defg-hij',
-    tags: ['demo', 'enterprise', 'tech'],
-    priority: 'high',
-    isRecurring: false,
-    reminders: [
-      { type: 'popup', minutes: 15 },
-      { type: 'email', minutes: 60 }
-    ]
-  },
-  {
-    id: '2',
-    title: 'Follow-up Call - StartupXYZ',
-    description: 'Discuss proposal feedback and next steps',
-    start: new Date(Date.now() + 5 * 60 * 60 * 1000), // 5 hours from now
-    end: new Date(Date.now() + 5.5 * 60 * 60 * 1000), // 5.5 hours from now
-    location: 'Phone',
-    type: 'call',
-    status: 'scheduled',
-    attendees: [
-      {
-        id: 'attendee3',
-        name: 'Mike Chen',
-        email: 'mike@startupxyz.com',
-        avatar: '/api/avatar/mike',
-        company: 'StartupXYZ',
-        title: 'Founder',
-        response: 'pending'
-      }
-    ],
-    organizer: {
-      id: 'organizer1',
-      name: 'John Doe',
-      email: 'john@company.com',
-      avatar: '/api/avatar/john'
-    },
-    relatedTo: {
-      type: 'deal',
-      id: 'deal1',
-      title: 'StartupXYZ Contract'
-    },
-    phoneNumber: '+1 (555) 123-4567',
-    tags: ['follow-up', 'proposal', 'startup'],
-    priority: 'medium',
-    isRecurring: false,
-    reminders: [
-      { type: 'popup', minutes: 10 }
-    ]
-  },
-  {
-    id: '3',
-    title: 'Weekly Team Standup',
-    description: 'Review progress and plan for the week',
-    start: new Date(Date.now() + 24 * 60 * 60 * 1000), // tomorrow
-    end: new Date(Date.now() + 24 * 60 * 60 * 1000 + 30 * 60 * 1000), // tomorrow + 30 min
-    location: 'Conference Room A',
-    type: 'meeting',
-    status: 'confirmed',
-    attendees: [
-      {
-        id: 'attendee4',
-        name: 'Jane Smith',
-        email: 'jane@company.com',
-        avatar: '/api/avatar/jane',
-        response: 'accepted'
-      },
-      {
-        id: 'attendee5',
-        name: 'Bob Wilson',
-        email: 'bob@company.com',
-        avatar: '/api/avatar/bob',
-        response: 'accepted'
-      }
-    ],
-    organizer: {
-      id: 'organizer1',
-      name: 'John Doe',
-      email: 'john@company.com',
-      avatar: '/api/avatar/john'
-    },
-    tags: ['team', 'standup', 'weekly'],
-    priority: 'low',
-    isRecurring: true,
-    recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO',
-    reminders: [
-      { type: 'popup', minutes: 5 }
-    ]
-  }
-];
-
 export default function EnhancedCalendar({ className }: EnhancedCalendarProps) {
   // All hooks must be called at the top level
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -247,13 +115,65 @@ export default function EnhancedCalendar({ className }: EnhancedCalendarProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setEvents(mockEvents);
-      setIsLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
+    const fetchEvents = async () => {
+      try {
+        // Calculate date range for the current view
+        const startDate = new Date(currentDate);
+        const endDate = new Date(currentDate);
+        
+        if (viewMode === 'week') {
+          startDate.setDate(currentDate.getDate() - currentDate.getDay());
+          endDate.setDate(startDate.getDate() + 6);
+        } else if (viewMode === 'month') {
+          startDate.setDate(1);
+          endDate.setMonth(endDate.getMonth() + 1);
+          endDate.setDate(0);
+        } else {
+          // day view
+          endDate.setDate(startDate.getDate() + 1);
+        }
+
+        const response = await fetch(`/api/calendar/events?start=${startDate.toISOString()}&end=${endDate.toISOString()}`);
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Transform API data to match our interface
+          const transformedEvents: CalendarEvent[] = (data.events || []).map((event: any) => ({
+            id: event.id,
+            title: event.title || 'Untitled Event',
+            description: event.description || '',
+            start: new Date(event.start),
+            end: new Date(event.end),
+            location: event.location || '',
+            type: 'meeting' as const, // Default type
+            status: 'confirmed' as const, // Default status
+            attendees: [], // API doesn't provide attendees yet
+            organizer: {
+              id: 'organizer1',
+              name: 'You',
+              email: 'you@company.com',
+              avatar: '/api/avatar/you'
+            },
+            tags: [],
+            priority: 'medium' as const,
+            isRecurring: false,
+            reminders: []
+          }));
+          
+          setEvents(transformedEvents);
+        } else {
+          setEvents([]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch calendar events:', error);
+        setEvents([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, [currentDate, viewMode]);
 
   // Helper functions - moved outside of render to avoid recreation
   const getEventTypeColor = (type: string) => {
@@ -669,38 +589,40 @@ export default function EnhancedCalendar({ className }: EnhancedCalendarProps) {
                 </div>
 
                 {/* Attendees */}
-                <div className="mb-4">
-                  <h3 className="font-medium mb-2">Attendees</h3>
-                  <div className="space-y-2">
-                    {selectedEvent.attendees.map(attendee => (
-                      <div key={attendee.id} className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={attendee.avatar} />
-                          <AvatarFallback>
-                            {attendee.name.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium">{attendee.name}</div>
-                          <div className="text-xs text-slate-600 dark:text-slate-400">
-                            {attendee.email}
+                {selectedEvent.attendees.length > 0 && (
+                  <div className="mb-4">
+                    <h3 className="font-medium mb-2">Attendees</h3>
+                    <div className="space-y-2">
+                      {selectedEvent.attendees.map(attendee => (
+                        <div key={attendee.id} className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={attendee.avatar} />
+                            <AvatarFallback>
+                              {attendee.name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">{attendee.name}</div>
+                            <div className="text-xs text-slate-600 dark:text-slate-400">
+                              {attendee.email}
+                            </div>
                           </div>
+                          <Badge 
+                            variant="outline" 
+                            className={cn(
+                              "text-xs",
+                              attendee.response === 'accepted' && "bg-green-100 text-green-700",
+                              attendee.response === 'declined' && "bg-red-100 text-red-700",
+                              attendee.response === 'pending' && "bg-yellow-100 text-yellow-700"
+                            )}
+                          >
+                            {attendee.response}
+                          </Badge>
                         </div>
-                        <Badge 
-                          variant="outline" 
-                          className={cn(
-                            "text-xs",
-                            attendee.response === 'accepted' && "bg-green-100 text-green-700",
-                            attendee.response === 'declined' && "bg-red-100 text-red-700",
-                            attendee.response === 'pending' && "bg-yellow-100 text-yellow-700"
-                          )}
-                        >
-                          {attendee.response}
-                        </Badge>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Related Item */}
                 {selectedEvent.relatedTo && (

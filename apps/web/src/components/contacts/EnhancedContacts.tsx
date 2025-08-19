@@ -77,48 +77,21 @@ import { cn } from '@/lib/utils';
 
 interface Contact {
   id: string;
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
-  phone?: string;
   company?: string;
   title?: string;
+  phone?: string;
   location?: string;
-  avatar?: string;
-  status: 'active' | 'inactive' | 'lead' | 'customer' | 'prospect';
+  avatarUrl?: string;
+  starred: boolean;
   tags: string[];
-  notes?: string;
-  lastContact?: Date;
-  nextFollowUp?: Date;
-  dealValue?: number;
-  dealStage?: string;
-  emailVerified: boolean;
-  phoneVerified: boolean;
-  gdprOptIn: boolean;
-  source: 'manual' | 'import' | 'website' | 'referral' | 'event';
-  createdAt: Date;
-  updatedAt: Date;
-  health: {
-    emailHealth: 'good' | 'warning' | 'poor';
-    phoneHealth: 'good' | 'warning' | 'poor';
-    engagementScore: number;
-    lastActivity: Date;
-  };
-  activities: {
-    id: string;
-    type: 'email' | 'call' | 'meeting' | 'note' | 'task';
-    title: string;
-    date: Date;
-    description?: string;
-  }[];
-  deals: {
-    id: string;
-    title: string;
-    value: number;
-    stage: string;
-    probability: number;
-    expectedClose: Date;
-  }[];
+  lastActivity: string;
+  emailCount: number;
+  leadCount: number;
+  source: 'email' | 'manual' | 'import';
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface EnhancedContactsProps {
@@ -127,163 +100,6 @@ interface EnhancedContactsProps {
   selectedFilters?: string[];
 }
 
-// Mock contacts data - moved outside component to prevent recreation
-const mockContacts: Contact[] = [
-  {
-    id: '1',
-    firstName: 'Sarah',
-    lastName: 'Johnson',
-    email: 'sarah.johnson@techcorp.com',
-    phone: '+1 (555) 123-4567',
-    company: 'TechCorp Inc.',
-    title: 'VP of Engineering',
-    location: 'San Francisco, CA',
-    avatar: '/api/avatar/sarah',
-    status: 'lead',
-    tags: ['enterprise', 'tech', 'decision-maker'],
-    notes: 'Interested in enterprise features. Prefers technical demos.',
-    lastContact: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-    nextFollowUp: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
-    dealValue: 50000,
-    dealStage: 'Proposal',
-    emailVerified: true,
-    phoneVerified: true,
-    gdprOptIn: true,
-    source: 'website',
-    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    health: {
-      emailHealth: 'good',
-      phoneHealth: 'good',
-      engagementScore: 85,
-      lastActivity: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-    },
-    activities: [
-      {
-        id: 'act1',
-        type: 'email',
-        title: 'Product Demo Follow-up',
-        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-        description: 'Sent demo recording and pricing information'
-      },
-      {
-        id: 'act2',
-        type: 'meeting',
-        title: 'Product Demo',
-        date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-        description: '45-minute demo of enterprise features'
-      }
-    ],
-    deals: [
-      {
-        id: 'deal1',
-        title: 'TechCorp Enterprise License',
-        value: 50000,
-        stage: 'Proposal',
-        probability: 75,
-        expectedClose: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-      }
-    ]
-  },
-  {
-    id: '2',
-    firstName: 'Mike',
-    lastName: 'Chen',
-    email: 'mike@startupxyz.com',
-    phone: '+1 (555) 987-6543',
-    company: 'StartupXYZ',
-    title: 'Founder & CEO',
-    location: 'Austin, TX',
-    avatar: '/api/avatar/mike',
-    status: 'customer',
-    tags: ['startup', 'founder', 'early-adopter'],
-    notes: 'Early customer. Very satisfied with the product.',
-    lastContact: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 1 week ago
-    dealValue: 15000,
-    dealStage: 'Closed Won',
-    emailVerified: true,
-    phoneVerified: false,
-    gdprOptIn: true,
-    source: 'referral',
-    createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    health: {
-      emailHealth: 'good',
-      phoneHealth: 'warning',
-      engagementScore: 92,
-      lastActivity: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    },
-    activities: [
-      {
-        id: 'act3',
-        type: 'call',
-        title: 'Quarterly Check-in',
-        date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-        description: 'Discussed upcoming features and renewal'
-      }
-    ],
-    deals: [
-      {
-        id: 'deal2',
-        title: 'StartupXYZ Annual License',
-        value: 15000,
-        stage: 'Closed Won',
-        probability: 100,
-        expectedClose: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-      }
-    ]
-  },
-  {
-    id: '3',
-    firstName: 'Emily',
-    lastName: 'Davis',
-    email: 'emily.davis@bigcorp.com',
-    phone: '+1 (555) 456-7890',
-    company: 'BigCorp Solutions',
-    title: 'Director of Operations',
-    location: 'New York, NY',
-    avatar: '/api/avatar/emily',
-    status: 'prospect',
-    tags: ['enterprise', 'operations', 'evaluating'],
-    notes: 'Currently evaluating our solution against competitors.',
-    lastContact: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
-    nextFollowUp: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
-    dealValue: 75000,
-    dealStage: 'Evaluation',
-    emailVerified: true,
-    phoneVerified: true,
-    gdprOptIn: false,
-    source: 'event',
-    createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-    health: {
-      emailHealth: 'good',
-      phoneHealth: 'good',
-      engagementScore: 78,
-      lastActivity: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
-    },
-    activities: [
-      {
-        id: 'act4',
-        type: 'email',
-        title: 'Trial Extension Request',
-        date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-        description: 'Requested additional time for evaluation'
-      }
-    ],
-    deals: [
-      {
-        id: 'deal3',
-        title: 'BigCorp Enterprise Deployment',
-        value: 75000,
-        stage: 'Evaluation',
-        probability: 60,
-        expectedClose: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000)
-      }
-    ]
-  }
-];
-
 export default function EnhancedContacts({ className, searchQuery = '', selectedFilters = [] }: EnhancedContactsProps) {
   // All hooks must be called at the top level
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -291,29 +107,43 @@ export default function EnhancedContacts({ className, searchQuery = '', selected
   const [showContactDrawer, setShowContactDrawer] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-  const [sortBy, setSortBy] = useState<'name' | 'company' | 'lastContact' | 'dealValue'>('name');
+  const [sortBy, setSortBy] = useState<'name' | 'company' | 'lastActivity' | 'emailCount'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setContacts(mockContacts);
-      setIsLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
+    const fetchContacts = async () => {
+      try {
+        const params = new URLSearchParams();
+        if (searchQuery) params.append('search', searchQuery);
+        if (selectedFilters.length > 0) params.append('filter', selectedFilters[0]); // API supports one filter at a time
+        
+        const response = await fetch(`/api/contacts?${params.toString()}`);
+        if (response.ok) {
+          const data = await response.json();
+          setContacts(data.contacts || []);
+        } else {
+          setContacts([]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch contacts:', error);
+        setContacts([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchContacts();
+  }, [searchQuery, selectedFilters]);
 
   // Helper functions - moved outside of render to avoid recreation
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'lead':
+  const getStatusColor = (source: string) => {
+    switch (source) {
+      case 'email':
         return 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'prospect':
-        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400';
-      case 'customer':
+      case 'manual':
         return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';
-      case 'inactive':
-        return 'bg-slate-100 text-slate-700 dark:bg-slate-900/20 dark:text-slate-400';
+      case 'import':
+        return 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400';
       default:
         return 'bg-slate-100 text-slate-700 dark:bg-slate-900/20 dark:text-slate-400';
     }
@@ -338,7 +168,8 @@ export default function EnhancedContacts({ className, searchQuery = '', selected
     return 'text-red-600 dark:text-red-400';
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -374,13 +205,12 @@ export default function EnhancedContacts({ className, searchQuery = '', selected
 
   const filteredContacts = contacts.filter(contact => {
     const matchesSearch = searchQuery === '' || 
-      contact.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contact.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       contact.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       contact.company?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesFilters = selectedFilters.length === 0 || 
-      selectedFilters.some(filter => contact.tags.includes(filter) || contact.status === filter);
+      selectedFilters.some(filter => contact.tags.includes(filter) || contact.source === filter);
     
     return matchesSearch && matchesFilters;
   });
@@ -390,24 +220,24 @@ export default function EnhancedContacts({ className, searchQuery = '', selected
     
     switch (sortBy) {
       case 'name':
-        aValue = `${a.firstName} ${a.lastName}`;
-        bValue = `${b.firstName} ${b.lastName}`;
+        aValue = a.name;
+        bValue = b.name;
         break;
       case 'company':
         aValue = a.company || '';
         bValue = b.company || '';
         break;
-      case 'lastContact':
-        aValue = a.lastContact || new Date(0);
-        bValue = b.lastContact || new Date(0);
+      case 'lastActivity':
+        aValue = new Date(a.lastActivity);
+        bValue = new Date(b.lastActivity);
         break;
-      case 'dealValue':
-        aValue = a.dealValue || 0;
-        bValue = b.dealValue || 0;
+      case 'emailCount':
+        aValue = a.emailCount;
+        bValue = b.emailCount;
         break;
       default:
-        aValue = a.firstName;
-        bValue = b.firstName;
+        aValue = a.name;
+        bValue = b.name;
     }
     
     if (sortOrder === 'asc') {
@@ -485,26 +315,23 @@ export default function EnhancedContacts({ className, searchQuery = '', selected
                 >
                   <div className="flex items-center gap-4">
                     <Avatar className="h-12 w-12">
-                      <AvatarImage src={contact.avatar} />
+                      <AvatarImage src={contact.avatarUrl} />
                       <AvatarFallback>
-                        {contact.firstName.charAt(0)}{contact.lastName.charAt(0)}
+                        {contact.name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                     
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-medium truncate">
-                          {contact.firstName} {contact.lastName}
+                          {contact.name}
                         </h3>
-                        <Badge variant="outline" className={cn("text-xs", getStatusColor(contact.status))}>
-                          {contact.status}
-                        </Badge>
-                        {contact.emailVerified && (
-                          <Badge variant="outline" className="text-xs bg-green-100 text-green-700">
-                            <CheckCircleIcon className="h-3 w-3 mr-1" />
-                            Email
-                          </Badge>
+                        {contact.starred && (
+                          <Star className="h-4 w-4 text-yellow-500" />
                         )}
+                        <Badge variant="outline" className={cn("text-xs", getStatusColor(contact.source))}>
+                          {contact.source}
+                        </Badge>
                       </div>
                       
                       <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
@@ -541,16 +368,16 @@ export default function EnhancedContacts({ className, searchQuery = '', selected
                     
                     <div className="flex flex-col items-end gap-2">
                       <div className="text-sm text-slate-600 dark:text-slate-400">
-                        {contact.lastContact ? formatDate(contact.lastContact) : 'Never'}
+                        {formatDate(contact.lastActivity)}
                       </div>
-                      {contact.dealValue && (
+                      <div className="text-sm text-slate-600 dark:text-slate-400">
+                        {contact.emailCount} emails
+                      </div>
+                      {contact.leadCount > 0 && (
                         <div className="text-sm font-medium text-green-600 dark:text-green-400">
-                          {formatCurrency(contact.dealValue)}
+                          {contact.leadCount} leads
                         </div>
                       )}
-                      <div className={cn("text-sm font-medium", getEngagementColor(contact.health.engagementScore))}>
-                        {contact.health.engagementScore}% engaged
-                      </div>
                     </div>
                     
                     <Button variant="ghost" size="sm">
@@ -575,14 +402,14 @@ export default function EnhancedContacts({ className, searchQuery = '', selected
                 >
                   <div className="flex items-center gap-3 mb-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={contact.avatar} />
+                      <AvatarImage src={contact.avatarUrl} />
                       <AvatarFallback>
-                        {contact.firstName.charAt(0)}{contact.lastName.charAt(0)}
+                        {contact.name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-medium truncate">
-                        {contact.firstName} {contact.lastName}
+                        {contact.name}
                       </h3>
                       {contact.company && (
                         <p className="text-sm text-slate-600 dark:text-slate-400 truncate">
@@ -594,14 +421,11 @@ export default function EnhancedContacts({ className, searchQuery = '', selected
                   
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={cn("text-xs", getStatusColor(contact.status))}>
-                        {contact.status}
+                      <Badge variant="outline" className={cn("text-xs", getStatusColor(contact.source))}>
+                        {contact.source}
                       </Badge>
-                      {contact.emailVerified && (
-                        <Badge variant="outline" className="text-xs bg-green-100 text-green-700">
-                          <CheckCircleIcon className="h-3 w-3 mr-1" />
-                          Email
-                        </Badge>
+                      {contact.starred && (
+                        <Star className="h-4 w-4 text-yellow-500" />
                       )}
                     </div>
                     
@@ -609,11 +433,9 @@ export default function EnhancedContacts({ className, searchQuery = '', selected
                       {contact.email}
                     </div>
                     
-                    {contact.dealValue && (
-                      <div className="text-sm font-medium text-green-600 dark:text-green-400">
-                        {formatCurrency(contact.dealValue)}
-                      </div>
-                    )}
+                    <div className="text-sm text-slate-600 dark:text-slate-400">
+                      {contact.emailCount} emails • {contact.leadCount} leads
+                    </div>
                   </div>
                 </motion.div>
               ))}
@@ -653,14 +475,14 @@ export default function EnhancedContacts({ className, searchQuery = '', selected
               
               <div className="flex items-center gap-3">
                 <Avatar className="h-16 w-16">
-                  <AvatarImage src={selectedContact.avatar} />
+                  <AvatarImage src={selectedContact.avatarUrl} />
                   <AvatarFallback className="text-lg">
-                    {selectedContact.firstName.charAt(0)}{selectedContact.lastName.charAt(0)}
+                    {selectedContact.name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <h2 className="text-xl font-semibold">
-                    {selectedContact.firstName} {selectedContact.lastName}
+                    {selectedContact.name}
                   </h2>
                   {selectedContact.title && (
                     <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -678,31 +500,6 @@ export default function EnhancedContacts({ className, searchQuery = '', selected
 
             {/* Contact Info */}
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
-              {/* Health Status */}
-              <div>
-                <h3 className="font-medium mb-3">Health Status</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Email Health</span>
-                    <Badge variant="outline" className={cn("text-xs", getHealthColor(selectedContact.health.emailHealth))}>
-                      {selectedContact.health.emailHealth}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Phone Health</span>
-                    <Badge variant="outline" className={cn("text-xs", getHealthColor(selectedContact.health.phoneHealth))}>
-                      {selectedContact.health.phoneHealth}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Engagement Score</span>
-                    <span className={cn("text-sm font-medium", getEngagementColor(selectedContact.health.engagementScore))}>
-                      {selectedContact.health.engagementScore}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-
               {/* Contact Details */}
               <div>
                 <h3 className="font-medium mb-3">Contact Details</h3>
@@ -710,17 +507,11 @@ export default function EnhancedContacts({ className, searchQuery = '', selected
                   <div className="flex items-center gap-2">
                     <MailIcon className="h-4 w-4 text-slate-400" />
                     <span className="text-sm">{selectedContact.email}</span>
-                    {selectedContact.emailVerified && (
-                      <CheckCircleIcon className="h-4 w-4 text-green-500" />
-                    )}
                   </div>
                   {selectedContact.phone && (
                     <div className="flex items-center gap-2">
                       <PhoneIcon className="h-4 w-4 text-slate-400" />
                       <span className="text-sm">{selectedContact.phone}</span>
-                      {selectedContact.phoneVerified && (
-                        <CheckCircleIcon className="h-4 w-4 text-green-500" />
-                      )}
                     </div>
                   )}
                   {selectedContact.location && (
@@ -746,60 +537,41 @@ export default function EnhancedContacts({ className, searchQuery = '', selected
                 </div>
               )}
 
-              {/* Deals */}
-              {selectedContact.deals.length > 0 && (
-                <div>
-                  <h3 className="font-medium mb-3">Deals</h3>
-                  <div className="space-y-2">
-                    {selectedContact.deals.map(deal => (
-                      <div key={deal.id} className="p-3 border border-slate-200 dark:border-slate-700 rounded-lg">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-medium text-sm">{deal.title}</h4>
-                          <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                            {formatCurrency(deal.value)}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
-                          <span>{deal.stage}</span>
-                          <span>{deal.probability}% probability</span>
-                        </div>
-                      </div>
-                    ))}
+              {/* Activity Summary */}
+              <div>
+                <h3 className="font-medium mb-3">Activity Summary</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Email Count</span>
+                    <span className="text-sm font-medium">{selectedContact.emailCount}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Lead Count</span>
+                    <span className="text-sm font-medium">{selectedContact.leadCount}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Last Activity</span>
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                      {formatDate(selectedContact.lastActivity)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Source</span>
+                    <Badge variant="outline" className={cn("text-xs", getStatusColor(selectedContact.source))}>
+                      {selectedContact.source}
+                    </Badge>
                   </div>
                 </div>
-              )}
+              </div>
 
-              {/* Recent Activity */}
-              {selectedContact.activities.length > 0 && (
-                <div>
-                  <h3 className="font-medium mb-3">Recent Activity</h3>
-                  <div className="space-y-2">
-                    {selectedContact.activities.slice(0, 5).map(activity => (
-                      <div key={activity.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800">
-                        <div className="p-1 rounded bg-slate-100 dark:bg-slate-800">
-                          {getActivityIcon(activity.type)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{activity.title}</p>
-                          <p className="text-xs text-slate-600 dark:text-slate-400">
-                            {formatDate(activity.date)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+              {/* Contact History */}
+              <div>
+                <h3 className="font-medium mb-3">Contact History</h3>
+                <div className="text-sm text-slate-600 dark:text-slate-400">
+                  <p>Created: {formatDate(selectedContact.createdAt)}</p>
+                  <p>Updated: {formatDate(selectedContact.updatedAt)}</p>
                 </div>
-              )}
-
-              {/* Notes */}
-              {selectedContact.notes && (
-                <div>
-                  <h3 className="font-medium mb-3">Notes</h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                    {selectedContact.notes}
-                  </p>
-                </div>
-              )}
+              </div>
             </div>
 
             {/* Quick Actions */}

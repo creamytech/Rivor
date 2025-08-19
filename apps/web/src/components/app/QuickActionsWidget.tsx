@@ -1,31 +1,79 @@
 "use client";
-
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Plus, 
   Mail, 
   Calendar, 
   User, 
-  Briefcase, 
+  Target, 
+  CheckSquare, 
   Phone, 
-  MessageSquare,
-  FileText,
-  Download,
-  Upload,
-  Settings,
-  Zap,
-  Star,
-  Clock,
-  TrendingUp,
-  Building,
-  MapPin,
+  MessageSquare, 
+  FileText, 
+  Download, 
+  Upload, 
+  Settings, 
+  Zap, 
+  Sparkles, 
+  TrendingUp, 
+  BarChart3, 
+  Users, 
+  Building, 
+  Clock, 
+  Star, 
+  AlertTriangle, 
+  CheckCircle, 
+  XCircle, 
+  ArrowRight, 
+  ArrowLeft,
+  ChevronRight,
+  ChevronLeft,
+  Edit,
+  Eye,
+  Trash2,
+  Copy,
   ExternalLink,
-  ArrowRight,
-  Sparkles
+  Briefcase,
+  DollarSign,
+  MapPin,
+  Phone as PhoneIcon,
+  Mail as MailIcon,
+  Calendar as CalendarIcon,
+  Target as TargetIcon,
+  CheckSquare as CheckSquareIcon,
+  MessageSquare as MessageSquareIcon,
+  FileText as FileTextIcon,
+  Download as DownloadIcon,
+  Upload as UploadIcon,
+  Settings as SettingsIcon,
+  Zap as ZapIcon,
+  Sparkles as SparklesIcon,
+  TrendingUp as TrendingUpIcon,
+  BarChart3 as BarChart3Icon,
+  Users as UsersIcon,
+  Building as BuildingIcon,
+  Clock as ClockIcon,
+  Star as StarIcon,
+  AlertTriangle as AlertTriangleIcon,
+  CheckCircle as CheckCircleIcon,
+  XCircle as XCircleIcon,
+  ArrowRight as ArrowRightIcon,
+  ArrowLeft as ArrowLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  ChevronLeft as ChevronLeftIcon,
+  Edit as EditIcon,
+  Eye as EyeIcon,
+  Trash2 as Trash2Icon,
+  Copy as CopyIcon,
+  ExternalLink as ExternalLinkIcon,
+  Briefcase as BriefcaseIcon,
+  DollarSign as DollarSignIcon,
+  MapPin as MapPinIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -35,338 +83,438 @@ interface QuickAction {
   description: string;
   icon: React.ReactNode;
   color: string;
-  category: 'primary' | 'secondary' | 'utility';
+  url: string;
+  category: 'create' | 'view' | 'import' | 'settings';
   shortcut?: string;
   badge?: string;
   badgeColor?: string;
-  action: () => void;
-  isNew?: boolean;
-  isPopular?: boolean;
 }
 
 interface QuickActionsWidgetProps {
   className?: string;
+  maxActions?: number;
   showCategories?: boolean;
-  compact?: boolean;
 }
 
 export default function QuickActionsWidget({ 
   className, 
-  showCategories = true,
-  compact = false 
+  maxActions = 8, 
+  showCategories = true 
 }: QuickActionsWidgetProps) {
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'primary' | 'secondary' | 'utility'>('all');
+  const [actions, setActions] = useState<QuickAction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'create' | 'view' | 'import' | 'settings'>('all');
 
-  const quickActions: QuickAction[] = [
-    // Primary Actions
-    {
-      id: 'add-lead',
-      title: 'Add Lead',
-      description: 'Create a new lead record',
-      icon: <User className="h-5 w-5" />,
-      color: 'blue',
-      category: 'primary',
-      shortcut: '⌘L',
-      badge: 'Popular',
-      badgeColor: 'green',
-      action: () => console.log('Add lead'),
-      isPopular: true
-    },
-    {
-      id: 'create-deal',
-      title: 'Create Deal',
-      description: 'Start a new sales opportunity',
-      icon: <Briefcase className="h-5 w-5" />,
-      color: 'green',
-      category: 'primary',
-      shortcut: '⌘D',
-      action: () => console.log('Create deal'),
-      isPopular: true
-    },
-    {
-      id: 'schedule-meeting',
-      title: 'Schedule Meeting',
-      description: 'Book a meeting or call',
-      icon: <Calendar className="h-5 w-5" />,
-      color: 'purple',
-      category: 'primary',
-      shortcut: '⌘M',
-      action: () => console.log('Schedule meeting'),
-      isPopular: true
-    },
-    {
-      id: 'compose-email',
-      title: 'Compose Email',
-      description: 'Write a new email message',
-      icon: <Mail className="h-5 w-5" />,
-      color: 'orange',
-      category: 'primary',
-      shortcut: '⌘E',
-      action: () => console.log('Compose email'),
-      isPopular: true
-    },
+  useEffect(() => {
+    const fetchQuickActions = async () => {
+      try {
+        // Fetch data to determine which actions are available
+        const [contactsData, tasksData, eventsData, leadsData] = await Promise.all([
+          fetch('/api/contacts').then(r => r.json()).catch(() => ({ contacts: [] })),
+          fetch('/api/tasks').then(r => r.json()).catch(() => ({ tasks: [] })),
+          fetch('/api/calendar/events').then(r => r.json()).catch(() => ({ events: [] })),
+          fetch('/api/pipeline/leads').then(r => r.json()).catch(() => ({ leads: [] }))
+        ]);
 
-    // Secondary Actions
-    {
-      id: 'add-contact',
-      title: 'Add Contact',
-      description: 'Create a new contact record',
-      icon: <User className="h-5 w-5" />,
-      color: 'indigo',
-      category: 'secondary',
-      action: () => console.log('Add contact'),
-    },
-    {
-      id: 'log-call',
-      title: 'Log Call',
-      description: 'Record a phone conversation',
-      icon: <Phone className="h-5 w-5" />,
-      color: 'teal',
-      category: 'secondary',
-      action: () => console.log('Log call'),
-    },
-    {
-      id: 'send-message',
-      title: 'Send Message',
-      description: 'Send a quick message',
-      icon: <MessageSquare className="h-5 w-5" />,
-      color: 'cyan',
-      category: 'secondary',
-      action: () => console.log('Send message'),
-    },
-    {
-      id: 'create-task',
-      title: 'Create Task',
-      description: 'Add a new task or reminder',
-      icon: <FileText className="h-5 w-5" />,
-      color: 'amber',
-      category: 'secondary',
-      action: () => console.log('Create task'),
-    },
+        const hasContacts = (contactsData.contacts || []).length > 0;
+        const hasTasks = (tasksData.tasks || []).length > 0;
+        const hasEvents = (eventsData.events || []).length > 0;
+        const hasLeads = (leadsData.leads || []).length > 0;
 
-    // Utility Actions
-    {
-      id: 'import-data',
-      title: 'Import Data',
-      description: 'Import leads, contacts, or deals',
-      icon: <Upload className="h-5 w-5" />,
-      color: 'slate',
-      category: 'utility',
-      action: () => console.log('Import data'),
-    },
-    {
-      id: 'export-data',
-      title: 'Export Data',
-      description: 'Export your data to CSV or Excel',
-      icon: <Download className="h-5 w-5" />,
-      color: 'slate',
-      category: 'utility',
-      action: () => console.log('Export data'),
-    },
-    {
-      id: 'ai-assistant',
-      title: 'AI Assistant',
-      description: 'Get help with AI-powered insights',
-      icon: <Sparkles className="h-5 w-5" />,
-      color: 'pink',
-      category: 'utility',
-      badge: 'New',
-      badgeColor: 'blue',
-      action: () => console.log('AI assistant'),
-      isNew: true
-    },
-    {
-      id: 'settings',
-      title: 'Settings',
-      description: 'Configure your workspace',
-      icon: <Settings className="h-5 w-5" />,
-      color: 'slate',
-      category: 'utility',
-      action: () => console.log('Settings'),
-    }
-  ];
+        const quickActions: QuickAction[] = [
+          // Create Actions
+          {
+            id: 'add-lead',
+            title: 'Add Lead',
+            description: 'Create a new lead in your pipeline',
+            icon: <Target className="h-5 w-5" />,
+            color: 'bg-blue-500',
+            url: '/app/pipeline/new',
+            category: 'create',
+            shortcut: '⌘L'
+          },
+          {
+            id: 'add-contact',
+            title: 'Add Contact',
+            description: 'Add a new contact to your database',
+            icon: <User className="h-5 w-5" />,
+            color: 'bg-green-500',
+            url: '/app/contacts/new',
+            category: 'create',
+            shortcut: '⌘C'
+          },
+          {
+            id: 'schedule-meeting',
+            title: 'Schedule Meeting',
+            description: 'Book a meeting or call',
+            icon: <Calendar className="h-5 w-5" />,
+            color: 'bg-purple-500',
+            url: '/app/calendar/new',
+            category: 'create',
+            shortcut: '⌘M'
+          },
+          {
+            id: 'create-task',
+            title: 'Create Task',
+            description: 'Add a new task to your list',
+            icon: <CheckSquare className="h-5 w-5" />,
+            color: 'bg-orange-500',
+            url: '/app/tasks/new',
+            category: 'create',
+            shortcut: '⌘T'
+          },
+          {
+            id: 'compose-email',
+            title: 'Compose Email',
+            description: 'Write a new email message',
+            icon: <Mail className="h-5 w-5" />,
+            color: 'bg-pink-500',
+            url: '/app/inbox/compose',
+            category: 'create',
+            shortcut: '⌘E'
+          },
+
+          // View Actions
+          {
+            id: 'view-pipeline',
+            title: 'View Pipeline',
+            description: 'See all your leads and deals',
+            icon: <BarChart3 className="h-5 w-5" />,
+            color: 'bg-emerald-500',
+            url: '/app/pipeline',
+            category: 'view',
+            badge: hasLeads ? `${leadsData.leads?.length || 0} leads` : undefined,
+            badgeColor: 'blue'
+          },
+          {
+            id: 'view-contacts',
+            title: 'View Contacts',
+            description: 'Browse your contact database',
+            icon: <Users className="h-5 w-5" />,
+            color: 'bg-teal-500',
+            url: '/app/contacts',
+            category: 'view',
+            badge: hasContacts ? `${contactsData.contacts?.length || 0} contacts` : undefined,
+            badgeColor: 'green'
+          },
+          {
+            id: 'view-calendar',
+            title: 'View Calendar',
+            description: 'Check your schedule',
+            icon: <Calendar className="h-5 w-5" />,
+            color: 'bg-indigo-500',
+            url: '/app/calendar',
+            category: 'view',
+            badge: hasEvents ? `${eventsData.events?.length || 0} events` : undefined,
+            badgeColor: 'purple'
+          },
+          {
+            id: 'view-tasks',
+            title: 'View Tasks',
+            description: 'See your task list',
+            icon: <CheckSquare className="h-5 w-5" />,
+            color: 'bg-amber-500',
+            url: '/app/tasks',
+            category: 'view',
+            badge: hasTasks ? `${tasksData.tasks?.length || 0} tasks` : undefined,
+            badgeColor: 'orange'
+          },
+          {
+            id: 'view-inbox',
+            title: 'View Inbox',
+            description: 'Check your email threads',
+            icon: <Mail className="h-5 w-5" />,
+            color: 'bg-rose-500',
+            url: '/app/inbox',
+            category: 'view'
+          },
+
+          // Import Actions
+          {
+            id: 'import-contacts',
+            title: 'Import Contacts',
+            description: 'Upload contacts from CSV or Google',
+            icon: <Upload className="h-5 w-5" />,
+            color: 'bg-cyan-500',
+            url: '/app/contacts/import',
+            category: 'import'
+          },
+          {
+            id: 'export-data',
+            title: 'Export Data',
+            description: 'Download your data as CSV',
+            icon: <Download className="h-5 w-5" />,
+            color: 'bg-slate-500',
+            url: '/app/settings/export',
+            category: 'import'
+          },
+
+          // Settings Actions
+          {
+            id: 'settings',
+            title: 'Settings',
+            description: 'Configure your account',
+            icon: <Settings className="h-5 w-5" />,
+            color: 'bg-gray-500',
+            url: '/app/settings',
+            category: 'settings'
+          },
+          {
+            id: 'integrations',
+            title: 'Integrations',
+            description: 'Connect external services',
+            icon: <Zap className="h-5 w-5" />,
+            color: 'bg-yellow-500',
+            url: '/app/settings/integrations',
+            category: 'settings'
+          }
+        ];
+
+        setActions(quickActions);
+      } catch (error) {
+        console.error('Failed to fetch quick actions data:', error);
+        // Fallback to basic actions if API fails
+        setActions([
+          {
+            id: 'add-lead',
+            title: 'Add Lead',
+            description: 'Create a new lead in your pipeline',
+            icon: <Target className="h-5 w-5" />,
+            color: 'bg-blue-500',
+            url: '/app/pipeline/new',
+            category: 'create',
+            shortcut: '⌘L'
+          },
+          {
+            id: 'add-contact',
+            title: 'Add Contact',
+            description: 'Add a new contact to your database',
+            icon: <User className="h-5 w-5" />,
+            color: 'bg-green-500',
+            url: '/app/contacts/new',
+            category: 'create',
+            shortcut: '⌘C'
+          },
+          {
+            id: 'schedule-meeting',
+            title: 'Schedule Meeting',
+            description: 'Book a meeting or call',
+            icon: <Calendar className="h-5 w-5" />,
+            color: 'bg-purple-500',
+            url: '/app/calendar/new',
+            category: 'create',
+            shortcut: '⌘M'
+          },
+          {
+            id: 'view-pipeline',
+            title: 'View Pipeline',
+            description: 'See all your leads and deals',
+            icon: <BarChart3 className="h-5 w-5" />,
+            color: 'bg-emerald-500',
+            url: '/app/pipeline',
+            category: 'view'
+          }
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchQuickActions();
+  }, []);
 
   const filteredActions = selectedCategory === 'all' 
-    ? quickActions 
-    : quickActions.filter(action => action.category === selectedCategory);
+    ? actions 
+    : actions.filter(action => action.category === selectedCategory);
 
-  const getColorClasses = (color: string) => {
-    const colorMap: Record<string, string> = {
-      blue: 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/40',
-      green: 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/40',
-      purple: 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-900/40',
-      orange: 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-900/40',
-      indigo: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-900/40',
-      teal: 'bg-teal-100 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400 hover:bg-teal-200 dark:hover:bg-teal-900/40',
-      cyan: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-400 hover:bg-cyan-200 dark:hover:bg-cyan-900/40',
-      amber: 'bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/40',
-      pink: 'bg-pink-100 text-pink-700 dark:bg-pink-900/20 dark:text-pink-400 hover:bg-pink-200 dark:hover:bg-pink-900/40',
-      slate: 'bg-slate-100 text-slate-700 dark:bg-slate-900/20 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-900/40'
-    };
-    return colorMap[color] || colorMap.slate;
+  const displayedActions = filteredActions.slice(0, maxActions);
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'create':
+        return <Plus className="h-4 w-4" />;
+      case 'view':
+        return <Eye className="h-4 w-4" />;
+      case 'import':
+        return <Upload className="h-4 w-4" />;
+      case 'settings':
+        return <Settings className="h-4 w-4" />;
+      default:
+        return <Zap className="h-4 w-4" />;
+    }
+  };
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'create':
+        return 'bg-green-100 text-green-700';
+      case 'view':
+        return 'bg-blue-100 text-blue-700';
+      case 'import':
+        return 'bg-purple-100 text-purple-700';
+      case 'settings':
+        return 'bg-slate-100 text-slate-700';
+      default:
+        return 'bg-slate-100 text-slate-700';
+    }
   };
 
   const getBadgeColor = (color?: string) => {
-    if (!color) return '';
-    const colorMap: Record<string, string> = {
-      green: 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400',
-      blue: 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400',
-      red: 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400',
-      orange: 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400'
-    };
-    return colorMap[color] || colorMap.blue;
+    switch (color) {
+      case 'blue':
+        return 'bg-blue-100 text-blue-700';
+      case 'green':
+        return 'bg-green-100 text-green-700';
+      case 'purple':
+        return 'bg-purple-100 text-purple-700';
+      case 'orange':
+        return 'bg-orange-100 text-orange-700';
+      case 'red':
+        return 'bg-red-100 text-red-700';
+      default:
+        return 'bg-slate-100 text-slate-700';
+    }
   };
+
+  if (isLoading) {
+    return (
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5" />
+            Quick Actions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-3">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-16 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className={className}>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5" />
-            Quick Actions
-            {quickActions.filter(a => a.isNew).length > 0 && (
-              <Badge variant="secondary" className="text-xs">
-                {quickActions.filter(a => a.isNew).length} New
-              </Badge>
-            )}
-          </CardTitle>
-        </div>
-
+        <CardTitle className="flex items-center gap-2">
+          <Zap className="h-5 w-5" />
+          Quick Actions
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
         {/* Category Filter */}
         {showCategories && (
-          <div className="flex items-center gap-1 mt-4">
-            {[
-              { key: 'all', label: 'All', count: quickActions.length },
-              { key: 'primary', label: 'Primary', count: quickActions.filter(a => a.category === 'primary').length },
-              { key: 'secondary', label: 'Secondary', count: quickActions.filter(a => a.category === 'secondary').length },
-              { key: 'utility', label: 'Utility', count: quickActions.filter(a => a.category === 'utility').length }
-            ].map((category) => (
-              <Button
-                key={category.key}
-                variant={selectedCategory === category.key ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setSelectedCategory(category.key as any)}
-                className="text-xs h-7"
-              >
-                {category.label}
-                <Badge variant="secondary" className="ml-1 text-xs">
-                  {category.count}
-                </Badge>
-              </Button>
-            ))}
+          <div className="flex items-center gap-2 mb-4 overflow-x-auto">
+            <Button
+              variant={selectedCategory === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedCategory('all')}
+            >
+              All
+            </Button>
+            <Button
+              variant={selectedCategory === 'create' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedCategory('create')}
+              className="flex items-center gap-1"
+            >
+              <Plus className="h-3 w-3" />
+              Create
+            </Button>
+            <Button
+              variant={selectedCategory === 'view' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedCategory('view')}
+              className="flex items-center gap-1"
+            >
+              <Eye className="h-3 w-3" />
+              View
+            </Button>
+            <Button
+              variant={selectedCategory === 'import' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedCategory('import')}
+              className="flex items-center gap-1"
+            >
+              <Upload className="h-3 w-3" />
+              Import
+            </Button>
+            <Button
+              variant={selectedCategory === 'settings' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedCategory('settings')}
+              className="flex items-center gap-1"
+            >
+              <Settings className="h-3 w-3" />
+              Settings
+            </Button>
           </div>
         )}
-      </CardHeader>
 
-      <CardContent>
-        <div className={cn(
-          "grid gap-3",
-          compact ? "grid-cols-2" : "grid-cols-1 md:grid-cols-2"
-        )}>
-          <AnimatePresence mode="wait">
-            {filteredActions.map((action, index) => (
-              <motion.div
-                key={action.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ delay: index * 0.05 }}
+        {/* Actions Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          {displayedActions.map((action, index) => (
+            <motion.div
+              key={action.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <Button
+                variant="outline"
+                className="w-full h-auto p-4 flex flex-col items-start gap-2 hover:shadow-md transition-all"
+                onClick={() => window.location.href = action.url}
               >
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full h-auto p-4 justify-start group relative overflow-hidden",
-                    compact ? "flex-col gap-2 h-24" : "flex-row gap-3 h-auto"
-                  )}
-                  onClick={action.action}
-                >
-                  {/* Icon */}
-                  <div className={cn(
-                    "flex-shrink-0 p-2 rounded-lg transition-colors",
-                    getColorClasses(action.color)
-                  )}>
+                <div className="flex items-center gap-2 w-full">
+                  <div className={cn("p-2 rounded-lg", action.color)}>
                     {action.icon}
                   </div>
-
-                  {/* Content */}
-                  <div className="flex-1 text-left min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium text-sm truncate">
-                        {action.title}
-                      </h4>
-                      {action.isNew && (
-                        <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
-                          New
-                        </Badge>
-                      )}
-                      {action.isPopular && (
-                        <Star className="h-3 w-3 text-yellow-500" />
-                      )}
+                  <div className="flex-1 text-left">
+                    <div className="font-medium text-sm">{action.title}</div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400 line-clamp-1">
+                      {action.description}
                     </div>
-                    
-                    {!compact && (
-                      <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">
-                        {action.description}
-                      </p>
-                    )}
-
-                    {/* Shortcut */}
-                    {action.shortcut && !compact && (
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
-                          {action.shortcut}
-                        </span>
-                      </div>
-                    )}
                   </div>
-
-                  {/* Badge */}
-                  {action.badge && (
-                    <Badge 
-                      variant="secondary" 
-                      className={cn("text-xs", getBadgeColor(action.badgeColor))}
-                    >
-                      {action.badge}
-                    </Badge>
-                  )}
-
-                  {/* Arrow Icon */}
-                  <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
-
-                  {/* Background Pattern */}
-                  <div className={cn(
-                    "absolute top-0 right-0 w-16 h-16 opacity-5 transition-opacity group-hover:opacity-10",
-                    `bg-${action.color}-500`
-                  )} />
-                </Button>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+                  <div className="flex items-center gap-1">
+                    {action.shortcut && (
+                      <Badge variant="secondary" className="text-xs">
+                        {action.shortcut}
+                      </Badge>
+                    )}
+                    {action.badge && (
+                      <Badge variant="secondary" className={cn("text-xs", getBadgeColor(action.badgeColor))}>
+                        {action.badge}
+                      </Badge>
+                    )}
+                    <ChevronRight className="h-3 w-3 text-slate-400" />
+                  </div>
+                </div>
+              </Button>
+            </motion.div>
+          ))}
         </div>
 
-        {/* Empty State */}
-        {filteredActions.length === 0 && (
-          <div className="text-center py-8 text-slate-500 dark:text-slate-400">
-            <Zap className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No actions found</p>
-            <p className="text-xs">Try selecting a different category</p>
+        {/* Show More Button */}
+        {filteredActions.length > maxActions && (
+          <div className="mt-4 text-center">
+            <Button variant="ghost" size="sm">
+              Show {filteredActions.length - maxActions} more
+            </Button>
           </div>
         )}
 
-        {/* Quick Tips */}
-        {!compact && (
-          <div className="mt-6 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="h-4 w-4 text-slate-500" />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                Pro Tips
-              </span>
-            </div>
-            <div className="text-xs text-slate-600 dark:text-slate-400 space-y-1">
-              <p>• Use keyboard shortcuts for faster access</p>
-              <p>• Star frequently used actions for quick access</p>
-              <p>• Customize your quick actions in settings</p>
-            </div>
+        {/* Empty State */}
+        {displayedActions.length === 0 && (
+          <div className="text-center py-8">
+            <Zap className="h-8 w-8 text-slate-400 mx-auto mb-2" />
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              No actions available in this category
+            </p>
           </div>
         )}
       </CardContent>

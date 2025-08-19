@@ -1,112 +1,58 @@
 "use client";
-
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { 
-  Mail, 
-  Star, 
-  Clock, 
-  AlertTriangle, 
-  CheckCircle, 
-  MoreHorizontal,
-  Reply,
-  ReplyAll,
-  Forward,
-  Archive,
-  Trash2,
-  Pin,
-  Snooze,
-  Tag,
-  User,
-  Building,
-  Phone,
-  MapPin,
-  Calendar,
-  MessageSquare,
-  FileText,
-  Download,
-  Eye,
-  EyeOff,
-  Filter,
-  Search,
-  ChevronRight,
-  ChevronLeft,
-  Send,
-  Edit,
-  Plus,
-  Sparkles,
-  Zap,
-  Target,
-  Briefcase,
-  CheckSquare
-} from 'lucide-react';
+import { Mail, Star, Clock, AlertTriangle, CheckCircle, MoreHorizontal, Reply, ReplyAll, Forward, Archive, Trash2, Pin, Snooze, Tag, User, Building, Phone, MapPin, Calendar, MessageSquare, FileText, Eye, EyeOff, Filter, Search, ChevronRight, ChevronLeft, Send, Edit, Plus, Sparkles, Zap, Target, Briefcase, CheckSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface EmailThread {
   id: string;
   subject: string;
-  participants: {
-    name: string;
-    email: string;
-    avatar?: string;
-  }[];
-  lastMessage: {
-    content: string;
-    timestamp: Date;
-    from: string;
-  };
+  snippet: string;
+  participants: Array<{ name: string; email: string }>;
+  messageCount: number;
   unread: boolean;
   starred: boolean;
-  snoozed: boolean;
+  hasAttachments: boolean;
   labels: string[];
-  intent: {
-    score: number;
-    type: 'lead' | 'deal' | 'support' | 'general';
-    confidence: number;
-  };
-  priority: 'high' | 'medium' | 'low';
-  stage?: 'prospect' | 'qualified' | 'proposal' | 'negotiation' | 'closed';
-  tags: string[];
-  attachments: number;
-  threadLength: number;
+  lastMessageAt: string;
+  updatedAt: string;
 }
 
 interface Contact {
   id: string;
   name: string;
   email: string;
-  company: string;
-  title: string;
+  company?: string;
+  title?: string;
   phone?: string;
-  avatar?: string;
-  lastContact: Date;
-  dealHistory: {
+  location?: string;
+  avatarUrl?: string;
+  intentScore?: number;
+  dealHistory?: Array<{
     id: string;
     title: string;
     value: number;
+    stage: string;
     status: string;
-  }[];
-  notes: string[];
+  }>;
+  notes?: string;
   tags: string[];
-  intent: number;
+  lastContact?: string;
+  nextFollowUp?: string;
 }
 
 interface EnhancedInboxProps {
-  activeTab: string;
-  searchQuery: string;
-  selectedFilter: string | null;
+  activeTab?: string;
+  searchQuery?: string;
+  selectedFilter?: string;
 }
 
-export default function EnhancedInbox({ 
-  activeTab, 
-  searchQuery, 
-  selectedFilter 
-}: EnhancedInboxProps) {
+export default function EnhancedInbox({ activeTab = 'all', searchQuery = '', selectedFilter = '' }: EnhancedInboxProps) {
   const [threads, setThreads] = useState<EmailThread[]>([]);
   const [selectedThread, setSelectedThread] = useState<EmailThread | null>(null);
   const [contact, setContact] = useState<Contact | null>(null);
@@ -114,167 +60,136 @@ export default function EnhancedInbox({
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'split' | 'thread'>('split');
 
-  // Mock data
-  const mockThreads: EmailThread[] = [
-    {
-      id: '1',
-      subject: 'Proposal Discussion - TechCorp Enterprise Deal',
-      participants: [
-        { name: 'Sarah Johnson', email: 'sarah@techcorp.com', avatar: '/api/avatar/sarah' },
-        { name: 'John Doe', email: 'john@company.com' }
-      ],
-      lastMessage: {
-        content: 'Hi John, I\'ve reviewed the proposal and have some questions about the implementation timeline...',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        from: 'sarah@techcorp.com'
-      },
-      unread: true,
-      starred: true,
-      snoozed: false,
-      labels: ['leads', 'proposal'],
-      intent: {
-        score: 0.85,
-        type: 'lead',
-        confidence: 0.92
-      },
-      priority: 'high',
-      stage: 'proposal',
-      tags: ['enterprise', 'tech', 'proposal'],
-      attachments: 2,
-      threadLength: 8
-    },
-    {
-      id: '2',
-      subject: 'Contract Review - StartupXYZ',
-      participants: [
-        { name: 'Mike Chen', email: 'mike@startupxyz.com', avatar: '/api/avatar/mike' },
-        { name: 'John Doe', email: 'john@company.com' }
-      ],
-      lastMessage: {
-        content: 'The contract looks good overall. Can we discuss the payment terms?',
-        timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000),
-        from: 'mike@startupxyz.com'
-      },
-      unread: false,
-      starred: false,
-      snoozed: false,
-      labels: ['deals', 'contract'],
-      intent: {
-        score: 0.78,
-        type: 'deal',
-        confidence: 0.85
-      },
-      priority: 'medium',
-      stage: 'negotiation',
-      tags: ['startup', 'contract', 'payment'],
-      attachments: 1,
-      threadLength: 12
-    },
-    {
-      id: '3',
-      subject: 'Product Demo Request',
-      participants: [
-        { name: 'David Wilson', email: 'david@acmecorp.com', avatar: '/api/avatar/david' },
-        { name: 'John Doe', email: 'john@company.com' }
-      ],
-      lastMessage: {
-        content: 'We\'re interested in seeing a demo of your platform. When would be a good time?',
-        timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
-        from: 'david@acmecorp.com'
-      },
-      unread: true,
-      starred: false,
-      snoozed: false,
-      labels: ['leads', 'demo'],
-      intent: {
-        score: 0.72,
-        type: 'lead',
-        confidence: 0.78
-      },
-      priority: 'medium',
-      stage: 'prospect',
-      tags: ['demo', 'acme', 'interest'],
-      attachments: 0,
-      threadLength: 3
-    }
-  ];
+  useEffect(() => {
+    const fetchThreads = async () => {
+      try {
+        const params = new URLSearchParams();
+        if (activeTab !== 'all') params.append('filter', activeTab);
+        if (searchQuery) params.append('search', searchQuery);
+        if (selectedFilter) params.append('filter', selectedFilter);
+        
+        const response = await fetch(`/api/inbox/threads?${params.toString()}`);
+        if (response.ok) {
+          const data = await response.json();
+          setThreads(data.threads || []);
+        } else {
+          setThreads([]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch email threads:', error);
+        setThreads([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const mockContact: Contact = {
-    id: '1',
-    name: 'Sarah Johnson',
-    email: 'sarah@techcorp.com',
-    company: 'TechCorp Inc.',
-    title: 'VP of Engineering',
-    phone: '+1 (555) 123-4567',
-    avatar: '/api/avatar/sarah',
-    lastContact: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    dealHistory: [
-      { id: '1', title: 'Enterprise License', value: 250000, status: 'In Progress' },
-      { id: '2', title: 'Professional Services', value: 50000, status: 'Completed' }
-    ],
-    notes: [
-      'Interested in enterprise features',
-      'Decision maker for technical purchases',
-      'Prefers technical demos over sales pitches'
-    ],
-    tags: ['enterprise', 'technical', 'decision-maker'],
-    intent: 85
-  };
+    fetchThreads();
+  }, [activeTab, searchQuery, selectedFilter]);
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setThreads(mockThreads);
-      setSelectedThread(mockThreads[0]);
-      setContact(mockContact);
-      setIsLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
+    // Fetch contact data when a thread is selected
+    if (selectedThread && selectedThread.participants.length > 0) {
+      const fetchContact = async () => {
+        try {
+          const participant = selectedThread.participants[0];
+          const response = await fetch(`/api/contacts?search=${participant.email}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.contacts && data.contacts.length > 0) {
+              const contactData = data.contacts[0];
+              setContact({
+                id: contactData.id,
+                name: contactData.name,
+                email: contactData.email,
+                company: contactData.company,
+                title: contactData.title,
+                phone: contactData.phone,
+                location: contactData.location,
+                avatarUrl: contactData.avatarUrl,
+                tags: contactData.tags || [],
+                lastContact: contactData.lastActivity,
+                notes: 'Contact information from email thread'
+              });
+            } else {
+              // Create a basic contact from participant data
+              setContact({
+                id: 'temp-' + Date.now(),
+                name: participant.name,
+                email: participant.email,
+                tags: ['email-contact'],
+                lastContact: selectedThread.lastMessageAt,
+                notes: 'Contact from email thread'
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch contact data:', error);
+          // Create a basic contact from participant data
+          if (selectedThread.participants.length > 0) {
+            const participant = selectedThread.participants[0];
+            setContact({
+              id: 'temp-' + Date.now(),
+              name: participant.name,
+              email: participant.email,
+              tags: ['email-contact'],
+              lastContact: selectedThread.lastMessageAt,
+              notes: 'Contact from email thread'
+            });
+          }
+        }
+      };
 
-  const getIntentColor = (score: number) => {
-    if (score >= 0.8) return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';
-    if (score >= 0.6) return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400';
-    return 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400';
+      fetchContact();
+    } else {
+      setContact(null);
+    }
+  }, [selectedThread]);
+
+  const getIntentColor = (score?: number) => {
+    if (!score) return 'bg-slate-100 text-slate-700';
+    if (score >= 80) return 'bg-green-100 text-green-700';
+    if (score >= 60) return 'bg-yellow-100 text-yellow-700';
+    return 'bg-red-100 text-red-700';
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400';
+        return 'bg-red-100 text-red-700';
       case 'medium':
-        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400';
+        return 'bg-yellow-100 text-yellow-700';
       default:
-        return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';
+        return 'bg-green-100 text-green-700';
     }
   };
 
-  const getStageColor = (stage?: string) => {
+  const getStageColor = (stage: string) => {
     switch (stage) {
+      case 'lead':
+        return 'bg-blue-100 text-blue-700';
       case 'prospect':
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
+        return 'bg-purple-100 text-purple-700';
       case 'qualified':
-        return 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400';
-      case 'proposal':
-        return 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400';
-      case 'negotiation':
-        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400';
-      case 'closed':
-        return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';
+        return 'bg-green-100 text-green-700';
       default:
-        return 'bg-slate-100 text-slate-700 dark:bg-slate-900/20 dark:text-slate-400';
+        return 'bg-slate-100 text-slate-700';
     }
   };
 
-  const formatTime = (date: Date) => {
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
     const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(hours / 24);
-
-    if (days > 0) return `${days}d`;
-    if (hours > 0) return `${hours}h`;
-    return 'now';
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    
+    if (diffInHours < 1) {
+      return 'Just now';
+    } else if (diffInHours < 24) {
+      return `${Math.floor(diffInHours)}h ago`;
+    } else if (diffInHours < 48) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString();
+    }
   };
 
   if (isLoading) {
@@ -289,11 +204,12 @@ export default function EnhancedInbox({
     <div className="h-full flex">
       {/* Thread List */}
       <div className={cn(
-        "border-r border-slate-200 dark:border-slate-700",
-        viewMode === 'split' ? 'w-1/3' : 'w-full'
+        "flex flex-col border-r border-slate-200 dark:border-slate-700",
+        viewMode === 'split' ? "w-1/3" : "w-full"
       )}>
+        {/* Thread List Header */}
         <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold">Inbox</h2>
             <div className="flex items-center gap-2">
               <Button
@@ -305,290 +221,365 @@ export default function EnhancedInbox({
               </Button>
             </div>
           </div>
-
-          {/* Quick Actions */}
-          <div className="flex items-center gap-2 mb-4">
-            <Button size="sm" className="flex items-center gap-2">
-              <Reply className="h-4 w-4" />
-              Reply
-            </Button>
-            <Button size="sm" variant="outline" className="flex items-center gap-2">
-              <Archive className="h-4 w-4" />
-              Archive
-            </Button>
-            <Button size="sm" variant="outline" className="flex items-center gap-2">
-              <Tag className="h-4 w-4" />
-              Tag
+          
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Search emails..."
+                className="pl-10"
+                value={searchQuery}
+                onChange={(e) => console.log('Search:', e.target.value)}
+              />
+            </div>
+            <Button variant="ghost" size="sm">
+              <Filter className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
         {/* Thread List */}
-        <div className="overflow-y-auto h-[calc(100vh-200px)]">
-          {threads.map((thread) => (
-            <motion.div
-              key={thread.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className={cn(
-                "p-4 border-b border-slate-100 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors",
-                selectedThread?.id === thread.id && "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
-              )}
-              onClick={() => setSelectedThread(thread)}
-            >
-              <div className="flex items-start gap-3">
-                {/* Avatar */}
-                <Avatar className="h-10 w-10 flex-shrink-0">
-                  <AvatarImage src={thread.participants[0].avatar} />
-                  <AvatarFallback>
-                    {thread.participants[0].name.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
+        <div className="flex-1 overflow-y-auto">
+          {threads.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center p-8">
+              <Mail className="h-12 w-12 text-slate-400 mb-4" />
+              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
+                No emails found
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400 mb-4">
+                {searchQuery ? 'Try adjusting your search terms' : 'Connect your email account to get started'}
+              </p>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Connect Email
+              </Button>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-200 dark:divide-slate-700">
+              {threads.map((thread) => (
+                <motion.div
+                  key={thread.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={cn(
+                    "p-4 cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50",
+                    selectedThread?.id === thread.id && "bg-blue-50 dark:bg-blue-900/20 border-r-2 border-blue-500"
+                  )}
+                  onClick={() => setSelectedThread(thread)}
+                >
+                  <div className="flex items-start gap-3">
+                    {/* Avatar */}
+                    <Avatar className="h-10 w-10 flex-shrink-0">
+                      <AvatarImage src={thread.participants[0]?.email ? `/api/avatar/${thread.participants[0].email}` : undefined} />
+                      <AvatarFallback>
+                        {thread.participants[0]?.name?.charAt(0) || 'E'}
+                      </AvatarFallback>
+                    </Avatar>
 
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-sm truncate">
-                      {thread.participants[0].name}
-                    </span>
-                    {thread.starred && <Star className="h-3 w-3 text-yellow-500 fill-current" />}
-                    {thread.unread && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className={cn(
+                          "font-medium text-sm truncate",
+                          thread.unread && "font-semibold"
+                        )}>
+                          {thread.subject || 'No Subject'}
+                        </h3>
+                        {thread.starred && (
+                          <Star className="h-3 w-3 text-yellow-500 fill-current" />
+                        )}
+                        {thread.hasAttachments && (
+                          <FileText className="h-3 w-3 text-slate-400" />
+                        )}
+                      </div>
+
+                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-2 line-clamp-2">
+                        {thread.snippet}
+                      </p>
+
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span>{thread.participants[0]?.name || thread.participants[0]?.email || 'Unknown'}</span>
+                        <span>•</span>
+                        <span>{formatTime(thread.lastMessageAt)}</span>
+                        {thread.messageCount > 1 && (
+                          <>
+                            <span>•</span>
+                            <span>{thread.messageCount} messages</span>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Labels */}
+                      {thread.labels.length > 0 && (
+                        <div className="flex items-center gap-1 mt-2">
+                          {thread.labels.slice(0, 2).map((label) => (
+                            <Badge key={label} variant="secondary" className="text-xs">
+                              {label}
+                            </Badge>
+                          ))}
+                          {thread.labels.length > 2 && (
+                            <Badge variant="secondary" className="text-xs">
+                              +{thread.labels.length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <MoreHorizontal className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
-
-                  <h3 className={cn(
-                    "text-sm font-medium mb-1 line-clamp-1",
-                    thread.unread ? "text-slate-900 dark:text-slate-100" : "text-slate-700 dark:text-slate-300"
-                  )}>
-                    {thread.subject}
-                  </h3>
-
-                  <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 mb-2">
-                    {thread.lastMessage.content}
-                  </p>
-
-                  {/* Badges */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge 
-                      variant="secondary" 
-                      className={cn("text-xs", getIntentColor(thread.intent.score))}
-                    >
-                      {Math.round(thread.intent.score * 100)}% Intent
-                    </Badge>
-                    
-                    <Badge 
-                      variant="secondary" 
-                      className={cn("text-xs", getPriorityColor(thread.priority))}
-                    >
-                      {thread.priority}
-                    </Badge>
-
-                    {thread.stage && (
-                      <Badge 
-                        variant="secondary" 
-                        className={cn("text-xs", getStageColor(thread.stage))}
-                      >
-                        {thread.stage}
-                      </Badge>
-                    )}
-
-                    {thread.attachments > 0 && (
-                      <Badge variant="outline" className="text-xs">
-                        📎 {thread.attachments}
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Meta */}
-                  <div className="flex items-center justify-between mt-2 text-xs text-slate-500 dark:text-slate-400">
-                    <span>{formatTime(thread.lastMessage.timestamp)}</span>
-                    <span>{thread.threadLength} messages</span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Thread Panel */}
-      {viewMode === 'split' && selectedThread && (
-        <div className="flex-1 flex">
-          {/* Email Content */}
-          <div className="flex-1 flex flex-col">
-            <div className="p-6 border-b border-slate-200 dark:border-slate-700">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">{selectedThread.subject}</h2>
-                <div className="flex items-center gap-2">
-                  <Button size="sm" variant="outline">
-                    <Reply className="h-4 w-4 mr-2" />
-                    Reply
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <ReplyAll className="h-4 w-4 mr-2" />
-                    Reply All
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <Forward className="h-4 w-4 mr-2" />
-                    Forward
-                  </Button>
+      {viewMode === 'split' && (
+        <div className="flex-1 flex flex-col">
+          {selectedThread ? (
+            <>
+              {/* Thread Header */}
+              <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold">{selectedThread.subject || 'No Subject'}</h3>
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="sm">
+                      <Reply className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm">
+                      <ReplyAll className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm">
+                      <Forward className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
 
-              {/* AI Summary */}
-              <Card className="mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Sparkles className="h-4 w-4 text-blue-500" />
-                    <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                      AI Summary
+                <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
+                  <div className="flex items-center gap-2">
+                    <span>From:</span>
+                    <span className="font-medium">
+                      {selectedThread.participants[0]?.name || selectedThread.participants[0]?.email || 'Unknown'}
                     </span>
                   </div>
-                  <p className="text-sm text-blue-600 dark:text-blue-400">
-                    This thread shows high intent (85%) for a lead opportunity. Sarah is interested in the enterprise proposal 
-                    and has questions about implementation timeline. Recommended next action: Schedule a technical demo.
+                  <div className="flex items-center gap-2">
+                    <span>To:</span>
+                    <span className="font-medium">
+                      {selectedThread.participants.slice(1).map(p => p.name || p.email).join(', ') || 'You'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-3 w-3" />
+                    <span>{formatTime(selectedThread.lastMessageAt)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Thread Content */}
+              <div className="flex-1 overflow-y-auto p-4">
+                <div className="prose prose-sm max-w-none">
+                  <p className="text-slate-700 dark:text-slate-300">
+                    {selectedThread.snippet}
                   </p>
-                </CardContent>
-              </Card>
-
-              {/* Email Content */}
-              <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={selectedThread.participants[0].avatar} />
-                    <AvatarFallback>
-                      {selectedThread.participants[0].name.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-sm">{selectedThread.participants[0].name}</span>
-                      <span className="text-xs text-slate-500">{selectedThread.participants[0].email}</span>
-                      <span className="text-xs text-slate-400">{formatTime(selectedThread.lastMessage.timestamp)}</span>
-                    </div>
-                    <p className="text-sm text-slate-700 dark:text-slate-300">
-                      {selectedThread.lastMessage.content}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Contact Panel */}
-          {showContactPanel && contact && (
-            <div className="w-80 border-l border-slate-200 dark:border-slate-700">
-              <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold">Contact</h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowContactPanel(false)}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="p-4 space-y-4">
-                {/* Contact Info */}
-                <div className="text-center">
-                  <Avatar className="h-16 w-16 mx-auto mb-3">
-                    <AvatarImage src={contact.avatar} />
-                    <AvatarFallback className="text-lg">
-                      {contact.name.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <h4 className="font-semibold">{contact.name}</h4>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">{contact.title}</p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">{contact.company}</p>
+                  <p className="text-slate-500 text-sm mt-4">
+                    This is a preview of the email content. The full message would be displayed here with proper formatting.
+                  </p>
                 </div>
 
-                {/* Contact Details */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Mail className="h-4 w-4 text-slate-400" />
-                    <span>{contact.email}</span>
-                  </div>
-                  {contact.phone && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="h-4 w-4 text-slate-400" />
-                      <span>{contact.phone}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Intent Score */}
-                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Intent Score</span>
-                    <span className="text-sm font-bold text-green-600">{contact.intent}%</span>
-                  </div>
-                  <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
-                    <div 
-                      className="bg-green-500 h-2 rounded-full transition-all"
-                      style={{ width: `${contact.intent}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Deal History */}
-                <div>
-                  <h5 className="font-medium mb-2">Deal History</h5>
-                  <div className="space-y-2">
-                    {contact.dealHistory.map((deal) => (
-                      <div key={deal.id} className="p-2 bg-slate-50 dark:bg-slate-800/50 rounded text-sm">
-                        <div className="font-medium">{deal.title}</div>
-                        <div className="text-slate-600 dark:text-slate-400">
-                          ${deal.value.toLocaleString()} • {deal.status}
-                        </div>
+                {/* AI Summary Card */}
+                <Card className="mt-6">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-sm">
+                      <Sparkles className="h-4 w-4 text-blue-500" />
+                      AI Summary
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          Intent: {contact?.intentScore ? `${contact.intentScore}%` : 'Unknown'}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          Priority: Medium
+                        </Badge>
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Notes */}
-                <div>
-                  <h5 className="font-medium mb-2">Notes</h5>
-                  <div className="space-y-1">
-                    {contact.notes.map((note, index) => (
-                      <div key={index} className="text-sm text-slate-600 dark:text-slate-400">
-                        • {note}
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        This appears to be a {contact?.intentScore && contact.intentScore > 70 ? 'high-intent' : 'general'} email. 
+                        {contact?.intentScore && contact.intentScore > 70 ? ' Consider following up promptly.' : ' Standard response timeline applies.'}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Button size="sm" variant="outline">
+                          <Target className="h-3 w-3 mr-1" />
+                          Mark as Lead
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <CheckSquare className="h-3 w-3 mr-1" />
+                          Create Task
+                        </Button>
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Tags */}
-                <div>
-                  <h5 className="font-medium mb-2">Tags</h5>
-                  <div className="flex flex-wrap gap-1">
-                    {contact.tags.map((tag) => (
-                      <Badge key={tag} variant="outline" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Quick Actions */}
-                <div className="space-y-2">
-                  <Button size="sm" className="w-full justify-start">
-                    <Mail className="h-4 w-4 mr-2" />
-                    Send Email
-                  </Button>
-                  <Button size="sm" variant="outline" className="w-full justify-start">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Schedule Meeting
-                  </Button>
-                  <Button size="sm" variant="outline" className="w-full justify-start">
-                    <CheckSquare className="h-4 w-4 mr-2" />
-                    Create Task
-                  </Button>
-                </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <Mail className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
+                  Select an email
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400">
+                  Choose an email from the list to view its content
+                </p>
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Contact Panel */}
+      {viewMode === 'split' && showContactPanel && contact && (
+        <div className="w-80 border-l border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+          <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold">Contact</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowContactPanel(false)}
+              >
+                <EyeOff className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="p-4 space-y-4">
+            {/* Contact Info */}
+            <div className="flex items-center gap-3">
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={contact.avatarUrl} />
+                <AvatarFallback>
+                  {contact.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h4 className="font-medium">{contact.name}</h4>
+                <p className="text-sm text-slate-600 dark:text-slate-400">{contact.email}</p>
+                {contact.company && (
+                  <p className="text-sm text-slate-600 dark:text-slate-400">{contact.company}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Intent Score */}
+            {contact.intentScore && (
+              <div>
+                <h5 className="text-sm font-medium mb-2">Intent Score</h5>
+                <Badge className={cn("text-xs", getIntentColor(contact.intentScore))}>
+                  {contact.intentScore}% likely to convert
+                </Badge>
+              </div>
+            )}
+
+            {/* Contact Details */}
+            <div className="space-y-2">
+              {contact.phone && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone className="h-4 w-4 text-slate-400" />
+                  <span>{contact.phone}</span>
+                </div>
+              )}
+              {contact.location && (
+                <div className="flex items-center gap-2 text-sm">
+                  <MapPin className="h-4 w-4 text-slate-400" />
+                  <span>{contact.location}</span>
+                </div>
+              )}
+              {contact.title && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Briefcase className="h-4 w-4 text-slate-400" />
+                  <span>{contact.title}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Tags */}
+            {contact.tags.length > 0 && (
+              <div>
+                <h5 className="text-sm font-medium mb-2">Tags</h5>
+                <div className="flex flex-wrap gap-1">
+                  {contact.tags.map((tag) => (
+                    <Badge key={tag} variant="secondary" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Deal History */}
+            {contact.dealHistory && contact.dealHistory.length > 0 && (
+              <div>
+                <h5 className="text-sm font-medium mb-2">Deal History</h5>
+                <div className="space-y-2">
+                  {contact.dealHistory.slice(0, 3).map((deal) => (
+                    <div key={deal.id} className="p-2 bg-white dark:bg-slate-800 rounded border">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{deal.title}</span>
+                        <span className="text-sm text-green-600">${deal.value.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className={cn("text-xs", getStageColor(deal.stage))}>
+                          {deal.stage}
+                        </Badge>
+                        <span className="text-xs text-slate-500">{deal.status}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Notes */}
+            {contact.notes && (
+              <div>
+                <h5 className="text-sm font-medium mb-2">Notes</h5>
+                <p className="text-sm text-slate-600 dark:text-slate-400">{contact.notes}</p>
+              </div>
+            )}
+
+            {/* Quick Actions */}
+            <div className="space-y-2">
+              <Button size="sm" className="w-full justify-start">
+                <Mail className="h-4 w-4 mr-2" />
+                Send Email
+              </Button>
+              <Button size="sm" variant="outline" className="w-full justify-start">
+                <Calendar className="h-4 w-4 mr-2" />
+                Schedule Meeting
+              </Button>
+              <Button size="sm" variant="outline" className="w-full justify-start">
+                <CheckSquare className="h-4 w-4 mr-2" />
+                Create Task
+              </Button>
+              <Button size="sm" variant="outline" className="w-full justify-start">
+                <Target className="h-4 w-4 mr-2" />
+                Add to Pipeline
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

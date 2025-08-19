@@ -1,23 +1,10 @@
 "use client";
-
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Target, 
-  Trophy, 
-  DollarSign, 
-  Percent, 
-  CheckSquare,
-  Plus,
-  ArrowRight,
-  AlertTriangle,
-  Clock
-} from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, Trophy, DollarSign, Percent, CheckSquare, Plus, ArrowRight, AlertTriangle, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface KPIMetric {
@@ -31,11 +18,7 @@ interface KPIMetric {
   color: string;
   trend: 'up' | 'down' | 'stable';
   period: string;
-  action?: {
-    label: string;
-    onClick: () => void;
-    icon: React.ReactNode;
-  };
+  action?: { label: string; onClick: () => void; icon: React.ReactNode; };
 }
 
 interface KPIStripProps {
@@ -45,100 +28,89 @@ interface KPIStripProps {
 }
 
 export default function KPIStrip({ className, showActions = true, compact = false }: KPIStripProps) {
-  const [metrics, setMetrics] = useState<KPIMetric[]>([
-    {
-      id: 'leads',
-      label: 'Leads',
-      value: 247,
-      change: 12.5,
-      changeType: 'increase',
-      target: 300,
-      icon: <Target className="h-4 w-4" />,
-      color: 'blue',
-      trend: 'up',
-      period: 'vs last week',
-      action: {
-        label: 'Add Lead',
-        onClick: () => console.log('Add lead'),
-        icon: <Plus className="h-3 w-3" />
-      }
-    },
-    {
-      id: 'deals',
-      label: 'Deals',
-      value: 89,
-      change: 8.2,
-      changeType: 'increase',
-      target: 120,
-      icon: <Trophy className="h-4 w-4" />,
-      color: 'green',
-      trend: 'up',
-      period: 'vs last week',
-      action: {
-        label: 'Create Deal',
-        onClick: () => console.log('Create deal'),
-        icon: <Plus className="h-3 w-3" />
-      }
-    },
-    {
-      id: 'revenue',
-      label: 'Revenue',
-      value: '$2.4M',
-      change: 15.3,
-      changeType: 'increase',
-      target: 3000000,
-      icon: <DollarSign className="h-4 w-4" />,
-      color: 'purple',
-      trend: 'up',
-      period: 'vs last month',
-      action: {
-        label: 'View Forecast',
-        onClick: () => console.log('View forecast'),
-        icon: <ArrowRight className="h-3 w-3" />
-      }
-    },
-    {
-      id: 'conversion',
-      label: 'Conversion',
-      value: '23.4%',
-      change: -2.1,
-      changeType: 'decrease',
-      target: 25,
-      icon: <Percent className="h-4 w-4" />,
-      color: 'orange',
-      trend: 'down',
-      period: 'vs last month',
-      action: {
-        label: 'Analyze',
-        onClick: () => console.log('Analyze conversion'),
-        icon: <ArrowRight className="h-3 w-3" />
-      }
-    },
-    {
-      id: 'tasks',
-      label: 'Tasks Due',
-      value: 12,
-      change: 3,
-      changeType: 'increase',
-      target: 5,
-      icon: <CheckSquare className="h-4 w-4" />,
-      color: 'red',
-      trend: 'up',
-      period: 'today',
-      action: {
-        label: 'View All',
-        onClick: () => console.log('View tasks'),
-        icon: <ArrowRight className="h-3 w-3" />
-      }
-    }
-  ]);
-
+  const [metrics, setMetrics] = useState<KPIMetric[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => setIsLoading(false), 500);
-    return () => clearTimeout(timer);
+    const fetchKPIData = async () => {
+      try {
+        const response = await fetch('/api/dashboard');
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Transform real data into KPI metrics
+          const realMetrics: KPIMetric[] = [
+            {
+              id: 'leads',
+              label: 'Active Leads',
+              value: data.totalActiveLeads || 0,
+              change: 0, // We'll need to calculate this from historical data
+              changeType: 'neutral',
+              icon: <Target className="h-4 w-4" />,
+              color: 'bg-blue-500',
+              trend: 'stable',
+              period: 'vs last week'
+            },
+            {
+              id: 'deals',
+              label: 'Pipeline Value',
+              value: data.pipelineStats?.totalValue ? `$${(data.pipelineStats.totalValue / 1000).toFixed(0)}k` : '$0',
+              change: 0,
+              changeType: 'neutral',
+              icon: <Trophy className="h-4 w-4" />,
+              color: 'bg-green-500',
+              trend: 'stable',
+              period: 'vs last week'
+            },
+            {
+              id: 'revenue',
+              label: 'Revenue',
+              value: data.pipelineStats?.closedValue ? `$${(data.pipelineStats.closedValue / 1000).toFixed(0)}k` : '$0',
+              change: 0,
+              changeType: 'neutral',
+              icon: <DollarSign className="h-4 w-4" />,
+              color: 'bg-emerald-500',
+              trend: 'stable',
+              period: 'this month'
+            },
+            {
+              id: 'conversion',
+              label: 'Win Rate',
+              value: data.pipelineStats?.winRate ? `${data.pipelineStats.winRate}%` : '0%',
+              change: 0,
+              changeType: 'neutral',
+              icon: <Percent className="h-4 w-4" />,
+              color: 'bg-purple-500',
+              trend: 'stable',
+              period: 'vs last month'
+            },
+            {
+              id: 'tasks',
+              label: 'Tasks Due',
+              value: data.tasksDue || 0,
+              change: 0,
+              changeType: 'neutral',
+              icon: <CheckSquare className="h-4 w-4" />,
+              color: 'bg-orange-500',
+              trend: 'stable',
+              period: 'today'
+            }
+          ];
+          
+          setMetrics(realMetrics);
+        } else {
+          // Fallback to empty metrics if API fails
+          setMetrics([]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch KPI data:', error);
+        setMetrics([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchKPIData();
   }, []);
 
   const getTrendIcon = (trend: string) => {
@@ -148,25 +120,14 @@ export default function KPIStrip({ className, showActions = true, compact = fals
       case 'down':
         return <TrendingDown className="h-3 w-3 text-red-500" />;
       default:
-        return <div className="h-3 w-3" />;
+        return <Clock className="h-3 w-3 text-slate-400" />;
     }
   };
 
-  const getChangeColor = (changeType: string) => {
-    switch (changeType) {
-      case 'increase':
-        return 'text-green-600 dark:text-green-400';
-      case 'decrease':
-        return 'text-red-600 dark:text-red-400';
-      default:
-        return 'text-slate-600 dark:text-slate-400';
-    }
-  };
-
-  const getProgressPercentage = (value: number | string, target?: number) => {
-    if (!target) return 0;
-    const numValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.]/g, '')) : value;
-    return Math.min((numValue / target) * 100, 100);
+  const getProgressColor = (change: number) => {
+    if (change > 0) return 'bg-green-500';
+    if (change < 0) return 'bg-red-500';
+    return 'bg-slate-300';
   };
 
   if (isLoading) {
@@ -175,12 +136,19 @@ export default function KPIStrip({ className, showActions = true, compact = fals
         {Array.from({ length: 5 }).map((_, i) => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-4">
-              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded mb-2"></div>
-              <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded mb-2"></div>
-              <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
+              <div className="h-4 bg-slate-200 rounded mb-2"></div>
+              <div className="h-8 bg-slate-200 rounded"></div>
             </CardContent>
           </Card>
         ))}
+      </div>
+    );
+  }
+
+  if (metrics.length === 0) {
+    return (
+      <div className={cn("text-center py-8", className)}>
+        <p className="text-slate-500">No KPI data available</p>
       </div>
     );
   }
@@ -196,110 +164,73 @@ export default function KPIStrip({ className, showActions = true, compact = fals
             exit={{ opacity: 0, y: -20 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Card className={cn(
-              "relative overflow-hidden transition-all duration-200 hover:shadow-md hover:scale-[1.02]",
-              compact ? "p-3" : "p-4"
-            )}>
-              <CardContent className={cn("p-0", compact ? "space-y-2" : "space-y-3")}>
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={cn(
-                      "p-2 rounded-lg",
-                      `bg-${metric.color}-100 dark:bg-${metric.color}-900/20`,
-                      `text-${metric.color}-600 dark:text-${metric.color}-400`
-                    )}>
-                      {metric.icon}
+            <Card className="relative overflow-hidden hover:shadow-md transition-shadow">
+              <CardContent className={cn("p-4", compact && "p-3")}>
+                {/* Background accent */}
+                <div className={cn("absolute top-0 left-0 w-1 h-full", metric.color)} />
+                
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    {/* Label */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={cn("p-1.5 rounded-lg", metric.color.replace('bg-', 'bg-').replace('-500', '-100'))}>
+                        <div className={cn("text-white", metric.color)}>
+                          {metric.icon}
+                        </div>
+                      </div>
+                      <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                        {metric.label}
+                      </span>
                     </div>
-                    <span className={cn(
-                      "font-medium text-slate-700 dark:text-slate-300",
-                      compact ? "text-sm" : "text-base"
-                    )}>
-                      {metric.label}
-                    </span>
+                    
+                    {/* Value */}
+                    <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-1">
+                      {metric.value}
+                    </div>
+                    
+                    {/* Change indicator */}
+                    <div className="flex items-center gap-2">
+                      {getTrendIcon(metric.trend)}
+                      <span className={cn(
+                        "text-xs font-medium",
+                        metric.changeType === 'increase' && "text-green-600 dark:text-green-400",
+                        metric.changeType === 'decrease' && "text-red-600 dark:text-red-400",
+                        metric.changeType === 'neutral' && "text-slate-500 dark:text-slate-400"
+                      )}>
+                        {metric.change > 0 ? '+' : ''}{metric.change}% {metric.period}
+                      </span>
+                    </div>
                   </div>
+                  
+                  {/* Action button */}
                   {showActions && metric.action && (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={metric.action.onClick}
-                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="ml-2"
                     >
                       {metric.action.icon}
                     </Button>
                   )}
                 </div>
-
-                {/* Value */}
-                <div className="flex items-baseline gap-2">
-                  <span className={cn(
-                    "font-bold text-slate-900 dark:text-slate-100",
-                    compact ? "text-xl" : "text-2xl"
-                  )}>
-                    {metric.value}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    {getTrendIcon(metric.trend)}
-                    <span className={cn(
-                      "text-xs font-medium",
-                      getChangeColor(metric.changeType)
-                    )}>
-                      {metric.change > 0 ? '+' : ''}{metric.change}%
-                    </span>
-                  </div>
-                </div>
-
-                {/* Progress Bar */}
+                
+                {/* Progress bar for target */}
                 {metric.target && (
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
                       <span>Progress</span>
-                      <span>{Math.round(getProgressPercentage(metric.value, metric.target))}%</span>
+                      <span>{Math.round((Number(metric.value) / metric.target) * 100)}%</span>
                     </div>
-                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
+                    <div className="w-full bg-slate-200 rounded-full h-1.5">
                       <div
-                        className={cn(
-                          "h-1.5 rounded-full transition-all duration-300",
-                          `bg-${metric.color}-500`
-                        )}
-                        style={{ width: `${getProgressPercentage(metric.value, metric.target)}%` }}
+                        className={cn("h-1.5 rounded-full transition-all", getProgressColor(metric.change))}
+                        style={{ width: `${Math.min((Number(metric.value) / metric.target) * 100, 100)}%` }}
                       />
                     </div>
                   </div>
                 )}
-
-                {/* Period */}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    {metric.period}
-                  </span>
-                  {metric.id === 'tasks' && metric.value > 5 && (
-                    <Badge variant="destructive" className="text-xs">
-                      <AlertTriangle className="h-3 w-3 mr-1" />
-                      Overdue
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Action Button */}
-                {showActions && metric.action && !compact && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={metric.action.onClick}
-                    className="w-full mt-2 text-xs"
-                  >
-                    {metric.action.icon}
-                    <span className="ml-1">{metric.action.label}</span>
-                  </Button>
-                )}
               </CardContent>
-
-              {/* Background Pattern */}
-              <div className={cn(
-                "absolute top-0 right-0 w-16 h-16 opacity-5",
-                `bg-${metric.color}-500`
-              )} />
             </Card>
           </motion.div>
         ))}
