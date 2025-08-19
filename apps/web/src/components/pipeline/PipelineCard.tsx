@@ -11,7 +11,8 @@ import {
   Phone,
   MoreHorizontal,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Lead } from './PipelineBoard';
@@ -136,6 +137,20 @@ export default function PipelineCard({ lead, isDragging = false }: PipelineCardP
                 <DropdownMenuItem>
                   <Calendar className="h-4 w-4 mr-2" />
                   Add Meeting
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const enabled = !lead.automationEnabled;
+                    fetch(`/api/pipeline/leads/${lead.id}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ automationEnabled: enabled })
+                    }).then(() => window.location.reload());
+                  }}
+                >
+                  <Zap className="h-4 w-4 mr-2" />
+                  {lead.automationEnabled ? 'Disable' : 'Enable'} Follow-up
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>Edit Details</DropdownMenuItem>

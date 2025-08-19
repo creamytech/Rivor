@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 /**
  * Create new lead
  */
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
@@ -30,10 +30,11 @@ export async function POST(_req: NextRequest) {
       stage,
       priority,
       source,
-      description,
-      tags,
-      threadId
-    } = body;
+        description,
+        tags,
+        threadId,
+        automationEnabled
+      } = body;
 
     if (!title || !company || !contact) {
       return NextResponse.json(
@@ -70,7 +71,8 @@ export async function POST(_req: NextRequest) {
         description: description || null,
         tags: tags || [],
         threadId: threadId || null,
-        status: 'active'
+        status: 'active',
+        automationEnabled: automationEnabled ?? false
       }
     });
 

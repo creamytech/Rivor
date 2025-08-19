@@ -100,6 +100,7 @@ export async function GET(_req: NextRequest) {
         description: lead.description,
         createdAt: lead.createdAt.toISOString(),
         updatedAt: lead.updatedAt.toISOString(),
+        automationEnabled: lead.automationEnabled,
         tags: lead.tags || [],
         threadId: lead.threadId,
         activities: lead.activities.map(activity => ({

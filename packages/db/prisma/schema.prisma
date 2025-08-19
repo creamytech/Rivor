@@ -288,6 +288,8 @@ model Lead {
   source             String?
   assignedToId       String?
   sourceThreadId     String?
+  automationEnabled  Boolean        @default(false)
+  lastFollowUpAt     DateTime?
   expectedCloseDate  DateTime?
   actualCloseDate    DateTime?
   createdAt          DateTime       @default(now())
