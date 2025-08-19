@@ -3,7 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Search, Bell, HelpCircle, User, ChevronDown } from "lucide-react";
+import {
+  Search,
+  Bell,
+  HelpCircle,
+  User,
+  ChevronDown,
+  BarChart3,
+  Building2,
+  Calendar,
+  TrendingUp
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,6 +36,14 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
+  const pathname = usePathname();
+
+  const mobileNavItems = [
+    { href: "/app", label: "Dashboard", icon: BarChart3 },
+    { href: "/app/properties", label: "Properties", icon: Building2 },
+    { href: "/app/showings", label: "Showings", icon: Calendar },
+    { href: "/app/insights", label: "Insights", icon: TrendingUp }
+  ];
   
   useEffect(() => setShowDrawer(Boolean(rightDrawer)), [rightDrawer]);
 
@@ -94,7 +112,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
           <div className="px-4 md:px-6 w-full flex items-center gap-4">
             {/* Mobile Logo (hidden on desktop) */}
             <div className="md:hidden">
-              <Link href="/app" className="flex items-center gap-2">
+              <Link href="/app" className="flex items-center gap-2" aria-label="Rivor dashboard">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-sm">R</span>
                 </div>
@@ -111,7 +129,8 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                 <input
                   type="text"
                   placeholder="Search leads, emails, or run commands..."
-                  className="w-full pl-9 pr-8 py-2.5 text-sm bg-[var(--background)] border border-[var(--border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
+                  aria-label="Search"
+                  className="w-full pl-9 pr-8 py-2 text-sm bg-[var(--background)] border border-[var(--border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
                   onClick={() => setShowQuickActions(true)}
                   readOnly
                 />
@@ -171,7 +190,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         </header>
         
         <div className="relative">
-          <main className={`h-full ${rightDrawer ? "md:mr-[360px]" : ""}`}>
+          <main className={`h-full pb-16 md:pb-0 ${rightDrawer ? "md:mr-[360px]" : ""}`}>
             {children}
           </main>
           {rightDrawer ? (
@@ -204,11 +223,38 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       />
       
       {/* Quick Actions Menu */}
-      <QuickActionsMenu 
-        isOpen={showQuickActions} 
-        onClose={() => setShowQuickActions(false)} 
+      <QuickActionsMenu
+        isOpen={showQuickActions}
+        onClose={() => setShowQuickActions(false)}
       />
-      
+
+      {/* Mobile Bottom Navigation */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden border-t border-[var(--border)] bg-[var(--muted)]"
+        aria-label="Primary"
+      >
+        {mobileNavItems.map((item) => {
+          const active = pathname.startsWith(item.href);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-label={item.label}
+              aria-current={active ? "page" : undefined}
+              className={`flex flex-col items-center justify-center flex-1 py-2 ${
+                active
+                  ? "text-blue-600"
+                  : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              <Icon className="h-5 w-5" />
+              <span className="text-xs">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
       <Toaster />
     </div>
   );
