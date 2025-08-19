@@ -2,22 +2,49 @@
 
 import { useState, useEffect, useRef } from "react";
 
+type Stats = {
+  agents: number;
+  deals: number;
+  satisfaction: number;
+};
+
 export function SocialProofSection() {
   const [hoveredLogo, setHoveredLogo] = useState<number | null>(null);
-  const [countedStats, setCountedStats] = useState({
+  const [countedStats, setCountedStats] = useState<Stats>({
+    agents: 0,
+    deals: 0,
+    satisfaction: 0
+  });
+  const [stats, setStats] = useState<Stats>({
     agents: 0,
     deals: 0,
     satisfaction: 0
   });
   const sectionRef = useRef<HTMLElement>(null);
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await fetch("/api/marketing/stats");
+        if (!res.ok) throw new Error("Failed to fetch stats");
+        const data: Stats = await res.json();
+        setStats(data);
+      } catch (error) {
+        console.error("Failed to fetch social proof stats:", error);
+      }
+    }
+
+    fetchStats();
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            // Start count-up animation
-            animateCountUp();
+          if (entry.isIntersecting && !hasAnimated.current) {
+            hasAnimated.current = true;
+            animateCountUp(stats);
           }
         });
       },
@@ -29,43 +56,63 @@ export function SocialProofSection() {
     }
 
     return () => observer.disconnect();
-  }, []);
+  }, [stats]);
 
-  const animateCountUp = () => {
+  const animateCountUp = (target: Stats) => {
     const duration = 2000; // 2 seconds
     const steps = 60;
     const stepDuration = duration / steps;
-    
+
     let currentStep = 0;
-    
+
     const timer = setInterval(() => {
       currentStep++;
       const progress = currentStep / steps;
-      
+
       setCountedStats({
-        agents: Math.floor(500 * progress),
-        deals: Math.floor(2.4 * progress * 100) / 100, // Keep 2 decimal places
-        satisfaction: Math.floor(98 * progress)
+        agents: Math.floor(target.agents * progress),
+        deals: Math.floor(target.deals * progress * 100) / 100, // Keep 2 decimal places
+        satisfaction: Math.floor(target.satisfaction * progress)
       });
-      
+
       if (currentStep >= steps) {
         clearInterval(timer);
-        setCountedStats({
-          agents: 500,
-          deals: 2.4,
-          satisfaction: 98
-        });
+        setCountedStats(target);
       }
     }, stepDuration);
   };
 
-  const logoPlaceholders = [
-    { name: "Keller Williams", width: "w-32" },
-    { name: "RE/MAX", width: "w-24" },
-    { name: "Coldwell Banker", width: "w-36" },
-    { name: "Century 21", width: "w-28" },
-    { name: "Compass", width: "w-24" },
-    { name: "eXp Realty", width: "w-26" },
+  const logos = [
+    {
+      src: "https://upload.wikimedia.org/wikipedia/commons/a/a7/Keller_Williams_logo.svg",
+      alt: "Keller Williams logo",
+      width: "w-32"
+    },
+    {
+      src: "https://upload.wikimedia.org/wikipedia/commons/2/2f/ReMax_logo.svg",
+      alt: "RE/MAX logo",
+      width: "w-24"
+    },
+    {
+      src: "https://upload.wikimedia.org/wikipedia/commons/4/4f/Coldwell_Banker_logo.svg",
+      alt: "Coldwell Banker logo",
+      width: "w-36"
+    },
+    {
+      src: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Century_21_2018_logo.svg",
+      alt: "Century 21 logo",
+      width: "w-28"
+    },
+    {
+      src: "https://upload.wikimedia.org/wikipedia/commons/4/49/Compass_Real_Estate_logo.svg",
+      alt: "Compass Real Estate logo",
+      width: "w-24"
+    },
+    {
+      src: "https://upload.wikimedia.org/wikipedia/commons/6/69/EXP_Realty_logo.svg",
+      alt: "eXp Realty logo",
+      width: "w-26"
+    }
   ];
 
   return (
@@ -78,9 +125,9 @@ export function SocialProofSection() {
         
         {/* Grayscale logos (hover to color) with stagger-in animation */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 items-center justify-items-center opacity-60 hover:opacity-100 transition-opacity duration-300">
-          {logoPlaceholders.map((logo, index) => (
+          {logos.map((logo, index) => (
             <div
-              key={logo.name}
+              key={logo.alt}
               className={`${logo.width} h-12 rounded-lg bg-muted border border-border flex items-center justify-center ${
                 index === 0 ? "animate-fade-up-delay-1" :
                 index === 1 ? "animate-fade-up-delay-2" :
@@ -91,14 +138,12 @@ export function SocialProofSection() {
               } hover:bg-surface transition-all duration-150 cursor-pointer grayscale hover:grayscale-0`}
               onMouseEnter={() => setHoveredLogo(index)}
               onMouseLeave={() => setHoveredLogo(null)}
-              style={{ 
+              style={{
                 animationDelay: `${index * 100}ms`,
                 transform: hoveredLogo === index ? 'scale(1.05)' : 'scale(1)',
               }}
             >
-              <span className="text-xs font-medium text-muted-foreground">
-                {logo.name}
-              </span>
+              <img src={logo.src} alt={logo.alt} className="max-h-full" />
             </div>
           ))}
         </div>
