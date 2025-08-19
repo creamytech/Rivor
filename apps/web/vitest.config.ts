@@ -14,6 +14,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@rivor/db': path.resolve(__dirname, '../../packages/db/src'),
+      '@rivor/crypto': path.resolve(__dirname, '../../packages/crypto/src'),
     },
   },
   esbuild: {
