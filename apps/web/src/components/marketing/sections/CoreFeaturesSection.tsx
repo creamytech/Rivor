@@ -33,20 +33,22 @@ export function CoreFeaturesSection() {
   const features = [
     {
       icon: "📥",
-      title: "One Inbox, Zero Chaos",
-      description: "AI-powered email summaries turn conversation threads into actionable insights. Never miss a lead or important follow-up.",
+      title: "Smart Inbox Triage",
+      description:
+        "Surface deal-closing emails and turn threads into next steps automatically.",
       benefits: [
         "Smart email prioritization",
-        "Automated thread summaries", 
+        "Automated thread summaries",
         "Lead qualification scoring",
         "Instant response suggestions"
       ],
       link: "/features/inbox"
     },
     {
-      icon: "📅", 
-      title: "Scheduling That Just Works",
-      description: "Calendar integration that automatically schedules showings, calls, and meetings based on your availability and preferences.",
+      icon: "📅",
+      title: "Effortless Auto-Scheduling",
+      description:
+        "Let clients book showings around your calendar without the back-and-forth.",
       benefits: [
         "Automated scheduling",
         "Buffer time management",
@@ -57,8 +59,9 @@ export function CoreFeaturesSection() {
     },
     {
       icon: "🎯",
-      title: "Pipelines That Move With You", 
-      description: "Visual deal tracking with automated stage progression, task generation, and performance analytics to close more deals.",
+      title: "Dynamic Deal Pipeline",
+      description:
+        "See every deal move forward with automated tasks and insight-driven analytics.",
       benefits: [
         "Visual deal tracking",
         "Automated workflows",
