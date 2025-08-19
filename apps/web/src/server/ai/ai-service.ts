@@ -9,7 +9,14 @@ const openai = new OpenAI({
 });
 
 interface ChatContext {
-  type?: 'lead' | 'contact' | 'thread';
+  type?:
+    | 'lead'
+    | 'contact'
+    | 'thread'
+    | 'pipeline'
+    | 'inbox'
+    | 'calendar'
+    | 'contacts';
   id?: string;
 }
 
@@ -59,25 +66,26 @@ export class AIService {
     const org = await this.getCurrentUserOrg();
     let contextData = '';
 
-    if (context?.type && context?.id) {
+    if (context?.type) {
       switch (context.type) {
         case 'lead':
-          const lead = await prisma.lead.findUnique({
-            where: { id: context.id, orgId: org.id },
-            include: {
-              contact: true,
-              stage: true,
-              assignedTo: {
-                include: { user: true }
-              },
-              tasks: {
-                where: { done: false },
-                orderBy: { dueAt: 'asc' }
+          if (context.id) {
+            const lead = await prisma.lead.findUnique({
+              where: { id: context.id, orgId: org.id },
+              include: {
+                contact: true,
+                stage: true,
+                assignedTo: {
+                  include: { user: true }
+                },
+                tasks: {
+                  where: { done: false },
+                  orderBy: { dueAt: 'asc' }
+                }
               }
-            }
-          });
-          if (lead) {
-            contextData = `
+            });
+            if (lead) {
+              contextData = `
 LEAD CONTEXT:
 - Title: ${lead.title || 'Untitled'}
 - Status: ${lead.status}
@@ -90,26 +98,28 @@ LEAD CONTEXT:
 - Created: ${lead.createdAt}
 - Last updated: ${lead.updatedAt}
 `;
+            }
           }
           break;
 
         case 'contact':
-          const contact = await prisma.contact.findUnique({
-            where: { id: context.id, orgId: org.id },
-            include: {
-              leads: {
-                include: {
-                  stage: true,
-                  tasks: {
-                    where: { done: false }
+          if (context.id) {
+            const contact = await prisma.contact.findUnique({
+              where: { id: context.id, orgId: org.id },
+              include: {
+                leads: {
+                  include: {
+                    stage: true,
+                    tasks: {
+                      where: { done: false }
+                    }
                   }
-                }
-              },
-              _count: { select: { leads: true } }
-            }
-          });
-          if (contact) {
-            contextData = `
+                },
+                _count: { select: { leads: true } }
+              }
+            });
+            if (contact) {
+              contextData = `
 CONTACT CONTEXT:
 - Name: ${contact.nameEnc ? 'Available' : 'Not available'}
 - Email: ${contact.emailEnc ? 'Available' : 'Not available'}
@@ -118,28 +128,30 @@ CONTACT CONTEXT:
 - Active leads: ${contact.leads.filter(l => l.status !== 'closed').length}
 - Pending tasks: ${contact.leads.reduce((sum, lead) => sum + (lead.tasks?.length || 0), 0)}
 `;
+            }
           }
           break;
 
         case 'thread':
-          const thread = await prisma.emailThread.findUnique({
-            where: { id: context.id, orgId: org.id },
-            include: {
-              messages: {
-                orderBy: { createdAt: 'desc' },
-                take: 5
-              },
-              lead: {
-                include: {
-                  contact: true,
-                  stage: true
-                }
-              },
-              _count: { select: { messages: true, attachments: true } }
-            }
-          });
-          if (thread) {
-            contextData = `
+          if (context.id) {
+            const thread = await prisma.emailThread.findUnique({
+              where: { id: context.id, orgId: org.id },
+              include: {
+                messages: {
+                  orderBy: { createdAt: 'desc' },
+                  take: 5
+                },
+                lead: {
+                  include: {
+                    contact: true,
+                    stage: true
+                  }
+                },
+                _count: { select: { messages: true, attachments: true } }
+              }
+            });
+            if (thread) {
+              contextData = `
 EMAIL THREAD CONTEXT:
 - Subject: ${thread.subjectEnc ? 'Available' : 'Not available'}
 - Messages: ${thread._count.messages}
@@ -149,7 +161,57 @@ EMAIL THREAD CONTEXT:
 ${thread.lead ? `- Lead stage: ${thread.lead.stage?.name || 'No stage'}` : ''}
 - Last message: ${thread.messages[0]?.sentAt || 'Unknown'}
 `;
+            }
           }
+          break;
+
+        case 'pipeline':
+          const stages = await prisma.pipelineStage.findMany({
+            where: { orgId: org.id },
+            include: { _count: { select: { leads: true } } },
+            orderBy: { order: 'asc' }
+          });
+          contextData = `PIPELINE CONTEXT:\n${stages
+            .map(s => `- ${s.name}: ${s._count.leads} leads`)
+            .join('\n')}`;
+          break;
+
+        case 'inbox':
+          const [totalThreads, unreadThreads, latestThread] = await Promise.all([
+            prisma.emailThread.count({ where: { orgId: org.id } }),
+            prisma.emailThread.count({ where: { orgId: org.id, unread: true } }),
+            prisma.emailThread.findFirst({
+              where: { orgId: org.id },
+              orderBy: { updatedAt: 'desc' },
+              select: { updatedAt: true }
+            })
+          ]);
+          contextData = `INBOX CONTEXT:\n- Total threads: ${totalThreads}\n- Unread threads: ${unreadThreads}\n- Last activity: ${latestThread?.updatedAt || 'Unknown'}`;
+          break;
+
+        case 'calendar':
+          const upcomingEvents = await prisma.calendarEvent.findMany({
+            where: { orgId: org.id, start: { gte: new Date() } },
+            orderBy: { start: 'asc' },
+            take: 5,
+            select: { start: true, end: true }
+          });
+          contextData = `CALENDAR CONTEXT:\n- Upcoming events: ${upcomingEvents.length}\n${upcomingEvents
+            .map(e => `- Event starting ${e.start}`)
+            .join('\n')}`;
+          break;
+
+        case 'contacts':
+          const [totalContacts, recentContacts] = await Promise.all([
+            prisma.contact.count({ where: { orgId: org.id } }),
+            prisma.contact.findMany({
+              where: { orgId: org.id },
+              orderBy: { createdAt: 'desc' },
+              take: 5,
+              select: { createdAt: true }
+            })
+          ]);
+          contextData = `CONTACTS CONTEXT:\n- Total contacts: ${totalContacts}\n- Recent contacts: ${recentContacts.length}`;
           break;
       }
     }
