@@ -23,12 +23,24 @@ export default function PipelinePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [groupBy, setGroupBy] = useState("stage");
 
-  const quickFilters = [
+  const [quickFilters, setQuickFilters] = useState([
     { label: "High Value", count: 12, active: false },
     { label: "Overdue", count: 3, active: false },
     { label: "This Week", count: 8, active: false },
     { label: "Hot Leads", count: 5, active: false }
-  ];
+  ]);
+
+  const toggleFilter = (label: string) => {
+    setQuickFilters((prev) =>
+      prev.map((filter) =>
+        filter.label === label ? { ...filter, active: !filter.active } : filter
+      )
+    );
+  };
+
+  const activeFilters = quickFilters
+    .filter((filter) => filter.active)
+    .map((filter) => filter.label);
 
   const groupByOptions = [
     { value: "stage", label: "Stage", icon: <BarChart3 className="h-4 w-4" /> },
@@ -106,7 +118,7 @@ export default function PipelinePage() {
                   key={index}
                   variant={filter.active ? "default" : "outline"}
                   size="sm"
-                  onClick={() => console.log(`Apply filter: ${filter.label}`)}
+                  onClick={() => toggleFilter(filter.label)}
                   className="text-xs h-7"
                 >
                   {filter.label}
@@ -119,9 +131,9 @@ export default function PipelinePage() {
 
         {/* Enhanced Pipeline Board */}
         <div className="px-6 pb-8">
-          <EnhancedPipelineBoard 
+          <EnhancedPipelineBoard
             searchQuery={searchQuery}
-            groupBy={groupBy}
+            selectedFilters={activeFilters}
           />
         </div>
       </AppShell>

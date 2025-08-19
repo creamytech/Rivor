@@ -30,6 +30,12 @@ export default function InboxPage() {
   const [activeTab, setActiveTab] = useState("leads");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+  const [quickFilters, setQuickFilters] = useState([
+    { label: "Unread", count: 24, active: false },
+    { label: "High Priority", count: 8, active: false },
+    { label: "This Week", count: 45, active: false },
+    { label: "Overdue", count: 3, active: false }
+  ]);
 
   const tabOptions = [
     { value: "leads", label: "Leads", count: 24, icon: <Star className="h-3 w-3" /> },
@@ -44,12 +50,16 @@ export default function InboxPage() {
     { id: "meeting-requests", label: "Meeting Requests", icon: <CheckCircle className="h-3 w-3" /> }
   ];
 
-  const quickFilters = [
-    { label: "Unread", count: 24, active: false },
-    { label: "High Priority", count: 8, active: false },
-    { label: "This Week", count: 45, active: false },
-    { label: "Overdue", count: 3, active: false }
-  ];
+  const handleQuickFilter = (label: string) => {
+    setQuickFilters((prev) =>
+      prev.map((filter) =>
+        filter.label === label
+          ? { ...filter, active: !filter.active }
+          : { ...filter, active: false }
+      )
+    );
+    setSelectedFilter((current) => (current === label ? null : label));
+  };
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
@@ -99,9 +109,14 @@ export default function InboxPage() {
                 <DropdownMenuLabel>Saved Filters</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {savedFilters.map((filter) => (
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     key={filter.id}
-                    onClick={() => setSelectedFilter(filter.id)}
+                    onClick={() => {
+                      setSelectedFilter(filter.id);
+                      setQuickFilters((prev) =>
+                        prev.map((f) => ({ ...f, active: false }))
+                      );
+                    }}
                     className="flex items-center gap-2"
                   >
                     {filter.icon}
@@ -120,7 +135,7 @@ export default function InboxPage() {
                 key={index}
                 variant={filter.active ? "default" : "outline"}
                 size="sm"
-                onClick={() => console.log(`Apply filter: ${filter.label}`)}
+                onClick={() => handleQuickFilter(filter.label)}
                 className="text-xs h-7"
               >
                 {filter.label}
@@ -132,10 +147,10 @@ export default function InboxPage() {
 
         {/* Enhanced Inbox Component */}
         <div className="px-6 pb-8">
-          <EnhancedInbox 
-            activeTab={activeTab} 
+          <EnhancedInbox
+            activeTab={activeTab}
             searchQuery={searchQuery}
-            selectedFilter={selectedFilter}
+            selectedFilter={selectedFilter || ""}
           />
         </div>
       </AppShell>
