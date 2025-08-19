@@ -6,6 +6,7 @@ import "./globals.css";
 import "@/worker/startWorkers";
 
 import ClientProviders from "@/components/providers/ClientProviders";
+import ChatWidget from "@/components/common/ChatWidget";
 
 const geistSans = Inter({
   variable: "--font-inter",
@@ -107,6 +108,7 @@ export default function RootLayout({
       >
         <ClientProviders>
           {children}
+          <ChatWidget />
         </ClientProviders>
       </body>
     </html>
