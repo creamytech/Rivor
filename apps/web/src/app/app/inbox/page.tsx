@@ -31,11 +31,11 @@ export default function InboxPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
-  const tabOptions = [
-    { value: "leads", label: "Leads", count: 24, icon: <Star className="h-3 w-3" /> },
-    { value: "review", label: "Review", count: 8, icon: <AlertTriangle className="h-3 w-3" /> },
-    { value: "other", label: "Other", count: 156, icon: <Mail className="h-3 w-3" /> }
-  ];
+  const [tabOptions, setTabOptions] = useState([
+    { value: "leads", label: "Leads", count: 0, icon: <Star className="h-3 w-3" /> },
+    { value: "review", label: "Review", count: 0, icon: <AlertTriangle className="h-3 w-3" /> },
+    { value: "other", label: "Other", count: 0, icon: <Mail className="h-3 w-3" /> }
+  ]);
 
   const savedFilters = [
     { id: "high-priority", label: "High Priority Leads", icon: <AlertTriangle className="h-3 w-3" /> },
@@ -44,12 +44,44 @@ export default function InboxPage() {
     { id: "meeting-requests", label: "Meeting Requests", icon: <CheckCircle className="h-3 w-3" /> }
   ];
 
-  const quickFilters = [
-    { label: "Unread", count: 24, active: false },
-    { label: "High Priority", count: 8, active: false },
-    { label: "This Week", count: 45, active: false },
-    { label: "Overdue", count: 3, active: false }
-  ];
+  const [quickFilters, setQuickFilters] = useState([
+    { id: "unread", key: "unread", label: "Unread", count: 0, active: false },
+    { id: "high-priority", key: "highPriority", label: "High Priority", count: 0, active: false },
+    { id: "this-week", key: "thisWeek", label: "This Week", count: 0, active: false },
+    { id: "overdue", key: "overdue", label: "Overdue", count: 0, active: false }
+  ]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch("/api/inbox/stats");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.tabs) {
+            setTabOptions((prev) =>
+              prev.map((t) => ({ ...t, count: data.tabs[t.value] ?? 0 }))
+            );
+          }
+          if (data.quickFilters) {
+            setQuickFilters((prev) =>
+              prev.map((f) => ({ ...f, count: data.quickFilters[f.key] ?? 0 }))
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch inbox stats:", error);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  const handleQuickFilter = (id: string) => {
+    setQuickFilters((prev) =>
+      prev.map((f) => ({ ...f, active: f.id === id ? !f.active : false }))
+    );
+    setSelectedFilter((prev) => (prev === id ? null : id));
+  };
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
@@ -115,12 +147,12 @@ export default function InboxPage() {
           {/* Quick Filters */}
           <div className="flex items-center gap-2 mt-3">
             <span className="text-sm text-muted-foreground mr-2">Quick filters:</span>
-            {quickFilters.map((filter, index) => (
+            {quickFilters.map((filter) => (
               <Button
-                key={index}
+                key={filter.id}
                 variant={filter.active ? "default" : "outline"}
                 size="sm"
-                onClick={() => console.log(`Apply filter: ${filter.label}`)}
+                onClick={() => handleQuickFilter(filter.id)}
                 className="text-xs h-7"
               >
                 {filter.label}
