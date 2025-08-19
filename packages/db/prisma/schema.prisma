@@ -291,6 +291,8 @@ model Lead {
   propertyAddress    String?
   listingId          String?
   propertyValue      Float?
+  automationEnabled  Boolean        @default(false)
+  lastFollowUpAt     DateTime?
   expectedCloseDate  DateTime?
   actualCloseDate    DateTime?
   createdAt          DateTime       @default(now())

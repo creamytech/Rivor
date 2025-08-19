@@ -36,6 +36,7 @@ export interface Lead {
   description?: string;
   createdAt: string;
   updatedAt: string;
+  automationEnabled: boolean;
   activities?: Activity[];
   tags: string[];
   threadId?: string; // Link to email thread

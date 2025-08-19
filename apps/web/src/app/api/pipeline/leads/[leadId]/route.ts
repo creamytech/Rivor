@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
+import { handleStageChange } from '@/server/automation';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,6 +62,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { leadId: st
           createdBy: session.user.email
         }
       });
+
+      if (existingLead.automationEnabled) {
+        await handleStageChange(orgId, leadId);
+      }
     }
 
     // Handle other updates
@@ -73,6 +78,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { leadId: st
     if (body.priority !== undefined) updateData.priority = body.priority;
     if (body.description !== undefined) updateData.description = body.description;
     if (body.tags !== undefined) updateData.tags = body.tags;
+    if (body.automationEnabled !== undefined) updateData.automationEnabled = body.automationEnabled;
 
     const updatedLead = await prisma.lead.update({
       where: { id: leadId },

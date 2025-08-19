@@ -35,7 +35,8 @@ export async function POST(req: NextRequest) {
       threadId,
       propertyAddress,
       listingId,
-      propertyValue
+      propertyValue,
+      automationEnabled
     } = body;
 
     if (!title || !company || !contact) {
@@ -76,7 +77,8 @@ export async function POST(req: NextRequest) {
         status: 'active',
         propertyAddress: propertyAddress || null,
         listingId: listingId || null,
-        propertyValue: propertyValue || null
+        propertyValue: propertyValue || null,
+        automationEnabled: automationEnabled ?? false
       }
     });
 
