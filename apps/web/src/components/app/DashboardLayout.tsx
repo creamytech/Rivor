@@ -47,6 +47,10 @@ import ActivityFeed from './ActivityFeed';
 import HealthWidget from './HealthWidget';
 import MiniPipelineSparkline from './MiniPipelineSparkline';
 
+// Import drawer components
+import CardManagementDrawer from './CardManagementDrawer';
+import PresetManagementDrawer from './PresetManagementDrawer';
+
 // Sortable Card Component
 interface SortableCardProps {
   id: string;
@@ -627,7 +631,3 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
     </div>
   );
 }
-
-// Import the drawer components
-import CardManagementDrawer from './CardManagementDrawer';
-import PresetManagementDrawer from './PresetManagementDrawer';
