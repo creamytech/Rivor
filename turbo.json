@@ -5,7 +5,8 @@
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", "build/**", ".next/**"],
-      "passThroughEnv": ["*"]
+      "passThroughEnv": ["*"],
+      "inputs": ["$TURBO_DEFAULT$", "package.json"]
     },
     "dev": {
       "cache": false,
