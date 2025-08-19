@@ -20,8 +20,22 @@ interface DashboardContentProps {
   className?: string;
 }
 
+interface SyncStatus {
+  accountsTotal: number;
+  accountsConnected: number;
+  accountsBackfilling: number;
+  accountsError: number;
+  threadsTotal: number;
+  lastSyncAt?: string;
+  syncInProgress: boolean;
+}
+
 export default function DashboardContent({ className = '' }: DashboardContentProps) {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
+  const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
+  const [syncLoading, setSyncLoading] = useState(true);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   // Fetch real data from tRPC - Independent queries for faster loading
   const { data: dashboardData, isLoading: dashboardLoading } = trpc.dashboard.useQuery(undefined, {
@@ -41,23 +55,10 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
     refetchOnWindowFocus: false
   });
 
-  interface SyncStatus {
-    accountsTotal: number;
-    accountsConnected: number;
-    accountsBackfilling: number;
-    accountsError: number;
-    threadsTotal: number;
-    lastSyncAt?: string;
-    syncInProgress: boolean;
-  }
-
-  const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
-  const [syncLoading, setSyncLoading] = useState(true);
-  const [syncError, setSyncError] = useState<string | null>(null);
-
   useEffect(() => {
     const fetchSyncStatus = async () => {
       try {
+        setSyncLoading(true);
         const res = await fetch('/api/sync/status');
         if (!res.ok) throw new Error('Failed to fetch sync status');
         const data = await res.json();
@@ -68,6 +69,7 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
         setSyncLoading(false);
       }
     };
+
     fetchSyncStatus();
   }, []);
 
@@ -84,30 +86,35 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const emailProgress = syncStatus
-    ? (syncStatus.accountsConnected / (syncStatus.accountsTotal || 1)) * 100
+  const emailProgress = syncStatus?.accountsTotal
+    ? (syncStatus.accountsConnected / syncStatus.accountsTotal) * 100
     : 0;
-  const emailStatus: 'running' | 'completed' | 'error' | 'paused' = syncStatus
-    ? syncStatus.accountsError > 0
+  const emailStatus: 'running' | 'completed' | 'error' = syncStatus?.syncInProgress
+    ? 'running'
+    : syncStatus && syncStatus.accountsError > 0
       ? 'error'
-      : syncStatus.syncInProgress
-        ? 'running'
-        : 'completed'
-    : 'paused';
+      : 'completed';
+
+  const emailEta = syncStatus?.syncInProgress ? 'Calculating…' : undefined;
+
   const emailErrorCount = syncStatus?.accountsError ?? 0;
-  const emailEta = syncStatus && syncStatus.syncInProgress
-    ? `${syncStatus.accountsBackfilling * 2} min`
-    : undefined;
 
-  const calendarTotal = integrationsData?.calendarAccounts?.length ?? 0;
-  const calendarConnected = integrationsData?.calendarAccounts?.filter(acc => acc.status === 'connected').length ?? 0;
-  const calendarProgress = calendarTotal > 0 ? (calendarConnected / calendarTotal) * 100 : 0;
-  const calendarErrorCount = calendarTotal - calendarConnected;
-  const calendarStatus: 'running' | 'completed' | 'error' | 'paused' = calendarErrorCount > 0 ? 'error' : 'completed';
+  const emailTotal = syncStatus?.accountsTotal;
+  const emailProcessed = syncStatus?.accountsConnected;
 
-  const contactsProgress = 0;
-  const contactsStatus: 'running' | 'completed' | 'error' | 'paused' = 'paused';
-  const contactsErrorCount = 0;
+  const calendarAccounts = integrationsData?.calendarAccounts || [];
+  const calendarTotal = calendarAccounts.length;
+  const calendarConnected = calendarAccounts.filter(acc => acc.status === 'connected').length;
+  const calendarErrors = calendarAccounts.filter(acc => acc.status !== 'connected').length;
+  const calendarProgress = calendarTotal ? (calendarConnected / calendarTotal) * 100 : 0;
+  const calendarStatus: 'running' | 'completed' | 'error' = calendarErrors > 0 ? 'error' : 'completed';
+
+  const contactsAccounts = integrationsData?.emailAccounts || [];
+  const contactsTotal = contactsAccounts.length;
+  const contactsConnected = contactsAccounts.filter(acc => acc.status === 'connected').length;
+  const contactsErrors = contactsAccounts.filter(acc => acc.status !== 'connected').length;
+  const contactsProgress = contactsTotal ? (contactsConnected / contactsTotal) * 100 : 0;
+  const contactsStatus: 'running' | 'completed' | 'error' = contactsErrors > 0 ? 'error' : 'completed';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
@@ -143,7 +150,7 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
             ))}
           </div>
         ) : syncError ? (
-          <div className="text-sm text-red-600">Failed to load sync status</div>
+          <div className="text-sm text-red-500">{syncError}</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <CompactSyncProgress
@@ -151,19 +158,25 @@ export default function DashboardContent({ className = '' }: DashboardContentPro
               progress={emailProgress}
               status={emailStatus}
               eta={emailEta}
+              totalItems={emailTotal}
+              processedItems={emailProcessed}
               errorCount={emailErrorCount}
             />
             <CompactSyncProgress
               syncType="calendar"
               progress={calendarProgress}
               status={calendarStatus}
-              errorCount={calendarErrorCount}
+              totalItems={calendarTotal}
+              processedItems={calendarConnected}
+              errorCount={calendarErrors}
             />
             <CompactSyncProgress
               syncType="contacts"
               progress={contactsProgress}
               status={contactsStatus}
-              errorCount={contactsErrorCount}
+              totalItems={contactsTotal}
+              processedItems={contactsConnected}
+              errorCount={contactsErrors}
             />
           </div>
         )}
