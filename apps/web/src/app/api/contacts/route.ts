@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
 import { mixWithDemoData, demoContacts } from '@/lib/demo-data';
+import { decryptForOrg, encryptForOrg } from '@/server/crypto';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * Get contacts for the organization
  */
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
@@ -21,102 +22,80 @@ export async function GET(_req: NextRequest) {
     }
 
     const url = new URL(req.url);
-    const search = url.searchParams.get('search');
-    const filter = url.searchParams.get('filter');
     const limit = parseInt(url.searchParams.get('limit') || '50');
     const offset = parseInt(url.searchParams.get('offset') || '0');
 
-    const whereClause: unknown = { orgId };
-
-    // Add search filter
-    if (search) {
-      whereClause.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { company: { contains: search, mode: 'insensitive' } },
-        { title: { contains: search, mode: 'insensitive' } }
-      ];
-    }
-
-    // Add category filters
-    if (filter) {
-      switch (filter) {
-        case 'starred':
-          whereClause.starred = true;
-          break;
-        case 'with-leads':
-          whereClause.leads = { some: {} };
-          break;
-        case 'recent':
-          whereClause.lastActivityAt = {
-            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-          };
-          break;
-      }
-    }
-
-    // Get contacts with aggregated data
     const contacts = await prisma.contact.findMany({
-      where: whereClause,
+      where: { orgId },
       include: {
         _count: {
           select: {
-            emailMessages: true,
             leads: true
           }
         }
       },
-      orderBy: { lastActivityAt: 'desc' },
+      orderBy: { lastActivity: 'desc' },
       take: limit,
       skip: offset
     });
 
-    // Transform to UI format
-    const contactsFormatted = contacts.map(contact => ({
-      id: contact.id,
-      name: contact.name,
-      email: contact.email,
-      company: contact.company,
-      title: contact.title,
-      phone: contact.phone,
-      location: contact.location,
-      avatarUrl: contact.avatarUrl,
-      starred: contact.starred,
-      tags: contact.tags || [],
-      lastActivity: contact.lastActivityAt?.toISOString() || contact.createdAt.toISOString(),
-      emailCount: contact._count.emailMessages,
-      leadCount: contact._count.leads,
-      source: contact.source as 'email' | 'manual' | 'import',
-      createdAt: contact.createdAt.toISOString(),
-      updatedAt: contact.updatedAt.toISOString()
-    }));
-
-    // Mix with demo data if enabled
-    const finalContacts = mixWithDemoData(contactsFormatted, demoContacts.map(contact => ({
-      id: contact.id,
-      name: contact.name,
-      email: contact.email,
-      company: contact.company,
-      title: contact.title,
-      phone: '',
-      location: '',
-      avatarUrl: null,
-      starred: false,
-      tags: [],
-      lastActivity: contact.lastActivity,
-      emailCount: 1,
-      leadCount: 0,
-      source: 'email' as const,
-      createdAt: contact.lastActivity,
-      updatedAt: contact.lastActivity
-    })));
-
-    const response = {
-      contacts: finalContacts,
-      total: finalContacts.length
+    const decode = async (blob: Buffer | null | undefined, ctx: string) => {
+      if (!blob) return '';
+      try {
+        const bytes = await decryptForOrg(orgId, blob, ctx);
+        return new TextDecoder().decode(bytes);
+      } catch {
+        return '';
+      }
     };
 
-    return NextResponse.json(response);
+    const contactsFormatted = await Promise.all(
+      contacts.map(async contact => ({
+        id: contact.id,
+        name: await decode(contact.nameEnc as any, 'contact:name'),
+        email: await decode(contact.emailEnc as any, 'contact:email'),
+        company: await decode(contact.companyEnc as any, 'contact:company'),
+        title: await decode(contact.titleEnc as any, 'contact:title'),
+        phone: await decode(contact.phoneEnc as any, 'contact:phone'),
+        location: await decode(contact.addressEnc as any, 'contact:address'),
+        avatarUrl: null,
+        starred: false,
+        tags: contact.tags || [],
+        lastActivity: contact.lastActivity?.toISOString() || contact.createdAt.toISOString(),
+        emailCount: 0,
+        leadCount: contact._count.leads,
+        source: contact.source as 'email' | 'manual' | 'import',
+        createdAt: contact.createdAt.toISOString(),
+        updatedAt: contact.updatedAt.toISOString()
+      }))
+    );
+
+    const finalContacts = mixWithDemoData(
+      contactsFormatted,
+      demoContacts.map(contact => ({
+        id: contact.id,
+        name: contact.name,
+        email: contact.email,
+        company: contact.company,
+        title: contact.title,
+        phone: '',
+        location: '',
+        avatarUrl: null,
+        starred: false,
+        tags: [],
+        lastActivity: contact.lastActivity,
+        emailCount: 1,
+        leadCount: 0,
+        source: 'email' as const,
+        createdAt: contact.lastActivity,
+        updatedAt: contact.lastActivity
+      }))
+    );
+
+    return NextResponse.json({
+      contacts: finalContacts,
+      total: finalContacts.length
+    });
 
   } catch (error: unknown) {
     console.error('Contacts API error:', error);
@@ -160,9 +139,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if contact already exists
+    const [
+      nameEnc,
+      emailEnc,
+      companyEnc,
+      titleEnc,
+      phoneEnc,
+      addressEnc
+    ] = await Promise.all([
+      encryptForOrg(orgId, name, 'contact:name'),
+      encryptForOrg(orgId, email, 'contact:email'),
+      company ? encryptForOrg(orgId, company, 'contact:company') : Promise.resolve(null),
+      title ? encryptForOrg(orgId, title, 'contact:title') : Promise.resolve(null),
+      phone ? encryptForOrg(orgId, phone, 'contact:phone') : Promise.resolve(null),
+      location ? encryptForOrg(orgId, location, 'contact:address') : Promise.resolve(null)
+    ]);
+
     const existingContact = await prisma.contact.findFirst({
-      where: { email, orgId }
+      where: { orgId, emailEnc }
     });
 
     if (existingContact) {
@@ -172,44 +166,48 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create contact
     const contact = await prisma.contact.create({
       data: {
         orgId,
-        name,
-        email,
-        company: company || null,
-        title: title || null,
-        phone: phone || null,
-        location: location || null,
+        nameEnc,
+        emailEnc,
+        companyEnc,
+        titleEnc,
+        phoneEnc,
+        addressEnc,
         tags: tags || [],
         source: 'manual',
-        starred: false,
-        lastActivityAt: new Date()
+        lastActivity: new Date()
       }
     });
 
-    // Transform to UI format
-    const contactFormatted = {
+    const [decName, decEmail, decCompany, decTitle, decPhone, decLocation] = await Promise.all([
+      decryptForOrg(orgId, contact.nameEnc as any, 'contact:name').then(bytes => new TextDecoder().decode(bytes)),
+      decryptForOrg(orgId, contact.emailEnc as any, 'contact:email').then(bytes => new TextDecoder().decode(bytes)),
+      contact.companyEnc ? decryptForOrg(orgId, contact.companyEnc as any, 'contact:company').then(bytes => new TextDecoder().decode(bytes)) : Promise.resolve(''),
+      contact.titleEnc ? decryptForOrg(orgId, contact.titleEnc as any, 'contact:title').then(bytes => new TextDecoder().decode(bytes)) : Promise.resolve(''),
+      contact.phoneEnc ? decryptForOrg(orgId, contact.phoneEnc as any, 'contact:phone').then(bytes => new TextDecoder().decode(bytes)) : Promise.resolve(''),
+      contact.addressEnc ? decryptForOrg(orgId, contact.addressEnc as any, 'contact:address').then(bytes => new TextDecoder().decode(bytes)) : Promise.resolve('')
+    ]);
+
+    return NextResponse.json({
       id: contact.id,
-      name: contact.name,
-      email: contact.email,
-      company: contact.company,
-      title: contact.title,
-      phone: contact.phone,
-      location: contact.location,
-      avatarUrl: contact.avatarUrl,
-      starred: contact.starred,
+      name: decName,
+      email: decEmail,
+      company: decCompany,
+      title: decTitle,
+      phone: decPhone,
+      location: decLocation,
+      avatarUrl: null,
+      starred: false,
       tags: contact.tags || [],
-      lastActivity: contact.lastActivityAt?.toISOString() || contact.createdAt.toISOString(),
+      lastActivity: contact.lastActivity?.toISOString() || contact.createdAt.toISOString(),
       emailCount: 0,
       leadCount: 0,
       source: contact.source as 'email' | 'manual' | 'import',
       createdAt: contact.createdAt.toISOString(),
       updatedAt: contact.updatedAt.toISOString()
-    };
-
-    return NextResponse.json(contactFormatted);
+    });
 
   } catch (error: unknown) {
     console.error('Contact creation API error:', error);
