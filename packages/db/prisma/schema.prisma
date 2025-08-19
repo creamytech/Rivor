@@ -21,6 +21,7 @@ model User {
   oauthAccounts OAuthAccount[]
   orgMembers    OrgMember[]
   sessions      Session[]
+  notifications Notification[]
 }
 
 model Account {
@@ -89,6 +90,7 @@ model Org {
   stripeCustomers      StripeCustomer[]
   subscriptions        Subscription[]
   tasks                Task[]
+  notifications        Notification[]
   webhookSubscriptions WebhookSubscription[]
 }
 
@@ -394,6 +396,24 @@ model PushNotificationLog {
 
   @@index([emailAccountId, processedAt(sort: Desc)])
   @@index([orgId, processedAt(sort: Desc)])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  orgId     String
+  userId    String
+  type      String
+  title     String
+  message   String
+  priority  String   @default("low")
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  readAt    DateTime?
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([userId])
 }
 
 enum ConnectionStatus {
