@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
@@ -39,17 +40,32 @@ interface ActivityFeedProps {
 
 export default function ActivityFeed({ className = '' }: ActivityFeedProps) {
   const router = useRouter();
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const getActionForActivity = (activity: ActivityItem) => {
-    switch (activity.type) {
+  const { data: fetchedActivities = [] } = useQuery<ActivityItem[]>({
+    queryKey: ['activity-feed'],
+    queryFn: async () => {
+      const res = await fetch('/api/activity');
+      if (!res.ok) throw new Error('Failed to fetch activity');
+      const data = await res.json();
+      return data.activities as ActivityItem[];
+    },
+    refetchInterval: 30000,
+  });
+
+  const activities = fetchedActivities.map(activity => ({
+    ...activity,
+    action: getActivityAction(activity.type, activity.id),
+  }));
+
+  function getActivityAction(type: ActivityItem['type'], id: string) {
+    switch (type) {
       case 'email':
-        return { label: 'Open', onClick: () => router.push(`/app/inbox/${activity.id}`) };
+        return { label: 'Open', onClick: () => router.push('/app/inbox') };
       case 'meeting':
         return { label: 'View', onClick: () => router.push('/app/calendar') };
       case 'lead':
-        return { label: 'View', onClick: () => router.push(`/app/leads/${activity.id}`) };
+        return { label: 'View', onClick: () => router.push('/app/pipeline') };
       case 'chat':
         return { label: 'Open', onClick: () => router.push('/app/chat') };
       case 'task':
@@ -57,26 +73,7 @@ export default function ActivityFeed({ className = '' }: ActivityFeedProps) {
       default:
         return undefined;
     }
-  };
-
-  useEffect(() => {
-    const fetchActivities = async () => {
-      try {
-        const response = await fetch('/api/activity');
-        if (!response.ok) throw new Error('Failed to fetch activity');
-        const data = await response.json();
-        const activityItems: ActivityItem[] = (data.activities || []).map((activity: ActivityItem) => ({
-          ...activity,
-          action: getActionForActivity(activity)
-        }));
-        setActivities(activityItems);
-      } catch (error) {
-        console.error('Error fetching activities', error);
-      }
-    };
-
-    fetchActivities();
-  }, []);
+  }
 
   const getActivityIcon = (type: ActivityItem['type']) => {
     switch (type) {
