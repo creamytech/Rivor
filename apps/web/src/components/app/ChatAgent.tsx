@@ -5,19 +5,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { 
-  MessageSquare, 
-  X, 
-  Send, 
-  Bot, 
-  User, 
+import {
+  X,
+  Send,
+  Bot,
+  User,
   Sparkles,
   Lightbulb,
   BookOpen,
-  Zap,
-  ArrowRight,
-  ChevronDown
+  Zap
 } from 'lucide-react';
 
 interface Message {
@@ -40,6 +36,7 @@ interface ChatAgentProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
 
 export default function ChatAgent({ isOpen, onClose }: ChatAgentProps) {
   const [messages, setMessages] = useState<Message[]>([
@@ -101,79 +98,89 @@ export default function ChatAgent({ isOpen, onClose }: ChatAgentProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const sendPrompt = async (prompt: string) => {
+  const handleSendMessage = async (contentOverride?: string) => {
+    const content = contentOverride ?? inputValue;
+    if (!content.trim()) return;
+
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
-      content: prompt,
+      content,
       timestamp: new Date()
     };
 
     setMessages(prev => [...prev, userMessage]);
     setIsTyping(true);
 
+    const assistantId = (Date.now() + 1).toString();
+    const assistantMessage: Message = {
+      id: assistantId,
+      type: 'assistant',
+      content: '',
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, assistantMessage]);
+
     try {
-      const response = await fetch('/api/ai/assistant', {
+      const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: prompt })
+        body: JSON.stringify({ message: content })
       });
 
-      const assistantId = (Date.now() + 1).toString();
-      const assistantMessage: Message = {
-        id: assistantId,
-        type: 'assistant',
-        content: '',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, assistantMessage]);
+      if (!response.body) throw new Error('No response body');
 
-      if (response.body) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let done = false;
-        while (!done) {
-          const { value, done: readerDone } = await reader.read();
-          done = readerDone;
-          if (value) {
-            const chunk = decoder.decode(value);
-            setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: m.content + chunk } : m));
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+      let buffer = '';
+
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const data = JSON.parse(line);
+            if (data.token) {
+              assistantMessage.content += data.token;
+            } else if (typeof data === 'string') {
+              assistantMessage.content += data;
+            }
+            if (data.suggestions) {
+              assistantMessage.suggestions = data.suggestions;
+            }
+          } catch {
+            assistantMessage.content += line;
           }
+          setMessages(prev =>
+            prev.map(m => (m.id === assistantId ? { ...assistantMessage } : m))
+          );
         }
-      } else {
-        setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: 'No response from assistant.' } : m));
       }
-    } catch (error) {
-      console.error('Assistant error', error);
-      const errorMessage: Message = {
-        id: `assistant_${Date.now()}`,
-        type: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
+    } catch (err) {
+      assistantMessage.content = 'Sorry, something went wrong.';
+      setMessages(prev =>
+        prev.map(m => (m.id === assistantId ? { ...assistantMessage } : m))
+      );
     } finally {
       setIsTyping(false);
-      scrollToBottom();
     }
-  };
-
-  const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
-    const prompt = inputValue;
-    setInputValue('');
-    await sendPrompt(prompt);
   };
 
   const handleQuickAction = (actionId: string) => {
     const action = quickActions.find(a => a.id === actionId);
     if (!action) return;
-    sendPrompt(action.title);
+    handleSendMessage(action.title);
   };
 
   const handleSuggestionClick = (suggestion: string) => {
-    setInputValue(suggestion);
-    handleSendMessage();
+    handleSendMessage(suggestion);
   };
 
   return (
