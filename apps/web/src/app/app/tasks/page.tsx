@@ -15,15 +15,6 @@ export default function TasksPage() {
             <TokenErrorBanner />
             
             <div className="space-y-6">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-                  Tasks
-                </h1>
-                <p className="text-slate-600 dark:text-slate-400">
-                  Manage your tasks and stay on top of important follow-ups.
-                </p>
-              </div>
-              
               <TasksList className="min-h-[600px]" />
             </div>
           </div>

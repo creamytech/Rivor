@@ -1,7 +1,6 @@
 "use client";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
-import PageHeader from "@/components/app/PageHeader";
 import QuickActions from "@/components/app/QuickActions";
 import FloatingQuickAdd from "@/components/app/FloatingQuickAdd";
 import KPIStrip from "@/components/app/KPIStrip";
@@ -58,65 +57,8 @@ export default function DashboardPage() {
     );
   }
 
-  const userName = session.user?.name || session.user?.email?.split('@')[0] || 'there';
-
-  // Enhanced 7-day deltas with trends
-  const sevenDayDeltas = [
-    { 
-      label: "Leads", 
-      value: "+12%", 
-      trend: "up", 
-      color: "green",
-      icon: <Target className="h-3 w-3" />
-    },
-    { 
-      label: "Deals", 
-      value: "+8%", 
-      trend: "up", 
-      color: "blue",
-      icon: <Trophy className="h-3 w-3" />
-    },
-    { 
-      label: "Revenue", 
-      value: "+15%", 
-      trend: "up", 
-      color: "purple",
-      icon: <Zap className="h-3 w-3" />
-    }
-  ];
-
-  // Personalized greeting based on time and user data
-  const getPersonalizedGreeting = () => {
-    const hour = new Date().getHours();
-    
-    if (hour < 12) return `Good morning, ${userName}`;
-    if (hour < 18) return `Good afternoon, ${userName}`;
-    return `Good evening, ${userName}`;
-  };
-
-  const getGreetingSubtitle = () => {
-    const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-    return `Here's your deal flow at a glance for ${today}`;
-  };
-
   return (
     <AppShell>
-      <PageHeader
-        title={getPersonalizedGreeting()}
-        subtitle={getGreetingSubtitle()}
-        icon={<BarChart3 className="h-6 w-6" />}
-        metaChips={sevenDayDeltas.map(delta => ({
-          label: delta.label,
-          value: delta.value,
-          color: delta.color
-        }))}
-        gradientColors={{
-          from: "from-blue-600/12",
-          via: "via-indigo-600/12",
-          to: "to-purple-600/12"
-        }}
-      />
-
       {/* Global Search Bar */}
       <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto">
@@ -147,7 +89,6 @@ export default function DashboardPage() {
             <div className="space-y-6">
               <QuickActionsWidget 
                 className="sticky top-6"
-                compact={true}
                 showCategories={false}
               />
               <TasksWidget 

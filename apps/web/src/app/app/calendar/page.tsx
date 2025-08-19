@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { PageHeader } from '@/components/app/PageHeader';
 import { AppShell } from '@/components/app/AppShell';
 import EnhancedCalendar from '@/components/calendar/EnhancedCalendar';
 import { Button } from '@/components/ui/button';
@@ -85,43 +84,8 @@ export default function CalendarPage() {
     );
   };
 
-  const getPersonalizedGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
-
-  const getGreetingSubtitle = () => {
-    const today = new Date();
-    const eventsToday = 3; // Mock data
-    return `You have ${eventsToday} events scheduled today`;
-  };
-
-  const sevenDayDeltas = [
-    { label: 'This Week', value: '12 events', color: 'blue' },
-    { label: 'Next Week', value: '8 events', color: 'green' },
-    { label: 'Conflicts', value: '0', color: 'red' },
-  ];
-
   return (
     <AppShell>
-      <PageHeader
-        title="Calendar"
-        subtitle="Manage your meetings and events"
-        icon={<Calendar className="h-6 w-6" />}
-        metaChips={sevenDayDeltas.map(delta => ({
-          label: delta.label,
-          value: delta.value,
-          color: delta.color
-        }))}
-        gradientColors={{
-          from: "from-purple-600/12",
-          via: "via-pink-600/12",
-          to: "to-rose-600/12"
-        }}
-      />
-
       {/* Search and Filter Bar */}
       <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto">

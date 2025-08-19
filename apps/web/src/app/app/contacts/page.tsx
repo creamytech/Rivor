@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { PageHeader } from '@/components/app/PageHeader';
 import { AppShell } from '@/components/app/AppShell';
 import EnhancedContacts from '@/components/contacts/EnhancedContacts';
 import { Button } from '@/components/ui/button';
@@ -97,43 +96,8 @@ export default function ContactsPage() {
     );
   };
 
-  const getPersonalizedGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
-
-  const getGreetingSubtitle = () => {
-    const totalContacts = 1247; // Mock data
-    const newThisWeek = 23; // Mock data
-    return `${totalContacts} total contacts • ${newThisWeek} new this week`;
-  };
-
-  const sevenDayDeltas = [
-    { label: 'Total Contacts', value: '1,247', color: 'blue' },
-    { label: 'New This Week', value: '23', color: 'green' },
-    { label: 'Needs Follow-up', value: '12', color: 'red' },
-  ];
-
   return (
     <AppShell>
-      <PageHeader
-        title="Contacts"
-        subtitle="Manage your contacts and relationships"
-        icon={<Users className="h-6 w-6" />}
-        metaChips={sevenDayDeltas.map(delta => ({
-          label: delta.label,
-          value: delta.value,
-          color: delta.color
-        }))}
-        gradientColors={{
-          from: "from-emerald-600/12",
-          via: "via-teal-600/12",
-          to: "to-cyan-600/12"
-        }}
-      />
-
       {/* Search and Filter Bar */}
       <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto">

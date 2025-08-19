@@ -1,7 +1,6 @@
 "use client";
 import AppShell from "@/components/app/AppShell";
 import EnhancedPipelineBoard from "@/components/pipeline/EnhancedPipelineBoard";
-import PageHeader from "@/components/app/PageHeader";
 import Toolbar, { ToolbarGroup, ToolbarItem } from "@/components/app/Toolbar";
 import { Button } from "@/components/ui/button";
 import { 
@@ -41,26 +40,6 @@ export default function PipelinePage() {
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-emerald-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <AppShell>
-        <PageHeader
-          title="Deal Flow"
-          subtitle="Track and manage your sales pipeline with visual boards and analytics"
-          icon={<Briefcase className="h-6 w-6" />}
-          metaChips={[
-            { label: "Active deals", value: "24", color: "green" },
-            { label: "Total value", value: "$2.4M", color: "blue" }
-          ]}
-          primaryAction={{
-            label: "Add Deal",
-            onClick: () => console.log("Add deal"),
-            icon: <Plus className="h-4 w-4" />
-          }}
-          gradientColors={{
-            from: "from-green-600/12",
-            via: "via-emerald-600/12",
-            to: "to-teal-600/12"
-          }}
-        />
-
         {/* Enhanced Sticky Toolbar */}
         <div className="sticky top-[calc(56px+80px)] z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-b border-[var(--border)]">
           <div className="px-6 py-4">

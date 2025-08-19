@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import AppShell from "@/components/app/AppShell";
 import EnhancedInbox from "@/components/inbox/EnhancedInbox";
-import PageHeader from "@/components/app/PageHeader";
 import SegmentedControl from "@/components/app/SegmentedControl";
 import Toolbar, { ToolbarGroup, ToolbarItem } from "@/components/app/Toolbar";
 import { Button } from "@/components/ui/button";
@@ -55,28 +54,6 @@ export default function InboxPage() {
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <AppShell>
-        <PageHeader
-          title="Inbox"
-          subtitle="Manage your email conversations and leads with intelligent filtering"
-          icon={<Mail className="h-6 w-6" />}
-          metaChips={[
-            { label: "Last sync", value: "2h ago", color: "blue" },
-            { label: "Unread", value: "24", color: "red" }
-          ]}
-          secondaryActions={[
-            {
-              label: "Saved Filters",
-              onClick: () => {}, // Handled by dropdown
-              icon: <Filter className="h-4 w-4" />
-            }
-          ]}
-          gradientColors={{
-            from: "from-blue-600/12",
-            via: "via-purple-600/12", 
-            to: "to-teal-600/12"
-          }}
-        />
-
         {/* Enhanced Search and Filter Bar */}
         <div className="px-6 py-4 border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--background)98%,transparent)]">
           <div className="flex items-center gap-4">
