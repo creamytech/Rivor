@@ -33,7 +33,7 @@ import {
   User,
   Grid3X3,
   List,
-  Timeline,
+  Activity,
   Home,
   MapPin,
   Clock,
@@ -130,7 +130,7 @@ export default function PipelinePage() {
       case 'list':
         return <List className="h-4 w-4" />;
       case 'timeline':
-        return <Timeline className="h-4 w-4" />;
+        return <Activity className="h-4 w-4" />;
     }
   };
 

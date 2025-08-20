@@ -19,7 +19,7 @@ import {
   Zap,
   Server,
   Key,
-  Sync,
+  RefreshCw,
   Settings
 } from 'lucide-react';
 
@@ -95,7 +95,7 @@ export default function SystemHealthStrip({ className = '' }: SystemHealthStripP
           status: Math.random() > 0.15 ? 'online' : 'warning',
           lastSync: new Date(Date.now() - 10 * 60 * 1000),
           message: 'Lead sync active',
-          icon: <Sync className="h-3 w-3" />
+          icon: <RefreshCw className="h-3 w-3" />
         },
         {
           id: 'security',
