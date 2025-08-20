@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
  * Health check endpoint showing system status
  * Access via /api/health (public) or /admin/health (protected)
  */
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   // Check if this is an admin request
   const url = new URL(req.url);
   const isAdminRequest = url.pathname.includes('/admin/health');

@@ -303,7 +303,6 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
           transition-all duration-300 ease-in-out
           ${isCollapsed ? 'w-[72px]' : 'w-[280px]'}
           relative overflow-hidden
-          ${isCollapsed ? 'hover:w-[280px] hover:shadow-xl group' : ''}
           backdrop-blur-sm
         `}
         style={{
@@ -753,8 +752,71 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
           </nav>
         </div>
 
-        {/* Quick Actions for collapsed mode */}
-        {isCollapsed && (
+        {/* Quick Actions Section */}
+        {!isCollapsed ? (
+          <div className="relative z-10 px-3 pb-3">
+            <div className="space-y-2">
+              <h3 
+                className="text-xs font-medium tracking-wide px-2"
+                style={{ color: currentTheme.colors.textMuted }}
+              >
+                QUICK ACTIONS
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-12 flex flex-col gap-1 text-xs"
+                  style={{
+                    borderColor: currentTheme.colors.border,
+                    backgroundColor: currentTheme.colors.background
+                  }}
+                  onClick={() => setShowQuickActionsMenu(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>New</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-12 flex flex-col gap-1 text-xs"
+                  style={{
+                    borderColor: currentTheme.colors.border,
+                    backgroundColor: currentTheme.colors.background
+                  }}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  <span>Chat</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-12 flex flex-col gap-1 text-xs"
+                  style={{
+                    borderColor: currentTheme.colors.border,
+                    backgroundColor: currentTheme.colors.background
+                  }}
+                >
+                  <Mail className="h-4 w-4" />
+                  <span>Email</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-12 flex flex-col gap-1 text-xs"
+                  style={{
+                    borderColor: currentTheme.colors.border,
+                    backgroundColor: currentTheme.colors.background
+                  }}
+                >
+                  <Calendar className="h-4 w-4" />
+                  <span>Meeting</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Quick Actions for collapsed mode */
           <div className="relative z-10 px-2 pb-2">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -778,6 +840,7 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
             </Tooltip>
           </div>
         )}
+
 
         {/* Compact Footer Accordion - Theme + Profile/Help/Logout */}
         <div 
