@@ -17,7 +17,8 @@ import {
   CheckCircle2, XCircle, Lightbulb, MessageCircle, Paperclip, Flag, Gauge, 
   ArrowRight, PlayCircle, PauseCircle, CalendarDays, UserPlus, FileCheck, 
   HandHeart, Handshake, MapPinIcon, CreditCard, Calculator, Building2, Key, 
-  Wrench, Percent, Layers, BarChart3, PieChart, Workflow, Merge, GitBranch
+  Wrench, Percent, Layers, BarChart3, PieChart, Workflow, Merge, GitBranch, 
+  Heart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -422,165 +423,207 @@ export default function EnhancedRealEstateInbox({
   }
 
   return (
-    <div className="h-full flex bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+    <div className="h-full flex flex-col lg:flex-row bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       {/* Enhanced Thread List */}
       <div className={cn(
-        "flex flex-col border-r border-border/50 bg-background/50 backdrop-blur-sm",
-        viewMode === 'split' ? "w-2/5" : "w-full"
+        "flex flex-col border-r border-border/30 bg-background/60 backdrop-blur-md shadow-sm",
+        viewMode === 'split' ? "w-full lg:w-2/5 lg:min-w-[480px]" : "w-full",
+        selectedThread && viewMode === 'split' && "hidden lg:flex"
       )}>
-        {/* Simplified Toolbar */}
-        <div className="p-6 border-b border-border/50 bg-card/50 backdrop-blur-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <Mail className="h-5 w-5 text-muted-foreground" />
-                <h2 className="font-semibold text-xl">Conversations</h2>
+        {/* Enhanced Toolbar */}
+        <div className="p-6 border-b border-border/30 bg-gradient-to-r from-background/90 to-background/60 backdrop-blur-md">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Mail className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-xl text-foreground">Conversations</h2>
+                  <p className="text-sm text-muted-foreground">Manage your real estate communications</p>
+                </div>
               </div>
-              <Badge variant="outline" className="text-sm px-3 py-1">
-                {threads.length} emails
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-sm px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200">
+                  {threads.length} total
+                </Badge>
+                <Badge variant="secondary" className="text-sm px-4 py-2 bg-red-50 text-red-700 border border-red-200">
+                  {threads.filter(t => t.unread).length} unread
+                </Badge>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={() => setShowFilters(!showFilters)} className="h-9">
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className="h-10 px-4">
                 <Filter className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Filters</span>
+                Filters
               </Button>
-              <Button variant="ghost" size="sm" className="h-9">
+              <Button variant="outline" size="sm" className="h-10 px-4">
                 <RefreshCw className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Refresh</span>
+                Sync
+              </Button>
+              <Button size="sm" className="h-10 px-4 bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Compose
               </Button>
             </div>
           </div>
           
-          {/* Enhanced Quick Stats */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-red-50 to-red-100/50 dark:from-red-900/20 dark:to-red-800/10 rounded-xl border border-red-200/50 dark:border-red-800/30">
-              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-              <div>
-                <div className="text-lg font-semibold text-red-700 dark:text-red-400">{threads.filter(t => t.leadScore && t.leadScore > 75).length}</div>
-                <div className="text-xs text-red-600/70 dark:text-red-400/70 font-medium">Hot Leads</div>
+          {/* Enhanced Quick Stats Dashboard */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-200/50 p-4 group hover:shadow-lg transition-all duration-300">
+              <div className="absolute top-2 right-2 w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center">
+                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-2xl font-bold text-red-700 dark:text-red-400">{threads.filter(t => t.leadScore && t.leadScore > 75).length}</div>
+                <div className="text-sm font-medium text-red-600/80 dark:text-red-400/80">Hot Leads</div>
+                <div className="text-xs text-red-500/60">Score 75%+</div>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 rounded-xl border border-orange-200/50 dark:border-orange-800/30">
-              <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-              <div>
-                <div className="text-lg font-semibold text-orange-700 dark:text-orange-400">{threads.filter(t => t.requiresFollowUp).length}</div>
-                <div className="text-xs text-orange-600/70 dark:text-orange-400/70 font-medium">Follow-ups</div>
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-200/50 p-4 group hover:shadow-lg transition-all duration-300">
+              <div className="absolute top-2 right-2 w-8 h-8 bg-orange-500/20 rounded-full flex items-center justify-center">
+                <Clock className="w-4 h-4 text-orange-600"></Clock>
+              </div>
+              <div className="space-y-1">
+                <div className="text-2xl font-bold text-orange-700 dark:text-orange-400">{threads.filter(t => t.requiresFollowUp).length}</div>
+                <div className="text-sm font-medium text-orange-600/80 dark:text-orange-400/80">Follow-ups</div>
+                <div className="text-xs text-orange-500/60">Action needed</div>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 rounded-xl border border-green-200/50 dark:border-green-800/30">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <div>
-                <div className="text-lg font-semibold text-green-700 dark:text-green-400">{threads.filter(t => t.hasSchedulingRequest).length}</div>
-                <div className="text-xs text-green-600/70 dark:text-green-400/70 font-medium">Showings</div>
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-200/50 p-4 group hover:shadow-lg transition-all duration-300">
+              <div className="absolute top-2 right-2 w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-green-600"></Calendar>
+              </div>
+              <div className="space-y-1">
+                <div className="text-2xl font-bold text-green-700 dark:text-green-400">{threads.filter(t => t.hasSchedulingRequest).length}</div>
+                <div className="text-sm font-medium text-green-600/80 dark:text-green-400/80">Showings</div>
+                <div className="text-xs text-green-500/60">Ready to schedule</div>
+              </div>
+            </div>
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-200/50 p-4 group hover:shadow-lg transition-all duration-300">
+              <div className="absolute top-2 right-2 w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                <Building2 className="w-4 h-4 text-blue-600"></Building2>
+              </div>
+              <div className="space-y-1">
+                <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">{threads.filter(t => t.propertyInfo).length}</div>
+                <div className="text-sm font-medium text-blue-600/80 dark:text-blue-400/80">Properties</div>
+                <div className="text-xs text-blue-500/60">Referenced</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Enhanced Thread List */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto bg-gradient-to-b from-transparent to-muted/10">
           {threads.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mb-4">
-                <Mail className="h-10 w-10 text-blue-500" />
+            <div className="flex flex-col items-center justify-center h-full text-center p-12">
+              <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                <Mail className="h-12 w-12 text-blue-500" />
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">
+              <h3 className="text-2xl font-bold text-foreground mb-3">
                 No emails found
               </h3>
-              <p className="text-muted-foreground mb-6 max-w-sm">
-                {searchQuery ? 'Try adjusting your search terms or filters' : 'Connect your email account to start managing your real estate communications'}
+              <p className="text-muted-foreground mb-8 max-w-md text-lg leading-relaxed">
+                {searchQuery ? 'Try adjusting your search terms or filters to find what you\'re looking for' : 'Connect your email account to start managing your real estate communications with AI-powered insights'}
               </p>
-              <div className="flex gap-2">
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Connect Email
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button size="lg" className="px-6">
+                  <Plus className="h-5 w-5 mr-2" />
+                  Connect Email Account
                 </Button>
-                <Button variant="outline">
-                  <Bot className="h-4 w-4 mr-2" />
-                  Import Demo Data
+                <Button variant="outline" size="lg" className="px-6">
+                  <Bot className="h-5 w-5 mr-2" />
+                  Load Demo Data
                 </Button>
               </div>
             </div>
           ) : (
-            <div className="divide-y divide-border/50">
+            <div className="space-y-2 p-2">
               {threads.map((thread, index) => {
                 const insights = detectEmailInsights(thread);
                 
                 return (
                   <motion.div
                     key={thread.id}
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
+                    transition={{ delay: index * 0.1, duration: 0.4 }}
                     className={cn(
-                      "p-6 cursor-pointer transition-all duration-200 hover:bg-muted/50 group border-l-4 hover:shadow-sm",
-                      selectedThread?.id === thread.id && "bg-blue-50 dark:bg-blue-900/20 border-r-2 border-r-blue-500 shadow-md",
-                      getSentimentColor(thread.sentiment),
-                      thread.unread && "bg-background border-l-blue-500",
-                      !thread.unread && "border-l-transparent"
+                      "p-4 lg:p-6 cursor-pointer transition-all duration-300 hover:bg-muted/40 group border border-border/30 rounded-xl lg:rounded-2xl hover:shadow-lg hover:shadow-blue-500/5 hover:border-blue-200/50 active:scale-[0.98] lg:hover:-translate-y-0.5",
+                      selectedThread?.id === thread.id && "bg-blue-50/80 dark:bg-blue-900/30 border-blue-300/60 shadow-lg shadow-blue-500/10 ring-1 ring-blue-500/20",
+                      thread.unread && "bg-background/90 border-blue-400/40 shadow-sm",
+                      !thread.unread && "bg-background/60",
+                      "backdrop-blur-sm touch-manipulation"
                     )}
                     onClick={() => setSelectedThread(thread)}
                   >
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-start gap-3 lg:gap-5">
                       {/* Enhanced Avatar with Status */}
                       <div className="relative flex-shrink-0">
-                        <Avatar className="h-12 w-12 ring-2 ring-border/50">
+                        <Avatar className="h-12 w-12 lg:h-14 lg:w-14 ring-2 ring-white/60 shadow-lg">
                           <AvatarImage src={thread.participants[0]?.email ? `/api/avatar/${thread.participants[0].email}` : undefined} />
                           <AvatarFallback className={cn(
-                            "font-semibold",
+                            "font-bold text-base",
                             getClientTypeColor(thread.clientType)
                           )}>
                             {thread.participants[0]?.name?.charAt(0) || 'E'}
                           </AvatarFallback>
                         </Avatar>
                         {thread.leadScore && thread.leadScore > 75 && (
-                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                          <div className="absolute -top-1 -right-1 lg:-top-2 lg:-right-2 w-5 h-5 lg:w-6 lg:h-6 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white">
                             <span className="text-xs text-white font-bold">!</span>
                           </div>
+                        )}
+                        {thread.unread && (
+                          <div className="absolute -bottom-1 -right-1 w-3 h-3 lg:w-4 lg:h-4 bg-blue-500 rounded-full border-2 border-white"></div>
                         )}
                       </div>
 
                       {/* Enhanced Content */}
                       <div className="flex-1 min-w-0">
                         {/* Header with Email Type */}
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="flex items-center gap-1">
-                            {getEmailTypeIcon(thread.emailType)}
-                            <Badge variant="outline" className={cn("text-xs border", getEmailTypeColor(thread.emailType))}>
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-800 dark:to-blue-900 flex items-center justify-center">
+                              {getEmailTypeIcon(thread.emailType)}
+                            </div>
+                            <Badge variant="outline" className={cn("text-sm font-medium px-3 py-1 border", getEmailTypeColor(thread.emailType))}>
                               {thread.emailType?.replace('_', ' ') || 'general'}
                             </Badge>
                           </div>
                           {thread.priority === 'high' && (
-                            <Badge variant="destructive" className="text-xs">
+                            <Badge className="text-xs bg-red-100 text-red-700 border-red-200">
                               <AlertTriangle className="h-3 w-3 mr-1" />
                               High Priority
                             </Badge>
                           )}
                           {thread.leadScore && (
-                            <Badge variant="outline" className={cn("text-xs border", getLeadScoreColor(thread.leadScore))}>
-                              {thread.leadScore}% Lead Score
+                            <Badge variant="outline" className={cn("text-sm font-semibold px-3 py-1", getLeadScoreColor(thread.leadScore))}>
+                              <Target className="h-3 w-3 mr-1" />
+                              {thread.leadScore}%
                             </Badge>
                           )}
                         </div>
 
-                        {/* AI Insights - Inline */}
+                        {/* AI Insights - Enhanced Inline */}
                         {insights.length > 0 && (
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="flex items-center gap-1">
-                              <Brain className="h-3 w-3 text-blue-500" />
-                              <span className="text-xs text-muted-foreground">AI:</span>
+                          <div className="mb-4 p-3 bg-gradient-to-r from-purple-50/60 to-indigo-50/40 dark:from-purple-900/20 dark:to-indigo-900/15 rounded-xl border border-purple-200/50">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-6 h-6 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <Brain className="h-4 w-4 text-purple-600" />
+                              </div>
+                              <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">AI Insights</span>
                             </div>
-                            <div className="flex items-center gap-1 flex-wrap">
-                              {insights.slice(0, 2).map((insight, idx) => (
-                                <Badge key={idx} variant="outline" className="text-[10px] h-4 px-1.5">
-                                  <span className="mr-1">{insight.icon}</span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {insights.slice(0, 3).map((insight, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs bg-white/60 border-purple-200 text-purple-700">
+                                  <span className="mr-1.5">{insight.icon}</span>
                                   {insight.message}
                                 </Badge>
                               ))}
-                              {insights.length > 2 && (
-                                <Badge variant="outline" className="text-[10px] h-4 px-1.5">
-                                  +{insights.length - 2} more
+                              {insights.length > 3 && (
+                                <Badge variant="outline" className="text-xs bg-white/60 border-purple-200 text-purple-700">
+                                  +{insights.length - 3} more insights
                                 </Badge>
                               )}
                             </div>
@@ -588,84 +631,100 @@ export default function EnhancedRealEstateInbox({
                         )}
 
                         {/* Subject and Status */}
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-3 mb-3">
                           <h3 className={cn(
-                            "font-medium text-base truncate",
-                            thread.unread && "font-semibold text-foreground",
+                            "font-semibold text-base lg:text-lg leading-tight flex-1",
+                            thread.unread && "text-foreground",
                             !thread.unread && "text-muted-foreground"
                           )}>
                             {thread.subject || 'No Subject'}
                           </h3>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-2">
                             {thread.starred && (
-                              <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                              <div className="w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center">
+                                <Star className="h-4 w-4 text-yellow-600 fill-current" />
+                              </div>
                             )}
                             {thread.hasAttachments && (
-                              <Paperclip className="h-4 w-4 text-muted-foreground" />
+                              <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                                <Paperclip className="h-3 w-3 text-gray-600" />
+                              </div>
                             )}
                             {thread.hasSchedulingRequest && (
-                              <Calendar className="h-4 w-4 text-blue-500" />
+                              <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                                <Calendar className="h-3 w-3 text-green-600" />
+                              </div>
                             )}
                             {thread.requiresFollowUp && (
-                              <Bell className="h-4 w-4 text-orange-500" />
+                              <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
+                                <Bell className="h-3 w-3 text-orange-600" />
+                              </div>
                             )}
                           </div>
                         </div>
 
                         {/* Property Info */}
                         {thread.propertyInfo && (
-                          <div className="flex items-center gap-3 mb-3 p-3 bg-muted/30 rounded-lg border border-border/30">
-                            <Building2 className="h-4 w-4 text-blue-500" />
-                            <span className="text-sm font-medium">{thread.propertyInfo.address}</span>
-                            <span className="text-sm text-green-600 font-semibold">
-                              {formatCurrency(thread.propertyInfo.price)}
-                            </span>
-                            <Badge variant="outline" className="text-xs">
-                              {thread.propertyInfo.propertyType}
-                            </Badge>
+                          <div className="flex items-center gap-4 mb-4 p-4 bg-gradient-to-r from-blue-50/60 to-blue-50/30 dark:from-blue-900/20 dark:to-blue-900/10 rounded-xl border border-blue-200/50">
+                            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                              <Building2 className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-semibold text-foreground">{thread.propertyInfo.address}</div>
+                              <div className="flex items-center gap-3 mt-1">
+                                <span className="text-lg font-bold text-green-600">
+                                  {formatCurrency(thread.propertyInfo.price)}
+                                </span>
+                                <Badge variant="outline" className="text-xs font-medium">
+                                  {thread.propertyInfo.propertyType}
+                                </Badge>
+                                {thread.propertyInfo.mlsId && (
+                                  <Badge variant="outline" className="text-xs">
+                                    MLS: {thread.propertyInfo.mlsId}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         )}
 
                         {/* Email Snippet */}
-                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2 leading-relaxed">
+                        <p className="text-sm lg:text-base text-muted-foreground mb-4 lg:mb-5 line-clamp-2 leading-relaxed">
                           {thread.snippet}
                         </p>
 
                         {/* Enhanced Metadata */}
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span className="font-medium">{thread.participants[0]?.name || thread.participants[0]?.email || 'Unknown'}</span>
-                            <span>•</span>
-                            <span>{formatTime(thread.lastMessageAt)}</span>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4" />
+                              <span className="font-semibold">{thread.participants[0]?.name || thread.participants[0]?.email?.split('@')[0] || 'Unknown'}</span>
+                            </div>
+                            <div className="w-1 h-1 bg-muted-foreground rounded-full"></div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              <span>{formatTime(thread.lastMessageAt)}</span>
+                            </div>
                             {thread.messageCount > 1 && (
                               <>
-                                <span>•</span>
-                                <MessageCircle className="h-3 w-3" />
-                                <span>{thread.messageCount}</span>
+                                <div className="w-1 h-1 bg-muted-foreground rounded-full"></div>
+                                <div className="flex items-center gap-1">
+                                  <MessageCircle className="h-3 w-3" />
+                                  <span className="font-medium">{thread.messageCount} messages</span>
+                                </div>
                               </>
                             )}
                           </div>
                           
                           {/* Urgency Indicator */}
                           {thread.urgency && thread.urgency > 7 && (
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-2 px-3 py-1 bg-red-50 border border-red-200 rounded-full">
                               <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                              <span className="text-xs text-red-600 font-medium">Urgent</span>
+                              <span className="text-xs text-red-700 font-bold">URGENT</span>
                             </div>
                           )}
                         </div>
 
-                        {/* AI Insights */}
-                        {insights.length > 0 && (
-                          <div className="flex items-center gap-1 mt-2">
-                            {insights.slice(0, 2).map((insight, idx) => (
-                              <Badge key={idx} variant="secondary" className="text-xs bg-blue-50 text-blue-700">
-                                <Brain className="h-3 w-3 mr-1" />
-                                {insight.message}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
 
                         {/* Enhanced Labels */}
                         {thread.labels.length > 0 && (
@@ -684,15 +743,20 @@ export default function EnhancedRealEstateInbox({
                         )}
                       </div>
 
-                      {/* Enhanced Actions */}
-                      <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="flex flex-col gap-1">
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="More options">
+                      {/* Enhanced Quick Actions */}
+                      <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                        <div className="flex flex-col gap-2">
+                          <Button variant="ghost" size="sm" className="h-10 w-10 p-0 hover:bg-blue-50 hover:border-blue-200 border border-transparent" title="More options">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                           {thread.hasSchedulingRequest && (
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Schedule showing">
-                              <Calendar className="h-4 w-4 text-blue-500" />
+                            <Button variant="ghost" size="sm" className="h-10 w-10 p-0 hover:bg-green-50 hover:border-green-200 border border-transparent" title="Schedule showing">
+                              <Calendar className="h-4 w-4 text-green-600" />
+                            </Button>
+                          )}
+                          {thread.leadScore && thread.leadScore > 60 && (
+                            <Button variant="ghost" size="sm" className="h-10 w-10 p-0 hover:bg-purple-50 hover:border-purple-200 border border-transparent" title="Create lead">
+                              <Target className="h-4 w-4 text-purple-600" />
                             </Button>
                           )}
                         </div>
@@ -708,280 +772,530 @@ export default function EnhancedRealEstateInbox({
 
       {/* Enhanced Thread Panel */}
       {viewMode === 'split' && selectedThread && (
-        <div className="flex-1 flex flex-col bg-background/50 backdrop-blur-sm">
-          {/* Smart Actions - Above Preview */}
+        <div className="flex-1 flex flex-col bg-gradient-to-br from-background/80 to-muted/20 backdrop-blur-lg relative">
+          {/* Mobile Back Button */}
+          <div className="lg:hidden p-4 border-b border-border/30 bg-background/90">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setSelectedThread(null)}
+              className="h-10"
+            >
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Back to Conversations
+            </Button>
+          </div>
+          {/* Enhanced Smart Actions Bar */}
           {smartActions.length > 0 && (
-            <div className="p-4 border-b border-border/30 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-blue-500" />
-                  <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Smart Actions</span>
+            <div className="p-6 border-b border-border/30 bg-gradient-to-r from-blue-50/80 to-indigo-50/60 dark:from-blue-900/20 dark:to-indigo-900/15">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <Zap className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-blue-700 dark:text-blue-300">Smart Actions</h3>
+                    <p className="text-sm text-blue-600/70 dark:text-blue-400/70">AI-powered suggestions for this conversation</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  {smartActions.map((action) => (
-                    <Button 
-                      key={action.id}
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleSmartAction(action)}
-                      className="text-xs h-7 bg-white/60 dark:bg-slate-800/60 hover:bg-white dark:hover:bg-slate-800"
-                    >
-                      {action.title}
-                      <Badge variant="secondary" className="ml-1 text-[10px] h-4">
-                        {action.confidence}%
-                      </Badge>
-                    </Button>
-                  ))}
-                </div>
+                <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 px-3 py-1">
+                  {smartActions.length} suggestions
+                </Badge>
+              </div>
+              <div className="flex items-center gap-3 flex-wrap mt-4">
+                {smartActions.map((action) => (
+                  <Button 
+                    key={action.id}
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleSmartAction(action)}
+                    className="text-sm h-10 px-4 bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-800 hover:shadow-md transition-all duration-200 border-blue-200/50 hover:border-blue-300"
+                  >
+                    {action.title}
+                    <Badge variant="secondary" className="ml-2 text-xs h-5 px-2 bg-blue-100 text-blue-700">
+                      {action.confidence}%
+                    </Badge>
+                  </Button>
+                ))}
               </div>
             </div>
           )}
           {/* Enhanced Thread Header */}
-          <div className="p-6 border-b border-border/50 bg-card/50">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <h3 className="text-xl font-semibold">{selectedThread.subject || 'No Subject'}</h3>
-                {selectedThread.emailType && (
-                  <Badge variant="outline" className={cn("text-sm", getEmailTypeColor(selectedThread.emailType))}>
-                    {getEmailTypeIcon(selectedThread.emailType)}
-                    <span className="ml-1">{selectedThread.emailType.replace('_', ' ')}</span>
-                  </Badge>
+          <div className="p-8 border-b border-border/30 bg-gradient-to-r from-background/90 to-muted/30">
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-4 mb-3">
+                  <h1 className="text-2xl font-bold text-foreground leading-tight">
+                    {selectedThread.subject || 'No Subject'}
+                  </h1>
+                  {selectedThread.emailType && (
+                    <Badge variant="outline" className={cn("text-sm font-semibold px-4 py-2", getEmailTypeColor(selectedThread.emailType))}>
+                      {getEmailTypeIcon(selectedThread.emailType)}
+                      <span className="ml-2">{selectedThread.emailType.replace('_', ' ')}</span>
+                    </Badge>
+                  )}
+                  {selectedThread.priority === 'high' && (
+                    <Badge className="text-sm bg-red-100 text-red-700 border-red-200 px-4 py-2">
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      High Priority
+                    </Badge>
+                  )}
+                </div>
+                {selectedThread.propertyInfo && (
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    <Building2 className="h-4 w-4" />
+                    <span className="text-sm">Property: {selectedThread.propertyInfo.address}</span>
+                    <span className="text-sm font-semibold text-green-600">
+                      {formatCurrency(selectedThread.propertyInfo.price)}
+                    </span>
+                  </div>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm">
-                  <Reply className="h-4 w-4" />
+                <Button size="sm" className="h-10 px-4">
+                  <Reply className="h-4 w-4 mr-2" />
                   Reply
                 </Button>
-                <Button variant="ghost" size="sm">
-                  <ReplyAll className="h-4 w-4" />
+                <Button variant="outline" size="sm" className="h-10 px-4">
+                  <ReplyAll className="h-4 w-4 mr-2" />
                   Reply All
                 </Button>
-                <Button variant="ghost" size="sm">
-                  <Forward className="h-4 w-4" />
+                <Button variant="outline" size="sm" className="h-10 px-4">
+                  <Forward className="h-4 w-4 mr-2" />
                   Forward
                 </Button>
-                <Button variant="ghost" size="sm">
+                <Button variant="outline" size="sm" className="h-10 w-10 p-0">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </div>
             </div>
 
             {/* Enhanced Email Meta */}
-            <div className="flex items-center gap-6 text-sm text-muted-foreground mb-4">
-              <div className="flex items-center gap-2">
-                <span>From:</span>
-                <span className="font-medium">
-                  {selectedThread.participants[0]?.name || selectedThread.participants[0]?.email || 'Unknown'}
-                </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
+              <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-xl">
+                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <User className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground font-medium">From</div>
+                  <div className="font-semibold text-foreground">
+                    {selectedThread.participants[0]?.name || selectedThread.participants[0]?.email?.split('@')[0] || 'Unknown'}
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                <span>{formatTime(selectedThread.lastMessageAt)}</span>
+              <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-xl">
+                <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground font-medium">Received</div>
+                  <div className="font-semibold text-foreground">{formatTime(selectedThread.lastMessageAt)}</div>
+                </div>
               </div>
               {selectedThread.leadScore && (
-                <div className="flex items-center gap-2">
-                  <Target className="h-4 w-4" />
-                  <span>Lead Score: {selectedThread.leadScore}%</span>
+                <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-xl">
+                  <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <Target className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground font-medium">Lead Score</div>
+                    <div className="font-semibold text-foreground">{selectedThread.leadScore}%</div>
+                  </div>
+                </div>
+              )}
+              {selectedThread.messageCount > 1 && (
+                <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-xl">
+                  <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                    <MessageCircle className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground font-medium">Messages</div>
+                    <div className="font-semibold text-foreground">{selectedThread.messageCount} in thread</div>
+                  </div>
                 </div>
               )}
             </div>
 
           </div>
 
-          {/* Enhanced Thread Content - Scrollable with Light Background */}
-          <div className="flex-1 overflow-y-auto">
-            <Card className="m-4 bg-slate-50/80 dark:bg-slate-800/30 border-slate-200/50 dark:border-slate-700/50 shadow-sm">
-              <CardContent className="p-6">
-                <div className="prose prose-sm max-w-none">
-                  <p className="text-foreground leading-relaxed">
-                    {selectedThread.snippet}
-                  </p>
-                  <p className="text-muted-foreground text-sm mt-4">
-                    This is a preview of the email content. The full message would be displayed here with proper formatting.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Enhanced AI Summary Card - Moved outside email preview */}
-            <Card className="m-4 border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Brain className="h-5 w-5 text-blue-500" />
-                  AI Intelligence & Insights
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Email Analysis */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm">Email Analysis</h4>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline" className={cn("text-xs", getLeadScoreColor(selectedThread.leadScore))}>
-                        Lead Score: {selectedThread.leadScore}%
-                      </Badge>
+          {/* Enhanced Thread Content - Premium Email Display */}
+          <div className="flex-1 overflow-y-auto bg-gradient-to-b from-transparent to-muted/5 p-6">
+            <div className="max-w-4xl mx-auto space-y-6">
+              {/* Email Content Card */}
+              <Card className="bg-background/90 border-border/50 shadow-lg shadow-black/5 backdrop-blur-sm">
+                <CardHeader className="border-b border-border/30 bg-muted/20">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg font-semibold">Email Content</CardTitle>
+                    <div className="flex items-center gap-2">
+                      {selectedThread.hasAttachments && (
+                        <Badge variant="outline" className="text-xs">
+                          <Paperclip className="h-3 w-3 mr-1" />
+                          Attachments
+                        </Badge>
+                      )}
                       <Badge variant="outline" className="text-xs">
-                        {selectedThread.sentiment} sentiment
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        Priority: {selectedThread.priority}
+                        {selectedThread.messageCount === 1 ? 'Single message' : `${selectedThread.messageCount} messages`}
                       </Badge>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm">Detected Intent</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedThread.hasSchedulingRequest && (
-                        <Badge className="text-xs bg-green-100 text-green-700">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          Scheduling Request
+                </CardHeader>
+                <CardContent className="p-8">
+                  <div className="prose prose-lg max-w-none">
+                    <div className="bg-gradient-to-r from-blue-50/50 to-indigo-50/30 dark:from-blue-900/10 dark:to-indigo-900/5 p-6 rounded-xl border border-blue-200/30 mb-6">
+                      <p className="text-foreground leading-relaxed text-base mb-0">
+                        {selectedThread.snippet}
+                      </p>
+                    </div>
+                    <div className="text-muted-foreground text-sm bg-muted/30 p-4 rounded-lg border border-border/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Eye className="h-4 w-4" />
+                        <span className="font-medium">Email Preview</span>
+                      </div>
+                      <p className="mb-0">
+                        This is a preview of the email content. The full message would be displayed here with proper formatting, 
+                        including HTML content, embedded images, and interactive elements. Thread conversations would show 
+                        chronologically with clear message separation.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              {/* Enhanced AI Intelligence Card */}
+              <Card className="border-purple-200/50 bg-gradient-to-br from-purple-50/80 to-indigo-50/60 dark:from-purple-900/20 dark:to-indigo-900/15 shadow-lg shadow-purple-500/5">
+                <CardHeader className="pb-4 bg-gradient-to-r from-purple-100/50 to-indigo-100/40 dark:from-purple-900/30 dark:to-indigo-900/25 border-b border-purple-200/30">
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <Brain className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-purple-700 dark:text-purple-300">AI Intelligence & Insights</h3>
+                      <p className="text-sm text-purple-600/70 dark:text-purple-400/70 font-normal mt-1">Powered by advanced real estate AI</p>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6 p-6">
+                {/* Enhanced Analysis Grid */}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
+                  <div className="space-y-4">
+                    <h4 className="font-bold text-base text-purple-700 dark:text-purple-300 flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5" />
+                      Email Analysis
+                    </h4>
+                    <div className="grid grid-cols-1 gap-3">
+                      <div className="flex items-center justify-between p-3 bg-white/60 dark:bg-slate-800/60 rounded-xl border border-purple-200/30">
+                        <span className="text-sm font-medium">Lead Score</span>
+                        <Badge className={cn("text-sm font-bold px-3 py-1", getLeadScoreColor(selectedThread.leadScore))}>
+                          {selectedThread.leadScore}%
                         </Badge>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-white/60 dark:bg-slate-800/60 rounded-xl border border-purple-200/30">
+                        <span className="text-sm font-medium">Sentiment</span>
+                        <Badge variant="outline" className="text-sm capitalize">
+                          {selectedThread.sentiment}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-white/60 dark:bg-slate-800/60 rounded-xl border border-purple-200/30">
+                        <span className="text-sm font-medium">Priority</span>
+                        <Badge variant="outline" className="text-sm capitalize">
+                          {selectedThread.priority}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <h4 className="font-bold text-base text-purple-700 dark:text-purple-300 flex items-center gap-2">
+                      <Target className="h-5 w-5" />
+                      Detected Intent
+                    </h4>
+                    <div className="space-y-3">
+                      {selectedThread.hasSchedulingRequest && (
+                        <div className="flex items-center gap-3 p-3 bg-green-50/80 border border-green-200/50 rounded-xl">
+                          <Calendar className="h-5 w-5 text-green-600" />
+                          <span className="font-medium text-green-700">Scheduling Request Detected</span>
+                        </div>
                       )}
                       {selectedThread.propertyInfo && (
-                        <Badge className="text-xs bg-blue-100 text-blue-700">
-                          <Building2 className="h-3 w-3 mr-1" />
-                          Property Inquiry
-                        </Badge>
+                        <div className="flex items-center gap-3 p-3 bg-blue-50/80 border border-blue-200/50 rounded-xl">
+                          <Building2 className="h-5 w-5 text-blue-600" />
+                          <span className="font-medium text-blue-700">Property Inquiry</span>
+                        </div>
+                      )}
+                      {selectedThread.requiresFollowUp && (
+                        <div className="flex items-center gap-3 p-3 bg-orange-50/80 border border-orange-200/50 rounded-xl">
+                          <Bell className="h-5 w-5 text-orange-600" />
+                          <span className="font-medium text-orange-700">Follow-up Required</span>
+                        </div>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Property Information */}
+                {/* Enhanced Property Information */}
                 {selectedThread.propertyInfo && (
-                  <div className="p-3 bg-background/50 rounded-lg border">
-                    <h4 className="font-medium text-sm mb-2">Property Details</h4>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div><strong>Address:</strong> {selectedThread.propertyInfo.address}</div>
-                      <div><strong>Price:</strong> {formatCurrency(selectedThread.propertyInfo.price)}</div>
-                      <div><strong>Type:</strong> {selectedThread.propertyInfo.propertyType}</div>
-                      {selectedThread.propertyInfo.mlsId && (
-                        <div><strong>MLS ID:</strong> {selectedThread.propertyInfo.mlsId}</div>
-                      )}
+                  <div className="p-6 bg-gradient-to-br from-blue-50/80 to-indigo-50/60 dark:from-blue-900/20 dark:to-indigo-900/15 rounded-2xl border border-blue-200/50">
+                    <h4 className="font-bold text-lg text-blue-700 dark:text-blue-300 mb-4 flex items-center gap-2">
+                      <Building2 className="h-6 w-6" />
+                      Property Details
+                    </h4>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-slate-800/60 rounded-xl">
+                          <MapPin className="h-5 w-5 text-blue-600" />
+                          <div>
+                            <div className="text-xs text-muted-foreground font-medium">Address</div>
+                            <div className="font-semibold">{selectedThread.propertyInfo.address}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-slate-800/60 rounded-xl">
+                          <DollarSign className="h-5 w-5 text-green-600" />
+                          <div>
+                            <div className="text-xs text-muted-foreground font-medium">Price</div>
+                            <div className="font-bold text-green-600 text-lg">{formatCurrency(selectedThread.propertyInfo.price)}</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-slate-800/60 rounded-xl">
+                          <Home className="h-5 w-5 text-purple-600" />
+                          <div>
+                            <div className="text-xs text-muted-foreground font-medium">Property Type</div>
+                            <div className="font-semibold">{selectedThread.propertyInfo.propertyType}</div>
+                          </div>
+                        </div>
+                        {selectedThread.propertyInfo.mlsId && (
+                          <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-slate-800/60 rounded-xl">
+                            <FileText className="h-5 w-5 text-orange-600" />
+                            <div>
+                              <div className="text-xs text-muted-foreground font-medium">MLS ID</div>
+                              <div className="font-semibold">{selectedThread.propertyInfo.mlsId}</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
 
-                {/* Extracted Client Data */}
+                {/* Enhanced Client Preferences */}
                 {selectedThread.extractedData && (
-                  <div className="p-3 bg-background/50 rounded-lg border">
-                    <h4 className="font-medium text-sm mb-2">Client Preferences</h4>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="p-6 bg-gradient-to-br from-green-50/80 to-emerald-50/60 dark:from-green-900/20 dark:to-emerald-900/15 rounded-2xl border border-green-200/50">
+                    <h4 className="font-bold text-lg text-green-700 dark:text-green-300 mb-4 flex items-center gap-2">
+                      <Users className="h-6 w-6" />
+                      Client Preferences
+                    </h4>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {selectedThread.extractedData.budget && (
-                        <div>
-                          <strong>Budget:</strong> {formatCurrency(selectedThread.extractedData.budget.min)} - {formatCurrency(selectedThread.extractedData.budget.max)}
+                        <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-slate-800/60 rounded-xl">
+                          <DollarSign className="h-5 w-5 text-green-600" />
+                          <div>
+                            <div className="text-xs text-muted-foreground font-medium">Budget Range</div>
+                            <div className="font-semibold">
+                              {formatCurrency(selectedThread.extractedData.budget.min)} - {formatCurrency(selectedThread.extractedData.budget.max)}
+                            </div>
+                          </div>
                         </div>
                       )}
                       {selectedThread.extractedData.timeline && (
-                        <div><strong>Timeline:</strong> {selectedThread.extractedData.timeline}</div>
+                        <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-slate-800/60 rounded-xl">
+                          <Clock className="h-5 w-5 text-blue-600" />
+                          <div>
+                            <div className="text-xs text-muted-foreground font-medium">Timeline</div>
+                            <div className="font-semibold">{selectedThread.extractedData.timeline}</div>
+                          </div>
+                        </div>
                       )}
                       {selectedThread.extractedData.propertyTypes && (
-                        <div><strong>Property Types:</strong> {selectedThread.extractedData.propertyTypes.join(', ')}</div>
+                        <div className="col-span-full">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Home className="h-4 w-4 text-purple-600" />
+                            <span className="text-sm font-medium text-muted-foreground">Property Types:</span>
+                          </div>
+                          <div className="flex gap-2 flex-wrap">
+                            {selectedThread.extractedData.propertyTypes.map((type, idx) => (
+                              <Badge key={idx} variant="outline" className="text-sm">{type}</Badge>
+                            ))}
+                          </div>
+                        </div>
                       )}
                       {selectedThread.extractedData.preferredLocations && (
-                        <div><strong>Locations:</strong> {selectedThread.extractedData.preferredLocations.join(', ')}</div>
+                        <div className="col-span-full">
+                          <div className="flex items-center gap-2 mb-2">
+                            <MapPin className="h-4 w-4 text-red-600" />
+                            <span className="text-sm font-medium text-muted-foreground">Preferred Locations:</span>
+                          </div>
+                          <div className="flex gap-2 flex-wrap">
+                            {selectedThread.extractedData.preferredLocations.map((location, idx) => (
+                              <Badge key={idx} variant="outline" className="text-sm">{location}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {selectedThread.extractedData.preApproved !== undefined && (
+                        <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-slate-800/60 rounded-xl">
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                          <div>
+                            <div className="text-xs text-muted-foreground font-medium">Pre-approval Status</div>
+                            <div className="font-semibold">
+                              {selectedThread.extractedData.preApproved ? 'Pre-approved' : 'Not pre-approved'}
+                            </div>
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
                 )}
 
-                {/* Action Buttons */}
-                <div className="flex items-center gap-2 pt-2">
-                  <Button size="sm" variant="outline">
-                    <Target className="h-4 w-4 mr-2" />
-                    Create Lead
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Schedule Showing
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <CheckSquare className="h-4 w-4 mr-2" />
-                    Create Task
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <Building2 className="h-4 w-4 mr-2" />
-                    Send Property Info
-                  </Button>
+                {/* Enhanced Action Buttons */}
+                <div className="pt-4 border-t border-purple-200/30">
+                  <h4 className="font-bold text-base text-purple-700 dark:text-purple-300 mb-4 flex items-center gap-2">
+                    <Zap className="h-5 w-5" />
+                    Quick Actions
+                  </h4>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <Button size="sm" className="h-12 flex-col gap-1 bg-blue-600 hover:bg-blue-700">
+                      <Target className="h-5 w-5" />
+                      <span className="text-xs">Create Lead</span>
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-12 flex-col gap-1 border-green-200 hover:bg-green-50">
+                      <Calendar className="h-5 w-5 text-green-600" />
+                      <span className="text-xs">Schedule Showing</span>
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-12 flex-col gap-1 border-orange-200 hover:bg-orange-50">
+                      <CheckSquare className="h-5 w-5 text-orange-600" />
+                      <span className="text-xs">Create Task</span>
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-12 flex-col gap-1 border-purple-200 hover:bg-purple-50">
+                      <Building2 className="h-5 w-5 text-purple-600" />
+                      <span className="text-xs">Send Properties</span>
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
-            </Card>
+              </Card>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Enhanced Contact Panel */}
-      {viewMode === 'split' && showContactPanel && contact && (
-        <div className="w-80 border-l border-border/50 bg-muted/30 backdrop-blur-sm">
-          <div className="p-4 border-b border-border/50">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold">Contact Intelligence</h3>
+      {/* Enhanced Contact Panel - Desktop Only */}
+      {viewMode === 'split' && showContactPanel && selectedThread && (
+        <div className="hidden xl:block w-96 border-l border-border/30 bg-gradient-to-b from-muted/40 to-muted/20 backdrop-blur-lg">
+          <div className="p-6 border-b border-border/30 bg-gradient-to-r from-background/90 to-muted/50">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Users className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">Contact Intelligence</h3>
+                  <p className="text-sm text-muted-foreground">AI-powered client insights</p>
+                </div>
+              </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowContactPanel(false)}
+                className="h-10 w-10 p-0"
               >
                 <EyeOff className="h-4 w-4" />
               </Button>
             </div>
           </div>
 
-          <div className="p-4 space-y-4">
+          <div className="p-6 space-y-6">
             {/* Enhanced Contact Info */}
-            <div className="flex items-center gap-3">
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={contact.avatarUrl} />
-                <AvatarFallback className={cn("font-semibold", getClientTypeColor(selectedThread?.clientType))}>
-                  {contact.name.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h4 className="font-medium">{contact.name}</h4>
-                <p className="text-sm text-muted-foreground">{contact.email}</p>
-                {selectedThread?.clientType && (
-                  <Badge variant="outline" className={cn("text-xs mt-1", getClientTypeColor(selectedThread.clientType))}>
-                    {selectedThread.clientType}
-                  </Badge>
-                )}
+            <div className="bg-background/60 p-6 rounded-2xl border border-border/30 shadow-sm">
+              <div className="flex items-center gap-4 mb-4">
+                <Avatar className="h-16 w-16 ring-4 ring-white/60 shadow-lg">
+                  <AvatarImage src={selectedThread.participants[0]?.email ? `/api/avatar/${selectedThread.participants[0].email}` : undefined} />
+                  <AvatarFallback className={cn("font-bold text-lg", getClientTypeColor(selectedThread?.clientType))}>
+                    {selectedThread.participants[0]?.name?.charAt(0) || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <h4 className="font-bold text-xl">{selectedThread.participants[0]?.name || 'Unknown Contact'}</h4>
+                  <p className="text-sm text-muted-foreground mb-2">{selectedThread.participants[0]?.email || 'No email'}</p>
+                  <div className="flex gap-2">
+                    {selectedThread?.clientType && (
+                      <Badge className={cn("text-sm font-medium px-3 py-1", getClientTypeColor(selectedThread.clientType))}>
+                        <User className="h-3 w-3 mr-1" />
+                        {selectedThread.clientType}
+                      </Badge>
+                    )}
+                    {selectedThread.leadScore && selectedThread.leadScore > 60 && (
+                      <Badge className="text-sm bg-purple-100 text-purple-700 border-purple-200 px-3 py-1">
+                        <Target className="h-3 w-3 mr-1" />
+                        High Value
+                      </Badge>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Communication Stats */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="text-center p-2 bg-background/50 rounded-lg">
-                <div className="text-lg font-semibold">87%</div>
-                <div className="text-xs text-muted-foreground">Response Rate</div>
-              </div>
-              <div className="text-center p-2 bg-background/50 rounded-lg">
-                <div className="text-lg font-semibold">2.5h</div>
-                <div className="text-xs text-muted-foreground">Avg Response</div>
+            {/* Enhanced Communication Stats */}
+            <div className="bg-background/60 p-6 rounded-2xl border border-border/30 shadow-sm">
+              <h5 className="font-bold text-base mb-4 flex items-center gap-2">
+                <MessageCircle className="h-5 w-5 text-blue-600" />
+                Communication Stats
+              </h5>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200/50">
+                  <div className="text-2xl font-bold text-green-700">87%</div>
+                  <div className="text-sm text-green-600/80 font-medium">Response Rate</div>
+                </div>
+                <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200/50">
+                  <div className="text-2xl font-bold text-blue-700">2.5h</div>
+                  <div className="text-sm text-blue-600/80 font-medium">Avg Response</div>
+                </div>
+                <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl border border-purple-200/50">
+                  <div className="text-2xl font-bold text-purple-700">{selectedThread.messageCount || 1}</div>
+                  <div className="text-sm text-purple-600/80 font-medium">Total Messages</div>
+                </div>
+                <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl border border-orange-200/50">
+                  <div className="text-2xl font-bold text-orange-700">
+                    {selectedThread.urgency || Math.floor(Math.random() * 5) + 5}
+                  </div>
+                  <div className="text-sm text-orange-600/80 font-medium">Engagement</div>
+                </div>
               </div>
             </div>
 
-            {/* Client Preferences */}
+            {/* Enhanced Client Preferences */}
             {selectedThread?.extractedData && (
-              <div>
-                <h5 className="text-sm font-medium mb-2">Preferences</h5>
-                <div className="space-y-2 text-sm">
+              <div className="bg-background/60 p-6 rounded-2xl border border-border/30 shadow-sm">
+                <h5 className="font-bold text-base mb-4 flex items-center gap-2">
+                  <Heart className="h-5 w-5 text-red-500" />
+                  Client Preferences
+                </h5>
+                <div className="space-y-4">
                   {selectedThread.extractedData.budget && (
-                    <div className="flex justify-between">
-                      <span>Budget:</span>
-                      <span className="font-medium">
+                    <div className="flex items-center justify-between p-3 bg-green-50/60 rounded-xl border border-green-200/30">
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-green-600" />
+                        <span className="font-medium">Budget</span>
+                      </div>
+                      <span className="font-bold text-green-700">
                         {formatCurrency(selectedThread.extractedData.budget.min)} - {formatCurrency(selectedThread.extractedData.budget.max)}
                       </span>
                     </div>
                   )}
                   {selectedThread.extractedData.timeline && (
-                    <div className="flex justify-between">
-                      <span>Timeline:</span>
-                      <span className="font-medium">{selectedThread.extractedData.timeline}</span>
+                    <div className="flex items-center justify-between p-3 bg-blue-50/60 rounded-xl border border-blue-200/30">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-blue-600" />
+                        <span className="font-medium">Timeline</span>
+                      </div>
+                      <span className="font-bold text-blue-700">{selectedThread.extractedData.timeline}</span>
                     </div>
                   )}
                   {selectedThread.extractedData.preApproved !== undefined && (
-                    <div className="flex justify-between">
-                      <span>Pre-approved:</span>
-                      <Badge variant={selectedThread.extractedData.preApproved ? "default" : "secondary"} className="text-xs">
+                    <div className="flex items-center justify-between p-3 bg-purple-50/60 rounded-xl border border-purple-200/30">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-purple-600" />
+                        <span className="font-medium">Pre-approved</span>
+                      </div>
+                      <Badge className={selectedThread.extractedData.preApproved ? "bg-green-100 text-green-700 border-green-200" : "bg-gray-100 text-gray-700 border-gray-200"}>
                         {selectedThread.extractedData.preApproved ? "Yes" : "No"}
                       </Badge>
                     </div>
@@ -990,28 +1304,62 @@ export default function EnhancedRealEstateInbox({
               </div>
             )}
 
-            {/* Quick Actions */}
-            <div className="space-y-2">
-              <h5 className="text-sm font-medium">Quick Actions</h5>
-              <div className="grid grid-cols-1 gap-2">
-                <Button size="sm" className="w-full justify-start text-xs">
-                  <Mail className="h-3 w-3 mr-2" />
-                  Send Follow-up
+            {/* Enhanced Quick Actions */}
+            <div className="bg-background/60 p-6 rounded-2xl border border-border/30 shadow-sm">
+              <h5 className="font-bold text-base mb-4 flex items-center gap-2">
+                <Zap className="h-5 w-5 text-yellow-600" />
+                Quick Actions
+              </h5>
+              <div className="space-y-3">
+                <Button size="sm" className="w-full justify-start h-12 bg-blue-600 hover:bg-blue-700">
+                  <Mail className="h-4 w-4 mr-3" />
+                  <div className="text-left">
+                    <div className="font-medium">Send Follow-up</div>
+                    <div className="text-xs opacity-80">AI-generated email</div>
+                  </div>
                 </Button>
-                <Button size="sm" variant="outline" className="w-full justify-start text-xs">
-                  <Calendar className="h-3 w-3 mr-2" />
-                  Schedule Showing
+                <Button size="sm" variant="outline" className="w-full justify-start h-12 border-green-200 hover:bg-green-50">
+                  <Calendar className="h-4 w-4 mr-3 text-green-600" />
+                  <div className="text-left">
+                    <div className="font-medium">Schedule Showing</div>
+                    <div className="text-xs text-muted-foreground">Calendar integration</div>
+                  </div>
                 </Button>
-                <Button size="sm" variant="outline" className="w-full justify-start text-xs">
-                  <Building2 className="h-3 w-3 mr-2" />
-                  Send Properties
+                <Button size="sm" variant="outline" className="w-full justify-start h-12 border-purple-200 hover:bg-purple-50">
+                  <Building2 className="h-4 w-4 mr-3 text-purple-600" />
+                  <div className="text-left">
+                    <div className="font-medium">Send Properties</div>
+                    <div className="text-xs text-muted-foreground">Matching listings</div>
+                  </div>
                 </Button>
-                <Button size="sm" variant="outline" className="w-full justify-start text-xs">
-                  <Target className="h-3 w-3 mr-2" />
-                  Add to Pipeline
+                <Button size="sm" variant="outline" className="w-full justify-start h-12 border-orange-200 hover:bg-orange-50">
+                  <Target className="h-4 w-4 mr-3 text-orange-600" />
+                  <div className="text-left">
+                    <div className="font-medium">Add to Pipeline</div>
+                    <div className="text-xs text-muted-foreground">Create CRM lead</div>
+                  </div>
                 </Button>
               </div>
             </div>
+            
+            {/* Property Match Suggestions */}
+            {selectedThread?.extractedData?.budget && (
+              <div className="bg-background/60 p-6 rounded-2xl border border-border/30 shadow-sm">
+                <h5 className="font-bold text-base mb-4 flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-blue-600" />
+                  Property Matches
+                </h5>
+                <div className="space-y-3">
+                  <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-200/30">
+                    <div className="font-medium text-sm">3 matching properties</div>
+                    <div className="text-xs text-muted-foreground">Based on budget & preferences</div>
+                  </div>
+                  <Button size="sm" variant="outline" className="w-full text-xs">
+                    View All Matches
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
