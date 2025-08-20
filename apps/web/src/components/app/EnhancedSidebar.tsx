@@ -188,6 +188,20 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
       // removed hotkey: '⌘A',
       description: 'AI-powered assistance'
     },
+    {
+      href: "/app/documents",
+      label: "Documents",
+      icon: <FileText className="h-4 w-4" />,
+      group: 'core',
+      description: 'Document templates and management'
+    },
+    {
+      href: "/app/reporting",
+      label: "Reporting",
+      icon: <BarChart3 className="h-4 w-4" />,
+      group: 'core',
+      description: 'Analytics and business insights'
+    },
     
     // Utilities
     { 

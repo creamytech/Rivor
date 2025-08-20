@@ -1,6 +1,7 @@
 import { google } from 'googleapis';
 import { prisma } from './db';
-import { decryptForOrg } from './crypto';
+import { decryptForOrg, encryptForOrg } from './crypto';
+import { logger } from '@/lib/logger';
 
 export type UiCalendarEvent = {
   id: string;

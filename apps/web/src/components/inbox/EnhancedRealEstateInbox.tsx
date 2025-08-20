@@ -161,6 +161,7 @@ export default function EnhancedRealEstateInbox({
   const [aiInsights, setAiInsights] = useState<any>(null);
   const [smartActions, setSmartActions] = useState<SmartAction[]>([]);
   const [showComposeModal, setShowComposeModal] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Enhanced utility functions for real estate email management
   const getEmailTypeColor = (type?: string) => {
@@ -411,6 +412,52 @@ export default function EnhancedRealEstateInbox({
     // Implementation would integrate with calendar, CRM, email templates, etc.
   };
 
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      const response = await fetch('/api/sync/gmail', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        console.log('Gmail sync successful:', result);
+        // Refresh threads after successful sync
+        const params = new URLSearchParams();
+        if (activeTab !== 'all') params.append('filter', activeTab);
+        if (searchQuery) params.append('search', searchQuery);
+        if (selectedFilter) params.append('filter', selectedFilter);
+        
+        const threadsResponse = await fetch(`/api/inbox/threads?${params.toString()}`);
+        if (threadsResponse.ok) {
+          const data = await threadsResponse.json();
+          const enhancedThreads = (data.threads || []).map((thread: EmailThread, index: number) => 
+            generateMockThread(thread, index)
+          );
+          setThreads(enhancedThreads);
+        }
+      } else {
+        console.error('Gmail sync failed:', result);
+        // Handle specific error cases
+        if (result.action === 'connect_gmail') {
+          // Redirect to Gmail connection flow
+          window.location.href = '/api/auth/signin/google';
+        } else if (result.action === 'reauthenticate_gmail') {
+          // Redirect to re-authentication
+          window.location.href = '/api/auth/signin/google';
+        }
+      }
+    } catch (error) {
+      console.error('Sync request failed:', error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -457,9 +504,15 @@ export default function EnhancedRealEstateInbox({
                 <Filter className="h-4 w-4 mr-2" />
                 Filters
               </Button>
-              <Button variant="outline" size="sm" className="h-10 px-4">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Sync
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-10 px-4"
+                onClick={handleSync}
+                disabled={isSyncing}
+              >
+                <RefreshCw className={cn("h-4 w-4 mr-2", isSyncing && "animate-spin")} />
+                {isSyncing ? 'Syncing...' : 'Sync'}
               </Button>
               <Button size="sm" className="h-10 px-4 bg-blue-600 hover:bg-blue-700">
                 <Plus className="h-4 w-4 mr-2" />

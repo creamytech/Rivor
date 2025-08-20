@@ -16,17 +16,21 @@ interface ChatMessage {
 
 interface EnhancedChatProps {
   className?: string;
+  aiStatus?: 'idle' | 'thinking' | 'processing';
+  onStatusChange?: (status: 'idle' | 'thinking' | 'processing') => void;
   context?: {
     type: 'lead' | 'contact' | 'thread';
     id: string;
   };
 }
 
-export default function EnhancedChat({ className = '', context }: EnhancedChatProps) {
+export default function EnhancedChat({ className = '', aiStatus, onStatusChange, context }: EnhancedChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [diagnosticsData, setDiagnosticsData] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Direct API calls instead of tRPC for chat functionality
@@ -56,6 +60,7 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
     setIsLoading(true);
+    onStatusChange?.('thinking');
 
     try {
       const response = await fetch('/api/chat', {
@@ -78,7 +83,16 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
 
       const data = await response.json();
 
-      if (data && data.id && data.content) {
+      if (data && data.error) {
+        // Handle API error response
+        const errorMessage: ChatMessage = {
+          id: `assistant_${Date.now()}`,
+          content: `Error: ${data.error}${data.details ? `\n\nDetails: ${data.details}` : ''}`,
+          role: 'assistant',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      } else if (data && data.id && data.content) {
         const aiMessage: ChatMessage = {
           id: data.id,
           content: data.content,
@@ -109,6 +123,7 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+      onStatusChange?.('idle');
     }
   };
 
@@ -160,6 +175,19 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
     }
   };
 
+  const runDiagnostics = async () => {
+    try {
+      const response = await fetch('/api/chat/test');
+      const data = await response.json();
+      setDiagnosticsData(data);
+      setShowDiagnostics(true);
+    } catch (error) {
+      console.error('Failed to run diagnostics:', error);
+      setDiagnosticsData({ error: 'Failed to run diagnostics' });
+      setShowDiagnostics(true);
+    }
+  };
+
   const getContextLabel = () => {
     if (!context) return 'General Assistant';
     switch (context.type) {
@@ -204,6 +232,12 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                     🤖 {getContextLabel()}
                   </h3>
                   <div className="flex items-center gap-2">
+                    <button 
+                      onClick={runDiagnostics}
+                      className="px-3 py-1 text-xs border border-white/20 rounded bg-white/10 hover:bg-white/20"
+                    >
+                      Diagnostics
+                    </button>
                     <button className="px-3 py-1 text-xs border border-white/20 rounded bg-white/10 hover:bg-white/20">
                       Settings
                     </button>
@@ -325,6 +359,54 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
                   
                   <div ref={messagesEndRef} />
                 </div>
+
+                {/* Diagnostics Panel */}
+                {showDiagnostics && diagnosticsData && (
+                  <div className="p-4 border-t border-white/20 bg-slate-50/50 dark:bg-slate-800/50">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium text-sm">🔧 AI Chat Diagnostics</h4>
+                      <button 
+                        onClick={() => setShowDiagnostics(false)}
+                        className="text-xs px-2 py-1 border border-white/20 rounded bg-white/10 hover:bg-white/20"
+                      >
+                        Close
+                      </button>
+                    </div>
+                    <div className="space-y-2 text-xs">
+                      {diagnosticsData.error ? (
+                        <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded text-red-700 dark:text-red-300">
+                          Error: {diagnosticsData.error}
+                        </div>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <strong>OpenAI Key:</strong> {diagnosticsData.environment?.hasOpenaiKey ? '✅ Set' : '❌ Missing'}
+                            </div>
+                            <div>
+                              <strong>Key Length:</strong> {diagnosticsData.environment?.apiKeyLength || 0} chars
+                            </div>
+                          </div>
+                          <div>
+                            <strong>OpenAI Test:</strong> 
+                            <span className={diagnosticsData.openai?.error ? 'text-red-600' : 'text-green-600'}>
+                              {diagnosticsData.openai?.testResult || 'Unknown'}
+                            </span>
+                          </div>
+                          {diagnosticsData.openai?.error && (
+                            <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded text-red-700 dark:text-red-300">
+                              <strong>OpenAI Error:</strong> {diagnosticsData.openai.error}
+                            </div>
+                          )}
+                          <div className="text-slate-500">
+                            <strong>User:</strong> {diagnosticsData.user?.email} | 
+                            <strong> Time:</strong> {new Date(diagnosticsData.timestamp).toLocaleTimeString()}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
                 
                 {/* Input Area */}
                 <div className="p-4 border-t border-white/20">

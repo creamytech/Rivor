@@ -51,12 +51,14 @@ import {
   User as UserIcon,
   Building as BuildingIcon
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function CalendarPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'my-events' | 'team' | 'all'>('my-events');
   const [meetingType, setMeetingType] = useState<'all' | 'intro' | 'demo' | 'follow-up' | 'internal'>('all');
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const availableFilters = [
     { id: 'has-video', label: 'Video Calls', icon: VideoIcon },
@@ -82,6 +84,37 @@ export default function CalendarPage() {
         ? prev.filter(id => id !== filterId)
         : [...prev, filterId]
     );
+  };
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      const response = await fetch('/api/sync/calendar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        console.log('Calendar sync successful:', result);
+        // The calendar component will automatically refresh on next render
+        window.location.reload(); // Simple refresh to show new events
+      } else {
+        console.error('Calendar sync failed:', result);
+        if (result.action === 'connect_calendar') {
+          window.location.href = '/api/auth/signin/google';
+        } else if (result.action === 'reauthenticate_calendar') {
+          window.location.href = '/api/auth/signin/google';
+        }
+      }
+    } catch (error) {
+      console.error('Calendar sync request failed:', error);
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   return (
@@ -150,6 +183,15 @@ export default function CalendarPage() {
 
             {/* Quick Actions */}
             <div className="flex items-center gap-2">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={handleSync}
+                disabled={isSyncing}
+              >
+                <Download className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                {isSyncing ? 'Syncing...' : 'Sync'}
+              </Button>
               <Button size="sm" variant="outline">
                 <Upload className="h-4 w-4 mr-2" />
                 Import

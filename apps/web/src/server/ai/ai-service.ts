@@ -394,20 +394,33 @@ Respond as a helpful AI assistant with access to the CRM data.`;
 
       let aiResponse = 'I apologize, but I encountered an error processing your request.';
       
-      if (openai) {
-        const completion = await openai.chat.completions.create({
-          model: 'gpt-4',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: message }
-          ],
-          max_tokens: 1000,
-          temperature: 0.7
-        });
-
-        aiResponse = completion.choices[0]?.message?.content || aiResponse;
+      if (!openai) {
+        aiResponse = 'AI service is currently unavailable. The OpenAI API key is not configured. Please check your environment variables.';
       } else {
-        aiResponse = 'AI service is currently unavailable. Please check your configuration.';
+        try {
+          const completion = await openai.chat.completions.create({
+            model: 'gpt-4o-mini', // Use gpt-4o-mini for better cost efficiency
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: message }
+            ],
+            max_tokens: 1000,
+            temperature: 0.7
+          });
+
+          aiResponse = completion.choices[0]?.message?.content || 'I received an empty response from the AI service.';
+        } catch (openaiError: any) {
+          console.error('OpenAI API Error:', openaiError);
+          if (openaiError.status === 401) {
+            aiResponse = 'Authentication failed with OpenAI. Please check your API key configuration.';
+          } else if (openaiError.status === 429) {
+            aiResponse = 'Rate limit exceeded. Please try again in a moment.';
+          } else if (openaiError.status === 500) {
+            aiResponse = 'OpenAI service is experiencing issues. Please try again later.';
+          } else {
+            aiResponse = `OpenAI API error: ${openaiError.message || 'Unknown error occurred'}`;
+          }
+        }
       }
 
       const suggestedActions = this.analyzeResponseForActions(
