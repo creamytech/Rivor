@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { useTheme } from "@/contexts/ThemeContext";
+import FloatingActionButton from "@/components/app/FloatingActionButton";
 import {
   BarChart3,
   Inbox,
@@ -43,7 +44,9 @@ import {
   Mail,
   Video,
   Bookmark,
-  Archive
+  Archive,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 
 interface NavItem {
@@ -729,38 +732,10 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
               </div>
             </div>
 
-            {/* Enhanced Quick Actions with Real Estate Focus */}
+            {/* Floating Action Button - Space saving */}
             {!isCollapsed && (
-              <div className="px-3 py-3 mt-4">
-                <div 
-                  className="p-3 rounded-xl border border-border/50 shadow-sm"
-                  style={{
-                    background: `linear-gradient(135deg, ${currentTheme.colors.background} 0%, color-mix(in oklab, ${currentTheme.colors.background} 97%, ${currentTheme.colors.primary}) 100%)`
-                  }}
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <Zap className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-semibold">Quick Actions</span>
-                  </div>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => setShowQuickActionsMenu(true)}
-                    className="w-full h-9 font-medium shadow-sm hover:shadow-md transition-all"
-                    style={{
-                      background: currentTheme.colors.gradient,
-                      border: 'none'
-                    }}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Action
-                  </Button>
-                  <div className="flex items-center justify-center mt-2">
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                      ⌘N • ⌘T • ⌘K • ⌘E • ⌘L
-                    </span>
-                  </div>
-                </div>
+              <div className="px-3 py-2 mt-2">
+                <FloatingActionButton />
               </div>
             )}
 
@@ -869,275 +844,127 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
           </nav>
         </div>
 
-        {/* Floating Quick Actions Button (when collapsed) - Enhanced */}
+        {/* FAB for collapsed mode */}
         {isCollapsed && (
           <div className="relative z-10 px-2 pb-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="default"
-                  size="icon"
-                  onClick={() => setShowQuickActionsMenu(true)}
-                  className="w-full h-10 relative overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-                  style={{
-                    background: currentTheme.colors.gradient
-                  }}
-                >
-                  <Plus className="h-4 w-4 relative z-10" />
-                  <div 
-                    className="absolute inset-0 opacity-0 hover:opacity-20 transition-opacity"
-                    style={{ background: 'white' }}
-                  ></div>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="max-w-xs">
-                <div className="space-y-2">
-                  <p className="font-medium">Quick Actions</p>
-                  <div className="text-xs space-y-1">
-                    {quickActions.slice(0, 3).map((action, idx) => (
-                      <div key={idx} className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {action.icon}
-                          <span>{action.label}</span>
-                        </div>
-                        <Badge variant="outline" className="text-[9px] px-1 py-0">
-                          {action.hotkey}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </TooltipContent>
-            </Tooltip>
+            <FloatingActionButton />
           </div>
         )}
 
-        {/* Theme Switcher - Enhanced */}
-        <div className="relative z-10 px-3 py-2">
-          {!isCollapsed ? (
-            <div 
-              className="p-2 rounded-lg border border-border/30"
-              style={{
-                background: `linear-gradient(135deg, ${currentTheme.colors.background} 0%, color-mix(in oklab, ${currentTheme.colors.background} 97%, ${currentTheme.colors.primary}) 100%)`
-              }}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <Palette className="h-3 w-3 text-primary" />
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Theme
-                </span>
-              </div>
-              <ThemeSwitcher showInNavigation compact />
-            </div>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex justify-center">
-                  <div 
-                    className="p-2 rounded-lg border border-border/30"
-                    style={{
-                      background: `linear-gradient(135deg, ${currentTheme.colors.background} 0%, color-mix(in oklab, ${currentTheme.colors.background} 97%, ${currentTheme.colors.primary}) 100%)`
-                    }}
-                  >
-                    <ThemeSwitcher showInNavigation compact />
-                  </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <div className="flex items-center gap-2">
-                  <Palette className="h-4 w-4" />
-                  <span>Switch Theme</span>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          )}
-        </div>
-
-        {/* Enhanced User Profile Section */}
+        {/* Compact Footer Accordion - Theme + Profile/Help/Logout */}
         <div 
-          className="relative z-10 p-3 mt-2"
+          className="relative z-10 mt-2"
           style={{
             borderTop: `1px solid ${currentTheme.colors.border}`,
             background: `linear-gradient(135deg, ${currentTheme.colors.background} 0%, color-mix(in oklab, ${currentTheme.colors.background} 98%, ${currentTheme.colors.primary}) 100%)`
           }}
         >
           {!isCollapsed ? (
-            <div className="space-y-3">
-              {/* User Info Card */}
-              <div 
-                className="p-3 rounded-lg border border-border/30 hover:border-border/50 transition-all cursor-pointer group"
-                style={{
-                  background: `linear-gradient(135deg, ${currentTheme.colors.background} 0%, color-mix(in oklab, ${currentTheme.colors.background} 97%, ${currentTheme.colors.primary}) 100%)`
-                }}
+            <div className="p-2 space-y-2">
+              {/* Accordion Header */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsFooterExpanded(!isFooterExpanded)}
+                className="w-full justify-between h-8 px-2 text-xs"
               >
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <Avatar className="h-10 w-10 border-2 border-primary/20 shadow-sm">
-                      <AvatarImage src={session?.user?.image || ''} />
-                      <AvatarFallback 
-                        className="text-white font-bold text-sm"
-                        style={{ background: currentTheme.colors.gradient }}
-                      >
-                        {getUserInitials()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div 
-                      className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-background flex items-center justify-center"
-                      style={{ backgroundColor: currentTheme.colors.primary }}
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={session?.user?.image || ''} />
+                    <AvatarFallback 
+                      className="text-white font-bold text-xs"
+                      style={{ background: currentTheme.colors.gradient }}
                     >
-                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate">
-                      {session?.user?.name || 'User'}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {session?.user?.email || 'user@rivor.com'}
-                    </p>
-                    <div className="flex items-center gap-1 mt-1">
-                      <div className="w-1 h-1 rounded-full bg-green-400"></div>
-                      <span className="text-[10px] text-muted-foreground">Online</span>
-                    </div>
-                  </div>
+                      {getUserInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="font-medium truncate">
+                    {session?.user?.name?.split(' ')[0] || 'User'}
+                  </span>
                 </div>
-              </div>
+                {isFooterExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              </Button>
               
-              {/* Action Buttons */}
-              <div className="flex gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="sm" className="flex-1 h-8">
-                      <User className="h-3 w-3 mr-1" />
-                      Profile
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>View and edit profile</TooltipContent>
-                </Tooltip>
-                
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="sm" className="flex-1 h-8">
-                      <HelpCircle className="h-3 w-3 mr-1" />
-                      Help
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Get help and support</TooltipContent>
-                </Tooltip>
-                
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
-                      <LogOut className="h-3 w-3" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Sign out</TooltipContent>
-                </Tooltip>
-              </div>
+              {/* Expanded Content */}
+              <AnimatePresence>
+                {isFooterExpanded && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-2 overflow-hidden"
+                  >
+                    {/* Theme Switcher */}
+                    <div className="px-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Palette className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Theme</span>
+                      </div>
+                      <ThemeSwitcher showInNavigation compact />
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="grid grid-cols-3 gap-1">
+                      <Button variant="ghost" size="sm" className="h-7 text-xs flex-col py-1 px-2">
+                        <User className="h-3 w-3" />
+                        <span className="text-[10px] mt-0.5">Profile</span>
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs flex-col py-1 px-2">
+                        <HelpCircle className="h-3 w-3" />
+                        <span className="text-[10px] mt-0.5">Help</span>
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs flex-col py-1 px-2 text-muted-foreground hover:text-destructive">
+                        <LogOut className="h-3 w-3" />
+                        <span className="text-[10px] mt-0.5">Logout</span>
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-3">
+            <div className="p-2 flex flex-col items-center gap-2">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="relative cursor-pointer group">
-                    <Avatar className="h-8 w-8 border-2 border-primary/20 shadow-sm transition-all group-hover:scale-110">
-                      <AvatarImage src={session?.user?.image || ''} />
-                      <AvatarFallback 
-                        className="text-white font-bold text-xs"
-                        style={{ background: currentTheme.colors.gradient }}
-                      >
-                        {getUserInitials()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div 
-                      className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border border-background flex items-center justify-center"
-                      style={{ backgroundColor: currentTheme.colors.primary }}
+                  <Avatar className="h-7 w-7 cursor-pointer hover:scale-110 transition-transform">
+                    <AvatarImage src={session?.user?.image || ''} />
+                    <AvatarFallback 
+                      className="text-white font-bold text-xs"
+                      style={{ background: currentTheme.colors.gradient }}
                     >
-                      <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
-                    </div>
-                  </div>
+                      {getUserInitials()}
+                    </AvatarFallback>
+                  </Avatar>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="max-w-xs">
-                  <div className="text-center space-y-2">
-                    <div className="space-y-1">
-                      <p className="font-semibold">{session?.user?.name || 'User'}</p>
+                <TooltipContent side="right">
+                  <div className="space-y-2">
+                    <div>
+                      <p className="font-medium">{session?.user?.name || 'User'}</p>
                       <p className="text-xs text-muted-foreground">{session?.user?.email}</p>
-                      <div className="flex items-center justify-center gap-1">
-                        <div className="w-1 h-1 rounded-full bg-green-400"></div>
-                        <span className="text-[10px] text-muted-foreground">Online</span>
-                      </div>
                     </div>
-                    <div className="flex gap-1 justify-center pt-2 border-t">
+                    <div className="flex gap-1">
                       <Button variant="ghost" size="icon" className="h-6 w-6">
                         <User className="h-3 w-3" />
                       </Button>
                       <Button variant="ghost" size="icon" className="h-6 w-6">
                         <HelpCircle className="h-3 w-3" />
                       </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6">
+                        <LogOut className="h-3 w-3" />
+                      </Button>
                     </div>
                   </div>
                 </TooltipContent>
               </Tooltip>
               
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive">
-                    <LogOut className="h-3 w-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">Sign out</TooltipContent>
-              </Tooltip>
+              <div className="w-full">
+                <ThemeSwitcher showInNavigation compact />
+              </div>
             </div>
           )}
         </div>
 
-        {/* Quick Actions Menu Modal - Works for both collapsed and expanded */}
-        <AnimatePresence>
-          {showQuickActionsMenu && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              className={`absolute ${isCollapsed ? 'bottom-16 left-2 right-2' : 'bottom-20 left-3 right-3'} bg-background/95 backdrop-blur-sm border border-border/50 rounded-xl shadow-2xl z-50 p-3 quick-actions-menu`}
-              style={{
-                background: `linear-gradient(135deg, ${currentTheme.colors.background} 0%, color-mix(in oklab, ${currentTheme.colors.background} 95%, ${currentTheme.colors.primary}) 100%)`
-              }}
-            >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border/30">
-                  <Zap className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-semibold">Quick Actions</span>
-                </div>
-                {quickActions.map((action, index) => (
-                  <Button
-                    key={index}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      action.action();
-                      setShowQuickActionsMenu(false);
-                    }}
-                    className="w-full justify-between text-sm h-10 rounded-lg hover:bg-background/80 group transition-all duration-200"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="group-hover:scale-110 transition-transform">
-                        {action.icon}
-                      </span>
-                      <span className="font-medium">{action.label}</span>
-                    </div>
-                    <Badge 
-                      variant="outline" 
-                      className="text-[10px] px-2 py-0.5 bg-background/50 group-hover:bg-background"
-                    >
-                      {action.hotkey}
-                    </Badge>
-                  </Button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </aside>
     </TooltipProvider>
   );
