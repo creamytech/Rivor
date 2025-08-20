@@ -108,49 +108,58 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       
       {/* Main Content Area */}
       <div className="grid grid-rows-[56px_1fr]">
-        <header className="sticky top-0 z-50 h-14 border-b border-[var(--border)] bg-gradient-to-r from-teal-500/80 to-azure-500/80 backdrop-blur flex items-center">
+        <header className="sticky top-0 z-50 h-16 border-b border-border/50 bg-gradient-to-r from-background/95 via-background/90 to-background/95 backdrop-blur-xl shadow-sm flex items-center">
           <div className="px-4 md:px-6 w-full flex items-center gap-4">
             {/* Mobile Logo (hidden on desktop) */}
             <div className="md:hidden">
               <Link href="/app" className="flex items-center gap-2" aria-label="Rivor dashboard">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-lg flex items-center justify-center shadow-lg">
                   <span className="text-white font-bold text-sm">R</span>
                 </div>
               </Link>
             </div>
 
-            {/* Breadcrumb / Page Title Placeholder */}
-            <div className="hidden md:block text-sm font-medium text-[var(--foreground)]">Page Title</div>
+            {/* Enhanced Breadcrumb / Page Title */}
+            <div className="hidden md:flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-blue-500" />
+                <span className="text-lg font-semibold text-foreground">Dashboard</span>
+              </div>
+              <div className="h-4 w-px bg-border/50"></div>
+              <div className="text-sm text-muted-foreground">Real Estate CRM</div>
+            </div>
 
-            {/* Sticky Search Bar */}
-            <div className="hidden md:flex flex-1 max-w-md mx-6">
+            {/* Enhanced Search Bar */}
+            <div className="hidden md:flex flex-1 max-w-lg mx-8">
               <div className="relative w-full flex items-center">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Search leads, emails, or run commands..."
+                  placeholder="Search properties, leads, contacts..."
                   aria-label="Search"
-                  className="w-full pl-9 pr-8 py-2 text-sm bg-[var(--background)] border border-[var(--border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
+                  className="w-full pl-12 pr-12 py-3 text-sm bg-background/50 border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 focus:bg-background transition-all cursor-pointer hover:border-border shadow-sm"
                   onClick={() => setShowQuickActions(true)}
                   readOnly
                 />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs bg-[var(--border)] px-1.5 py-0.5 rounded text-[var(--muted-foreground)]">
-                  ⌘K
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  <div className="text-xs bg-muted px-2 py-1 rounded-md text-muted-foreground font-medium border border-border/50">
+                    ⌘K
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Right side actions */}
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-3 ml-auto">
               {/* Chat Agent Button */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowChatAgent(true)}
                 aria-label="Help & Chat Agent"
-                className="relative flex items-center justify-center"
+                className="relative flex items-center justify-center hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-xl transition-all duration-200"
               >
-                <HelpCircle className="h-4 w-4" />
+                <HelpCircle className="h-5 w-5 text-muted-foreground hover:text-blue-600" />
               </Button>
 
               {/* Notifications Button */}
@@ -160,29 +169,28 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                   size="icon"
                   onClick={() => setShowNotifications(!showNotifications)}
                   aria-label="Notifications"
-                  className="relative flex items-center justify-center"
+                  className="relative flex items-center justify-center hover:bg-orange-50 dark:hover:bg-orange-950/50 rounded-xl transition-all duration-200"
                 >
-                  <Bell className="h-4 w-4" />
-                  {/* Notification badge */}
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
+                  <Bell className="h-5 w-5 text-muted-foreground hover:text-orange-600" />
+                  {/* Enhanced notification badge */}
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-red-500 to-red-600 rounded-full border-2 border-background shadow-sm animate-pulse"></div>
                 </Button>
               </div>
 
-              {/* User Profile Button */}
+              {/* Enhanced User Profile Button */}
               <div className="relative">
                 <Button
                   variant="ghost"
-                  size="icon"
                   onClick={() => setShowUserProfile(!showUserProfile)}
                   aria-label="User menu"
-                  className="flex items-center gap-2 px-2"
+                  className="flex items-center gap-3 px-3 py-2 h-auto hover:bg-muted/50 rounded-xl transition-all duration-200"
                 >
-                  <Avatar className="h-6 w-6">
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white text-xs font-semibold">
+                  <Avatar className="h-8 w-8 ring-2 ring-border/50">
+                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-teal-500 text-white text-sm font-semibold">
                       {getUserInitials()}
                     </AvatarFallback>
                   </Avatar>
-                  <ChevronDown className="h-3 w-3" />
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 </Button>
               </div>
             </div>

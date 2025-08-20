@@ -901,6 +901,34 @@ body {
   .text-body-lg {
     font-size: 0.9rem;
   }
+  
+  /* Dashboard mobile optimizations */
+  .dashboard-grid-mobile {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .kpi-strip-mobile {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .quick-actions-mobile {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Mobile dashboard card spacing */
+  .dashboard-card-mobile {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  /* Mobile search bar */
+  .search-mobile {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+  }
 }
 
 /* Tablet-specific adjustments */
@@ -918,6 +946,161 @@ body {
   .absolute.w-32 {
     width: 6rem;
     height: 6rem;
+  }
+}
+
+/* Enhanced Dashboard Animations */
+@keyframes dashboard-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dashboard-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes metric-counter {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+  }
+}
+
+.animate-dashboard-fade-in {
+  animation: dashboard-fade-in 0.6s ease-out forwards;
+}
+
+.animate-dashboard-slide-in {
+  animation: dashboard-slide-in 0.4s ease-out forwards;
+}
+
+.animate-metric-counter {
+  animation: metric-counter 0.8s ease-out forwards;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* Interactive Dashboard Elements */
+.dashboard-card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dashboard-card-hover:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.1),
+    0 0 30px rgba(59, 130, 246, 0.15);
+}
+
+/* Real Estate Theme Colors */
+.real-estate-gradient {
+  background: linear-gradient(135deg, 
+    #667eea 0%, 
+    #764ba2 25%, 
+    #f093fb 50%, 
+    #f5576c 75%, 
+    #4facfe 100%);
+}
+
+.property-card {
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+}
+
+.lead-card {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+}
+
+.revenue-card {
+  background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%);
+}
+
+/* Enhanced Button Interactions */
+.btn-dashboard {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-dashboard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.2), 
+    transparent);
+  transition: left 0.6s ease;
+}
+
+.btn-dashboard:hover::before {
+  left: 100%;
+}
+
+.btn-dashboard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Search Bar Enhancements */
+.search-bar-enhanced {
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.search-bar-enhanced:focus-within {
+  transform: scale(1.02);
+  box-shadow: 
+    0 8px 30px rgba(0, 0, 0, 0.12),
+    0 0 20px rgba(59, 130, 246, 0.2);
+}
+
+/* Loading States */
+.skeleton-enhanced {
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.2) 25%, 
+    rgba(255, 255, 255, 0.4) 50%, 
+    rgba(255, 255, 255, 0.2) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 2s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
   }
 }
 

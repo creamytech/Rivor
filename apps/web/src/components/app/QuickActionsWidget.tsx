@@ -399,14 +399,17 @@ export default function QuickActionsWidget({
   }
 
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Zap className="h-5 w-5" />
-          Quick Actions
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div className={cn("bg-transparent border-0", className)}>
+      <div className="p-6 pb-4">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-teal-500 shadow-lg">
+            <Zap className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">Quick Actions</h3>
+            <p className="text-sm text-muted-foreground">Fast access to common tasks</p>
+          </div>
+        </div>
         {/* Category Filter */}
         {showCategories && (
           <div className="flex items-center gap-2 mb-4 overflow-x-auto">
@@ -456,43 +459,44 @@ export default function QuickActionsWidget({
           </div>
         )}
 
-        {/* Actions Grid */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* Enhanced Actions Grid */}
+        <div className="grid grid-cols-1 gap-3">
           {displayedActions.map((action, index) => (
             <motion.div
               key={action.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: index * 0.1, duration: 0.3 }}
+              whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
             >
               <Button
-                variant="outline"
-                className="w-full h-auto p-4 flex flex-col items-start gap-2 hover:shadow-md transition-all"
+                variant="ghost"
+                className="w-full h-auto p-4 flex items-center gap-4 hover:bg-gradient-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-950/50 dark:hover:to-teal-950/50 transition-all duration-200 rounded-xl border border-border/50 hover:border-border group"
                 onClick={() => window.location.href = action.url}
               >
-                <div className="flex items-center gap-2 w-full">
-                  <div className={cn("p-2 rounded-lg", action.color)}>
+                <div className={cn("p-3 rounded-xl bg-gradient-to-br shadow-lg group-hover:shadow-xl transition-shadow", action.color)}>
+                  <div className="text-white">
                     {action.icon}
                   </div>
-                  <div className="flex-1 text-left">
-                    <div className="font-medium text-sm">{action.title}</div>
-                    <div className="text-xs text-slate-600 dark:text-slate-400 line-clamp-1">
-                      {action.description}
-                    </div>
+                </div>
+                <div className="flex-1 text-left">
+                  <div className="font-semibold text-base text-foreground group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">{action.title}</div>
+                  <div className="text-sm text-muted-foreground line-clamp-1 mt-1">
+                    {action.description}
                   </div>
-                  <div className="flex items-center gap-1">
-                    {action.shortcut && (
-                      <Badge variant="secondary" className="text-xs">
-                        {action.shortcut}
-                      </Badge>
-                    )}
-                    {action.badge && (
-                      <Badge variant="secondary" className={cn("text-xs", getBadgeColor(action.badgeColor))}>
-                        {action.badge}
-                      </Badge>
-                    )}
-                    <ChevronRight className="h-3 w-3 text-slate-400" />
-                  </div>
+                  {action.badge && (
+                    <Badge variant="secondary" className={cn("text-xs mt-2", getBadgeColor(action.badgeColor))}>
+                      {action.badge}
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {action.shortcut && (
+                    <Badge variant="secondary" className="text-xs px-2 py-1">
+                      {action.shortcut}
+                    </Badge>
+                  )}
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-blue-500 transition-colors" />
                 </div>
               </Button>
             </motion.div>
@@ -501,23 +505,28 @@ export default function QuickActionsWidget({
 
         {/* Show More Button */}
         {filteredActions.length > maxActions && (
-          <div className="mt-4 text-center">
-            <Button variant="ghost" size="sm">
-              Show {filteredActions.length - maxActions} more
+          <div className="mt-6 text-center">
+            <Button variant="outline" size="sm" className="rounded-full">
+              Show {filteredActions.length - maxActions} more actions
             </Button>
           </div>
         )}
 
-        {/* Empty State */}
+        {/* Enhanced Empty State */}
         {displayedActions.length === 0 && (
-          <div className="text-center py-8">
-            <Zap className="h-8 w-8 text-slate-400 mx-auto mb-2" />
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              No actions available in this category
+          <div className="text-center py-12">
+            <div className="p-4 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 w-16 h-16 flex items-center justify-center mx-auto mb-4">
+              <Zap className="h-8 w-8 text-slate-400" />
+            </div>
+            <p className="text-base font-medium text-slate-600 dark:text-slate-400 mb-2">
+              No actions available
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Try switching to a different category
             </p>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

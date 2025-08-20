@@ -77,12 +77,14 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
       href: "/app/properties",
       label: "Properties",
       icon: <Building2 className="h-4 w-4" />,
+      badge: Math.floor(Math.random() * 15) + 5,
       group: 'core'
     },
     {
       href: "/app/showings",
       label: "Showings",
       icon: <Calendar className="h-4 w-4" />,
+      badge: Math.floor(Math.random() * 8) + 2,
       group: 'core'
     },
     {

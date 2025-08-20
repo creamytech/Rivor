@@ -579,7 +579,7 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-slate-200 dark:bg-slate-900/80 dark:border-slate-700 p-4"
+            className="sticky top-0 z-40 bg-gradient-to-r from-white/95 to-white/90 dark:from-slate-900/95 dark:to-slate-800/90 backdrop-blur-md border-b border-border/50 p-4 shadow-lg"
           >
             <div className="flex items-center justify-between max-w-7xl mx-auto">
               <div className="flex items-center gap-2">
@@ -638,8 +638,8 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
       </AnimatePresence>
 
       {/* Main Dashboard Grid with Drag & Drop */}
-      <div className="p-4 h-full">
-        <div className="max-w-7xl mx-auto px-6">
+      <div className="p-2 h-full">
+        <div className="max-w-full mx-auto">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -649,7 +649,7 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
               items={visibleCards}
               strategy={verticalListSortingStrategy}
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 h-full">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 h-full auto-rows-fr">
                 {visibleCards.map(cardId => (
                   <SortableCard key={cardId} id={cardId} isEditMode={isEditMode}>
                     {renderCard(cardId)}
