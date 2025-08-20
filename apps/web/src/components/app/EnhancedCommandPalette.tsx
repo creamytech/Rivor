@@ -128,7 +128,17 @@ export default function EnhancedCommandPalette({
       description: "Schedule and manage meetings",
       category: "navigation",
       icon: <Calendar className="h-4 w-4" />,
+      shortcut: "G S",
       run: () => router.push("/app/calendar") 
+    },
+    { 
+      id: "nav-tasks", 
+      title: "Go to Tasks", 
+      description: "Manage tasks and reminders",
+      category: "navigation",
+      icon: <Clock className="h-4 w-4" />,
+      shortcut: "G T",
+      run: () => router.push("/app/tasks") 
     },
     { 
       id: "nav-chat", 
@@ -136,6 +146,7 @@ export default function EnhancedCommandPalette({
       description: "Get AI-powered help",
       category: "navigation",
       icon: <MessageSquare className="h-4 w-4" />,
+      shortcut: "G A",
       run: () => router.push("/app/chat") 
     },
     { 

@@ -104,16 +104,15 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
         return;
       }
 
-      // Navigation shortcuts
+      // Day-1 Navigation shortcuts
       if (event.metaKey || event.ctrlKey) {
         const shortcuts: { [key: string]: string } = {
           'd': '/app',
           'i': '/app/inbox',
           'p': '/app/pipeline',
-          'r': '/app/properties',
-          's': '/app/showings',
-          'm': '/app/insights',
           'c': '/app/contacts',
+          's': '/app/calendar',
+          't': '/app/tasks',
           'a': '/app/chat',
           ',': '/app/settings'
         };
@@ -124,13 +123,12 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
           return;
         }
 
-        // Quick actions shortcuts
+        // Day-1 Quick actions shortcuts
         const quickShortcuts: { [key: string]: () => void } = {
           'n': () => window.location.href = '/app/pipeline/create',
-          't': () => window.location.href = '/app/showings/new',
-          'k': () => window.location.href = '/app/properties/new',
           'e': () => window.location.href = '/app/inbox/compose',
-          'l': () => window.location.href = '/app/contacts'
+          'm': () => window.location.href = '/app/calendar?action=create',
+          'k': () => window.location.href = '/app/contacts?action=create'
         };
 
         if (quickShortcuts[event.key]) {
@@ -144,7 +142,7 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onToggleCollapse]);
 
-  // Enhanced navigation items with real estate-specific features
+  // Day-1 Core Navigation - Streamlined for launch
   const navItems: NavItem[] = [
     // Core Workflows
     { 
@@ -154,7 +152,7 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
       exactMatch: true, 
       group: 'core',
       hotkey: '⌘D',
-      description: 'Overview and key metrics',
+      description: 'Today\'s focus and analytics',
       widget: {
         value: '$2.4M',
         trend: 'up',
@@ -169,7 +167,7 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
       badgeColor: 'destructive',
       group: 'core',
       hotkey: '⌘I',
-      description: 'Email and messages',
+      description: 'AI-powered email management',
       widget: {
         value: 5,
         subtitle: 'Hot leads'
@@ -183,52 +181,11 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
       badgeColor: 'warning',
       group: 'core',
       hotkey: '⌘P',
-      description: 'Sales pipeline management',
+      description: 'Sales pipeline kanban',
       widget: {
         value: '24%',
         trend: 'up',
         subtitle: 'Close rate'
-      }
-    },
-    {
-      href: "/app/properties",
-      label: "Properties",
-      icon: <Building2 className="h-4 w-4" />,
-      badge: 47,
-      badgeColor: 'default',
-      group: 'core',
-      hotkey: '⌘R',
-      description: 'Property listings and details',
-      widget: {
-        value: 127,
-        subtitle: 'Active listings'
-      }
-    },
-    {
-      href: "/app/showings",
-      label: "Showings",
-      icon: <Calendar className="h-4 w-4" />,
-      badge: 6,
-      badgeColor: 'success',
-      group: 'core',
-      hotkey: '⌘S',
-      description: 'Schedule and manage showings',
-      widget: {
-        value: 3,
-        subtitle: 'Today'
-      }
-    },
-    {
-      href: "/app/insights",
-      label: "Market Insights",
-      icon: <TrendingUp className="h-4 w-4" />,
-      group: 'core',
-      hotkey: '⌘M',
-      description: 'Market trends and analytics',
-      widget: {
-        value: '↗ 12%',
-        trend: 'up',
-        subtitle: 'Avg. price'
       }
     },
     {
@@ -244,6 +201,30 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
         value: 348,
         subtitle: 'Total contacts'
       }
+    },
+    {
+      href: "/app/calendar",
+      label: "Calendar",
+      icon: <Calendar className="h-4 w-4" />,
+      badge: 6,
+      badgeColor: 'success',
+      group: 'core',
+      hotkey: '⌘S',
+      description: 'Schedule meetings and showings',
+      widget: {
+        value: 3,
+        subtitle: 'Today'
+      }
+    },
+    {
+      href: "/app/tasks",
+      label: "Tasks",
+      icon: <Clock className="h-4 w-4" />,
+      badge: 2,
+      badgeColor: 'warning',
+      group: 'core',
+      hotkey: '⌘T',
+      description: 'Task and reminder management'
     },
     { 
       href: "/app/chat", 
@@ -264,20 +245,6 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
       group: 'utilities',
       hotkey: '⌘,',
       description: 'App settings and preferences'
-    },
-    { 
-      href: "/app/integrations", 
-      label: "Integrations", 
-      icon: <Zap className="h-4 w-4" />, 
-      group: 'utilities',
-      description: 'Third-party app connections'
-    },
-    {
-      href: "/app/reports",
-      label: "Reports",
-      icon: <FileText className="h-4 w-4" />,
-      group: 'utilities',
-      description: 'Analytics and reporting'
     }
   ];
 
@@ -289,28 +256,28 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
       hotkey: '⌘N'
     },
     { 
-      label: "Schedule Showing", 
-      icon: <Calendar className="h-4 w-4" />, 
-      action: () => window.location.href = '/app/showings/new',
-      hotkey: '⌘T'
-    },
-    { 
-      label: "Add Property", 
-      icon: <Building2 className="h-4 w-4" />, 
-      action: () => window.location.href = '/app/properties/new',
-      hotkey: '⌘K'
-    },
-    { 
       label: "Compose Email", 
       icon: <Mail className="h-4 w-4" />, 
       action: () => window.location.href = '/app/inbox/compose',
       hotkey: '⌘E'
     },
     { 
-      label: "Quick Call", 
-      icon: <Phone className="h-4 w-4" />, 
-      action: () => window.location.href = '/app/contacts',
-      hotkey: '⌘L'
+      label: "Schedule Meeting", 
+      icon: <Calendar className="h-4 w-4" />, 
+      action: () => window.location.href = '/app/calendar?action=create',
+      hotkey: '⌘M'
+    },
+    { 
+      label: "Add Task", 
+      icon: <Clock className="h-4 w-4" />, 
+      action: () => window.location.href = '/app/tasks?action=create',
+      hotkey: '⌘T'
+    },
+    { 
+      label: "Add Contact", 
+      icon: <User className="h-4 w-4" />, 
+      action: () => window.location.href = '/app/contacts?action=create',
+      hotkey: '⌘K'
     }
   ];
 
