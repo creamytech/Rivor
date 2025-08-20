@@ -1,6 +1,7 @@
 "use client";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
+import { useTheme } from "@/contexts/ThemeContext";
 import QuickActions from "@/components/app/QuickActions";
 import FloatingQuickAdd from "@/components/app/FloatingQuickAdd";
 import KPIStrip from "@/components/app/KPIStrip";
@@ -30,13 +31,20 @@ const DashboardLayout = dynamic(() => import("@/components/app/DashboardLayout")
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
+  const { currentTheme } = useTheme();
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: currentTheme.colors.background }}
+      >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500 mx-auto mb-4"></div>
-          <p className="text-slate-600 dark:text-slate-400">Loading...</p>
+          <div 
+            className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4"
+            style={{ borderColor: currentTheme.colors.primary }}
+          ></div>
+          <p style={{ color: currentTheme.colors.textSecondary }}>Loading...</p>
         </div>
       </div>
     );
@@ -44,12 +52,18 @@ export default function DashboardPage() {
 
   if (!session) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: currentTheme.colors.background }}
+      >
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+          <h1 
+            className="text-2xl font-bold mb-4"
+            style={{ color: currentTheme.colors.textPrimary }}
+          >
             Not Authenticated
           </h1>
-          <p className="text-slate-600 dark:text-slate-400">
+          <p style={{ color: currentTheme.colors.textSecondary }}>
             Please sign in to access the dashboard.
           </p>
         </div>

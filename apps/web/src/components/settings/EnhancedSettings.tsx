@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ThemeSwitcher } from '@/components/ui/theme-switcher';
+import { useTheme } from '@/contexts/ThemeContext';
 import { 
   Settings, 
   Shield, 
@@ -103,6 +105,7 @@ interface EnhancedSettingsProps {
 }
 
 export default function EnhancedSettings({ className = '' }: EnhancedSettingsProps) {
+  const { currentTheme, themeId } = useTheme();
   const [activeTab, setActiveTab] = useState('lead-rules');
   const [showAddRuleModal, setShowAddRuleModal] = useState(false);
   const [editingRule, setEditingRule] = useState<LeadRule | null>(null);
@@ -497,43 +500,145 @@ export default function EnhancedSettings({ className = '' }: EnhancedSettingsPro
           {/* Appearance Tab */}
           <TabsContent value="appearance" className="space-y-6">
             <div>
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                Appearance
+              <h2 
+                className="text-xl font-semibold mb-2"
+                style={{ color: currentTheme.colors.textPrimary }}
+              >
+                Appearance & Themes
               </h2>
-              <p className="text-slate-600 dark:text-slate-400">
-                Customize the look and feel of your application
+              <p style={{ color: currentTheme.colors.textSecondary }}>
+                Personalize your Rivor workspace with beautiful river-inspired themes
               </p>
             </div>
 
             <div className="grid gap-6">
-              {/* Theme */}
-              <GlassCard variant="gradient" intensity="medium">
+              {/* River Theme Selection */}
+              <GlassCard 
+                variant="gradient" 
+                intensity="medium"
+                style={{
+                  background: currentTheme.colors.glassBg,
+                  border: `1px solid ${currentTheme.colors.border}`,
+                  backdropFilter: currentTheme.colors.glassBlur,
+                }}
+              >
                 <GlassCardHeader>
-                  <GlassCardTitle>Theme</GlassCardTitle>
+                  <GlassCardTitle style={{ color: currentTheme.colors.textPrimary }}>
+                    <Palette className="h-5 w-5 mr-2" style={{ color: currentTheme.colors.primary }} />
+                    River Theme Selection
+                  </GlassCardTitle>
                 </GlassCardHeader>
                 <GlassCardContent>
-                  <div className="flex items-center gap-4">
-                    <Button
-                      variant={appearance.theme === 'light' ? 'default' : 'outline'}
-                      onClick={() => handleAppearanceUpdate({ theme: 'light' })}
-                    >
-                      <Sun className="h-4 w-4 mr-2" />
-                      Light
-                    </Button>
-                    <Button
-                      variant={appearance.theme === 'dark' ? 'default' : 'outline'}
-                      onClick={() => handleAppearanceUpdate({ theme: 'dark' })}
-                    >
-                      <Moon className="h-4 w-4 mr-2" />
-                      Dark
-                    </Button>
-                    <Button
-                      variant={appearance.theme === 'system' ? 'default' : 'outline'}
-                      onClick={() => handleAppearanceUpdate({ theme: 'system' })}
-                    >
-                      <Monitor className="h-4 w-4 mr-2" />
-                      System
-                    </Button>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div 
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                        style={{
+                          background: currentTheme.colors.primaryMuted,
+                          border: `1px solid ${currentTheme.colors.primary}`,
+                        }}
+                      >
+                        <div 
+                          className="w-4 h-4 rounded-full"
+                          style={{ background: currentTheme.colors.gradient }}
+                        />
+                        <span 
+                          className="text-sm font-medium"
+                          style={{ color: currentTheme.colors.primary }}
+                        >
+                          Current: {currentTheme.name}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Full Theme Switcher */}
+                    <ThemeSwitcher />
+                  </div>
+                </GlassCardContent>
+              </GlassCard>
+
+              {/* Theme Information */}
+              <GlassCard 
+                variant="gradient" 
+                intensity="medium"
+                style={{
+                  background: currentTheme.colors.glassBg,
+                  border: `1px solid ${currentTheme.colors.border}`,
+                  backdropFilter: currentTheme.colors.glassBlur,
+                }}
+              >
+                <GlassCardHeader>
+                  <GlassCardTitle style={{ color: currentTheme.colors.textPrimary }}>
+                    <Activity className="h-5 w-5 mr-2" style={{ color: currentTheme.colors.secondary }} />
+                    Current Theme Details
+                  </GlassCardTitle>
+                </GlassCardHeader>
+                <GlassCardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 
+                        className="font-semibold mb-2"
+                        style={{ color: currentTheme.colors.textPrimary }}
+                      >
+                        {currentTheme.name} Theme
+                      </h4>
+                      <p 
+                        className="text-sm mb-3"
+                        style={{ color: currentTheme.colors.textSecondary }}
+                      >
+                        {currentTheme.description}
+                      </p>
+                      <p 
+                        className="text-xs italic"
+                        style={{ color: currentTheme.colors.textMuted }}
+                      >
+                        {currentTheme.personality}
+                      </p>
+                    </div>
+                    
+                    {/* Color Palette Display */}
+                    <div>
+                      <h5 
+                        className="text-sm font-medium mb-2"
+                        style={{ color: currentTheme.colors.textSecondary }}
+                      >
+                        Color Palette
+                      </h5>
+                      <div className="flex gap-2">
+                        <div 
+                          className="w-8 h-8 rounded-lg border"
+                          style={{ 
+                            backgroundColor: currentTheme.colors.primary,
+                            borderColor: currentTheme.colors.border 
+                          }}
+                          title="Primary Color"
+                        />
+                        <div 
+                          className="w-8 h-8 rounded-lg border"
+                          style={{ 
+                            backgroundColor: currentTheme.colors.secondary,
+                            borderColor: currentTheme.colors.border 
+                          }}
+                          title="Secondary Color"
+                        />
+                        <div 
+                          className="w-8 h-8 rounded-lg border"
+                          style={{ 
+                            backgroundColor: currentTheme.colors.accent,
+                            borderColor: currentTheme.colors.border 
+                          }}
+                          title="Accent Color"
+                        />
+                        <div 
+                          className="w-8 h-8 rounded-lg border"
+                          style={{ 
+                            background: currentTheme.colors.gradient,
+                            borderColor: currentTheme.colors.border 
+                          }}
+                          title="Gradient"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </GlassCardContent>
               </GlassCard>

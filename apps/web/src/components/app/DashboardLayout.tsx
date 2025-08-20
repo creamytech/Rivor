@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/contexts/ThemeContext';
 import BusinessKPIsPanel from './BusinessKPIsPanel';
 import TodaysFocusPanel from './TodaysFocusPanel';
 import PipelineOverviewPanel from './PipelineOverviewPanel';
@@ -17,6 +18,7 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ className = '' }: DashboardLayoutProps) {
   const [isLoading, setIsLoading] = useState(true);
+  const { currentTheme } = useTheme();
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 800);
@@ -37,7 +39,12 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
   }
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+    <div 
+      className="relative min-h-screen"
+      style={{
+        background: `linear-gradient(135deg, ${currentTheme.colors.background} 0%, ${currentTheme.colors.backgroundSecondary} 50%, ${currentTheme.colors.backgroundTertiary} 100%)`
+      }}
+    >
       {/* Floating Action Button */}
       <div className="fixed bottom-8 right-8 z-20">
         <FloatingActionButton />
