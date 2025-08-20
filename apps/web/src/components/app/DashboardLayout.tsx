@@ -9,7 +9,6 @@ import TodaysFocusPanel from './TodaysFocusPanel';
 import PipelineOverviewPanel from './PipelineOverviewPanel';
 import ActivityFeedPanel from './ActivityFeedPanel';
 import SystemHealthStrip from './SystemHealthStrip';
-import FloatingActionButton from './FloatingActionButton';
 import WeeklyActivityPanel from './WeeklyActivityPanel';
 
 interface DashboardLayoutProps {
@@ -63,10 +62,6 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
         background: `linear-gradient(135deg, ${currentTheme.colors.background} 0%, ${currentTheme.colors.backgroundSecondary} 50%, ${currentTheme.colors.backgroundTertiary} 100%)`
       }}
     >
-      {/* Floating Action Button - Mobile adjusted */}
-      <div className="fixed bottom-24 md:bottom-8 right-4 md:right-8 z-20">
-        <FloatingActionButton />
-      </div>
 
       {/* Main Story Flow - Mobile optimized spacing */}
       <div className={cn("space-y-4 md:space-y-8 p-4 md:p-6 max-w-7xl mx-auto", className)}>

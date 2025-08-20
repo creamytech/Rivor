@@ -646,11 +646,6 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
             </div>
 
             {/* Floating Action Button - Space saving */}
-            {!isCollapsed && (
-              <div className="px-3 py-2 mt-2">
-                <FloatingActionButton />
-              </div>
-            )}
 
             {/* Utilities - Enhanced section */}
             <div className="mt-6">
