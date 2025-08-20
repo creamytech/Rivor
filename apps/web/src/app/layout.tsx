@@ -1,6 +1,9 @@
-﻿import type { Metadata, Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
+
+// Import polyfills for server-side compatibility
+import "@/lib/polyfills";
 
 // Start all workers (only on server side)
 import "@/worker/startWorkers";

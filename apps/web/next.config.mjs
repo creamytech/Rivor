@@ -20,14 +20,13 @@ const nextConfig = {
   experimental: {
     externalDir: true,
     optimizeCss: true,
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
+    serverComponentsExternalPackages: [
+      'puppeteer',
+      '@google-cloud/kms', 
+      'bullmq',
+      'canvas',
+      'jsdom'
+    ],
   },
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production'
@@ -54,46 +53,72 @@ const nextConfig = {
       "@rivor/db": path.join(__dirname, "../../packages/db/src/index.ts"),
     };
     
+    // Fix client-side globals being used on server
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+      crypto: false,
+    };
+    
+    // Define browser globals for server-side compatibility
+    config.plugins = config.plugins || [];
+    if (isServer) {
+      const webpack = require('webpack');
+      config.plugins.push(
+        new webpack.DefinePlugin({
+          'typeof window': JSON.stringify('undefined'),
+          'typeof document': JSON.stringify('undefined'),
+          'typeof self': JSON.stringify('undefined'),
+          'typeof navigator': JSON.stringify('undefined'),
+        })
+      );
+    }
+    
     // Optimize externals for server-side only heavy packages
     config.externals = Array.isArray(config.externals) ? config.externals : [];
     if (isServer) {
       config.externals.push(
         '@google-cloud/kms',
         'puppeteer',
-        'bullmq'
+        'bullmq',
+        'canvas',
+        'jsdom'
       );
+    } else {
+      // Client-side externals for browser compatibility
+      config.externals.push({
+        'puppeteer': 'puppeteer',
+        'canvas': 'canvas',
+        'jsdom': 'jsdom',
+      });
     }
     
-    // Optimize chunks
-    if (!dev) {
+    // Optimize chunks - simplified to avoid issues
+    if (!dev && !isServer) {
       config.optimization = config.optimization || {};
       config.optimization.splitChunks = {
         chunks: 'all',
+        maxInitialRequests: 25,
+        maxAsyncRequests: 25,
         cacheGroups: {
+          default: {
+            minChunks: 2,
+            priority: 10,
+            reuseExistingChunk: true,
+          },
           vendor: {
             test: /[\\/]node_modules[\\/]/,
             name: 'vendors',
             chunks: 'all',
-            priority: 10,
-          },
-          common: {
-            name: 'common',
-            minChunks: 2,
-            chunks: 'all',
-            priority: 5,
-            reuseExistingChunk: true,
-          },
-          ui: {
-            test: /[\\/]node_modules[\\/](@radix-ui|lucide-react)[\\/]/,
-            name: 'ui',
-            chunks: 'all',
             priority: 20,
           },
-          api: {
-            test: /[\\/]src[\\/]app[\\/]api[\\/]/,
-            name: 'api',
+          ui: {
+            test: /[\\/]node_modules[\\/](@radix-ui|lucide-react|framer-motion)[\\/]/,
+            name: 'ui',
             chunks: 'all',
-            priority: 15,
+            priority: 30,
           },
         },
       };

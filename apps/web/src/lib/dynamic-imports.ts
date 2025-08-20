@@ -1,75 +1,90 @@
 // Dynamic imports for heavy libraries to improve bundle splitting and loading performance
+// These should only be used in server-side contexts
 
-// PDF Generation - only load when needed
+// Server-side only imports
 export const getPuppeteerLazy = async () => {
+  if (typeof window !== 'undefined') {
+    throw new Error('Puppeteer can only be used on the server side');
+  }
   const { default: puppeteer } = await import('puppeteer');
   return puppeteer;
 };
 
-// Google APIs - only load when needed
 export const getGoogleApisLazy = async () => {
+  if (typeof window !== 'undefined') {
+    throw new Error('Google APIs can only be used on the server side');
+  }
   const { google } = await import('googleapis');
   return google;
 };
 
-// OpenAI - only load when needed  
 export const getOpenAILazy = async () => {
+  if (typeof window !== 'undefined') {
+    throw new Error('OpenAI can only be used on the server side');
+  }
   const { default: OpenAI } = await import('openai');
   return OpenAI;
 };
 
-// BullMQ - only load when needed
 export const getBullMQLazy = async () => {
+  if (typeof window !== 'undefined') {
+    throw new Error('BullMQ can only be used on the server side');
+  }
   const { Queue, Worker } = await import('bullmq');
   return { Queue, Worker };
 };
 
-// Framer Motion - only load when needed
+export const getMicrosoftGraphLazy = async () => {
+  if (typeof window !== 'undefined') {
+    throw new Error('Microsoft Graph can only be used on the server side');
+  }
+  const { Client } = await import('@microsoft/microsoft-graph-client');
+  return Client;
+};
+
+export const getAzureMSALLazy = async () => {
+  if (typeof window !== 'undefined') {
+    throw new Error('Azure MSAL can only be used on the server side');
+  }
+  const { ConfidentialClientApplication } = await import('@azure/msal-node');
+  return ConfidentialClientApplication;
+};
+
+export const getGoogleKMSLazy = async () => {
+  if (typeof window !== 'undefined') {
+    throw new Error('Google KMS can only be used on the server side');
+  }
+  const { KeyManagementServiceClient } = await import('@google-cloud/kms');
+  return KeyManagementServiceClient;
+};
+
+export const getRedisLazy = async () => {
+  if (typeof window !== 'undefined') {
+    throw new Error('Redis can only be used on the server side');
+  }
+  const { Redis } = await import('@upstash/redis');
+  return Redis;
+};
+
+// Client-side safe imports
 export const getFramerMotionLazy = async () => {
   const { motion, AnimatePresence } = await import('framer-motion');
   return { motion, AnimatePresence };
 };
 
-// Recharts - only load when needed
 export const getRechartsLazy = async () => {
   const recharts = await import('recharts');
   return recharts;
 };
 
-// React Grid Layout - only load when needed
 export const getGridLayoutLazy = async () => {
   const { default: GridLayout } = await import('react-grid-layout');
   return GridLayout;
 };
 
-// DOMPurify - only load when needed
 export const getDOMPurifyLazy = async () => {
   const { default: DOMPurify } = await import('isomorphic-dompurify');
   return DOMPurify;
-};
-
-// Microsoft Graph - only load when needed
-export const getMicrosoftGraphLazy = async () => {
-  const { Client } = await import('@microsoft/microsoft-graph-client');
-  return Client;
-};
-
-// Azure MSAL - only load when needed
-export const getAzureMSALLazy = async () => {
-  const { ConfidentialClientApplication } = await import('@azure/msal-node');
-  return ConfidentialClientApplication;
-};
-
-// Google Cloud KMS - only load when needed
-export const getGoogleKMSLazy = async () => {
-  const { KeyManagementServiceClient } = await import('@google-cloud/kms');
-  return KeyManagementServiceClient;
-};
-
-// Upstash Redis - only load when needed
-export const getRedisLazy = async () => {
-  const { Redis } = await import('@upstash/redis');
-  return Redis;
 };
 
 // Export type helpers for better TypeScript support
