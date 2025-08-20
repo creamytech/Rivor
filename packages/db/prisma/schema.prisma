@@ -94,6 +94,9 @@ model Org {
   notifications        Notification[]
   webhookSubscriptions WebhookSubscription[]
   chatThreads         ChatThread[]
+  documents           Document[]
+  documentTemplates   DocumentTemplate[]
+  documentFolders     DocumentFolder[]
 }
 
 model OrgMember {
@@ -276,6 +279,8 @@ model Contact {
   updatedAt    DateTime  @updatedAt
   org          Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
   leads        Lead[]
+  documents    Document[] @relation("DocumentContacts")
+  folders      DocumentFolder[] @relation("FolderContacts")
 }
 
 model Lead {
@@ -306,24 +311,30 @@ model Lead {
   org                Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
   stage              PipelineStage? @relation(fields: [stageId], references: [id])
   tasks              Task[]         @relation("LeadTasks")
+  documents          Document[]     @relation("DocumentDeals")
+  folders            DocumentFolder[] @relation("FolderDeals")
 }
 
 model Task {
-  id           String     @id @default(cuid())
-  orgId        String
-  title        String
-  description  String?
-  dueAt        DateTime?
-  done         Boolean    @default(false)
-  priority     String     @default("medium")
-  assignedToId String?
-  linkThreadId String?
-  linkLeadId   String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  assignedTo   OrgMember? @relation("TaskAssignments", fields: [assignedToId], references: [id])
-  lead         Lead?      @relation("LeadTasks", fields: [linkLeadId], references: [id])
-  org          Org        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  id             String     @id @default(cuid())
+  orgId          String
+  title          String
+  description    String?
+  status         String     @default("pending") // pending, in_progress, completed, cancelled
+  dueAt          DateTime?
+  completedAt    DateTime?
+  done           Boolean    @default(false)
+  priority       String     @default("medium")
+  assignedToId   String?
+  linkThreadId   String?
+  linkLeadId     String?
+  linkedEmailId  String?    // For linking to email threads
+  linkedContactId String?   // For linking to contacts
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  assignedTo     OrgMember? @relation("TaskAssignments", fields: [assignedToId], references: [id])
+  lead           Lead?      @relation("LeadTasks", fields: [linkLeadId], references: [id])
+  org            Org        @relation(fields: [orgId], references: [id], onDelete: Cascade)
 }
 
 model PipelineStage {
@@ -450,6 +461,78 @@ model Notification {
 
   @@index([orgId])
   @@index([userId])
+}
+
+model DocumentTemplate {
+  id          String     @id @default(cuid())
+  orgId       String
+  name        String     // Encrypted
+  description String?    // Encrypted
+  category    String     @default("other") // listing, purchase, disclosure, agreement, marketing, legal, other
+  content     String     // Encrypted template content
+  mergeFields String     // JSON array of merge field keys
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  org         Org        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  documents   Document[]
+
+  @@index([orgId])
+  @@index([category])
+  @@index([isActive])
+}
+
+model Document {
+  id                   String            @id @default(cuid())
+  orgId                String
+  name                 String            // Encrypted
+  templateId           String?
+  content              String            // Encrypted document content
+  status               String            @default("draft") // draft, generated, sent, signed, completed
+  linkedDealId         String?
+  linkedContactId      String?
+  folderId             String?
+  generatedPdfUrl      String?           // Encrypted URL to generated PDF
+  docusignEnvelopeId   String?           // DocuSign envelope ID
+  signedAt             DateTime?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  org                  Org               @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  template             DocumentTemplate? @relation(fields: [templateId], references: [id])
+  folder               DocumentFolder?   @relation(fields: [folderId], references: [id])
+  linkedDeal           Lead?             @relation("DocumentDeals", fields: [linkedDealId], references: [id])
+  linkedContact        Contact?          @relation("DocumentContacts", fields: [linkedContactId], references: [id])
+
+  @@index([orgId])
+  @@index([status])
+  @@index([linkedDealId])
+  @@index([linkedContactId])
+  @@index([folderId])
+}
+
+model DocumentFolder {
+  id              String           @id @default(cuid())
+  orgId           String
+  name            String           // Encrypted
+  parentId        String?
+  linkedDealId    String?
+  linkedContactId String?
+  color           String?
+  isArchived      Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  org             Org              @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  parent          DocumentFolder?  @relation("FolderHierarchy", fields: [parentId], references: [id])
+  children        DocumentFolder[] @relation("FolderHierarchy")
+  documents       Document[]
+  linkedDeal      Lead?            @relation("FolderDeals", fields: [linkedDealId], references: [id])
+  linkedContact   Contact?         @relation("FolderContacts", fields: [linkedContactId], references: [id])
+
+  @@index([orgId])
+  @@index([parentId])
+  @@index([linkedDealId])
+  @@index([linkedContactId])
+  @@index([isArchived])
 }
 
 

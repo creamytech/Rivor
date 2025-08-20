@@ -276,21 +276,21 @@ export default function EnhancedInbox({ activeTab = 'all', searchQuery = '', sel
   const getEmailTypeIcon = (type?: string) => {
     switch (type) {
       case 'buyer_inquiry':
-        return <Home className=\"h-3 w-3\" />;
+        return <Home className="h-3 w-3" />;
       case 'seller_lead':
-        return <DollarSign className=\"h-3 w-3\" />;
+        return <DollarSign className="h-3 w-3" />;
       case 'showing_request':
-        return <Calendar className=\"h-3 w-3\" />;
+        return <Calendar className="h-3 w-3" />;
       case 'property_inquiry':
-        return <Building2 className=\"h-3 w-3\" />;
+        return <Building2 className="h-3 w-3" />;
       case 'referral':
-        return <Users className=\"h-3 w-3\" />;
+        return <Users className="h-3 w-3" />;
       case 'vendor':
-        return <Wrench className=\"h-3 w-3\" />;
+        return <Wrench className="h-3 w-3" />;
       case 'follow_up':
-        return <Clock className=\"h-3 w-3\" />;
+        return <Clock className="h-3 w-3" />;
       case 'market_update':
-        return <TrendingUp className=\"h-3 w-3\" />;
+        return <TrendingUp className="h-3 w-3" />;
       default:
         return <Mail className=\"h-3 w-3\" />;
     }

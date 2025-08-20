@@ -164,7 +164,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         />
       
         {/* Main Content Area */}
-        <div className="grid grid-rows-[56px_1fr]">
+        <div className="grid grid-rows-[64px_1fr]">
           <header 
             className="sticky top-0 z-50 h-16 backdrop-blur-xl shadow-sm flex items-center border-b"
             style={{ 
@@ -356,21 +356,68 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
           </header>
 
           {/* Main Content */}
-          <main className={`overflow-auto h-[calc(100vh-64px)] pb-16 md:pb-0 ${rightDrawer ? "md:mr-[360px]" : ""}`}>
+          <main className={`overflow-auto h-[calc(100vh-64px)] pb-16 md:pb-0 ${rightDrawer && showDrawer ? "pr-[360px]" : ""}`}>
             {children}
           </main>
 
           {/* Right Drawer */}
-          <aside className={`fixed md:static right-0 top-14 md:top-0 w-[360px] h-[calc(100vh-56px)] md:h-full border-l border-[var(--border)] bg-[var(--muted)] ${showDrawer ? "" : "hidden"}`}>
-            {rightDrawer}
-          </aside>
+          {showDrawer && (
+            <aside className="fixed right-0 top-16 w-[360px] h-[calc(100vh-64px)] border-l z-40" style={{
+              backgroundColor: currentTheme.colors.surfaceAlt,
+              borderColor: currentTheme.colors.border
+            }}>
+              {rightDrawer}
+            </aside>
+          )}
         </div>
       </div>
 
       {/* Mobile Layout */}
-      <div className="md:hidden min-h-screen flex flex-col pt-14 pb-20">
+      <div className="md:hidden min-h-screen flex flex-col">
+        {/* Mobile Header */}
+        <header 
+          className="fixed top-0 left-0 right-0 z-50 h-16 backdrop-blur-xl shadow-sm flex items-center border-b"
+          style={{ 
+            backgroundColor: `${currentTheme.colors.surfaceAlt}F5`,
+            borderBottomColor: currentTheme.colors.border,
+            boxShadow: `0 1px 0 0 ${currentTheme.colors.border}40`
+          }}
+        >
+          <div className="px-4 w-full flex items-center justify-between gap-4">
+            {/* Mobile Logo */}
+            <Link href="/app" className="flex items-center gap-2" aria-label="Rivor dashboard">
+              <div 
+                className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg"
+                style={{ background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})` }}
+              >
+                <span className="text-white font-bold text-sm">R</span>
+              </div>
+            </Link>
+            
+            {/* Mobile Actions */}
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-9 w-9"
+                onClick={() => setShowNotifications(true)}
+              >
+                <Bell className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-9 w-9"
+                onClick={() => setShowMobileNav(true)}
+              >
+                <User className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </header>
+
         {/* Mobile Content */}
-        <main className="flex-1 overflow-auto h-[calc(100vh-140px)]">
+        <main className="flex-1 overflow-auto pt-16 pb-20">
           {children}
         </main>
       </div>
