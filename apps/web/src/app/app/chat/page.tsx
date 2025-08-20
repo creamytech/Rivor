@@ -14,7 +14,10 @@ import {
   Sparkles,
   Clock,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Mail,
+  Calendar,
+  Activity
 } from "lucide-react";
 import { useState } from "react";
 
