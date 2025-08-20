@@ -52,18 +52,18 @@
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-border: var(--border);
+  --color-background: var(--theme-background, var(--background));
+  --color-foreground: var(--theme-textPrimary, var(--foreground));
+  --color-muted: var(--theme-surface, var(--muted));
+  --color-muted-foreground: var(--theme-textMuted, var(--muted-foreground));
+  --color-border: var(--theme-border, var(--border));
   --font-sans: var(--font-inter);
   --font-mono: var(--font-plex-mono);
 }
 
-/* Light Mode Overrides */
+/* Light Mode Overrides - only apply when no theme is set */
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme]) {
     --background: #ffffff;
     --foreground: #0f172a;
     --surface: #f8fafc;
@@ -88,8 +88,9 @@ html {
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--theme-background, var(--background));
+  color: var(--theme-textPrimary, var(--foreground));
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Focus rings - WCAG 2.1 AA compliant */
@@ -300,6 +301,20 @@ body {
 .animate-count-up {
   animation: countUp 0.5s ease-out forwards;
 }
+
+/* Theme-aware utility classes */
+.bg-background { background-color: var(--theme-background, var(--background)) !important; }
+.bg-surface { background-color: var(--theme-surface, var(--surface)) !important; }
+.bg-surface-alt { background-color: var(--theme-surfaceAlt, var(--surface)) !important; }
+.text-foreground { color: var(--theme-textPrimary, var(--foreground)) !important; }
+.text-muted-foreground { color: var(--theme-textMuted, var(--muted-foreground)) !important; }
+.text-on-surface { color: var(--theme-textOnSurface, var(--foreground)) !important; }
+.text-on-surface-alt { color: var(--theme-textOnSurfaceAlt, var(--foreground)) !important; }
+.border-border { border-color: var(--theme-border, var(--border)) !important; }
+
+/* Override Tailwind defaults for theme consistency */
+.bg-muted { background-color: var(--theme-surface, var(--muted)) !important; }
+.text-muted { color: var(--theme-textMuted, var(--muted-foreground)) !important; }
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {

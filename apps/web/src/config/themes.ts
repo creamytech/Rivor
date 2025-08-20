@@ -166,9 +166,9 @@ export const themes: Record<ThemeId, Theme> = {
       surfaceAlt: 'rgba(241, 245, 249, 0.98)', // Sidebar/topbar - soft fog
       
       // Border colors - Sophisticated definition
-      border: 'rgba(100, 116, 139, 0.12)', // Subtle definition
-      borderHover: 'rgba(100, 116, 139, 0.25)', // Enhanced borders
-      borderActive: 'rgba(14, 165, 233, 0.35)', // Fog blue focus
+      border: 'rgba(100, 116, 139, 0.2)', // Visible definition
+      borderHover: 'rgba(100, 116, 139, 0.35)', // Enhanced borders
+      borderActive: 'rgba(14, 165, 233, 0.5)', // Strong fog blue focus
       
       // Text colors - Crisp readability
       textPrimary: '#0F172A', // Deep charcoal
@@ -233,9 +233,9 @@ export const themes: Record<ThemeId, Theme> = {
       surfaceAlt: 'rgba(240, 249, 255, 0.98)', // Sidebar/topbar - ice crystal
       
       // Border colors - Fresh definition
-      border: 'rgba(14, 165, 233, 0.08)', // Gentle definition
-      borderHover: 'rgba(14, 165, 233, 0.18)', // Clear borders
-      borderActive: 'rgba(6, 214, 160, 0.28)', // Mint focus
+      border: 'rgba(14, 165, 233, 0.15)', // Visible definition
+      borderHover: 'rgba(14, 165, 233, 0.25)', // Clear borders
+      borderActive: 'rgba(6, 214, 160, 0.4)', // Strong mint focus
       
       // Text colors - Mountain clarity
       textPrimary: '#0F172A', // Deep mountain

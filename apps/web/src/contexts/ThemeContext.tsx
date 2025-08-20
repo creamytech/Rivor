@@ -54,6 +54,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     // Add theme class to body for additional styling
     document.body.className = document.body.className.replace(/theme-\w+/g, '');
     document.body.classList.add(`theme-${themeId}`);
+    
+    // Set data-theme attribute to prevent light mode override
+    document.documentElement.setAttribute('data-theme', themeId);
 
     // Create theme-specific keyframes
     createThemeKeyframes(theme);
