@@ -27,13 +27,13 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
 
   if (isLoading) {
     return (
-      <div className={cn("space-y-8 p-6", className)}>
-        {/* Loading skeleton with story-driven layout */}
-        <div className="h-32 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 to-slate-900 rounded-2xl animate-pulse" />
-        <div className="h-40 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 to-slate-900 rounded-2xl animate-pulse" />
-        <div className="h-64 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-slate-800 to-slate-900 rounded-2xl animate-pulse" />
-        <div className="h-80 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-slate-800 to-slate-900 rounded-2xl animate-pulse" />
-        <div className="h-16 bg-gradient-to-r from-orange-50 to-red-50 dark:from-slate-800 to-slate-900 rounded-xl animate-pulse" />
+      <div className={cn("space-y-4 md:space-y-8 p-4 md:p-6", className)}>
+        {/* Loading skeleton with story-driven layout - Mobile optimized */}
+        <div className="h-20 md:h-32 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 to-slate-900 rounded-xl md:rounded-2xl animate-pulse" />
+        <div className="h-32 md:h-40 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 to-slate-900 rounded-xl md:rounded-2xl animate-pulse" />
+        <div className="h-48 md:h-64 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-slate-800 to-slate-900 rounded-xl md:rounded-2xl animate-pulse" />
+        <div className="h-56 md:h-80 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-slate-800 to-slate-900 rounded-xl md:rounded-2xl animate-pulse" />
+        <div className="h-12 md:h-16 bg-gradient-to-r from-orange-50 to-red-50 dark:from-slate-800 to-slate-900 rounded-lg md:rounded-xl animate-pulse" />
       </div>
     );
   }
@@ -45,13 +45,13 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
         background: `linear-gradient(135deg, ${currentTheme.colors.background} 0%, ${currentTheme.colors.backgroundSecondary} 50%, ${currentTheme.colors.backgroundTertiary} 100%)`
       }}
     >
-      {/* Floating Action Button */}
-      <div className="fixed bottom-8 right-8 z-20">
+      {/* Floating Action Button - Mobile adjusted */}
+      <div className="fixed bottom-24 md:bottom-8 right-4 md:right-8 z-20">
         <FloatingActionButton />
       </div>
 
-      {/* Main Story Flow */}
-      <div className={cn("space-y-8 p-6 max-w-7xl mx-auto", className)}>
+      {/* Main Story Flow - Mobile optimized spacing */}
+      <div className={cn("space-y-4 md:space-y-8 p-4 md:p-6 max-w-7xl mx-auto", className)}>
         {/* Chapter 1: Business Performance Overview */}
         <motion.section
           initial={{ opacity: 0, y: 30 }}

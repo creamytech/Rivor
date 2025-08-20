@@ -12,7 +12,7 @@ export default function SettingsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="px-6 pb-8"
+          className="px-4 md:px-6 pb-8"
         >
           <EnhancedSettings />
         </motion.div>

@@ -157,7 +157,7 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md bg-[#121A28] border border-white/10 text-[#EAF2FF]">
+      <DialogContent className="max-w-md mx-4 sm:mx-auto bg-[#121A28] border border-white/10 text-[#EAF2FF]">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-center">
             {isSuccess ? "You're in!" : "Join the Rivor waitlist"}
@@ -186,7 +186,7 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
 
               <div className="space-y-3">
                 <p className="text-sm text-[#6E85AC]">Share the word:</p>
-                <div className="flex justify-center gap-3">
+                <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                   <Button
                     variant="outline"
                     size="sm"

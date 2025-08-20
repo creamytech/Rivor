@@ -279,22 +279,26 @@ export default function EnhancedSettings({ className = '' }: EnhancedSettingsPro
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="lead-rules" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Lead Rules
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+            <TabsTrigger value="lead-rules" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
+              <Users className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Lead Rules</span>
+              <span className="sm:hidden">Rules</span>
             </TabsTrigger>
-            <TabsTrigger value="integrations" className="flex items-center gap-2">
-              <Globe className="h-4 w-4" />
-              Integrations
+            <TabsTrigger value="integrations" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
+              <Globe className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Integrations</span>
+              <span className="sm:hidden">Apps</span>
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2">
-              <Bell className="h-4 w-4" />
-              Notifications
+            <TabsTrigger value="notifications" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
+              <Bell className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Notifications</span>
+              <span className="sm:hidden">Alerts</span>
             </TabsTrigger>
-            <TabsTrigger value="appearance" className="flex items-center gap-2">
-              <Palette className="h-4 w-4" />
-              Appearance
+            <TabsTrigger value="appearance" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
+              <Palette className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Appearance</span>
+              <span className="sm:hidden">Theme</span>
             </TabsTrigger>
           </TabsList>
 

@@ -414,7 +414,7 @@ export default function BusinessKPIsPanel({ className = '' }: BusinessKPIsPanelP
         <CardContent className="p-8">
           <div className="animate-pulse">
             <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded-lg mb-6 w-1/3" />
-            <div className="grid grid-cols-5 gap-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-8">
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="space-y-4">
                   <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded" />
@@ -467,7 +467,7 @@ export default function BusinessKPIsPanel({ className = '' }: BusinessKPIsPanelP
           </motion.div>
 
           {/* KPI Metrics Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-8">
             {metrics.map((metric, index) => (
               <motion.div
                 key={metric.id}

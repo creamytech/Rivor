@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "../styles/themes.css";
+@import "../styles/mobile.css";
 
 :root {
   /* Rivor Flow Gradient - Brand Colors */

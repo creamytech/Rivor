@@ -177,7 +177,7 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({
                 initial={{ opacity: 0, y: -10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                className="absolute right-0 top-full mt-2 w-72 z-50 rounded-xl border shadow-2xl"
+                className="absolute right-0 top-full mt-2 w-72 sm:w-80 max-w-[90vw] z-50 rounded-xl border shadow-2xl"
                 style={{
                   backgroundColor: currentTheme.colors.surface,
                   borderColor: currentTheme.colors.border,
@@ -238,7 +238,7 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {Object.keys(themes).map((id) => (
           <ThemePreview key={id} themeId={id as ThemeId} />
         ))}
