@@ -11,27 +11,20 @@
     }
   },
   "functions": {
-    "apps/web/src/app/api/chat/route.ts": {
+    "src/app/api/**/route.{js,ts}": {
+      "maxDuration": 30
+    },
+    "src/app/api/sync/**/route.{js,ts}": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/documents/generate-pdf/route.{js,ts}": {
+      "maxDuration": 30,
+      "memory": 1024
+    },
+    "src/app/api/chat/route.{js,ts}": {
       "maxDuration": 30,
       "memory": 512
-    },
-    "apps/web/src/app/api/sync/gmail/route.ts": {
-      "maxDuration": 60,
-      "memory": 1024
-    },
-    "apps/web/src/app/api/sync/calendar/route.ts": {
-      "maxDuration": 60,
-      "memory": 1024
-    },
-    "apps/web/src/app/api/documents/generate-pdf/route.ts": {
-      "maxDuration": 30,
-      "memory": 1024
     }
-  },
-  "crons": [
-    {
-      "path": "/api/health/route",
-      "schedule": "0 */6 * * *"
-    }
-  ]
+  }
 }
