@@ -3,7 +3,7 @@
     "version": "0.1.0",
     "private": true,
     "scripts": {
-        "dev": "next dev",
+        "dev": "npm run db:generate && next dev",
         "prebuild": "node ../../scripts/optimize-build.js || echo 'Pre-build optimization skipped'",
         "build": "npm run db:generate:prod && npm run db:migrate:safe && next build",
         "db:migrate:safe": "node ../../scripts/migrate-safe.js",
@@ -71,6 +71,7 @@
         "next-auth": "^4.24.10",
         "openai": "^4.68.0",
         "posthog-js": "^1.260.1",
+        "prisma": "^6.14.0",
         "puppeteer": "^24.9.0",
         "react": "^18",
         "react-dom": "^18",

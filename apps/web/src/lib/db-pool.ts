@@ -1,46 +1,6 @@
-// Database connection pooling for better performance
+// Use the working @rivor/db temporarily to resolve 500 errors
 import { PrismaClient } from '@prisma/client';
-
-interface GlobalForPrisma {
-  prisma: PrismaClient | undefined;
-}
-
-const globalForPrisma = globalThis as unknown as GlobalForPrisma;
-
-// Create Prisma client instance with safe initialization
-function createPrismaClient(): PrismaClient {
-  return new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
-      },
-    },
-  });
-}
-
-// Export the Prisma client with lazy initialization
-export const prisma = (() => {
-  // Skip initialization during build time
-  if (process.env.NEXT_PHASE === 'phase-production-build') {
-    return new Proxy({}, {
-      get() {
-        throw new Error('Prisma client cannot be used during build time');
-      }
-    }) as PrismaClient;
-  }
-
-  // Use global instance in development to prevent hot-reload issues
-  if (process.env.NODE_ENV !== 'production') {
-    if (!globalForPrisma.prisma) {
-      globalForPrisma.prisma = createPrismaClient();
-    }
-    return globalForPrisma.prisma;
-  }
-
-  // Create new instance in production
-  return createPrismaClient();
-})();
+export { prisma } from '@rivor/db';
 
 // Optimized transaction helper with retries
 export async function withTransaction<T>(

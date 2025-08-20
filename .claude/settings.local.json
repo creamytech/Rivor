@@ -15,7 +15,8 @@
       "Bash(npm install:*)",
       "Bash(sed:*)",
       "Bash(npm ls:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": [],
