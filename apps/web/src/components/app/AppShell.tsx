@@ -186,7 +186,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
           </header>
 
           {/* Main Content */}
-          <main className={`h-full pb-16 md:pb-0 ${rightDrawer ? "md:mr-[360px]" : ""}`}>
+          <main className={`overflow-auto h-[calc(100vh-64px)] pb-16 md:pb-0 ${rightDrawer ? "md:mr-[360px]" : ""}`}>
             {children}
           </main>
 
@@ -200,7 +200,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       {/* Mobile Layout */}
       <div className="md:hidden min-h-screen flex flex-col pt-14 pb-20">
         {/* Mobile Content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto h-[calc(100vh-140px)]">
           {children}
         </main>
       </div>

@@ -12,7 +12,8 @@
     "deny": [],
     "ask": [],
     "additionalDirectories": [
-      "C:\\c\\Users\\benja"
+      "C:\\c\\Users\\benja",
+      "C:\\mnt\\c\\Users\\benja\\rivor\\apps"
     ]
   }
 }

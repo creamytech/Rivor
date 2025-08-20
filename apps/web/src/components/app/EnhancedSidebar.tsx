@@ -75,6 +75,7 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
   const pathname = usePathname();
   const { data: session } = useSession();
   const [showQuickActionsMenu, setShowQuickActionsMenu] = useState(false);
+  const [isFooterExpanded, setIsFooterExpanded] = useState(false);
   const [notifications, setNotifications] = useState([
     { id: '1', type: 'urgent', count: 3, message: 'High priority leads' },
     { id: '2', type: 'info', count: 7, message: 'New property inquiries' },
