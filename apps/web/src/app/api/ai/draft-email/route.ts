@@ -5,7 +5,7 @@ import { AIService, EmailDraftOptions } from '@/server/ai';
 // Force dynamic rendering - this route uses session/auth data
 export const dynamic = 'force-dynamic';
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     const session = await auth();
     if (!session) {

@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
-import { trpc } from '@/lib/trpc';
 
 interface ChatMessage {
   id: string;
@@ -30,11 +29,7 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
   const [isInitialized, setIsInitialized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // tRPC mutations and queries
-  const sendMessageMutation = trpc.chat.sendMessage.useMutation();
-  const executeActionMutation = trpc.chat.executeAction.useMutation();
-  // For now, we'll skip loading existing thread data since we don't have a threadId
-  // const threadData = trpc.chat.getThread.useQuery({ threadId: 'default' });
+  // Direct API calls instead of tRPC for chat functionality
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -63,22 +58,34 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
     setIsLoading(true);
 
     try {
-      const response = await sendMessageMutation.mutateAsync({
-        message: inputMessage,
-        context: context ? {
-          type: context.type,
-          id: context.id
-        } : undefined
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: inputMessage,
+          context: context ? {
+            type: context.type,
+            id: context.id
+          } : undefined
+        })
       });
 
-      if (response && typeof response === 'object' && response.id && response.content) {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data && data.id && data.content) {
         const aiMessage: ChatMessage = {
-          id: response.id,
-          content: response.content,
+          id: data.id,
+          content: data.content,
           role: 'assistant',
-          timestamp: new Date(response.timestamp || Date.now()),
-          reasoning: response.reasoning,
-          actions: response.actions
+          timestamp: new Date(data.timestamp || Date.now()),
+          reasoning: data.reasoning,
+          actions: data.actions
         };
         setMessages(prev => [...prev, aiMessage]);
       } else {
@@ -112,18 +119,30 @@ export default function EnhancedChat({ className = '', context }: EnhancedChatPr
     }
 
     try {
-      const result = await executeActionMutation.mutateAsync({
-        actionType: action.type,
-        actionData: action.data,
-        context: context ? {
-          type: context.type,
-          id: context.id
-        } : undefined
+      // For now, we'll use the AI service to handle action execution
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: `Execute action: ${action.label}`,
+          context: context ? {
+            type: context.type,
+            id: context.id
+          } : undefined
+        })
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
 
       const actionMessage: ChatMessage = {
         id: `action_${Date.now()}`,
-        content: typeof result === 'object' && result?.result ? result.result : 'Action executed successfully',
+        content: data?.content || 'Action executed successfully',
         role: 'assistant',
         timestamp: new Date()
       };
