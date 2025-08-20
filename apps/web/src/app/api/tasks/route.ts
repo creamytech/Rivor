@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
-import { mixWithDemoData, demoTasks } from '@/lib/demo-data';
+// Removed demo data imports - now using real data only
 
 export const dynamic = 'force-dynamic';
 
@@ -61,24 +61,8 @@ export async function GET(_req: NextRequest) {
       tags: task.tags || []
     }));
 
-    // Mix with demo data if enabled
-    const finalTasks = mixWithDemoData(tasksFormatted, demoTasks.map(task => ({
-      id: task.id,
-      title: task.title,
-      description: '',
-      status: task.completed ? 'completed' as const : 'pending' as const,
-      priority: task.priority as 'low' | 'medium' | 'high',
-      dueAt: task.dueAt?.toISOString(),
-      completedAt: task.completed ? new Date().toISOString() : undefined,
-      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date().toISOString(),
-      createdBy: 'demo_user',
-      assignedTo: undefined,
-      linkedEmailId: undefined,
-      linkedLeadId: undefined,
-      linkedContactId: undefined,
-      tags: []
-    })));
+    // Use real tasks data only - no demo data mixing
+    const finalTasks = tasksFormatted;
 
     const response = {
       tasks: finalTasks,

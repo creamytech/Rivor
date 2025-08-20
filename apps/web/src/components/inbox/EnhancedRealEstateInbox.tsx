@@ -20,7 +20,6 @@ import {
   Wrench, Percent, Layers, BarChart3, PieChart, Workflow, Merge, GitBranch
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import ComposeEmailModal from './ComposeEmailModal';
 
 interface EmailThread {
   id: string;
@@ -130,12 +129,14 @@ interface EnhancedRealEstateInboxProps {
   activeTab?: string;
   searchQuery?: string;
   selectedFilter?: string;
+  sortBy?: 'date' | 'priority' | 'lead_score';
 }
 
 export default function EnhancedRealEstateInbox({ 
   activeTab = 'all', 
   searchQuery = '', 
-  selectedFilter = '' 
+  selectedFilter = '',
+  sortBy = 'date'
 }: EnhancedRealEstateInboxProps) {
   const [threads, setThreads] = useState<EmailThread[]>([]);
   const [selectedThread, setSelectedThread] = useState<EmailThread | null>(null);
@@ -155,7 +156,6 @@ export default function EnhancedRealEstateInbox({
     dateRange: '',
     leadScore: { min: 0, max: 100 }
   });
-  const [sortBy, setSortBy] = useState<'date' | 'priority' | 'leadScore' | 'sender'>('date');
   const [showSmartSuggestions, setShowSmartSuggestions] = useState(true);
   const [aiInsights, setAiInsights] = useState<any>(null);
   const [smartActions, setSmartActions] = useState<SmartAction[]>([]);
@@ -428,78 +428,52 @@ export default function EnhancedRealEstateInbox({
         "flex flex-col border-r border-border/50 bg-background/50 backdrop-blur-sm",
         viewMode === 'split' ? "w-2/5" : "w-full"
       )}>
-        {/* Enhanced Toolbar */}
-        <div className="p-4 border-b border-border/50 bg-card/50 backdrop-blur-sm">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <h2 className="font-semibold text-lg">Real Estate Inbox</h2>
-              <Badge variant="outline" className="text-xs">
+        {/* Simplified Toolbar */}
+        <div className="p-6 border-b border-border/50 bg-card/50 backdrop-blur-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Mail className="h-5 w-5 text-muted-foreground" />
+                <h2 className="font-semibold text-xl">Conversations</h2>
+              </div>
+              <Badge variant="outline" className="text-sm px-3 py-1">
                 {threads.length} emails
               </Badge>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setShowFilters(!showFilters)}>
-                <Filter className="h-4 w-4" />
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="sm" onClick={() => setShowFilters(!showFilters)} className="h-9">
+                <Filter className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Filters</span>
               </Button>
-              <Button variant="ghost" size="sm">
-                <RefreshCw className="h-4 w-4" />
+              <Button variant="ghost" size="sm" className="h-9">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Refresh</span>
               </Button>
-              <ComposeEmailModal
-                trigger={
-                  <Button size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Compose
-                  </Button>
-                }
-              />
             </div>
           </div>
           
-          {/* Sort Options */}
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground">Sort by:</span>
-            <Button
-              variant={sortBy === 'date' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setSortBy('date')}
-              className="h-7 text-xs"
-            >
-              <Clock className="h-3 w-3 mr-1" />
-              Date
-            </Button>
-            <Button
-              variant={sortBy === 'priority' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setSortBy('priority')}
-              className="h-7 text-xs"
-            >
-              <Flag className="h-3 w-3 mr-1" />
-              Priority
-            </Button>
-            <Button
-              variant={sortBy === 'leadScore' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setSortBy('leadScore')}
-              className="h-7 text-xs"
-            >
-              <Target className="h-3 w-3 mr-1" />
-              Lead Score
-            </Button>
-          </div>
-          
-          {/* Quick Stats */}
-          <div className="flex items-center gap-4 mt-3 p-3 bg-muted/50 rounded-lg">
-            <div className="flex items-center gap-2 text-sm">
-              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-              <span className="text-xs text-muted-foreground">Hot Leads: {threads.filter(t => t.leadScore && t.leadScore > 75).length}</span>
+          {/* Enhanced Quick Stats */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-red-50 to-red-100/50 dark:from-red-900/20 dark:to-red-800/10 rounded-xl border border-red-200/50 dark:border-red-800/30">
+              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+              <div>
+                <div className="text-lg font-semibold text-red-700 dark:text-red-400">{threads.filter(t => t.leadScore && t.leadScore > 75).length}</div>
+                <div className="text-xs text-red-600/70 dark:text-red-400/70 font-medium">Hot Leads</div>
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-sm">
-              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-              <span className="text-xs text-muted-foreground">Follow-ups: {threads.filter(t => t.requiresFollowUp).length}</span>
+            <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 rounded-xl border border-orange-200/50 dark:border-orange-800/30">
+              <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+              <div>
+                <div className="text-lg font-semibold text-orange-700 dark:text-orange-400">{threads.filter(t => t.requiresFollowUp).length}</div>
+                <div className="text-xs text-orange-600/70 dark:text-orange-400/70 font-medium">Follow-ups</div>
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-sm">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-xs text-muted-foreground">Showings: {threads.filter(t => t.hasSchedulingRequest).length}</span>
+            <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 rounded-xl border border-green-200/50 dark:border-green-800/30">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <div>
+                <div className="text-lg font-semibold text-green-700 dark:text-green-400">{threads.filter(t => t.hasSchedulingRequest).length}</div>
+                <div className="text-xs text-green-600/70 dark:text-green-400/70 font-medium">Showings</div>
+              </div>
             </div>
           </div>
         </div>
@@ -540,15 +514,15 @@ export default function EnhancedRealEstateInbox({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
                     className={cn(
-                      "p-4 cursor-pointer transition-all duration-200 hover:bg-muted/50 group border-l-4",
-                      selectedThread?.id === thread.id && "bg-blue-50 dark:bg-blue-900/20 border-r-2 border-r-blue-500",
+                      "p-6 cursor-pointer transition-all duration-200 hover:bg-muted/50 group border-l-4 hover:shadow-sm",
+                      selectedThread?.id === thread.id && "bg-blue-50 dark:bg-blue-900/20 border-r-2 border-r-blue-500 shadow-md",
                       getSentimentColor(thread.sentiment),
                       thread.unread && "bg-background border-l-blue-500",
                       !thread.unread && "border-l-transparent"
                     )}
                     onClick={() => setSelectedThread(thread)}
                   >
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-start gap-4">
                       {/* Enhanced Avatar with Status */}
                       <div className="relative flex-shrink-0">
                         <Avatar className="h-12 w-12 ring-2 ring-border/50">
@@ -570,7 +544,7 @@ export default function EnhancedRealEstateInbox({
                       {/* Enhanced Content */}
                       <div className="flex-1 min-w-0">
                         {/* Header with Email Type */}
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-3 mb-3">
                           <div className="flex items-center gap-1">
                             {getEmailTypeIcon(thread.emailType)}
                             <Badge variant="outline" className={cn("text-xs border", getEmailTypeColor(thread.emailType))}>
@@ -591,7 +565,7 @@ export default function EnhancedRealEstateInbox({
                         </div>
 
                         {/* Subject and Status */}
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-2">
                           <h3 className={cn(
                             "font-medium text-base truncate",
                             thread.unread && "font-semibold text-foreground",
@@ -617,7 +591,7 @@ export default function EnhancedRealEstateInbox({
 
                         {/* Property Info */}
                         {thread.propertyInfo && (
-                          <div className="flex items-center gap-2 mb-2 p-2 bg-muted/30 rounded-md">
+                          <div className="flex items-center gap-3 mb-3 p-3 bg-muted/30 rounded-lg border border-border/30">
                             <Building2 className="h-4 w-4 text-blue-500" />
                             <span className="text-sm font-medium">{thread.propertyInfo.address}</span>
                             <span className="text-sm text-green-600 font-semibold">
@@ -630,7 +604,7 @@ export default function EnhancedRealEstateInbox({
                         )}
 
                         {/* Email Snippet */}
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2 leading-relaxed">
+                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2 leading-relaxed">
                           {thread.snippet}
                         </p>
 

@@ -23,12 +23,14 @@ import {
   Handshake,
   Eye,
   Filter,
-  RefreshCw
+  RefreshCw,
+  Target,
+  Plus
 } from 'lucide-react';
 
 interface ActivityItem {
   id: string;
-  type: 'lead' | 'email' | 'call' | 'meeting' | 'showing' | 'deal_update' | 'property_view';
+  type: 'lead' | 'email' | 'call' | 'meeting' | 'showing' | 'deal_update' | 'property_view' | 'task' | 'contact';
   title: string;
   description: string;
   timestamp: Date;
@@ -45,6 +47,20 @@ interface ActivityFeedPanelProps {
   className?: string;
 }
 
+interface ApiActivity {
+  id: string;
+  type: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+  leadId?: string;
+  contactId?: string;
+  threadId?: string;
+  taskId?: string;
+  metadata?: any;
+}
+
 export default function ActivityFeedPanel({ className = '' }: ActivityFeedPanelProps) {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [filter, setFilter] = useState<'all' | 'leads' | 'meetings' | 'deals'>('all');
@@ -57,87 +73,173 @@ export default function ActivityFeedPanel({ className = '' }: ActivityFeedPanelP
 
   const fetchActivityData = async () => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockActivities: ActivityItem[] = [
-        {
-          id: '1',
-          type: 'lead',
-          title: 'New Lead from Zillow',
-          description: 'Investment property inquiry - Budget: $600K-800K',
-          timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
-          agent: 'Sarah Johnson',
-          client: 'Jennifer Martinez',
-          priority: 'urgent',
-          icon: <Users className="h-4 w-4" />,
-          color: 'blue'
-        },
-        {
-          id: '2',
-          type: 'email',
-          title: 'Email Reply Sent',
-          description: 'Property showing confirmation for 1234 Oak Street',
-          timestamp: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
-          agent: 'Mike Chen',
-          client: 'Robert Wilson',
-          property: '1234 Oak Street',
-          icon: <Mail className="h-4 w-4" />,
-          color: 'green'
-        },
-        {
-          id: '3',
-          type: 'deal_update',
-          title: 'Deal Moved to Under Contract',
-          description: 'Thompson family deal progressed - $750K value',
-          timestamp: new Date(Date.now() - 32 * 60 * 1000), // 32 minutes ago
-          agent: 'Lisa Williams',
-          client: 'Thompson Family',
-          value: 750000,
-          priority: 'high',
-          icon: <Handshake className="h-4 w-4" />,
-          color: 'purple'
-        },
-        {
-          id: '4',
-          type: 'showing',
-          title: 'Property Showing Completed',
-          description: 'Positive feedback received from the Anderson family',
-          timestamp: new Date(Date.now() - 45 * 60 * 1000), // 45 minutes ago
-          agent: 'David Brown',
-          client: 'Anderson Family',
-          property: '567 Pine Lane',
-          icon: <Home className="h-4 w-4" />,
-          color: 'orange'
-        },
-        {
-          id: '5',
-          type: 'call',
-          title: 'Follow-up Call Made',
-          description: 'Discussed price adjustment with seller',
-          timestamp: new Date(Date.now() - 67 * 60 * 1000), // 1 hour ago
-          agent: 'Sarah Johnson',
-          client: 'Maria Rodriguez',
-          icon: <Phone className="h-4 w-4" />,
-          color: 'teal'
-        },
-        {
-          id: '6',
-          type: 'property_view',
-          title: 'Property Photos Uploaded',
-          description: 'Professional photos added to 890 Elm Street listing',
-          timestamp: new Date(Date.now() - 95 * 60 * 1000), // 1.5 hours ago
-          agent: 'Mike Chen',
-          property: '890 Elm Street',
-          icon: <Eye className="h-4 w-4" />,
-          color: 'indigo'
-        }
-      ];
+      // Fetch real activity data from multiple APIs
+      const [activityRes, tasksRes, dashboardRes] = await Promise.all([
+        fetch('/api/activity?limit=20').then(res => res.ok ? res.json() : null),
+        fetch('/api/tasks?limit=10').then(res => res.ok ? res.json() : null),
+        fetch('/api/dashboard').then(res => res.ok ? res.json() : null)
+      ]);
 
-      setActivities(mockActivities);
+      const realActivities: ActivityItem[] = [];
+
+      // Process activity API data
+      if (activityRes?.activities) {
+        activityRes.activities.forEach((activity: ApiActivity) => {
+          const timestamp = new Date(activity.createdAt);
+          
+          let activityItem: ActivityItem = {
+            id: activity.id,
+            type: 'contact',
+            title: 'Activity',
+            description: activity.description || 'No description',
+            timestamp,
+            agent: 'User', // In real app, would look up user name
+            icon: <Activity className="h-4 w-4" />,
+            color: 'blue'
+          };
+
+          // Map activity types to our format
+          switch (activity.type) {
+            case 'lead_created':
+              activityItem = {
+                ...activityItem,
+                type: 'lead',
+                title: 'New Lead Created',
+                description: activity.description || 'A new lead was added to the pipeline',
+                icon: <Users className="h-4 w-4" />,
+                color: 'blue',
+                priority: 'high'
+              };
+              break;
+            case 'email_sent':
+              activityItem = {
+                ...activityItem,
+                type: 'email',
+                title: 'Email Sent',
+                description: activity.description || 'Email communication sent',
+                icon: <Mail className="h-4 w-4" />,
+                color: 'green'
+              };
+              break;
+            case 'task_completed':
+              activityItem = {
+                ...activityItem,
+                type: 'task',
+                title: 'Task Completed',
+                description: activity.description || 'A task was marked as complete',
+                icon: <Target className="h-4 w-4" />,
+                color: 'purple'
+              };
+              break;
+            case 'contact_updated':
+              activityItem = {
+                ...activityItem,
+                type: 'contact',
+                title: 'Contact Updated',
+                description: activity.description || 'Contact information was updated',
+                icon: <Users className="h-4 w-4" />,
+                color: 'teal'
+              };
+              break;
+            default:
+              activityItem = {
+                ...activityItem,
+                title: activity.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                description: activity.description || 'Activity recorded'
+              };
+          }
+
+          realActivities.push(activityItem);
+        });
+      }
+
+      // Add recent tasks as activities
+      if (tasksRes?.tasks) {
+        tasksRes.tasks
+          .filter((task: any) => task.status === 'completed')
+          .slice(0, 3)
+          .forEach((task: any) => {
+            realActivities.push({
+              id: `task-${task.id}`,
+              type: 'task',
+              title: 'Task Completed',
+              description: task.title || 'Task marked as complete',
+              timestamp: new Date(task.completedAt || task.updatedAt),
+              agent: 'User',
+              icon: <Target className="h-4 w-4" />,
+              color: 'indigo'
+            });
+          });
+      }
+
+      // Add email activities from dashboard
+      if (dashboardRes?.recentThreads) {
+        dashboardRes.recentThreads.slice(0, 3).forEach((thread: any) => {
+          realActivities.push({
+            id: `email-${thread.id}`,
+            type: 'email',
+            title: 'Email Thread Updated',
+            description: thread.subject || 'Email conversation updated',
+            timestamp: new Date(thread.lastMessageAt),
+            agent: 'User',
+            client: thread.participants || 'Contact',
+            icon: <Mail className="h-4 w-4" />,
+            color: 'green'
+          });
+        });
+      }
+
+      // If no real activities, create helpful placeholder activities
+      if (realActivities.length === 0) {
+        const welcomeActivities: ActivityItem[] = [
+          {
+            id: 'welcome-1',
+            type: 'contact',
+            title: 'Welcome to Rivor',
+            description: 'Your CRM is ready to track all your real estate activities',
+            timestamp: new Date(),
+            agent: 'System',
+            icon: <Star className="h-4 w-4" />,
+            color: 'blue',
+            priority: 'medium'
+          },
+          {
+            id: 'welcome-2',
+            type: 'lead',
+            title: 'Getting Started',
+            description: 'Add your first lead to see activity tracking in action',
+            timestamp: new Date(Date.now() - 5 * 60 * 1000),
+            agent: 'System',
+            icon: <Plus className="h-4 w-4" />,
+            color: 'teal'
+          }
+        ];
+        realActivities.push(...welcomeActivities);
+      }
+
+      // Sort by timestamp (newest first)
+      realActivities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+      setActivities(realActivities);
       setIsLoading(false);
     } catch (error) {
       console.error('Failed to fetch activity data:', error);
+      
+      // Fallback activities
+      const fallbackActivities: ActivityItem[] = [
+        {
+          id: 'fallback-1',
+          type: 'contact',
+          title: 'System Ready',
+          description: 'Your activity feed will show real-time updates here',
+          timestamp: new Date(),
+          agent: 'System',
+          icon: <Activity className="h-4 w-4" />,
+          color: 'blue'
+        }
+      ];
+      
+      setActivities(fallbackActivities);
       setIsLoading(false);
     }
   };
@@ -277,87 +379,105 @@ export default function ActivityFeedPanel({ className = '' }: ActivityFeedPanelP
             className="space-y-4 max-h-96 overflow-y-auto pr-2"
           >
             <AnimatePresence>
-              {filteredActivities.map((activity, index) => (
-                <motion.div
-                  key={activity.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  transition={{ delay: 0.1 * index, duration: 0.5 }}
-                  className="relative group"
-                >
-                  <div className={`p-4 rounded-xl border transition-all duration-300 hover:shadow-md ${getActivityColor(activity.color)}`}>
-                    {/* Activity Header */}
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${getActivityColor(activity.color)} shadow-sm`}>
-                          {activity.icon}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-semibold text-slate-900 dark:text-slate-100">
-                              {activity.title}
-                            </h4>
-                            {activity.priority && (
-                              <Badge className={`text-xs ${getPriorityBadge(activity.priority)}`}>
-                                <Star className="h-2 w-2 mr-1" />
-                                {activity.priority}
-                              </Badge>
-                            )}
+              {filteredActivities.length > 0 ? (
+                filteredActivities.map((activity, index) => (
+                  <motion.div
+                    key={activity.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ delay: 0.1 * index, duration: 0.5 }}
+                    className="relative group"
+                  >
+                    <div className={`p-4 rounded-xl border transition-all duration-300 hover:shadow-md ${getActivityColor(activity.color)}`}>
+                      {/* Activity Header */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg ${getActivityColor(activity.color)} shadow-sm`}>
+                            {activity.icon}
                           </div>
-                          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                            {activity.description}
-                          </p>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-slate-900 dark:text-slate-100">
+                                {activity.title}
+                              </h4>
+                              {activity.priority && (
+                                <Badge className={`text-xs ${getPriorityBadge(activity.priority)}`}>
+                                  <Star className="h-2 w-2 mr-1" />
+                                  {activity.priority}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                              {activity.description}
+                            </p>
+                          </div>
                         </div>
+                        
+                        <Badge variant="outline" className="text-xs flex-shrink-0">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {getTimeAgo(activity.timestamp)}
+                        </Badge>
                       </div>
-                      
-                      <Badge variant="outline" className="text-xs flex-shrink-0">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {getTimeAgo(activity.timestamp)}
-                      </Badge>
-                    </div>
 
-                    {/* Activity Details */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 text-sm">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback className="text-xs">
-                              {activity.agent.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-slate-600 dark:text-slate-400">{activity.agent}</span>
+                      {/* Activity Details */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarFallback className="text-xs">
+                                {activity.agent.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-slate-600 dark:text-slate-400">{activity.agent}</span>
+                          </div>
+                          
+                          {activity.client && (
+                            <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+                              <Users className="h-3 w-3" />
+                              <span>{activity.client}</span>
+                            </div>
+                          )}
+                          
+                          {activity.property && (
+                            <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+                              <MapPin className="h-3 w-3" />
+                              <span className="truncate max-w-32">{activity.property}</span>
+                            </div>
+                          )}
+                          
+                          {activity.value && (
+                            <div className="flex items-center gap-1 text-green-600 dark:text-green-400 font-medium">
+                              <DollarSign className="h-3 w-3" />
+                              <span>{formatCurrency(activity.value)}</span>
+                            </div>
+                          )}
                         </div>
                         
-                        {activity.client && (
-                          <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                            <Users className="h-3 w-3" />
-                            <span>{activity.client}</span>
-                          </div>
-                        )}
-                        
-                        {activity.property && (
-                          <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                            <MapPin className="h-3 w-3" />
-                            <span className="truncate max-w-32">{activity.property}</span>
-                          </div>
-                        )}
-                        
-                        {activity.value && (
-                          <div className="flex items-center gap-1 text-green-600 dark:text-green-400 font-medium">
-                            <DollarSign className="h-3 w-3" />
-                            <span>{formatCurrency(activity.value)}</span>
-                          </div>
-                        )}
+                        <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <ArrowRight className="h-3 w-3" />
+                        </Button>
                       </div>
-                      
-                      <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ArrowRight className="h-3 w-3" />
-                      </Button>
                     </div>
+                  </motion.div>
+                ))
+              ) : (
+                // Empty state for filtered results
+                <div className="text-center py-12">
+                  <div className="p-4 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <Activity className="h-8 w-8 text-slate-400" />
                   </div>
-                </motion.div>
-              ))}
+                  <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
+                    No {filter === 'all' ? '' : filter} activities
+                  </h3>
+                  <p className="text-slate-600 dark:text-slate-400">
+                    {filter === 'all' 
+                      ? 'Activities will appear here as you use the CRM'
+                      : `No ${filter} activities found. Try changing the filter.`
+                    }
+                  </p>
+                </div>
+              )}
             </AnimatePresence>
           </motion.div>
 
@@ -395,24 +515,24 @@ export default function ActivityFeedPanel({ className = '' }: ActivityFeedPanelP
 
               <div className="p-3 bg-purple-50 dark:bg-purple-950/30 rounded-lg border border-purple-200 dark:border-purple-800">
                 <div className="flex items-center gap-2">
-                  <Handshake className="h-4 w-4 text-purple-600" />
+                  <Target className="h-4 w-4 text-purple-600" />
                   <div>
                     <div className="text-lg font-bold text-purple-900 dark:text-purple-100">
-                      {activities.filter(a => a.type === 'deal_update').length}
+                      {activities.filter(a => a.type === 'task').length}
                     </div>
-                    <div className="text-xs text-purple-600 dark:text-purple-400">Deal Updates</div>
+                    <div className="text-xs text-purple-600 dark:text-purple-400">Tasks Done</div>
                   </div>
                 </div>
               </div>
 
               <div className="p-3 bg-orange-50 dark:bg-orange-950/30 rounded-lg border border-orange-200 dark:border-orange-800">
                 <div className="flex items-center gap-2">
-                  <Home className="h-4 w-4 text-orange-600" />
+                  <Activity className="h-4 w-4 text-orange-600" />
                   <div>
                     <div className="text-lg font-bold text-orange-900 dark:text-orange-100">
-                      {activities.filter(a => a.type === 'showing').length}
+                      {activities.length}
                     </div>
-                    <div className="text-xs text-orange-600 dark:text-orange-400">Showings</div>
+                    <div className="text-xs text-orange-600 dark:text-orange-400">Total Actions</div>
                   </div>
                 </div>
               </div>

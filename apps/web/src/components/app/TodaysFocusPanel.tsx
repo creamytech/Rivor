@@ -23,7 +23,7 @@ import {
 
 interface FocusItem {
   id: string;
-  type: 'lead' | 'reply' | 'meeting' | 'showing' | 'deadline';
+  type: 'lead' | 'reply' | 'meeting' | 'showing' | 'deadline' | 'task';
   title: string;
   description: string;
   time?: string;
@@ -40,7 +40,7 @@ interface TodaysSummary {
   newLeads: number;
   repliesDue: number;
   meetingsScheduled: number;
-  showingsToday: number;
+  pendingTasks: number;
 }
 
 interface TodaysFocusPanelProps {
@@ -48,86 +48,185 @@ interface TodaysFocusPanelProps {
 }
 
 export default function TodaysFocusPanel({ className = '' }: TodaysFocusPanelProps) {
-  const [summary, setSummary] = useState<TodaysSummary>({ newLeads: 0, repliesDue: 0, meetingsScheduled: 0, showingsToday: 0 });
+  const [summary, setSummary] = useState<TodaysSummary>({ newLeads: 0, repliesDue: 0, meetingsScheduled: 0, pendingTasks: 0 });
   const [focusItems, setFocusItems] = useState<FocusItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchTodayData = async () => {
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        const mockSummary: TodaysSummary = {
-          newLeads: 8,
-          repliesDue: 12,
-          meetingsScheduled: 5,
-          showingsToday: 7
+        // Fetch real data from multiple APIs in parallel
+        const [dashboardRes, tasksRes, statsRes] = await Promise.all([
+          fetch('/api/dashboard').then(res => res.ok ? res.json() : null),
+          fetch('/api/tasks?limit=50').then(res => res.ok ? res.json() : null),
+          fetch('/api/stats').then(res => res.ok ? res.json() : null)
+        ]);
+
+        const dashboardData = dashboardRes || {
+          unreadCount: 0,
+          recentThreads: [],
+          upcomingEvents: [],
+          calendarStats: { todayCount: 0, upcomingCount: 0 }
         };
 
-        const mockFocusItems: FocusItem[] = [
-          {
-            id: '1',
+        const tasksData = tasksRes || { tasks: [], total: 0 };
+        const statsData = statsRes || { activeDeals: 0, todayMeetings: 0 };
+
+        // Calculate today's data
+        const today = new Date();
+        const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+
+        // Filter tasks for today
+        const todayTasks = tasksData.tasks.filter((task: any) => {
+          if (!task.dueAt) return false;
+          const dueDate = new Date(task.dueAt);
+          return dueDate >= startOfDay && dueDate < endOfDay && task.status === 'pending';
+        });
+
+        // Get urgent/overdue tasks
+        const urgentTasks = tasksData.tasks.filter((task: any) => {
+          if (task.status !== 'pending') return false;
+          if (task.priority === 'high') return true;
+          if (task.dueAt) {
+            const dueDate = new Date(task.dueAt);
+            return dueDate < new Date(); // Overdue
+          }
+          return false;
+        });
+
+        // Today's events
+        const todayEvents = dashboardData.upcomingEvents.filter((event: any) => {
+          const eventDate = new Date(event.start);
+          return eventDate >= startOfDay && eventDate < endOfDay;
+        });
+
+        // Recent unread emails (simulate reply urgency)
+        const recentThreads = dashboardData.recentThreads.slice(0, 3);
+
+        // Build summary
+        const realSummary: TodaysSummary = {
+          newLeads: statsData.activeDeals || 0,
+          repliesDue: Math.min(dashboardData.unreadCount || 0, 15), // Cap for display
+          meetingsScheduled: dashboardData.calendarStats.todayCount || 0,
+          pendingTasks: todayTasks.length
+        };
+
+        // Build focus items from real data
+        const realFocusItems: FocusItem[] = [];
+
+        // Add urgent tasks
+        urgentTasks.slice(0, 3).forEach((task: any, index: number) => {
+          realFocusItems.push({
+            id: `task-${task.id}`,
+            type: 'task',
+            title: task.title || 'Untitled Task',
+            description: task.description || 'No description available',
+            time: task.dueAt ? new Date(task.dueAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined,
+            priority: task.priority === 'high' ? 'urgent' : 'high',
+            completed: task.status === 'completed',
+            icon: <Target className="h-4 w-4" />,
+            action: { 
+              label: 'View', 
+              onClick: () => window.location.href = `/app/tasks/${task.id}` 
+            }
+          });
+        });
+
+        // Add recent email threads that need replies
+        recentThreads.slice(0, 2).forEach((thread: any, index: number) => {
+          realFocusItems.push({
+            id: `email-${thread.id}`,
             type: 'reply',
-            title: 'Reply to Sarah Wilson',
-            description: 'Inquiry about 1234 Oak Street listing - Budget: $450K',
-            time: '2 hours ago',
-            priority: 'urgent',
-            completed: false,
-            icon: <Mail className="h-4 w-4" />,
-            action: { label: 'Reply', onClick: () => console.log('Reply') }
-          },
-          {
-            id: '2', 
-            type: 'showing',
-            title: 'Property Showing',
-            description: '567 Maple Ave with the Johnson family',
-            time: '2:30 PM',
+            title: `Reply to ${thread.participants || 'Contact'}`,
+            description: thread.subject || 'No subject',
+            time: new Date(thread.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             priority: 'high',
             completed: false,
-            icon: <Home className="h-4 w-4" />,
-            action: { label: 'Details', onClick: () => console.log('Details') }
-          },
-          {
-            id: '3',
+            icon: <Mail className="h-4 w-4" />,
+            action: { 
+              label: 'Reply', 
+              onClick: () => window.location.href = `/app/inbox/${thread.id}` 
+            }
+          });
+        });
+
+        // Add today's meetings
+        todayEvents.slice(0, 3).forEach((event: any, index: number) => {
+          realFocusItems.push({
+            id: `meeting-${event.id}`,
             type: 'meeting',
-            title: 'Client Meeting',
-            description: 'First-time buyer consultation with Mike Chen',
-            time: '4:00 PM',
+            title: event.title || 'Meeting',
+            description: event.location ? `at ${event.location}` : 'No location specified',
+            time: new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             priority: 'medium',
             completed: false,
             icon: <Calendar className="h-4 w-4" />,
-            action: { label: 'Prepare', onClick: () => console.log('Prepare') }
-          },
-          {
-            id: '4',
-            type: 'lead',
-            title: 'New Lead Follow-up',
-            description: 'Hot lead from Zillow - Investment property inquiry',
-            time: '30 mins ago',
-            priority: 'urgent',
+            action: { 
+              label: 'Details', 
+              onClick: () => window.location.href = `/app/calendar` 
+            }
+          });
+        });
+
+        // Add today's tasks
+        todayTasks.slice(0, 2).forEach((task: any, index: number) => {
+          if (!realFocusItems.find(item => item.id === `task-${task.id}`)) {
+            realFocusItems.push({
+              id: `task-today-${task.id}`,
+              type: 'task',
+              title: task.title || 'Task',
+              description: task.description || 'Scheduled for today',
+              time: task.dueAt ? new Date(task.dueAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined,
+              priority: 'medium',
+              completed: task.status === 'completed',
+              icon: <CheckCircle2 className="h-4 w-4" />,
+              action: { 
+                label: 'Complete', 
+                onClick: () => console.log('Complete task:', task.id) 
+              }
+            });
+          }
+        });
+
+        // If no real data, add helpful placeholder items
+        if (realFocusItems.length === 0) {
+          realFocusItems.push({
+            id: 'welcome',
+            type: 'task',
+            title: 'Welcome to Rivor',
+            description: 'Set up your first lead or import contacts to get started',
+            priority: 'medium',
             completed: false,
             icon: <Users className="h-4 w-4" />,
-            action: { label: 'Call', onClick: () => console.log('Call') }
-          },
-          {
-            id: '5',
-            type: 'deadline',
-            title: 'Contract Deadline',
-            description: 'Thompson deal - inspection contingency expires',
-            time: '6:00 PM',
-            priority: 'urgent',
-            completed: false,
-            icon: <AlertTriangle className="h-4 w-4" />,
-            action: { label: 'Review', onClick: () => console.log('Review') }
-          }
-        ];
+            action: { 
+              label: 'Get Started', 
+              onClick: () => window.location.href = '/app/contacts' 
+            }
+          });
+        }
 
-        setSummary(mockSummary);
-        setFocusItems(mockFocusItems);
+        setSummary(realSummary);
+        setFocusItems(realFocusItems);
         setIsLoading(false);
       } catch (error) {
         console.error('Failed to fetch today\'s data:', error);
+        
+        // Fallback data
+        setSummary({ newLeads: 0, repliesDue: 0, meetingsScheduled: 0, pendingTasks: 0 });
+        setFocusItems([{
+          id: 'fallback',
+          type: 'task',
+          title: 'Connect your accounts',
+          description: 'Connect email and calendar to see your daily priorities',
+          priority: 'medium',
+          completed: false,
+          icon: <Users className="h-4 w-4" />,
+          action: { 
+            label: 'Settings', 
+            onClick: () => window.location.href = '/app/settings' 
+          }
+        }]);
         setIsLoading(false);
       }
     };
@@ -135,12 +234,32 @@ export default function TodaysFocusPanel({ className = '' }: TodaysFocusPanelPro
     fetchTodayData();
   }, []);
 
-  const toggleItemComplete = (itemId: string) => {
+  const toggleItemComplete = async (itemId: string) => {
     setFocusItems(prev => 
       prev.map(item => 
         item.id === itemId ? { ...item, completed: !item.completed } : item
       )
     );
+
+    // If it's a task, update the backend
+    if (itemId.startsWith('task-')) {
+      const taskId = itemId.replace('task-', '').replace('task-today-', '');
+      try {
+        await fetch(`/api/tasks/${taskId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'completed' })
+        });
+      } catch (error) {
+        console.error('Failed to update task:', error);
+        // Revert on error
+        setFocusItems(prev => 
+          prev.map(item => 
+            item.id === itemId ? { ...item, completed: !item.completed } : item
+          )
+        );
+      }
+    }
   };
 
   const getPriorityColor = (priority: string) => {
@@ -160,6 +279,7 @@ export default function TodaysFocusPanel({ className = '' }: TodaysFocusPanelPro
       case 'meeting': return <Calendar className="h-5 w-5 text-purple-600" />;
       case 'showing': return <Home className="h-5 w-5 text-orange-600" />;
       case 'deadline': return <AlertTriangle className="h-5 w-5 text-red-600" />;
+      case 'task': return <Target className="h-5 w-5 text-indigo-600" />;
       default: return <Clock className="h-5 w-5 text-slate-600" />;
     }
   };
@@ -224,7 +344,7 @@ export default function TodaysFocusPanel({ className = '' }: TodaysFocusPanelPro
                 <Users className="h-5 w-5 text-blue-600" />
                 <div>
                   <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{summary.newLeads}</div>
-                  <div className="text-xs text-blue-600 dark:text-blue-400">New Leads</div>
+                  <div className="text-xs text-blue-600 dark:text-blue-400">Active Leads</div>
                 </div>
               </div>
             </motion.div>
@@ -239,7 +359,7 @@ export default function TodaysFocusPanel({ className = '' }: TodaysFocusPanelPro
                 <Mail className="h-5 w-5 text-green-600" />
                 <div>
                   <div className="text-2xl font-bold text-green-900 dark:text-green-100">{summary.repliesDue}</div>
-                  <div className="text-xs text-green-600 dark:text-green-400">Replies Due</div>
+                  <div className="text-xs text-green-600 dark:text-green-400">Unread Emails</div>
                 </div>
               </div>
             </motion.div>
@@ -254,7 +374,7 @@ export default function TodaysFocusPanel({ className = '' }: TodaysFocusPanelPro
                 <Calendar className="h-5 w-5 text-purple-600" />
                 <div>
                   <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">{summary.meetingsScheduled}</div>
-                  <div className="text-xs text-purple-600 dark:text-purple-400">Meetings</div>
+                  <div className="text-xs text-purple-600 dark:text-purple-400">Today's Meetings</div>
                 </div>
               </div>
             </motion.div>
@@ -266,10 +386,10 @@ export default function TodaysFocusPanel({ className = '' }: TodaysFocusPanelPro
               className="p-4 bg-orange-50 dark:bg-orange-950/30 rounded-xl border border-orange-200 dark:border-orange-800"
             >
               <div className="flex items-center gap-3">
-                <Home className="h-5 w-5 text-orange-600" />
+                <Target className="h-5 w-5 text-orange-600" />
                 <div>
-                  <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">{summary.showingsToday}</div>
-                  <div className="text-xs text-orange-600 dark:text-orange-400">Showings</div>
+                  <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">{summary.pendingTasks}</div>
+                  <div className="text-xs text-orange-600 dark:text-orange-400">Pending Tasks</div>
                 </div>
               </div>
             </motion.div>
@@ -409,6 +529,21 @@ export default function TodaysFocusPanel({ className = '' }: TodaysFocusPanelPro
                     </motion.div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {urgentItems.length === 0 && otherItems.length === 0 && (
+              <div className="text-center py-12">
+                <div className="p-4 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900 dark:to-teal-900 w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+                </div>
+                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
+                  All caught up!
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400">
+                  You have no urgent items for today. Great work!
+                </p>
               </div>
             )}
           </motion.div>

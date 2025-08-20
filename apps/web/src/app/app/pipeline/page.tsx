@@ -61,7 +61,7 @@ type ViewMode = 'kanban' | 'list' | 'timeline';
 export default function PipelinePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
-  const [showAnalytics, setShowAnalytics] = useState(true);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const [showCreateDeal, setShowCreateDeal] = useState(false);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
@@ -165,41 +165,84 @@ export default function PipelinePage() {
               <div className="flex items-center gap-4">
                 {/* Enhanced Search */}
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     type="text"
                     placeholder="Search deals, properties, or contacts..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 pr-4 py-2 w-80 bg-background border-input focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="pl-12 pr-12 py-3 w-96 bg-background border-input focus:ring-2 focus:ring-blue-500 focus:border-transparent rounded-xl shadow-sm"
                   />
                   {searchQuery && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
                       onClick={() => setSearchQuery('')}
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-4 w-4" />
                     </Button>
                   )}
                 </div>
                 
-                {/* Advanced Filters */}
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setShowAdvancedFilters(true)}
-                  className={selectedFilters.length > 0 ? "border-blue-500 bg-blue-50 dark:bg-blue-950" : ""}
-                >
-                  <Filter className="h-4 w-4 mr-2" />
-                  Advanced Filters
-                  {selectedFilters.length > 0 && (
-                    <Badge variant="secondary" className="ml-2">
-                      {selectedFilters.length}
-                    </Badge>
-                  )}
-                </Button>
+                {/* Compact Filters */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className={`h-10 ${selectedFilters.length > 0 ? "border-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}
+                    >
+                      <Filter className="h-4 w-4 mr-2" />
+                      Filters
+                      {selectedFilters.length > 0 && (
+                        <Badge variant="secondary" className="ml-2">
+                          {selectedFilters.length}
+                        </Badge>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-80">
+                    <DropdownMenuLabel>Advanced Filters</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <div className="p-3 space-y-3">
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">Deal Stage</label>
+                        <Select value={advancedFilters.dealStage} onValueChange={(value) => setAdvancedFilters(prev => ({ ...prev, dealStage: value }))}>
+                          <SelectTrigger className="h-8">
+                            <SelectValue placeholder="Any stage" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="lead">New Lead</SelectItem>
+                            <SelectItem value="qualified">Qualified</SelectItem>
+                            <SelectItem value="showing">Showing Scheduled</SelectItem>
+                            <SelectItem value="offer">Offer Made</SelectItem>
+                            <SelectItem value="contract">Under Contract</SelectItem>
+                            <SelectItem value="closed">Closed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">Property Type</label>
+                        <Select value={advancedFilters.propertyType} onValueChange={(value) => setAdvancedFilters(prev => ({ ...prev, propertyType: value }))}>
+                          <SelectTrigger className="h-8">
+                            <SelectValue placeholder="Any type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="single-family">Single Family</SelectItem>
+                            <SelectItem value="condo">Condo</SelectItem>
+                            <SelectItem value="townhouse">Townhouse</SelectItem>
+                            <SelectItem value="multi-family">Multi-Family</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => setSelectedFilters(Object.keys(advancedFilters).filter(key => advancedFilters[key as keyof typeof advancedFilters]))}>Apply</Button>
+                        <Button variant="outline" size="sm" onClick={() => { setAdvancedFilters({ dealStage: '', propertyType: '', priceRange: { min: '', max: '' }, daysInStage: '', assignedAgent: '', leadSource: '', dealProbability: '', lastActivity: '' }); setSelectedFilters([]); }}>Clear</Button>
+                      </div>
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
               
               {/* Right Group - View Controls and Actions */}
@@ -220,14 +263,18 @@ export default function PipelinePage() {
                   ))}
                 </div>
 
-                {/* Analytics Toggle */}
+                {/* Analytics Drawer Toggle */}
                 <Button
                   variant={showAnalytics ? "default" : "outline"}
                   size="sm"
                   onClick={() => setShowAnalytics(!showAnalytics)}
+                  className="relative"
                 >
                   <BarChart3 className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Analytics</span>
+                  {showAnalytics && (
+                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full" />
+                  )}
                 </Button>
 
                 {/* Action Buttons */}
@@ -259,54 +306,44 @@ export default function PipelinePage() {
               </div>
             </div>
 
-            {/* Quick Filters Pills */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm text-muted-foreground mr-2">Quick filters:</span>
-              {quickFilters.map((filter) => (
-                <motion.div
-                  key={filter.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <Button
-                    variant={filter.active ? "default" : "outline"}
-                    size="sm"
+            {/* Quick Filters Chips - Horizontal Scrollable */}
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground font-medium flex-shrink-0">Quick filters:</span>
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                {quickFilters.map((filter) => (
+                  <motion.button
+                    key={filter.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    whileHover={{ scale: 1.05 }}
                     onClick={() => toggleQuickFilter(filter.id)}
-                    className={`text-xs h-8 relative ${filter.active ? filter.color.replace('text-', 'border-').replace('100', '300') : ''}`}
+                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                      filter.active 
+                        ? 'bg-blue-500 text-white shadow-md' 
+                        : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground border border-border/50'
+                    }`}
                   >
                     {filter.label}
-                    <span className="ml-1 text-xs opacity-70">({filter.count})</span>
-                    {filter.active && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="absolute -top-1 -right-1"
-                      >
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-5 w-5 p-0 bg-red-500 hover:bg-red-600 text-white rounded-full"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeFilter(filter.id);
-                          }}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </motion.div>
-                    )}
-                  </Button>
-                </motion.div>
-              ))}
+                    <Badge 
+                      variant={filter.active ? "secondary" : "outline"} 
+                      className={`text-xs h-5 px-1.5 ${
+                        filter.active ? 'bg-white/20 text-white border-white/30' : ''
+                      }`}
+                    >
+                      {filter.count}
+                    </Badge>
+                  </motion.button>
+                ))}
+              </div>
               
               {hasActiveFilters && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={clearAllFilters}
-                  className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
                 >
+                  <X className="h-3 w-3 mr-1" />
                   Clear All
                 </Button>
               )}

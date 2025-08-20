@@ -101,48 +101,15 @@ interface PipelineKanbanViewProps {
   advancedFilters: any;
 }
 
-// Mock data generator
-const generateMockDeals = (): Deal[] => {
-  const clientNames = ['Sarah Johnson', 'Michael Chen', 'Emily Rodriguez', 'David Wilson', 'Lisa Thompson', 'Robert Lee', 'Amanda Davis', 'Christopher Brown', 'Jessica Miller', 'Andrew Garcia'];
-  const propertyAddresses = ['123 Oak Street', '456 Pine Avenue', '789 Maple Drive', '321 Cedar Lane', '654 Elm Street', '987 Birch Road', '147 Willow Way', '258 Spruce Street', '369 Ash Boulevard', '741 Cherry Lane'];
-  const propertyTypes: Deal['propertyType'][] = ['Single Family', 'Condo', 'Townhouse', 'Multi-Family', 'Commercial'];
-  const priorities: Deal['priority'][] = ['hot', 'warm', 'cold'];
-  const agents = ['John Smith', 'Mary Johnson', 'Tom Wilson', 'Lisa Davis'];
-  const sources = ['Website', 'Referral', 'Cold Call', 'Social Media', 'Open House'];
-
-  return clientNames.map((name, index) => ({
-    id: `deal-${index + 1}`,
-    title: `${propertyAddresses[index]} Sale`,
-    clientName: name,
-    clientAvatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
-    propertyAddress: propertyAddresses[index],
-    propertyType: propertyTypes[index % propertyTypes.length],
-    dealValue: 250000 + (index * 75000) + Math.floor(Math.random() * 500000),
-    stage: ['lead', 'qualified', 'showing', 'offer', 'contract', 'closed'][Math.floor(Math.random() * 6)],
-    daysInStage: Math.floor(Math.random() * 45) + 1,
-    probability: Math.floor(Math.random() * 100),
-    priority: priorities[index % priorities.length],
-    nextAction: {
-      type: ['call', 'email', 'meeting', 'showing', 'follow_up'][index % 5] as Deal['nextAction']['type'],
-      description: 'Follow up on property tour feedback',
-      dueDate: new Date(Date.now() + (index + 1) * 24 * 60 * 60 * 1000)
-    },
-    lastActivity: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
-    assignedAgent: agents[index % agents.length],
-    leadSource: sources[index % sources.length],
-    tags: ['First Time Buyer', 'Investment', 'Relocation'].slice(0, Math.floor(Math.random() * 3) + 1),
-    createdAt: new Date(Date.now() - (index + 1) * 7 * 24 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000)
-  }));
-};
+// Pipeline data now fetched from real API - no mock data needed
 
 const PIPELINE_STAGES = [
-  { id: 'lead', title: 'New Lead', color: 'bg-slate-500', bgColor: 'bg-slate-50' },
-  { id: 'qualified', title: 'Qualified', color: 'bg-blue-500', bgColor: 'bg-blue-50' },
-  { id: 'showing', title: 'Showing Scheduled', color: 'bg-purple-500', bgColor: 'bg-purple-50' },
-  { id: 'offer', title: 'Offer Made', color: 'bg-orange-500', bgColor: 'bg-orange-50' },
-  { id: 'contract', title: 'Under Contract', color: 'bg-green-500', bgColor: 'bg-green-50' },
-  { id: 'closed', title: 'Closed', color: 'bg-emerald-500', bgColor: 'bg-emerald-50' }
+  { id: 'lead', title: 'New Lead', color: 'bg-slate-500', bgColor: 'bg-slate-50', lightBg: 'bg-slate-50' },
+  { id: 'qualified', title: 'Qualified', color: 'bg-blue-500', bgColor: 'bg-blue-50', lightBg: 'bg-blue-50' },
+  { id: 'showing', title: 'Showing Scheduled', color: 'bg-purple-500', bgColor: 'bg-purple-50', lightBg: 'bg-purple-50' },
+  { id: 'offer', title: 'Offer Made', color: 'bg-orange-500', bgColor: 'bg-orange-50', lightBg: 'bg-orange-50' },
+  { id: 'contract', title: 'Under Contract', color: 'bg-green-500', bgColor: 'bg-green-50', lightBg: 'bg-green-50' },
+  { id: 'closed', title: 'Closed', color: 'bg-emerald-500', bgColor: 'bg-emerald-50', lightBg: 'bg-emerald-50' }
 ];
 
 // Sortable Deal Card Component
@@ -186,30 +153,46 @@ interface DealCardProps {
 }
 
 function DealCard({ deal, onDealClick }: DealCardProps) {
+  const [showExpanded, setShowExpanded] = useState(false);
+
   const getPriorityIcon = () => {
     switch (deal.priority) {
       case 'hot':
-        return <Flame className="h-4 w-4 text-red-500" />;
+        return <Flame className="h-3 w-3 text-red-500" />;
       case 'warm':
-        return <TrendingUp className="h-4 w-4 text-orange-500" />;
+        return <TrendingUp className="h-3 w-3 text-orange-500" />;
       case 'cold':
-        return <Snowflake className="h-4 w-4 text-blue-500" />;
+        return <Snowflake className="h-3 w-3 text-blue-500" />;
     }
   };
 
   const getPriorityColor = () => {
     switch (deal.priority) {
       case 'hot':
-        return 'border-l-red-500 bg-red-50/50';
+        return 'border-l-red-500 bg-gradient-to-r from-red-50/30 to-transparent';
       case 'warm':
-        return 'border-l-orange-500 bg-orange-50/50';
+        return 'border-l-orange-500 bg-gradient-to-r from-orange-50/30 to-transparent';
       case 'cold':
-        return 'border-l-blue-500 bg-blue-50/50';
+        return 'border-l-blue-500 bg-gradient-to-r from-blue-50/30 to-transparent';
     }
   };
 
-  const getNextActionIcon = () => {
-    switch (deal.nextAction.type) {
+  const getActionColor = (type: string) => {
+    switch (type) {
+      case 'call':
+        return 'bg-green-100 text-green-700';
+      case 'email':
+        return 'bg-purple-100 text-purple-700';
+      case 'meeting':
+      case 'showing':
+        return 'bg-blue-100 text-blue-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const getActionIcon = (type: string) => {
+    switch (type) {
       case 'call':
         return <Phone className="h-3 w-3" />;
       case 'email':
@@ -218,145 +201,126 @@ function DealCard({ deal, onDealClick }: DealCardProps) {
         return <User className="h-3 w-3" />;
       case 'showing':
         return <Eye className="h-3 w-3" />;
-      case 'follow_up':
+      default:
         return <ArrowRight className="h-3 w-3" />;
     }
   };
 
   const isOverdue = deal.nextAction.dueDate < new Date();
+  const formatValue = (value: number) => {
+    if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
+    return `$${value.toLocaleString()}`;
+  };
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
-      className={`mb-3 cursor-pointer`}
+      whileHover={{ scale: 1.01, transition: { duration: 0.15 } }}
+      className="mb-4 cursor-pointer"
     >
       <Card 
-        className={`border-l-4 ${getPriorityColor()} hover:shadow-lg transition-all duration-200`}
+        className={`border-l-4 ${getPriorityColor()} hover:shadow-lg transition-all duration-200 overflow-hidden`}
         onClick={() => onDealClick(deal)}
       >
         <CardContent className="p-4">
-          {/* Header */}
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={deal.clientAvatar} />
-                <AvatarFallback>{deal.clientName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-              </Avatar>
-              <div>
-                <h3 className="font-semibold text-sm">{deal.clientName}</h3>
-                <p className="text-xs text-muted-foreground">{deal.assignedAgent}</p>
+          {/* Primary Info - Always Visible */}
+          <div className="space-y-3">
+            {/* Header with Client Name & Value */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <Avatar className="h-8 w-8 flex-shrink-0">
+                  <AvatarImage src={deal.clientAvatar} />
+                  <AvatarFallback className="text-xs">{deal.clientName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-semibold text-sm truncate">{deal.clientName}</h3>
+                  <p className="text-xs text-muted-foreground truncate">{deal.propertyAddress}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {getPriorityIcon()}
+                <span className="text-lg font-bold text-green-600">{formatValue(deal.dealValue)}</span>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              {getPriorityIcon()}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                    <MoreHorizontal className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <Phone className="h-4 w-4 mr-2" />
-                    Call Client
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Mail className="h-4 w-4 mr-2" />
-                    Send Email
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Schedule Showing
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-red-600">
-                    <AlertTriangle className="h-4 w-4 mr-2" />
-                    Mark as Lost
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
 
-          {/* Property Details */}
-          <div className="mb-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Home className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">{deal.propertyAddress}</span>
+            {/* Stage Progress - Color-coded */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-muted-foreground">Stage Progress</span>
+                <span className="text-xs font-semibold">{deal.probability}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    deal.probability >= 80 ? 'bg-green-500' :
+                    deal.probability >= 60 ? 'bg-orange-500' :
+                    deal.probability >= 40 ? 'bg-yellow-500' : 'bg-red-500'
+                  }`}
+                  style={{ width: `${deal.probability}%` }}
+                />
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Building className="h-4 w-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">{deal.propertyType}</span>
-            </div>
-          </div>
 
-          {/* Deal Value */}
-          <div className="mb-3">
+            {/* Next Action - Color Coded */}
             <div className="flex items-center justify-between">
-              <span className="text-lg font-bold text-green-600">
-                ${deal.dealValue.toLocaleString()}
-              </span>
-              <Badge variant="outline" className="text-xs">
-                {deal.probability}% prob
-              </Badge>
+              <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${getActionColor(deal.nextAction.type)}`}>
+                {getActionIcon(deal.nextAction.type)}
+                <span>{deal.nextAction.type.replace('_', ' ')}</span>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">{deal.daysInStage}d in stage</p>
+                {isOverdue && (
+                  <p className="text-xs text-red-600 font-medium">Overdue!</p>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Progress Bar */}
-          <div className="mb-3">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-muted-foreground">Progress</span>
-              <span className="text-xs text-muted-foreground">{deal.probability}%</span>
-            </div>
-            <Progress value={deal.probability} className="h-2" />
-          </div>
+            {/* Expandable Footer */}
+            {showExpanded && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="border-t border-border/50 pt-3 space-y-2"
+              >
+                <div className="text-xs text-muted-foreground">
+                  <p><strong>Agent:</strong> {deal.assignedAgent}</p>
+                  <p><strong>Type:</strong> {deal.propertyType}</p>
+                  <p><strong>Next:</strong> {deal.nextAction.description}</p>
+                  <p><strong>Due:</strong> {deal.nextAction.dueDate.toLocaleDateString()}</p>
+                </div>
+                {deal.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {deal.tags.slice(0, 3).map((tag, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                    {deal.tags.length > 3 && (
+                      <Badge variant="secondary" className="text-xs">
+                        +{deal.tags.length - 3}
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </motion.div>
+            )}
 
-          {/* Days in Stage */}
-          <div className="mb-3">
-            <div className="flex items-center gap-2">
-              <Clock className="h-3 w-3 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">
-                {deal.daysInStage} days in stage
-              </span>
-            </div>
+            {/* Expand/Collapse Toggle */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full h-6 text-xs text-muted-foreground hover:text-foreground"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowExpanded(!showExpanded);
+              }}
+            >
+              {showExpanded ? 'Show Less' : 'Show More'}
+            </Button>
           </div>
-
-          {/* Next Action */}
-          <div className={`p-2 rounded border-l-2 ${isOverdue ? 'border-red-500 bg-red-50' : 'border-blue-500 bg-blue-50'}`}>
-            <div className="flex items-center gap-2 mb-1">
-              {getNextActionIcon()}
-              <span className={`text-xs font-medium ${isOverdue ? 'text-red-700' : 'text-blue-700'}`}>
-                {deal.nextAction.type.replace('_', ' ').toUpperCase()}
-              </span>
-              {isOverdue && <AlertTriangle className="h-3 w-3 text-red-500" />}
-            </div>
-            <p className="text-xs text-muted-foreground line-clamp-2">
-              {deal.nextAction.description}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Due: {deal.nextAction.dueDate.toLocaleDateString()}
-            </p>
-          </div>
-
-          {/* Tags */}
-          {deal.tags.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-1">
-              {deal.tags.slice(0, 2).map((tag, index) => (
-                <Badge key={index} variant="secondary" className="text-xs">
-                  {tag}
-                </Badge>
-              ))}
-              {deal.tags.length > 2 && (
-                <Badge variant="secondary" className="text-xs">
-                  +{deal.tags.length - 2}
-                </Badge>
-              )}
-            </div>
-          )}
         </CardContent>
       </Card>
     </motion.div>
@@ -381,28 +345,100 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
   );
 
   useEffect(() => {
-    const mockDeals = generateMockDeals();
-    setDeals(mockDeals);
-
-    // Group deals by stage
-    const stageData = PIPELINE_STAGES.map(stage => {
-      const stageDeals = mockDeals.filter(deal => deal.stage === stage.id);
-      const totalValue = stageDeals.reduce((sum, deal) => sum + deal.dealValue, 0);
-      const avgDays = stageDeals.length > 0 
-        ? stageDeals.reduce((sum, deal) => sum + deal.daysInStage, 0) / stageDeals.length 
-        : 0;
-
-      return {
-        ...stage,
-        deals: stageDeals,
-        dealCount: stageDeals.length,
-        totalValue,
-        avgDaysInStage: Math.round(avgDays),
-        conversionRate: Math.random() * 30 + 15 // Mock conversion rate
-      };
-    });
-
-    setStages(stageData);
+    const fetchPipelineData = async () => {
+      try {
+        // Fetch real pipeline data from API
+        const response = await fetch('/api/pipeline/stages');
+        if (!response.ok) throw new Error('Failed to fetch pipeline data');
+        
+        const { stages: apiStages } = await response.json();
+        
+        // Convert API data to component format
+        const realDeals: Deal[] = [];
+        const stageData: PipelineStage[] = [];
+        
+        apiStages.forEach((apiStage: any, index: number) => {
+          // Convert API leads to Deal format
+          const stageDeals: Deal[] = apiStage.leads.map((lead: any) => ({
+            id: lead.id,
+            title: lead.title || `${lead.contact?.name || 'Contact'} Deal`,
+            clientName: lead.contact?.name || 'Unknown Contact',
+            clientAvatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${lead.contact?.name || lead.id}`,
+            propertyAddress: lead.property?.address || 'No address specified',
+            propertyType: lead.property?.type || 'Single Family',
+            dealValue: lead.value || 0,
+            stage: apiStage.id,
+            daysInStage: Math.floor((Date.now() - new Date(lead.createdAt).getTime()) / (1000 * 60 * 60 * 24)),
+            probability: lead.probability || 50,
+            priority: lead.priority || 'warm',
+            nextAction: {
+              type: 'follow_up',
+              description: lead.notes || 'Follow up required',
+              dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+            },
+            lastActivity: new Date(lead.updatedAt),
+            assignedAgent: lead.assignedTo || 'Unassigned',
+            leadSource: lead.source || 'Unknown',
+            tags: lead.tags || [],
+            createdAt: new Date(lead.createdAt),
+            updatedAt: new Date(lead.updatedAt)
+          }));
+          
+          realDeals.push(...stageDeals);
+          
+          // Create stage data
+          const totalValue = stageDeals.reduce((sum, deal) => sum + deal.dealValue, 0);
+          const avgDays = stageDeals.length > 0 
+            ? stageDeals.reduce((sum, deal) => sum + deal.daysInStage, 0) / stageDeals.length 
+            : 0;
+          
+          stageData.push({
+            id: apiStage.id,
+            title: apiStage.name,
+            color: apiStage.color || PIPELINE_STAGES[index % PIPELINE_STAGES.length].color,
+            bgColor: `${apiStage.color || PIPELINE_STAGES[index % PIPELINE_STAGES.length].color.replace('bg-', 'bg-').replace('-500', '-50')}`,
+            deals: stageDeals,
+            dealCount: stageDeals.length,
+            totalValue,
+            avgDaysInStage: Math.round(avgDays),
+            conversionRate: 85 - (index * 15) // Rough conversion rate based on stage position
+          });
+        });
+        
+        // If no stages from API, use default empty stages
+        if (stageData.length === 0) {
+          const defaultStages = PIPELINE_STAGES.map(stage => ({
+            ...stage,
+            deals: [],
+            dealCount: 0,
+            totalValue: 0,
+            avgDaysInStage: 0,
+            conversionRate: 0
+          }));
+          setStages(defaultStages);
+        } else {
+          setStages(stageData);
+        }
+        
+        setDeals(realDeals);
+      } catch (error) {
+        console.error('Failed to fetch pipeline data:', error);
+        
+        // Fallback to empty pipeline stages
+        const fallbackStages = PIPELINE_STAGES.map(stage => ({
+          ...stage,
+          deals: [],
+          dealCount: 0,
+          totalValue: 0,
+          avgDaysInStage: 0,
+          conversionRate: 0
+        }));
+        setStages(fallbackStages);
+        setDeals([]);
+      }
+    };
+    
+    fetchPipelineData();
   }, []);
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -528,36 +564,62 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
               key={stage.id}
               className="flex-shrink-0 w-80"
             >
-              {/* Stage Header */}
-              <Card className={`mb-4 ${stage.bgColor} border-l-4 ${stage.color.replace('bg-', 'border-l-')}`}>
+              {/* Enhanced Stage Header */}
+              <Card className={`mb-4 ${stage.bgColor} border-l-4 ${stage.color.replace('bg-', 'border-l-')} shadow-sm`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg font-semibold">{stage.title}</CardTitle>
-                    <Badge variant="secondary">{stage.dealCount}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="font-semibold">{stage.dealCount}</Badge>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="h-7 w-7 p-0 opacity-70 hover:opacity-100"
+                        onClick={() => {/* Add deal to this stage */}}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Total Value</span>
-                      <span className="font-semibold text-green-600">
-                        ${stage.totalValue.toLocaleString()}
-                      </span>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground text-xs">Total Value</span>
+                        <span className="font-semibold text-green-600 text-sm">
+                          ${stage.totalValue >= 1000000 ? `${(stage.totalValue / 1000000).toFixed(1)}M` : 
+                            stage.totalValue >= 1000 ? `${(stage.totalValue / 1000).toFixed(0)}K` : 
+                            stage.totalValue.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground text-xs">Avg Days</span>
+                        <span className="font-medium text-xs">{stage.avgDaysInStage}d</span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Avg Days</span>
-                      <span className="font-medium">{stage.avgDaysInStage} days</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Conversion</span>
-                      <span className="font-medium">{stage.conversionRate.toFixed(1)}%</span>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground text-xs">Conversion</span>
+                        <span className="font-medium text-xs">{stage.conversionRate.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-1.5">
+                        <div 
+                          className={`h-1.5 rounded-full transition-all duration-300 ${stage.color}`}
+                          style={{ width: `${Math.min(stage.conversionRate, 100)}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
               </Card>
 
-              {/* Deals Container */}
+              {/* Enhanced Deals Container with Stage Background */}
               <SortableContext items={stage.deals.map(deal => deal.id)} strategy={verticalListSortingStrategy}>
                 <div
-                  className="min-h-[400px] p-2 rounded-lg border-2 border-dashed border-muted-foreground/20 hover:border-muted-foreground/40 transition-colors"
+                  className={`min-h-[500px] p-4 rounded-xl border-2 border-dashed transition-all duration-200 ${stage.bgColor}/20 ${
+                    stage.deals.length === 0 
+                      ? 'border-muted-foreground/30 hover:border-muted-foreground/50' 
+                      : 'border-transparent'
+                  }`}
                   id={stage.id}
                 >
                   <AnimatePresence>
@@ -570,11 +632,32 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
                     ))}
                   </AnimatePresence>
                   
+                  {/* Enhanced Empty State */}
                   {stage.deals.length === 0 && (
-                    <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
-                      <Target className="h-8 w-8 mb-2" />
-                      <p className="text-sm">No deals in this stage</p>
-                    </div>
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex flex-col items-center justify-center h-80 text-center space-y-4"
+                    >
+                      <div className={`w-16 h-16 rounded-full ${stage.bgColor} flex items-center justify-center border-2 border-dashed ${stage.color.replace('bg-', 'border-')}/50`}>
+                        <div className="w-8 h-8 rounded-full border-2 border-dashed border-muted-foreground/40 flex items-center justify-center">
+                          <Plus className="h-4 w-4 text-muted-foreground/60" />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">No deals in {stage.title}</p>
+                        <p className="text-xs text-muted-foreground/70">Drag deals here or add a new one</p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className={`border-dashed hover:${stage.bgColor} hover:border-solid transition-all duration-200`}
+                        onClick={() => {/* Create new deal in this stage */}}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Deal
+                      </Button>
+                    </motion.div>
                   )}
                 </div>
               </SortableContext>

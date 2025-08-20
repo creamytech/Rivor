@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/server/db';
-import { mixWithDemoData, demoLeads } from '@/lib/demo-data';
+// Removed demo data imports - now using real data only
 
 export const dynamic = 'force-dynamic';
 
@@ -113,20 +113,7 @@ export async function GET(_req: NextRequest) {
       }))
     }));
 
-    // Mix with demo data if enabled and stages are empty
-    if (stagesFormatted.every(stage => stage.leads.length === 0)) {
-      // Distribute demo leads across stages
-      const demoLeadsWithStages = demoLeads.map((lead, index) => ({
-        ...lead,
-        stage: stagesFormatted[index % Math.min(4, stagesFormatted.length)]?.id || stagesFormatted[0]?.id,
-        activities: []
-      }));
-
-      stagesFormatted.forEach(stage => {
-        const stageLeads = demoLeadsWithStages.filter(lead => lead.stage === stage.id);
-        stage.leads = mixWithDemoData(stage.leads, stageLeads);
-      });
-    }
+    // Note: No demo data mixing - showing real pipeline data only
 
     const response = {
       stages: stagesFormatted
