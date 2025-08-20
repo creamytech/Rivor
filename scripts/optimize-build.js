@@ -115,7 +115,7 @@ async function optimizeDatabase() {
     const dbPackagePath = path.join(PROJECT_ROOT, 'packages', 'db');
     
     console.log('  ✓ Generating optimized Prisma client...');
-    execSync('npm run prisma:generate', { 
+    execSync('npm run prisma:generate:prod', { 
       cwd: dbPackagePath,
       stdio: 'inherit'
     });

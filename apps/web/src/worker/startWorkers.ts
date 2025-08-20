@@ -33,12 +33,12 @@ export function startAllWorkers() {
 }
 
 // Auto-start workers when this module is imported
-if (typeof window === 'undefined') {
-  // Only start workers on the server side
+if (typeof window === 'undefined' && process.env.NEXT_PHASE !== 'phase-production-build') {
+  // Only start workers on the server side and not during build
   try {
     startAllWorkers();
   } catch (error) {
     // Silently handle errors during build time
-    console.warn('Workers not started (this is normal during build):', error instanceof Error ? error.message : String(error));
+    console.warn('Workers not started:', error instanceof Error ? error.message : String(error));
   }
 }

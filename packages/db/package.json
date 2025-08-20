@@ -8,6 +8,7 @@
         "build": "tsc -p tsconfig.json",
         "dev": "tsc -w -p tsconfig.json",
         "prisma:generate": "prisma generate",
+        "prisma:generate:prod": "prisma generate --no-engine",
         "prisma:push": "prisma db push",
         "prisma:migrate": "prisma migrate dev",
         "prisma:seed": "node seed.js",

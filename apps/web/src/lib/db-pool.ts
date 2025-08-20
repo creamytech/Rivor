@@ -8,28 +8,47 @@ interface GlobalForPrisma {
 const globalForPrisma = globalThis as unknown as GlobalForPrisma;
 
 // Create a single Prisma instance with optimized settings
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-  // Connection pool configuration for better performance
-  __internal: {
-    engine: {
-      // Optimize connection pooling
-      connectionString: process.env.DATABASE_URL,
-      connectionPoolTimeout: 20000, // 20 seconds
-      connectionPoolSize: 10, // Limit connections for Vercel
-      connectionTimeout: 30000, // 30 seconds
-    },
-  },
-});
+// Only initialize if not during build time
+let prismaInstance: PrismaClient | undefined;
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
-}
+export const prisma = (() => {
+  // Prevent initialization during build time
+  if (typeof window === 'undefined' && process.env.NEXT_PHASE === 'phase-production-build') {
+    // Return a mock during build to prevent errors
+    return new Proxy({}, {
+      get() {
+        throw new Error('Prisma client cannot be used during build time');
+      }
+    }) as PrismaClient;
+  }
+
+  if (!prismaInstance) {
+    prismaInstance = globalForPrisma.prisma ?? new PrismaClient({
+      log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL,
+        },
+      },
+      // Connection pool configuration for better performance
+      __internal: {
+        engine: {
+          // Optimize connection pooling
+          connectionString: process.env.DATABASE_URL,
+          connectionPoolTimeout: 20000, // 20 seconds
+          connectionPoolSize: 10, // Limit connections for Vercel
+          connectionTimeout: 30000, // 30 seconds
+        },
+      },
+    });
+
+    if (process.env.NODE_ENV !== 'production') {
+      globalForPrisma.prisma = prismaInstance;
+    }
+  }
+
+  return prismaInstance;
+})();
 
 // Optimized transaction helper with retries
 export async function withTransaction<T>(

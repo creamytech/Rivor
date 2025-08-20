@@ -8,6 +8,11 @@ export const maxDuration = 10; // Short duration for status checks
 
 export async function GET(req: NextRequest) {
   try {
+    // Skip during build time
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      return NextResponse.json({ error: 'Not available during build' }, { status: 503 });
+    }
+
     const session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
