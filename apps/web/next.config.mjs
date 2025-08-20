@@ -20,14 +20,14 @@ const nextConfig = {
   experimental: {
     externalDir: true,
     optimizeCss: true,
-    serverComponentsExternalPackages: [
-      'puppeteer',
-      '@google-cloud/kms', 
-      'bullmq',
-      'canvas',
-      'jsdom'
-    ],
   },
+  serverExternalPackages: [
+    'puppeteer',
+    '@google-cloud/kms', 
+    'bullmq',
+    'canvas',
+    'jsdom'
+  ],
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production'
   },

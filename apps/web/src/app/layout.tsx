@@ -3,7 +3,7 @@ import { Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
 // Import polyfills for server-side compatibility
-import "@/lib/polyfills";
+import "./polyfills.js";
 
 // Start all workers (only on server side)
 import "@/worker/startWorkers";

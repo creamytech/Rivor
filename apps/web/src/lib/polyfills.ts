@@ -1,9 +1,9 @@
 // Polyfills for server-side rendering compatibility
 
 // Check if we're in a server environment
-const isServer = typeof window === 'undefined';
+const isServerEnvironment = typeof window === 'undefined';
 
-if (isServer) {
+if (isServerEnvironment) {
   // Core browser globals
   if (typeof globalThis !== 'undefined') {
     // Define on globalThis for better compatibility
@@ -107,9 +107,9 @@ if (isServer) {
   g.sessionStorage = g.localStorage;
 }
 
-// Export for explicit imports if needed
-export const isServer = typeof window === 'undefined';
-export const isBrowser = typeof window !== 'undefined';
+// Export for explicit imports if needed  
+export const isServer = isServerEnvironment;
+export const isBrowser = !isServerEnvironment;
 
 // Safe access to browser APIs
 export const safeWindow = typeof window !== 'undefined' ? window : undefined;

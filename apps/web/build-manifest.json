@@ -1,0 +1,15 @@
+{
+  "buildTime": "2025-08-20T21:23:36.811Z",
+  "optimizations": {
+    "dynamicImports": true,
+    "codesplitting": true,
+    "bundleOptimization": true,
+    "databasePooling": true,
+    "assetOptimization": true
+  },
+  "performance": {
+    "expectedBuildTime": "< 3 minutes",
+    "expectedColdStart": "< 2 seconds",
+    "bundleSizeTarget": "< 1MB initial"
+  }
+}
