@@ -535,6 +535,23 @@ model DocumentFolder {
   @@index([isArchived])
 }
 
+model Waitlist {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  firstName String?
+  role      String?  // 'agent', 'broker', 'team', 'other'
+  note      String?
+  consent   Boolean  @default(true)
+  source    String   @default("marketing")
+  ip        String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([source])
+  @@index([role])
+}
+
 
 enum ConnectionStatus {
   connected

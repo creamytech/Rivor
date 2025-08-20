@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import fs from 'fs/promises';
-import path from 'path';
+import { prisma } from '@/server/db';
+import { logger } from '@/lib/logger';
 
 // Rate limiting - simple in-memory store (in production, use Redis)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
@@ -18,43 +18,6 @@ const waitlistSchema = z.object({
   source: z.string().default('marketing'),
 });
 
-interface WaitlistEntry {
-  id: string;
-  email: string;
-  firstName?: string;
-  role?: string;
-  note?: string;
-  consent: boolean;
-  source: string;
-  createdAt: string;
-  ip?: string;
-}
-
-// Simple file-based storage (replace with database in production)
-const WAITLIST_FILE = path.join(process.cwd(), 'data', 'waitlist.json');
-
-async function ensureDataDirectory() {
-  const dataDir = path.dirname(WAITLIST_FILE);
-  try {
-    await fs.mkdir(dataDir, { recursive: true });
-  } catch (error) {
-    // Directory might already exist
-  }
-}
-
-async function readWaitlist(): Promise<WaitlistEntry[]> {
-  try {
-    const data = await fs.readFile(WAITLIST_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    return [];
-  }
-}
-
-async function writeWaitlist(entries: WaitlistEntry[]): Promise<void> {
-  await ensureDataDirectory();
-  await fs.writeFile(WAITLIST_FILE, JSON.stringify(entries, null, 2));
-}
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
@@ -109,11 +72,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Read existing entries
-    const entries = await readWaitlist();
-    
     // Check if email already exists
-    const existingEntry = entries.find(entry => entry.email.toLowerCase() === validatedData.email.toLowerCase());
+    const existingEntry = await prisma.waitlist.findUnique({
+      where: { email: validatedData.email.toLowerCase() }
+    });
+    
     if (existingEntry) {
       return NextResponse.json(
         { error: 'This email is already on our waitlist.' },
@@ -121,25 +84,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create new entry
-    const newEntry: WaitlistEntry = {
-      id: crypto.randomUUID(),
-      email: validatedData.email.toLowerCase(),
-      firstName: validatedData.firstName,
-      role: validatedData.role,
-      note: validatedData.note,
-      consent: validatedData.consent,
-      source: validatedData.source,
-      createdAt: new Date().toISOString(),
-      ip: ip !== 'unknown' ? ip : undefined,
-    };
+    // Create new entry in database
+    const newEntry = await prisma.waitlist.create({
+      data: {
+        email: validatedData.email.toLowerCase(),
+        firstName: validatedData.firstName,
+        role: validatedData.role,
+        note: validatedData.note,
+        consent: validatedData.consent,
+        source: validatedData.source,
+        ip: ip !== 'unknown' ? ip : undefined,
+      }
+    });
 
-    // Add to entries and save
-    entries.push(newEntry);
-    await writeWaitlist(entries);
-
-    // Log for analytics (in production, send to analytics service)
-    console.log(`New waitlist signup: ${newEntry.email} (${newEntry.role || 'no role'}) from ${newEntry.source}`);
+    // Log for analytics
+    logger.info('New waitlist signup', {
+      email: newEntry.email,
+      role: newEntry.role || 'no role',
+      source: newEntry.source,
+      ip: newEntry.ip
+    });
 
     return NextResponse.json({ ok: true, id: newEntry.id });
 
@@ -162,26 +126,43 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const entries = await readWaitlist();
+    // Get total count
+    const total = await prisma.waitlist.count();
+    
+    // Get recent signups (last 7 days)
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const recent = await prisma.waitlist.count({
+      where: {
+        createdAt: {
+          gte: weekAgo
+        }
+      }
+    });
+    
+    // Get role distribution
+    const roleData = await prisma.waitlist.groupBy({
+      by: ['role'],
+      _count: {
+        role: true
+      }
+    });
+    
+    const byRole = roleData.reduce((acc, item) => {
+      const role = item.role || 'not_specified';
+      acc[role] = item._count.role;
+      return acc;
+    }, {} as Record<string, number>);
     
     // Return anonymized stats only
     const stats = {
-      total: entries.length,
-      recent: entries.filter(entry => {
-        const entryDate = new Date(entry.createdAt);
-        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        return entryDate > weekAgo;
-      }).length,
-      byRole: entries.reduce((acc, entry) => {
-        const role = entry.role || 'not_specified';
-        acc[role] = (acc[role] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>),
+      total,
+      recent,
+      byRole,
     };
 
     return NextResponse.json(stats);
   } catch (error) {
-    console.error('Waitlist stats error:', error);
+    logger.error('Waitlist stats error', { error });
     return NextResponse.json(
       { error: 'Unable to fetch stats' },
       { status: 500 }
