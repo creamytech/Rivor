@@ -7,14 +7,22 @@ interface GlobalForPrisma {
 
 const globalForPrisma = globalThis as unknown as GlobalForPrisma;
 
-// Create a single Prisma instance with optimized settings
-// Only initialize if not during build time
-let prismaInstance: PrismaClient | undefined;
+// Create Prisma client instance with safe initialization
+function createPrismaClient(): PrismaClient {
+  return new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
+  });
+}
 
+// Export the Prisma client with lazy initialization
 export const prisma = (() => {
-  // Prevent initialization during build time
-  if (typeof window === 'undefined' && process.env.NEXT_PHASE === 'phase-production-build') {
-    // Return a mock during build to prevent errors
+  // Skip initialization during build time
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
     return new Proxy({}, {
       get() {
         throw new Error('Prisma client cannot be used during build time');
@@ -22,32 +30,16 @@ export const prisma = (() => {
     }) as PrismaClient;
   }
 
-  if (!prismaInstance) {
-    prismaInstance = globalForPrisma.prisma ?? new PrismaClient({
-      log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL,
-        },
-      },
-      // Connection pool configuration for better performance
-      __internal: {
-        engine: {
-          // Optimize connection pooling
-          connectionString: process.env.DATABASE_URL,
-          connectionPoolTimeout: 20000, // 20 seconds
-          connectionPoolSize: 10, // Limit connections for Vercel
-          connectionTimeout: 30000, // 30 seconds
-        },
-      },
-    });
-
-    if (process.env.NODE_ENV !== 'production') {
-      globalForPrisma.prisma = prismaInstance;
+  // Use global instance in development to prevent hot-reload issues
+  if (process.env.NODE_ENV !== 'production') {
+    if (!globalForPrisma.prisma) {
+      globalForPrisma.prisma = createPrismaClient();
     }
+    return globalForPrisma.prisma;
   }
 
-  return prismaInstance;
+  // Create new instance in production
+  return createPrismaClient();
 })();
 
 // Optimized transaction helper with retries
@@ -62,7 +54,6 @@ export async function withTransaction<T>(
       return await prisma.$transaction(callback, {
         maxWait: 10000, // 10 seconds
         timeout: 30000, // 30 seconds
-        isolationLevel: 'ReadCommitted', // Better for high concurrency
       });
     } catch (error) {
       lastError = error;
@@ -84,33 +75,6 @@ export async function withTransaction<T>(
   }
   
   throw lastError;
-}
-
-// Optimized bulk operations
-export async function bulkUpsert<T extends Record<string, any>>(
-  model: any,
-  data: T[],
-  uniqueKey: keyof T,
-  batchSize = 100
-): Promise<void> {
-  // Process in batches to avoid memory issues
-  for (let i = 0; i < data.length; i += batchSize) {
-    const batch = data.slice(i, i + batchSize);
-    
-    await prisma.$transaction(
-      batch.map(item => 
-        model.upsert({
-          where: { [uniqueKey]: item[uniqueKey] },
-          update: item,
-          create: item,
-        })
-      ),
-      {
-        maxWait: 10000,
-        timeout: 60000, // Longer timeout for bulk operations
-      }
-    );
-  }
 }
 
 // Connection health check
@@ -140,5 +104,9 @@ export async function checkDatabaseHealth(): Promise<{
 
 // Cleanup function for graceful shutdowns
 export async function cleanup(): Promise<void> {
-  await prisma.$disconnect();
+  try {
+    await prisma.$disconnect();
+  } catch (error) {
+    console.warn('Error disconnecting Prisma client:', error);
+  }
 }
