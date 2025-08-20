@@ -1,8 +1,8 @@
 {
   "version": 2,
   "framework": "nextjs",
-  "installCommand": "npm ci --legacy-peer-deps --prefer-offline && npm --prefix ../../packages/db ci && npm --prefix ../../packages/db run prisma:generate",
-  "buildCommand": "npm run db:migrate:deploy && npm run build",
+  "installCommand": "npm ci --legacy-peer-deps --prefer-offline && npm --prefix ../../packages/db ci",
+  "buildCommand": "npm run build",
   "build": {
     "env": {
       "NPM_CONFIG_CACHE": ".npm",
