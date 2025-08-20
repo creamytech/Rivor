@@ -342,7 +342,7 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
           backdrop-blur-sm
         `}
         style={{
-          backgroundColor: `color-mix(in oklab, ${currentTheme.colors.background} 98%, transparent)`,
+          backgroundColor: currentTheme.colors.surfaceAlt,
           borderRight: `1px solid ${currentTheme.colors.border}`,
           backdropFilter: 'blur(8px)'
         }}

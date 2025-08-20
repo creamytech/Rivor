@@ -7,6 +7,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { ThemeId } from '@/types/theme';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { getThemeHealth } from '@/lib/theme-tokens';
 
 interface ThemeSwitcherProps {
   showInNavigation?: boolean;
@@ -67,6 +68,7 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({
     const theme = themes[id];
     const isActive = themeId === id;
     const isPreview = hoverPreview === id;
+    const themeHealth = getThemeHealth(theme);
 
     // Get theme-specific personality effects
     const getThemeEffects = () => {
@@ -319,38 +321,36 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({
           </div>
         </div>
 
-        {/* Accessibility Indicator */}
-        {theme.accessibility && (
-          <div className="mt-2 pt-2 border-t border-current/10">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                {theme.accessibility.wcagLevel === 'AAA' && (
-                  <>
-                    <CheckCircle className="h-3 w-3 text-green-500" />
-                    <span className="text-[10px] text-green-600">AAA</span>
-                  </>
-                )}
-                {theme.accessibility.wcagLevel === 'AA' && (
-                  <>
-                    <Shield className="h-3 w-3 text-blue-500" />
-                    <span className="text-[10px] text-blue-600">AA</span>
-                  </>
-                )}
-                {theme.accessibility.wcagLevel === 'Fail' && (
-                  <>
-                    <AlertTriangle className="h-3 w-3 text-amber-500" />
-                    <span className="text-[10px] text-amber-600">Needs Fix</span>
-                  </>
-                )}
-              </div>
-              {theme.accessibility.needsOverlay && (
-                <div className="text-[9px] opacity-60" title="Auto-enhanced for better contrast">
-                  Enhanced
-                </div>
+        {/* Theme Health Indicator */}
+        <div className="mt-2 pt-2 border-t border-current/10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              {themeHealth.status === 'healthy' && (
+                <>
+                  <CheckCircle className="h-3 w-3 text-green-500" />
+                  <span className="text-[10px] text-green-600">{themeHealth.wcagLevel}</span>
+                </>
+              )}
+              {themeHealth.status === 'warning' && (
+                <>
+                  <Shield className="h-3 w-3 text-blue-500" />
+                  <span className="text-[10px] text-blue-600">{themeHealth.wcagLevel}</span>
+                </>
+              )}
+              {themeHealth.status === 'error' && (
+                <>
+                  <AlertTriangle className="h-3 w-3 text-amber-500" />
+                  <span className="text-[10px] text-amber-600">Issues</span>
+                </>
               )}
             </div>
+            {themeHealth.issues.length > 0 && (
+              <div className="text-[9px] opacity-60" title={themeHealth.issues.join('; ')}>
+                {themeHealth.issues.length} issue{themeHealth.issues.length !== 1 ? 's' : ''}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </motion.div>
     );
   };

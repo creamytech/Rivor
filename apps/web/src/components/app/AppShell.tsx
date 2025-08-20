@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useTheme } from "@/contexts/ThemeContext";
 import EnhancedSidebar from "./EnhancedSidebar";
 import MobileNavigation from "./MobileNavigation";
 import ChatAgent from "./ChatAgent";
@@ -31,6 +32,7 @@ type AppShellProps = {
 };
 
 export default function AppShell({ children, rightDrawer }: AppShellProps) {
+  const { currentTheme } = useTheme();
   const [showDrawer, setShowDrawer] = useState(Boolean(rightDrawer));
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -103,7 +105,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       
         {/* Main Content Area */}
         <div className="grid grid-rows-[56px_1fr]">
-          <header className="sticky top-0 z-50 h-16 border-b border-border/50 bg-gradient-to-r from-background/95 via-background/90 to-background/95 backdrop-blur-xl shadow-sm flex items-center">
+          <header className="sticky top-0 z-50 h-16 border-b border-border/50 backdrop-blur-xl shadow-sm flex items-center" style={{ background: `linear-gradient(to right, ${currentTheme.colors.surfaceAlt}, ${currentTheme.colors.surfaceAlt})` }}>
             <div className="px-4 md:px-6 w-full flex items-center gap-4">
               {/* Mobile Logo (hidden on desktop) */}
               <div className="md:hidden">
@@ -132,7 +134,11 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                     type="text"
                     placeholder="Search properties, leads, contacts..."
                     aria-label="Search"
-                    className="w-full pl-12 pr-12 py-3 text-sm bg-background/50 border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 focus:bg-background transition-all cursor-pointer hover:border-border shadow-sm"
+                    className="w-full pl-12 pr-12 py-3 text-sm border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all cursor-pointer hover:border-border shadow-sm"
+                    style={{ 
+                      backgroundColor: currentTheme.colors.surface,
+                      color: currentTheme.colors.textOnSurface 
+                    }}
                     onClick={() => setShowQuickActions(true)}
                     readOnly
                   />

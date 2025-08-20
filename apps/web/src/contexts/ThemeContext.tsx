@@ -40,6 +40,12 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       root.style.setProperty(`--theme-${key}`, value);
     });
 
+    // Apply surface-specific text colors to ensure proper contrast
+    root.style.setProperty('--surface-alt-bg', theme.colors.surfaceAlt);
+    root.style.setProperty('--surface-alt-text', theme.colors.textOnSurfaceAlt);
+    root.style.setProperty('--surface-bg', theme.colors.surface);
+    root.style.setProperty('--surface-text', theme.colors.textOnSurface);
+
     // Apply theme-specific patterns and animations
     if (theme.patterns?.subtle) {
       root.style.setProperty('--theme-pattern-subtle', `url("${theme.patterns.subtle}")`);

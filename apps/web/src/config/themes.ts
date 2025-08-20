@@ -1,11 +1,13 @@
 import { Theme, ThemeId } from '@/types/theme';
 import { getAccessibleThemes } from '@/lib/theme-accessibility';
+import { generateCompleteTheme } from '@/lib/theme-tokens';
+import { applyReadabilityToThemeGradients } from '@/lib/gradient-readability';
 
 export const themes: Record<ThemeId, Theme> = {
   mississippi: {
     id: 'mississippi',
     name: 'Mississippi',
-    description: 'Luxury riverboat elegance with deep navy and rich gold',
+    description: 'Luxury dark theme with gold accents',
     personality: 'Sophisticated riverboat luxury - opulent gold details on midnight navy',
     colors: {
       // Primary brand colors - Rich gold/amber luxury
@@ -27,6 +29,7 @@ export const themes: Record<ThemeId, Theme> = {
       surface: 'rgba(30, 41, 59, 0.92)', // Rich dark surface with transparency
       surfaceHover: 'rgba(51, 65, 85, 0.95)', // Elegant hover
       surfaceActive: 'rgba(71, 85, 105, 0.98)', // Luxurious active state
+      surfaceAlt: 'rgba(20, 31, 49, 0.95)', // Sidebar/topbar - darker luxury
       
       // Border colors - Subtle gold elegance
       border: 'rgba(212, 175, 55, 0.15)', // Delicate gold borders
@@ -38,6 +41,8 @@ export const themes: Record<ThemeId, Theme> = {
       textSecondary: '#E2E8F0', // Soft white
       textMuted: '#CBD5E1', // Muted elegance
       textInverse: '#0A0F1C', // Deep navy for light backgrounds
+      textOnSurface: '#F8FAFC', // White text on surface
+      textOnSurfaceAlt: '#F8FAFC', // White text on sidebar/topbar
       
       // Accent colors - Riverboat luxury
       accent: '#FBBF24', // Bright gold accent
@@ -52,7 +57,7 @@ export const themes: Record<ThemeId, Theme> = {
       
       // Special elements - Premium depth
       shadow: 'rgba(0, 0, 0, 0.5)', // Deep shadows
-      gradient: 'linear-gradient(135deg, #D4AF37 0%, #CD853F 50%, #B8941F 100%)',
+      gradient: 'linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, transparent 50%, rgba(0, 0, 0, 0.4) 100%), linear-gradient(135deg, #D4AF37 0%, #CD853F 50%, #B8941F 100%)',
       glassBg: 'rgba(10, 15, 28, 0.85)', // Rich glass effect
       glassBlur: 'blur(24px)', // Enhanced blur
     },
@@ -69,7 +74,7 @@ export const themes: Record<ThemeId, Theme> = {
   amazon: {
     id: 'amazon',
     name: 'Amazon',
-    description: 'Tropical rainforest with lush greens and natural textures',
+    description: 'Natural green theme with organic feel',
     personality: 'Living, breathing nature - vibrant forest canopy with organic flow',
     colors: {
       // Primary brand colors - Vibrant emerald life
@@ -91,6 +96,7 @@ export const themes: Record<ThemeId, Theme> = {
       surface: 'rgba(20, 39, 23, 0.88)', // Natural surface
       surfaceHover: 'rgba(34, 84, 61, 0.92)', // Organic hover
       surfaceActive: 'rgba(45, 90, 61, 0.95)', // Living active state
+      surfaceAlt: 'rgba(15, 29, 18, 0.92)', // Sidebar/topbar - deeper forest
       
       // Border colors - Organic growth patterns
       border: 'rgba(16, 185, 129, 0.18)', // Living borders
@@ -102,6 +108,8 @@ export const themes: Record<ThemeId, Theme> = {
       textSecondary: '#DCFCE7', // Soft green white
       textMuted: '#BBF7D0', // Muted green
       textInverse: '#0D1B0F', // Deep forest
+      textOnSurface: '#F0FDF4', // Fresh white on surface
+      textOnSurfaceAlt: '#F0FDF4', // Fresh white on sidebar/topbar
       
       // Accent colors - Tropical vibrancy
       accent: '#06D6A0', // Tropical mint
@@ -116,7 +124,7 @@ export const themes: Record<ThemeId, Theme> = {
       
       // Special elements - Organic depth
       shadow: 'rgba(0, 0, 0, 0.4)', // Forest shadows
-      gradient: 'linear-gradient(135deg, #10B981 0%, #059669 35%, #0891B2 100%)',
+      gradient: 'linear-gradient(135deg, rgba(0, 0, 0, 0.3) 0%, transparent 50%, rgba(0, 0, 0, 0.3) 100%), linear-gradient(135deg, #10B981 0%, #059669 35%, #0891B2 100%)',
       glassBg: 'rgba(13, 27, 15, 0.82)', // Natural glass
       glassBlur: 'blur(20px)', // Organic blur
     },
@@ -133,7 +141,7 @@ export const themes: Record<ThemeId, Theme> = {
   thames: {
     id: 'thames',
     name: 'Thames',
-    description: 'London fog elegance with misty greys and crystalline silver',
+    description: 'Clean light theme with sophisticated greys',
     personality: 'Sophisticated fog - refined British elegance with crisp precision',
     colors: {
       // Primary brand colors - Refined silver and platinum
@@ -155,6 +163,7 @@ export const themes: Record<ThemeId, Theme> = {
       surface: 'rgba(255, 255, 255, 0.95)', // Crystal surfaces
       surfaceHover: 'rgba(248, 250, 252, 0.98)', // Refined hover
       surfaceActive: 'rgba(241, 245, 249, 0.98)', // Elegant active
+      surfaceAlt: 'rgba(241, 245, 249, 0.98)', // Sidebar/topbar - soft fog
       
       // Border colors - Sophisticated definition
       border: 'rgba(100, 116, 139, 0.12)', // Subtle definition
@@ -166,6 +175,8 @@ export const themes: Record<ThemeId, Theme> = {
       textSecondary: '#334155', // Medium charcoal
       textMuted: '#64748B', // Sophisticated grey
       textInverse: '#F8FAFC', // Pure white
+      textOnSurface: '#0F172A', // Dark text on light surface
+      textOnSurfaceAlt: '#0F172A', // Dark text on sidebar/topbar
       
       // Accent colors - London sophistication
       accent: '#0EA5E9', // Thames blue
@@ -180,7 +191,7 @@ export const themes: Record<ThemeId, Theme> = {
       
       // Special elements - Misty effects
       shadow: 'rgba(15, 23, 42, 0.08)', // Soft shadows
-      gradient: 'linear-gradient(135deg, #64748B 0%, #94A3B8 50%, #0EA5E9 100%)',
+      gradient: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 50%, rgba(255, 255, 255, 0.2) 100%), linear-gradient(135deg, #64748B 0%, #94A3B8 50%, #0EA5E9 100%)',
       glassBg: 'rgba(248, 250, 252, 0.92)', // Crystal glass
       glassBlur: 'blur(32px)', // Sophisticated blur
     },
@@ -197,7 +208,7 @@ export const themes: Record<ThemeId, Theme> = {
   colorado: {
     id: 'colorado',
     name: 'Colorado',
-    description: 'Alpine fresh with crystalline blues and snow-white purity',
+    description: 'Fresh light theme with crisp blues',
     personality: 'Crisp mountain air - energizing freshness with crystal clarity',
     colors: {
       // Primary brand colors - Crystal blue mountains
@@ -219,6 +230,7 @@ export const themes: Record<ThemeId, Theme> = {
       surface: 'rgba(255, 255, 255, 0.98)', // Crystal surfaces
       surfaceHover: 'rgba(240, 249, 255, 0.98)', // Ice hover
       surfaceActive: 'rgba(224, 242, 254, 0.98)', // Active frost
+      surfaceAlt: 'rgba(240, 249, 255, 0.98)', // Sidebar/topbar - ice crystal
       
       // Border colors - Fresh definition
       border: 'rgba(14, 165, 233, 0.08)', // Gentle definition
@@ -230,6 +242,8 @@ export const themes: Record<ThemeId, Theme> = {
       textSecondary: '#334155', // Stone grey
       textMuted: '#64748B', // Mountain mist
       textInverse: '#FFFFFF', // Pure white
+      textOnSurface: '#0F172A', // Dark text on light surface
+      textOnSurfaceAlt: '#0F172A', // Dark text on sidebar/topbar
       
       // Accent colors - Alpine energy
       accent: '#06D6A0', // Electric mint
@@ -244,7 +258,7 @@ export const themes: Record<ThemeId, Theme> = {
       
       // Special elements - Crystal effects
       shadow: 'rgba(14, 165, 233, 0.08)', // Soft blue shadows
-      gradient: 'linear-gradient(135deg, #0EA5E9 0%, #06D6A0 50%, #22C55E 100%)',
+      gradient: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 50%, rgba(255, 255, 255, 0.2) 100%), linear-gradient(135deg, #0EA5E9 0%, #06D6A0 50%, #22C55E 100%)',
       glassBg: 'rgba(255, 255, 255, 0.95)', // Crystal glass
       glassBlur: 'blur(20px)', // Fresh blur
     },
@@ -261,7 +275,7 @@ export const themes: Record<ThemeId, Theme> = {
   nile: {
     id: 'nile',
     name: 'Nile',
-    description: 'Desert sunset with warm sand and ancient luxurious bronze',
+    description: 'Warm theme with desert sunset colors',
     personality: 'Ancient luxury - warm desert sunset with terracotta and bronze elegance',
     colors: {
       // Primary brand colors - Rich terracotta and gold
@@ -283,6 +297,7 @@ export const themes: Record<ThemeId, Theme> = {
       surface: 'rgba(41, 31, 20, 0.92)', // Ancient surface
       surfaceHover: 'rgba(68, 51, 35, 0.95)', // Warmed stone
       surfaceActive: 'rgba(92, 69, 47, 0.98)', // Active bronze
+      surfaceAlt: 'rgba(35, 26, 17, 0.95)', // Sidebar/topbar - deeper sand
       
       // Border colors - Luxurious bronze definition
       border: 'rgba(205, 127, 50, 0.18)', // Bronze borders
@@ -294,6 +309,8 @@ export const themes: Record<ThemeId, Theme> = {
       textSecondary: '#FAE8D4', // Soft sand
       textMuted: '#D6BC9A', // Muted sand
       textInverse: '#1A1512', // Deep desert
+      textOnSurface: '#FEF3E2', // Warm white on surface
+      textOnSurfaceAlt: '#FEF3E2', // Warm white on sidebar/topbar
       
       // Accent colors - Sunset luxury
       accent: '#DAA520', // Goldenrod sunset
@@ -308,7 +325,7 @@ export const themes: Record<ThemeId, Theme> = {
       
       // Special elements - Ancient luxury
       shadow: 'rgba(0, 0, 0, 0.45)', // Deep desert shadows
-      gradient: 'linear-gradient(135deg, #CD7F32 0%, #D2691E 40%, #DAA520 100%)',
+      gradient: 'linear-gradient(135deg, rgba(0, 0, 0, 0.3) 0%, transparent 50%, rgba(0, 0, 0, 0.3) 100%), linear-gradient(135deg, #CD7F32 0%, #D2691E 40%, #DAA520 100%)',
       glassBg: 'rgba(26, 21, 18, 0.85)', // Desert glass
       glassBlur: 'blur(28px)', // Ancient blur
     },

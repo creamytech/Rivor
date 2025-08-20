@@ -23,6 +23,7 @@ export interface Theme {
     surface: string;
     surfaceHover: string;
     surfaceActive: string;
+    surfaceAlt: string; // For sidebar/topbar
     
     // Border colors
     border: string;
@@ -34,6 +35,8 @@ export interface Theme {
     textSecondary: string;
     textMuted: string;
     textInverse: string;
+    textOnSurface: string; // Auto-derived for surface contrast
+    textOnSurfaceAlt: string; // Auto-derived for surfaceAlt contrast
     
     // Accent colors for highlights
     accent: string;
