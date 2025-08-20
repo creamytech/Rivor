@@ -3,14 +3,12 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-
-// Import dashboard cards
-import TodayAtAGlance from './TodayAtAGlance';
-import CompactSyncProgress from './CompactSyncProgress';
-import LeadFeed from './LeadFeed';
-import ActivityFeed from './ActivityFeed';
-import HealthWidget from './HealthWidget';
-import MiniPipelineSparkline from './MiniPipelineSparkline';
+import BusinessKPIsPanel from './BusinessKPIsPanel';
+import TodaysFocusPanel from './TodaysFocusPanel';
+import PipelineOverviewPanel from './PipelineOverviewPanel';
+import ActivityFeedPanel from './ActivityFeedPanel';
+import SystemHealthStrip from './SystemHealthStrip';
+import QuickActionsWidget from './QuickActionsWidget';
 
 interface DashboardLayoutProps {
   className?: string;
@@ -20,116 +18,116 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate initial loading
-    const timer = setTimeout(() => setIsLoading(false), 500);
+    const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
 
   if (isLoading) {
     return (
-      <div className={cn("space-y-6", className)}>
-        {/* Loading skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-32 bg-muted/50 rounded-lg animate-pulse"
-            />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-64 bg-muted/50 rounded-lg animate-pulse"
-            />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-96 bg-muted/50 rounded-lg animate-pulse"
-            />
-          ))}
-        </div>
+      <div className={cn("space-y-8 p-6", className)}>
+        {/* Loading skeleton with story-driven layout */}
+        <div className="h-32 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 to-slate-900 rounded-2xl animate-pulse" />
+        <div className="h-40 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 to-slate-900 rounded-2xl animate-pulse" />
+        <div className="h-64 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-slate-800 to-slate-900 rounded-2xl animate-pulse" />
+        <div className="h-80 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-slate-800 to-slate-900 rounded-2xl animate-pulse" />
+        <div className="h-16 bg-gradient-to-r from-orange-50 to-red-50 dark:from-slate-800 to-slate-900 rounded-xl animate-pulse" />
       </div>
     );
   }
 
   return (
-    <div className={cn("space-y-6", className)}>
-      {/* Top Row - Today at a Glance (Full Width) */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="w-full"
-      >
-        <div className="bg-card border border-border rounded-lg shadow-sm">
-          <TodayAtAGlance />
-        </div>
-      </motion.div>
-
-      {/* Second Row - Three Equal Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
-        >
-          <div className="h-64 p-4">
-            <CompactSyncProgress />
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
-        >
-          <div className="h-64 p-4">
-            <HealthWidget />
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
-        >
-          <div className="h-64 p-4">
-            <MiniPipelineSparkline />
-          </div>
-        </motion.div>
+    <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      {/* Quick Actions Sidebar */}
+      <div className="fixed right-6 top-1/2 transform -translate-y-1/2 z-20">
+        <QuickActionsWidget />
       </div>
 
-      {/* Third Row - Two Large Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
+      {/* Main Story Flow */}
+      <div className={cn("space-y-8 p-6 max-w-7xl mx-auto pr-24", className)}>
+        {/* Chapter 1: Business Performance Overview */}
+        <motion.section
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
+          transition={{ delay: 0.1, duration: 0.6 }}
+          className="relative"
         >
-          <div className="h-96 p-4">
-            <LeadFeed />
-          </div>
-        </motion.div>
+          <div className="absolute -left-4 top-0 w-1 h-full bg-gradient-to-b from-blue-500 to-teal-500 rounded-full" />
+          <BusinessKPIsPanel />
+        </motion.section>
 
+        {/* Flow Divider */}
         <motion.div
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ delay: 0.3, duration: 0.8 }}
+          className="h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent dark:via-slate-600"
+        />
+
+        {/* Chapter 2: Today's Priorities */}
+        <motion.section
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+          className="relative"
+        >
+          <div className="absolute -left-4 top-0 w-1 h-full bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full" />
+          <TodaysFocusPanel />
+        </motion.section>
+
+        {/* Flow Divider */}
+        <motion.div
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ delay: 0.6, duration: 0.8 }}
+          className="h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent dark:via-slate-600"
+        />
+
+        {/* Chapter 3: Pipeline Insights */}
+        <motion.section
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7, duration: 0.6 }}
+          className="relative"
+        >
+          <div className="absolute -left-4 top-0 w-1 h-full bg-gradient-to-b from-purple-500 to-pink-500 rounded-full" />
+          <PipelineOverviewPanel />
+        </motion.section>
+
+        {/* Flow Divider */}
+        <motion.div
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ delay: 0.9, duration: 0.8 }}
+          className="h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent dark:via-slate-600"
+        />
+
+        {/* Chapter 4: Live Activity Stream */}
+        <motion.section
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.0, duration: 0.6 }}
+          className="relative"
+        >
+          <div className="absolute -left-4 top-0 w-1 h-full bg-gradient-to-b from-orange-500 to-red-500 rounded-full" />
+          <ActivityFeedPanel />
+        </motion.section>
+
+        {/* Flow Divider */}
+        <motion.div
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ delay: 1.2, duration: 0.8 }}
+          className="h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent dark:via-slate-600"
+        />
+
+        {/* Chapter 5: System Health Footer */}
+        <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
+          transition={{ delay: 1.3, duration: 0.6 }}
         >
-          <div className="h-96 p-4">
-            <ActivityFeed />
-          </div>
-        </motion.div>
+          <SystemHealthStrip />
+        </motion.section>
       </div>
     </div>
   );

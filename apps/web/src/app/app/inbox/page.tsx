@@ -32,6 +32,8 @@ export default function InboxPage() {
   const [activeTab, setActiveTab] = useState("leads");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [summary, setSummary] = useState("");
   const [quickFilters, setQuickFilters] = useState([
     { label: "Unread", count: 24, active: false },
     { label: "High Priority", count: 8, active: false },

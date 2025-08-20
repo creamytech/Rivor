@@ -3,6 +3,8 @@
 import dynamic from "next/dynamic";
 
 import ThemeProvider from "./ThemeProvider";
+import { Toaster } from "@/components/ui/toaster";
+import { ToastProvider } from "@/components/river/RiverToast";
 
 const ClientRoot = dynamic(() => import("./ClientRoot"), { ssr: false });
 const SessionProviderWrapper = dynamic(() => import("./SessionProviderWrapper"), { ssr: false });
@@ -17,11 +19,14 @@ export default function ClientProviders({ children }: ClientProvidersProps) {
     <SessionProviderWrapper>
       <ThemeProvider>
         <TRPCProvider>
-          {children}
-          <ClientRoot />
-          <div id="portal-toasts" />
-          <div id="portal-modals" />
-          <div id="portal-drawers" />
+          <ToastProvider>
+            {children}
+            <ClientRoot />
+            <Toaster />
+            <div id="portal-toasts" />
+            <div id="portal-modals" />
+            <div id="portal-drawers" />
+          </ToastProvider>
         </TRPCProvider>
       </ThemeProvider>
     </SessionProviderWrapper>

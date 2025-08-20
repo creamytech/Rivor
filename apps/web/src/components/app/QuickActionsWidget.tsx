@@ -161,7 +161,12 @@ export default function QuickActionsWidget({
   }
 
   return (
-    <div className={cn("bg-transparent border-0", className)}>
+    <motion.div 
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.6 }}
+      className={cn("bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border border-white/20 dark:border-slate-700/20 rounded-2xl shadow-xl", className)}
+    >
       <div className="p-6 pb-4">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-teal-500 shadow-lg">
@@ -263,6 +268,6 @@ export default function QuickActionsWidget({
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
