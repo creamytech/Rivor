@@ -564,6 +564,29 @@ export default function EnhancedRealEstateInbox({
                           )}
                         </div>
 
+                        {/* AI Insights - Inline */}
+                        {insights.length > 0 && (
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-1">
+                              <Brain className="h-3 w-3 text-blue-500" />
+                              <span className="text-xs text-muted-foreground">AI:</span>
+                            </div>
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {insights.slice(0, 2).map((insight, idx) => (
+                                <Badge key={idx} variant="outline" className="text-[10px] h-4 px-1.5">
+                                  <span className="mr-1">{insight.icon}</span>
+                                  {insight.message}
+                                </Badge>
+                              ))}
+                              {insights.length > 2 && (
+                                <Badge variant="outline" className="text-[10px] h-4 px-1.5">
+                                  +{insights.length - 2} more
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
                         {/* Subject and Status */}
                         <div className="flex items-center gap-2 mb-2">
                           <h3 className={cn(
@@ -686,6 +709,33 @@ export default function EnhancedRealEstateInbox({
       {/* Enhanced Thread Panel */}
       {viewMode === 'split' && selectedThread && (
         <div className="flex-1 flex flex-col bg-background/50 backdrop-blur-sm">
+          {/* Smart Actions - Above Preview */}
+          {smartActions.length > 0 && (
+            <div className="p-4 border-b border-border/30 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Smart Actions</span>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {smartActions.map((action) => (
+                    <Button 
+                      key={action.id}
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleSmartAction(action)}
+                      className="text-xs h-7 bg-white/60 dark:bg-slate-800/60 hover:bg-white dark:hover:bg-slate-800"
+                    >
+                      {action.title}
+                      <Badge variant="secondary" className="ml-1 text-[10px] h-4">
+                        {action.confidence}%
+                      </Badge>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
           {/* Enhanced Thread Header */}
           <div className="p-6 border-b border-border/50 bg-card/50">
             <div className="flex items-center justify-between mb-4">
@@ -737,42 +787,25 @@ export default function EnhancedRealEstateInbox({
               )}
             </div>
 
-            {/* Smart Actions */}
-            {smartActions.length > 0 && (
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-sm font-medium">Smart Actions:</span>
-                {smartActions.map((action) => (
-                  <Button 
-                    key={action.id}
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleSmartAction(action)}
-                    className="text-xs"
-                  >
-                    <Zap className="h-3 w-3 mr-1" />
-                    {action.title}
-                    <Badge variant="secondary" className="ml-1 text-xs">
-                      {action.confidence}%
-                    </Badge>
-                  </Button>
-                ))}
-              </div>
-            )}
           </div>
 
-          {/* Enhanced Thread Content */}
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="prose prose-sm max-w-none">
-              <p className="text-foreground leading-relaxed">
-                {selectedThread.snippet}
-              </p>
-              <p className="text-muted-foreground text-sm mt-4">
-                This is a preview of the email content. The full message would be displayed here with proper formatting.
-              </p>
-            </div>
-
-            {/* Enhanced AI Summary Card */}
-            <Card className="mt-6 border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
+          {/* Enhanced Thread Content - Scrollable with Light Background */}
+          <div className="flex-1 overflow-y-auto">
+            <Card className="m-4 bg-slate-50/80 dark:bg-slate-800/30 border-slate-200/50 dark:border-slate-700/50 shadow-sm">
+              <CardContent className="p-6">
+                <div className="prose prose-sm max-w-none">
+                  <p className="text-foreground leading-relaxed">
+                    {selectedThread.snippet}
+                  </p>
+                  <p className="text-muted-foreground text-sm mt-4">
+                    This is a preview of the email content. The full message would be displayed here with proper formatting.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Enhanced AI Summary Card - Moved outside email preview */}
+            <Card className="m-4 border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Brain className="h-5 w-5 text-blue-500" />

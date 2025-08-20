@@ -112,10 +112,10 @@ export default function InboxPage() {
             </div>
           </div>
 
-          {/* Search and Filter Row */}
-          <div className="flex items-center gap-4 mb-4">
+          {/* Consolidated Search, Filters & Sort Row */}
+          <div className="flex items-center gap-4">
             {/* Enhanced Search Bar */}
-            <div className="flex-1 max-w-2xl">
+            <div className="flex-1 max-w-xl">
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <input
@@ -136,19 +136,65 @@ export default function InboxPage() {
               </div>
             </div>
 
-            {/* Compact Filter Controls */}
+            {/* Quick Filter Chips - Inline */}
+            <div className="flex items-center gap-2 flex-1">
+              {quickFilters.map((filter) => (
+                <button
+                  key={filter.id}
+                  onClick={() => handleQuickFilter(filter.id)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 whitespace-nowrap",
+                    filter.active 
+                      ? "bg-primary text-primary-foreground shadow-md" 
+                      : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground border border-border/50"
+                  )}
+                >
+                  {filter.icon}
+                  {filter.label}
+                  <Badge 
+                    variant={filter.active ? "secondary" : "outline"} 
+                    className={cn(
+                      "text-[10px] h-4 px-1 ml-1",
+                      filter.active ? "bg-primary-foreground/20 text-primary-foreground" : ""
+                    )}
+                  >
+                    {filter.count}
+                  </Badge>
+                </button>
+              ))}
+            </div>
+
+            {/* Compact Controls */}
             <div className="flex items-center gap-2">
-              {/* Saved Filters Dropdown */}
+              {/* Filters & Sort Combined */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="flex items-center gap-2 h-10">
                     <Filter className="h-4 w-4" />
+                    <ArrowUpDown className="h-3 w-3" />
                     <ChevronDown className="h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64">
-                  <DropdownMenuLabel>Saved Filters</DropdownMenuLabel>
+                  <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                  {sortOptions.map((option) => (
+                    <DropdownMenuItem
+                      key={option.value}
+                      onClick={() => setSortBy(option.value as any)}
+                      className={cn(
+                        "flex items-center gap-3 py-2",
+                        sortBy === option.value && "bg-accent"
+                      )}
+                    >
+                      {option.icon}
+                      {option.label}
+                      {sortBy === option.value && (
+                        <CheckCircle className="h-4 w-4 ml-auto text-primary" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
                   <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Saved Filters</DropdownMenuLabel>
                   {savedFilters.map((filter) => (
                     <DropdownMenuItem
                       key={filter.id}
@@ -167,82 +213,18 @@ export default function InboxPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Sort Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="flex items-center gap-2 h-10">
-                    <ArrowUpDown className="h-4 w-4" />
-                    <span className="hidden sm:inline">Sort: {activeSortOption?.label}</span>
-                    <ChevronDown className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {sortOptions.map((option) => (
-                    <DropdownMenuItem
-                      key={option.value}
-                      onClick={() => setSortBy(option.value as any)}
-                      className={cn(
-                        "flex items-center gap-3 py-2",
-                        sortBy === option.value && "bg-accent"
-                      )}
-                    >
-                      {option.icon}
-                      {option.label}
-                      {sortBy === option.value && (
-                        <CheckCircle className="h-4 w-4 ml-auto text-primary" />
-                      )}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
               {/* Refresh Button */}
               <Button variant="ghost" size="sm" className="h-10 w-10 p-0">
                 <RefreshCw className="h-4 w-4" />
               </Button>
-            </div>
-          </div>
-
-          {/* Quick Filter Chips Row */}
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground font-medium">Quick filters:</span>
-            <div className="flex items-center gap-2">
-              {quickFilters.map((filter) => (
-                <button
-                  key={filter.id}
-                  onClick={() => handleQuickFilter(filter.id)}
-                  className={cn(
-                    "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105",
-                    filter.active 
-                      ? "bg-primary text-primary-foreground shadow-md" 
-                      : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground border border-border/50"
-                  )}
-                >
-                  {filter.icon}
-                  {filter.label}
-                  <Badge 
-                    variant={filter.active ? "secondary" : "outline"} 
-                    className={cn(
-                      "text-xs h-5 px-1.5 ml-1",
-                      filter.active ? "bg-primary-foreground/20 text-primary-foreground" : ""
-                    )}
-                  >
-                    {filter.count}
-                  </Badge>
-                </button>
-              ))}
-            </div>
-            
-            {/* Active Filter Indicator */}
-            {activeFilterCount > 0 && (
-              <div className="ml-auto">
+              
+              {/* Active Filter Indicator */}
+              {activeFilterCount > 0 && (
                 <Badge variant="secondary" className="text-xs">
-                  {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active
+                  {activeFilterCount} active
                 </Badge>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
 

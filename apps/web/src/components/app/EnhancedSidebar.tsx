@@ -49,6 +49,31 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
   const { data: session } = useSession();
   const [showQuickActionsMenu, setShowQuickActionsMenu] = useState(false);
 
+  // Close quick actions menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showQuickActionsMenu && !(event.target as Element).closest('.quick-actions-menu')) {
+        setShowQuickActionsMenu(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showQuickActionsMenu]);
+
+  // Keyboard shortcut to toggle sidebar
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
+        event.preventDefault();
+        onToggleCollapse();
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onToggleCollapse]);
+
   // Navigation items with proper grouping and icons
   const navItems: NavItem[] = [
     // Core Workflows
@@ -161,6 +186,7 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
         transition-all duration-300 ease-in-out
         ${isCollapsed ? 'w-[72px]' : 'w-64'}
         relative overflow-hidden
+        ${isCollapsed ? 'hover:w-64 hover:shadow-xl group' : ''}
       `}>
         {/* Enhanced River Flow Background Effect */}
         <div className="absolute inset-0 opacity-10">
@@ -212,29 +238,23 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
           )}
         </div>
 
-        {/* Scrollable Navigation Container with Fade Masks */}
+        {/* Scrollable Navigation Container */}
         <div className="flex-1 relative overflow-hidden">
-          {/* Top Fade Mask */}
-          <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[var(--muted)] to-transparent z-10 pointer-events-none" />
-          
-          {/* Bottom Fade Mask */}
-          <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[var(--muted)] to-transparent z-10 pointer-events-none" />
-          
-          {/* Scrollable Content */}
+          {/* Scrollable Content - Reduced spacing */}
           <nav
-            className="h-full overflow-y-auto py-4 space-y-4 relative z-0 scrollbar-thin scrollbar-thumb-[var(--border)] scrollbar-track-transparent"
+            className="sidebar-nav h-full overflow-y-auto py-2 space-y-1.5 relative z-0 scrollbar-none"
             aria-label="Main"
           >
-            {/* Core Workflows */}
+            {/* Core Workflows - Compressed header */}
             <div>
               {!isCollapsed && (
-                <div className="px-4 mb-1">
-                  <span className="text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider">
+                <div className="px-3 mb-0.5">
+                  <span className="text-[10px] font-medium text-[var(--muted-foreground)] uppercase tracking-wide opacity-75">
                     Core Workflows
                   </span>
                 </div>
               )}
-              <div className="space-y-0.5">
+              <div className="space-y-0">
                 {groupedItems.core.map((item) => {
                   const active = isActive(item);
                   return (
@@ -244,9 +264,9 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
                           href={item.href} 
                           aria-current={active ? "page" : undefined}
                           className={`
-                            flex items-center gap-3 px-4 py-2.5 text-sm 
+                            flex items-center gap-2.5 px-3 py-1.5 text-sm 
                             hover:bg-[var(--background)] transition-all duration-200 
-                            rounded-md mx-2 relative group
+                            rounded-md mx-1.5 relative group
                             ${active 
                               ? "bg-gradient-to-r from-blue-500/15 to-teal-500/15 text-blue-600 dark:text-blue-400 border-l-2 border-blue-500" 
                               : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
@@ -270,13 +290,13 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
                             {!isCollapsed && <span>{item.label}</span>}
                           </div>
                           
-                          {/* Badge - only show if count > 0 */}
+                          {/* Badge - compact size */}
                           {item.badge && item.badge > 0 && (
                             <Badge 
                               variant="destructive" 
                               className={`
-                                ml-auto text-xs px-1.5 py-0.5 min-w-[20px] h-5
-                                ${isCollapsed ? 'absolute -top-1 -right-1' : ''}
+                                ml-auto text-[10px] px-1 py-0 min-w-[16px] h-4 rounded-full
+                                ${isCollapsed ? 'absolute -top-0.5 -right-0.5' : ''}
                               `}
                               aria-label={`${item.badge} new in ${item.label}`}
                             >
@@ -304,46 +324,36 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
               </div>
             </div>
 
-            {/* Quick Actions - Compact when expanded, floating + when collapsed */}
+            {/* Quick Actions - Now as floating + button only */}
             {!isCollapsed && (
-              <div>
-                <div className="px-4 mb-1">
-                  <span className="text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider">
-                    Quick Actions
-                  </span>
-                </div>
-                <div className="space-y-0.5">
-                  {quickActions.map((action, index) => (
-                    <Tooltip key={index} disableHoverableContent={!isCollapsed}>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={action.action}
-                          className="w-full justify-start px-4 py-2.5 text-sm hover:bg-[var(--background)] transition-all duration-200 rounded-md mx-2"
-                        >
-                          <span className="text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]">
-                            {action.icon}
-                          </span>
-                          <span className="ml-3">{action.label}</span>
-                        </Button>
-                      </TooltipTrigger>
-                    </Tooltip>
-                  ))}
-                </div>
+              <div className="px-3 pb-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => setShowQuickActionsMenu(true)}
+                      className="w-full h-8 bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-xs"
+                    >
+                      <Plus className="h-3 w-3 mr-2" />
+                      Quick Actions
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Add Lead, New Meeting, Compose Email</TooltipContent>
+                </Tooltip>
               </div>
             )}
 
-            {/* Utilities */}
+            {/* Utilities - Collapsible section */}
             <div>
               {!isCollapsed && (
-                <div className="px-4 mb-1">
-                  <span className="text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider">
+                <div className="px-3 mb-0.5">
+                  <span className="text-[10px] font-medium text-[var(--muted-foreground)] uppercase tracking-wide opacity-75">
                     Utilities
                   </span>
                 </div>
               )}
-              <div className="space-y-0.5">
+              <div className="space-y-0">
                 {groupedItems.utilities.map((item) => {
                   const active = isActive(item);
                   return (
@@ -353,9 +363,9 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
                           href={item.href} 
                           aria-current={active ? "page" : undefined}
                           className={`
-                            flex items-center gap-3 px-4 py-2.5 text-sm 
+                            flex items-center gap-2.5 px-3 py-1.5 text-sm 
                             hover:bg-[var(--background)] transition-all duration-200 
-                            rounded-md mx-2
+                            rounded-md mx-1.5
                             ${active 
                               ? "bg-gradient-to-r from-blue-500/15 to-teal-500/15 text-blue-600 dark:text-blue-400 border-l-2 border-blue-500" 
                               : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
@@ -384,18 +394,18 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
           </nav>
         </div>
 
-        {/* Floating Quick Actions Button (when collapsed) */}
+        {/* Floating Quick Actions Button (when collapsed) - Compact */}
         {isCollapsed && (
-          <div className="relative z-10 p-2">
+          <div className="relative z-10 px-2 pb-1">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="default"
                   size="icon"
                   onClick={() => setShowQuickActionsMenu(true)}
-                  className="w-full h-10 bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600"
+                  className="w-full h-8 bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-3 w-3" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right">Quick Actions</TooltipContent>
@@ -403,35 +413,42 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
           </div>
         )}
 
-        {/* User Profile Section */}
-        <div className="relative z-10 p-3 border-t border-[var(--border)]">
+        {/* User Profile Section - Condensed */}
+        <div className="relative z-10 px-2 py-1 border-t border-[var(--border)]">
           {!isCollapsed ? (
-            <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--background)] transition-colors cursor-pointer">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={session?.user?.image || ''} />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-teal-500 text-white text-sm">
-                  {getUserInitials()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[var(--foreground)] truncate">
-                  {session?.user?.name || session?.user?.email?.split('@')[0] || 'User'}
-                </p>
-                <p className="text-xs text-[var(--muted-foreground)] truncate">
-                  {session?.user?.email || 'user@example.com'}
-                </p>
-              </div>
-              <Button variant="ghost" size="icon" className="h-6 w-6">
-                <LogOut className="h-3 w-3" />
-              </Button>
-            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-2 p-1.5 rounded-md hover:bg-[var(--background)] transition-colors cursor-pointer">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={session?.user?.image || ''} />
+                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-teal-500 text-white text-xs">
+                      {getUserInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-[var(--foreground)] truncate">
+                      {session?.user?.name || session?.user?.email?.split('@')[0] || 'User'}
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-4 w-4">
+                    <LogOut className="h-2.5 w-2.5" />
+                  </Button>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="text-center">
+                  <p className="font-medium">{session?.user?.name || 'User'}</p>
+                  <p className="text-xs text-muted-foreground">{session?.user?.email}</p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
           ) : (
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col items-center gap-1">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Avatar className="h-8 w-8 cursor-pointer">
+                  <Avatar className="h-6 w-6 cursor-pointer">
                     <AvatarImage src={session?.user?.image || ''} />
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-teal-500 text-white text-sm">
+                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-teal-500 text-white text-xs">
                       {getUserInitials()}
                     </AvatarFallback>
                   </Avatar>
@@ -443,22 +460,22 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
                   </div>
                 </TooltipContent>
               </Tooltip>
-              <Button variant="ghost" size="icon" className="h-6 w-6">
-                <LogOut className="h-3 w-3" />
+              <Button variant="ghost" size="icon" className="h-4 w-4">
+                <LogOut className="h-2.5 w-2.5" />
               </Button>
             </div>
           )}
         </div>
 
-        {/* Quick Actions Menu Modal (when collapsed) */}
+        {/* Quick Actions Menu Modal - Works for both collapsed and expanded */}
         <AnimatePresence>
-          {showQuickActionsMenu && isCollapsed && (
+          {showQuickActionsMenu && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="absolute bottom-20 left-2 right-2 bg-[var(--background)] border border-[var(--border)] rounded-lg shadow-lg z-50 p-2"
+              className={`absolute ${isCollapsed ? 'bottom-16 left-2 right-2' : 'bottom-12 left-3 right-3'} bg-[var(--background)] border border-[var(--border)] rounded-lg shadow-lg z-50 p-2 quick-actions-menu`}
             >
               <div className="space-y-1">
                 {quickActions.map((action, index) => (
@@ -470,7 +487,7 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
                       action.action();
                       setShowQuickActionsMenu(false);
                     }}
-                    className="w-full justify-start text-sm"
+                    className="w-full justify-start text-sm h-8"
                   >
                     {action.icon}
                     <span className="ml-2">{action.label}</span>

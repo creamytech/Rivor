@@ -564,8 +564,8 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
               key={stage.id}
               className="flex-shrink-0 w-80"
             >
-              {/* Enhanced Stage Header */}
-              <Card className={`mb-4 ${stage.bgColor} border-l-4 ${stage.color.replace('bg-', 'border-l-')} shadow-sm`}>
+              {/* Enhanced Stage Header - Stage Colored */}
+              <Card className={`mb-4 bg-gradient-to-r ${stage.color.replace('bg-', 'from-')}/20 ${stage.color.replace('bg-', 'to-')}/5 border-l-4 ${stage.color.replace('bg-', 'border-l-')} shadow-sm`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg font-semibold">{stage.title}</CardTitle>
@@ -612,12 +612,12 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
                 </CardHeader>
               </Card>
 
-              {/* Enhanced Deals Container with Stage Background */}
+              {/* Enhanced Deals Container with Faint Stage Background */}
               <SortableContext items={stage.deals.map(deal => deal.id)} strategy={verticalListSortingStrategy}>
                 <div
-                  className={`min-h-[500px] p-4 rounded-xl border-2 border-dashed transition-all duration-200 ${stage.bgColor}/20 ${
+                  className={`min-h-[500px] p-4 rounded-xl border-2 transition-all duration-200 bg-gradient-to-b ${stage.color.replace('bg-', 'from-')}/5 ${stage.color.replace('bg-', 'to-')}/2 ${
                     stage.deals.length === 0 
-                      ? 'border-muted-foreground/30 hover:border-muted-foreground/50' 
+                      ? `border-dashed ${stage.color.replace('bg-', 'border-')}/30 hover:${stage.color.replace('bg-', 'border-')}/50` 
                       : 'border-transparent'
                   }`}
                   id={stage.id}
@@ -632,31 +632,44 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
                     ))}
                   </AnimatePresence>
                   
-                  {/* Enhanced Empty State */}
+                  {/* Enhanced Empty State with Better CTAs */}
                   {stage.deals.length === 0 && (
                     <motion.div 
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="flex flex-col items-center justify-center h-80 text-center space-y-4"
                     >
-                      <div className={`w-16 h-16 rounded-full ${stage.bgColor} flex items-center justify-center border-2 border-dashed ${stage.color.replace('bg-', 'border-')}/50`}>
-                        <div className="w-8 h-8 rounded-full border-2 border-dashed border-muted-foreground/40 flex items-center justify-center">
-                          <Plus className="h-4 w-4 text-muted-foreground/60" />
+                      <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${stage.color.replace('bg-', 'from-')}/20 ${stage.color.replace('bg-', 'to-')}/40 flex items-center justify-center border-2 border-dashed ${stage.color.replace('bg-', 'border-')}/40 relative`}>
+                        <div className="w-10 h-10 rounded-full border-2 border-dashed border-muted-foreground/40 flex items-center justify-center bg-white/60 dark:bg-slate-800/60">
+                          <Plus className="h-5 w-5 text-muted-foreground/80" />
                         </div>
+                        {/* Floating elements for visual interest */}
+                        <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ${stage.color} animate-pulse`} />
+                        <div className={`absolute -bottom-1 -left-1 w-2 h-2 rounded-full ${stage.color}/60 animate-pulse`} style={{ animationDelay: '0.5s' }} />
                       </div>
                       <div className="space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">No deals in {stage.title}</p>
-                        <p className="text-xs text-muted-foreground/70">Drag deals here or add a new one</p>
+                        <p className="text-base font-semibold text-foreground">Ready for {stage.title}?</p>
+                        <p className="text-sm text-muted-foreground max-w-xs">Drop deals here or create a new one to get started with this stage</p>
                       </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className={`border-dashed hover:${stage.bgColor} hover:border-solid transition-all duration-200`}
-                        onClick={() => {/* Create new deal in this stage */}}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Deal
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          className={`bg-gradient-to-r ${stage.color.replace('bg-', 'from-')} ${stage.color.replace('bg-', 'to-')}/80 hover:${stage.color.replace('bg-', 'from-')}/90 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200`}
+                          onClick={() => {/* Create new deal in this stage */}}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Deal
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className={`border-${stage.color.replace('bg-', '')} text-${stage.color.replace('bg-', '')}-600 hover:bg-${stage.color.replace('bg-', '')}/10`}
+                          onClick={() => {/* Show drag target guide */}}
+                        >
+                          Drop Zone
+                        </Button>
+                      </div>
                     </motion.div>
                   )}
                 </div>

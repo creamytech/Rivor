@@ -8,7 +8,8 @@ import TodaysFocusPanel from './TodaysFocusPanel';
 import PipelineOverviewPanel from './PipelineOverviewPanel';
 import ActivityFeedPanel from './ActivityFeedPanel';
 import SystemHealthStrip from './SystemHealthStrip';
-import QuickActionsWidget from './QuickActionsWidget';
+import FloatingActionButton from './FloatingActionButton';
+import WeeklyActivityPanel from './WeeklyActivityPanel';
 
 interface DashboardLayoutProps {
   className?: string;
@@ -37,13 +38,13 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      {/* Quick Actions Sidebar */}
-      <div className="fixed right-6 top-1/2 transform -translate-y-1/2 z-20">
-        <QuickActionsWidget />
+      {/* Floating Action Button */}
+      <div className="fixed bottom-8 right-8 z-20">
+        <FloatingActionButton />
       </div>
 
       {/* Main Story Flow */}
-      <div className={cn("space-y-8 p-6 max-w-7xl mx-auto pr-24", className)}>
+      <div className={cn("space-y-8 p-6 max-w-7xl mx-auto", className)}>
         {/* Chapter 1: Business Performance Overview */}
         <motion.section
           initial={{ opacity: 0, y: 30 }}
@@ -120,11 +121,30 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
           className="h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent dark:via-slate-600"
         />
 
-        {/* Chapter 5: System Health Footer */}
+        {/* Chapter 5: Weekly Activity Overview */}
+        <motion.section
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.3, duration: 0.6 }}
+          className="relative"
+        >
+          <div className="absolute -left-4 top-0 w-1 h-full bg-gradient-to-b from-green-500 to-emerald-500 rounded-full" />
+          <WeeklyActivityPanel />
+        </motion.section>
+
+        {/* Flow Divider */}
+        <motion.div
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ delay: 1.5, duration: 0.8 }}
+          className="h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent dark:via-slate-600"
+        />
+
+        {/* Chapter 6: System Health Footer */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.3, duration: 0.6 }}
+          transition={{ delay: 1.6, duration: 0.6 }}
         >
           <SystemHealthStrip />
         </motion.section>

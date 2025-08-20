@@ -129,8 +129,8 @@ export default function ContactsPage() {
 
   return (
     <AppShell>
-      {/* Search and Filter Bar */}
-      <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+      {/* Consolidated Sticky Filter Bar */}
+      <div className="sticky top-0 z-30 px-6 py-3 border-b border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
             {/* Search */}
@@ -144,153 +144,152 @@ export default function ContactsPage() {
               />
             </div>
 
-            {/* View Mode Toggle */}
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
-              <Button
-                variant={viewMode === 'all' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('all')}
-                className="text-xs"
-              >
-                All
-              </Button>
-              <Button
-                variant={viewMode === 'leads' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('leads')}
-                className="text-xs"
-              >
-                Leads
-              </Button>
-              <Button
-                variant={viewMode === 'prospects' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('prospects')}
-                className="text-xs"
-              >
-                Prospects
-              </Button>
-              <Button
-                variant={viewMode === 'customers' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('customers')}
-                className="text-xs"
-              >
-                Customers
-              </Button>
-            </div>
-
-            {/* Lifecycle Stage Filter */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-600 dark:text-slate-400">Stage:</span>
+            {/* Horizontal Filter Chips */}
+            <div className="flex items-center gap-2 flex-1">
+              {/* View Mode */}
               <div className="flex items-center gap-1">
-                {lifecycleStages.map(stage => (
+                {['all', 'leads', 'prospects', 'customers'].map(mode => (
+                  <Button
+                    key={mode}
+                    variant={viewMode === mode ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode(mode as any)}
+                    className="text-xs h-7 px-2"
+                  >
+                    {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                  </Button>
+                ))}
+              </div>
+              
+              <div className="w-px h-6 bg-border" />
+              
+              {/* Lifecycle Stages */}
+              <div className="flex items-center gap-1">
+                {lifecycleStages.slice(1).map(stage => (
                   <Button
                     key={stage.id}
                     variant={lifecycleStage === stage.id ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setLifecycleStage(stage.id as any)}
-                    className="text-xs h-8"
+                    className="text-xs h-7 px-2"
                   >
                     <stage.icon className="h-3 w-3 mr-1" />
                     {stage.label}
                   </Button>
                 ))}
               </div>
+              
+              <div className="w-px h-6 bg-border" />
+              
+              {/* Filter Tags */}
+              <div className="flex items-center gap-1 flex-wrap">
+                {availableFilters.slice(0, 4).map(filter => (
+                  <Button
+                    key={filter.id}
+                    variant={selectedFilters.includes(filter.id) ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => toggleFilter(filter.id)}
+                    className="text-xs h-7 px-2"
+                  >
+                    <filter.icon className="h-3 w-3 mr-1" />
+                    {filter.label}
+                  </Button>
+                ))}
+                {selectedFilters.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedFilters([])}
+                    className="text-xs h-7 px-2 text-red-600 hover:text-red-700"
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Quick Actions */}
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={handleImport} disabled={importing}>
-                <Upload className="h-4 w-4 mr-2" />
-                {importing ? 'Importing...' : 'Import'}
+              <Button size="sm" variant="outline" onClick={handleImport} disabled={importing} className="h-7">
+                <Upload className="h-3 w-3 mr-1" />
+                Import
               </Button>
-              <Button size="sm" variant="outline" onClick={handleExport} disabled={exporting}>
-                <Download className="h-4 w-4 mr-2" />
-                {exporting ? 'Exporting...' : 'Export'}
-              </Button>
-              <Button size="sm" variant="outline">
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
+              <Button size="sm" variant="outline" onClick={handleExport} disabled={exporting} className="h-7">
+                <Download className="h-3 w-3 mr-1" />
+                Export
               </Button>
             </div>
-          </div>
-
-          {/* Filter Chips */}
-          <div className="flex items-center gap-2 mt-3">
-            <span className="text-sm text-slate-600 dark:text-slate-400">Filters:</span>
-            <div className="flex items-center gap-2 flex-wrap">
-              {availableFilters.map(filter => (
-                <Button
-                  key={filter.id}
-                  variant={selectedFilters.includes(filter.id) ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => toggleFilter(filter.id)}
-                  className="text-xs h-7"
-                >
-                  <filter.icon className="h-3 w-3 mr-1" />
-                  {filter.label}
-                </Button>
-              ))}
-            </div>
-            {selectedFilters.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedFilters([])}
-                className="text-xs h-7 text-slate-500 hover:text-slate-700"
-              >
-                Clear all
-              </Button>
-            )}
           </div>
         </div>
       </div>
 
-      {/* Smart Suggestions */}
-      <div className="px-6 py-3 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-b border-slate-200 dark:border-slate-700">
+      {/* Smart Suggestions as Interactive Cards */}
+      <div className="px-6 py-4 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-b border-slate-200 dark:border-slate-700">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-emerald-600" />
-              <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                Smart Suggestions
-              </span>
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="h-4 w-4 text-emerald-600" />
+            <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+              Smart Suggestions - Take Action
+            </span>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* Follow-up Card */}
+            <div className="p-3 bg-white/60 dark:bg-slate-800/60 rounded-lg border border-green-200 dark:border-green-800 hover:shadow-md transition-all duration-200 cursor-pointer group">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="font-medium text-sm text-green-700 dark:text-green-300">Follow-up Needed</span>
+                </div>
+                <Badge className="bg-green-100 text-green-800 border-green-300 text-xs">12</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mb-2">Contacts haven't been contacted in 7+ days</p>
+              <Button size="sm" variant="outline" className="w-full h-7 text-xs group-hover:bg-green-50 group-hover:border-green-300">
+                Draft Follow-up Emails
+              </Button>
             </div>
-            <div className="flex items-center gap-3 text-sm">
-              <div className="flex items-center gap-1">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-green-700 dark:text-green-300">
-                  12 contacts need follow-up
-                </span>
+            
+            {/* Duplicates Card */}
+            <div className="p-3 bg-white/60 dark:bg-slate-800/60 rounded-lg border border-orange-200 dark:border-orange-800 hover:shadow-md transition-all duration-200 cursor-pointer group">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Target className="h-4 w-4 text-orange-600" />
+                  <span className="font-medium text-sm text-orange-700 dark:text-orange-300">Duplicate Contacts</span>
+                </div>
+                <Badge className="bg-orange-100 text-orange-800 border-orange-300 text-xs">5</Badge>
               </div>
-              <div className="flex items-center gap-1">
-                <Target className="h-4 w-4 text-orange-600" />
-                <span className="text-orange-700 dark:text-orange-300">
-                  5 duplicate suggestions
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Zap className="h-4 w-4 text-purple-600" />
-                <span className="text-purple-700 dark:text-purple-300">
-                  Auto-enrichment available
-                </span>
-              </div>
+              <p className="text-xs text-muted-foreground mb-2">Potential duplicate contacts detected</p>
+              <Button size="sm" variant="outline" className="w-full h-7 text-xs group-hover:bg-orange-50 group-hover:border-orange-300">
+                Review & Merge
+              </Button>
             </div>
-            <Button size="sm" variant="outline" className="ml-auto">
-              <Sparkles className="h-4 w-4 mr-2" />
-              Enrich All
-            </Button>
+            
+            {/* Enrichment Card */}
+            <div className="p-3 bg-white/60 dark:bg-slate-800/60 rounded-lg border border-purple-200 dark:border-purple-800 hover:shadow-md transition-all duration-200 cursor-pointer group">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-purple-600" />
+                  <span className="font-medium text-sm text-purple-700 dark:text-purple-300">Data Enrichment</span>
+                </div>
+                <Badge className="bg-purple-100 text-purple-800 border-purple-300 text-xs">23</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mb-2">Contacts missing phone numbers or addresses</p>
+              <Button size="sm" variant="outline" className="w-full h-7 text-xs group-hover:bg-purple-50 group-hover:border-purple-300">
+                Auto-Enrich Data
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Contacts Component */}
+      {/* Table View Contacts */}
       <div className="flex-1 overflow-hidden">
         <EnhancedContacts 
           className="h-full" 
           searchQuery={searchQuery}
           selectedFilters={selectedFilters}
+          defaultView="table"
+          showTableHeaders={true}
         />
       </div>
     </AppShell>

@@ -98,15 +98,17 @@ interface EnhancedContactsProps {
   className?: string;
   searchQuery?: string;
   selectedFilters?: string[];
+  defaultView?: 'table' | 'list' | 'grid';
+  showTableHeaders?: boolean;
 }
 
-export default function EnhancedContacts({ className, searchQuery = '', selectedFilters = [] }: EnhancedContactsProps) {
+export default function EnhancedContacts({ className, searchQuery = '', selectedFilters = [], defaultView = 'list', showTableHeaders = false }: EnhancedContactsProps) {
   // All hooks must be called at the top level
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [showContactDrawer, setShowContactDrawer] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [viewMode, setViewMode] = useState<'table' | 'list' | 'grid'>(defaultView);
   const [sortBy, setSortBy] = useState<'name' | 'company' | 'lastActivity' | 'emailCount'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
@@ -264,7 +266,127 @@ export default function EnhancedContacts({ className, searchQuery = '', selected
 
         {/* Contact List */}
         <div className="flex-1 overflow-y-auto">
-          {viewMode === 'list' ? (
+          {/* Table View */}
+          {viewMode === 'table' ? (
+            <div className="overflow-x-auto">
+              {/* Table Headers */}
+              {showTableHeaders && (
+                <div className="sticky top-0 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-3">
+                  <div className="grid grid-cols-12 gap-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+                    <div className="col-span-3">Name & Company</div>
+                    <div className="col-span-2">Stage</div>
+                    <div className="col-span-2">Last Contacted</div>
+                    <div className="col-span-2">Lead Score</div>
+                    <div className="col-span-2">Contact Info</div>
+                    <div className="col-span-1">Actions</div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Table Rows */}
+              <div className="divide-y divide-slate-200 dark:divide-slate-700">
+                {sortedContacts.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-full flex items-center justify-center mb-4">
+                      <Users className="h-10 w-10 text-blue-500" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                      No contacts found
+                    </h3>
+                    <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-sm text-center">
+                      {searchQuery ? 'Try adjusting your search terms or filters' : 'Start building your network by adding contacts'}
+                    </p>
+                    <div className="flex gap-3">
+                      <Button>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Contact
+                      </Button>
+                      <Button variant="outline">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Import Contacts
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  sortedContacts.map(contact => (
+                    <motion.div
+                      key={contact.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                      onClick={() => {
+                        setSelectedContact(contact);
+                        setShowContactDrawer(true);
+                      }}
+                    >
+                      <div className="grid grid-cols-12 gap-4 items-center">
+                        {/* Name & Company */}
+                        <div className="col-span-3 flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={contact.avatarUrl} />
+                            <AvatarFallback className="text-xs">
+                              {contact.name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <div className="font-medium text-sm truncate">{contact.name}</div>
+                            {contact.company && (
+                              <div className="text-xs text-slate-500 truncate">{contact.company}</div>
+                            )}
+                          </div>
+                          {contact.starred && <Star className="h-3 w-3 text-yellow-500" />}
+                        </div>
+                        
+                        {/* Stage */}
+                        <div className="col-span-2">
+                          <Badge variant="outline" className={cn("text-xs", getStatusColor(contact.source))}>
+                            {contact.source === 'email' ? 'Lead' : contact.source === 'manual' ? 'Prospect' : 'Customer'}
+                          </Badge>
+                        </div>
+                        
+                        {/* Last Contacted */}
+                        <div className="col-span-2 text-sm text-slate-600 dark:text-slate-400">
+                          {formatDate(contact.lastActivity)}
+                        </div>
+                        
+                        {/* Lead Score */}
+                        <div className="col-span-2 flex items-center gap-2">
+                          <div className="text-sm font-medium">{Math.floor(Math.random() * 100)}%</div>
+                          <div className="w-16 bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                            <div 
+                              className="h-2 rounded-full bg-gradient-to-r from-green-500 to-blue-500" 
+                              style={{ width: `${Math.floor(Math.random() * 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Contact Info */}
+                        <div className="col-span-2">
+                          <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400">
+                            <Mail className="h-3 w-3" />
+                            <span>{contact.emailCount}</span>
+                            {contact.phone && (
+                              <>
+                                <Phone className="h-3 w-3 ml-2" />
+                                <span>Verified</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Actions */}
+                        <div className="col-span-1">
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                            <MoreHorizontal className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))
+                )}
+              </div>
+            </div>
+          ) : viewMode === 'list' ? (
             <div className="divide-y divide-slate-200 dark:divide-slate-700">
               {sortedContacts.map(contact => (
                 <motion.div

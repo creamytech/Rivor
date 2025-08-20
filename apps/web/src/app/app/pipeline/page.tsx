@@ -47,6 +47,7 @@ import PipelineTimelineView from "@/components/pipeline/PipelineTimelineView";
 import PipelineAnalyticsSidebar from "@/components/pipeline/PipelineAnalyticsSidebar";
 import CreateDealModal from "@/components/pipeline/CreateDealModal";
 import AdvancedFiltersModal from "@/components/pipeline/AdvancedFiltersModal";
+import PipelineFunnelViz from "@/components/pipeline/PipelineFunnelViz";
 
 interface FilterPill {
   id: string;
@@ -185,7 +186,7 @@ export default function PipelinePage() {
                   )}
                 </div>
                 
-                {/* Compact Filters */}
+                {/* Advanced Filters - Collapsible Popover */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button 
@@ -194,7 +195,7 @@ export default function PipelinePage() {
                       className={`h-10 ${selectedFilters.length > 0 ? "border-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}
                     >
                       <Filter className="h-4 w-4 mr-2" />
-                      Filters
+                      Advanced Filters
                       {selectedFilters.length > 0 && (
                         <Badge variant="secondary" className="ml-2">
                           {selectedFilters.length}
@@ -263,7 +264,7 @@ export default function PipelinePage() {
                   ))}
                 </div>
 
-                {/* Analytics Drawer Toggle */}
+                {/* Analytics Drawer Toggle - Collapsible */}
                 <Button
                   variant={showAnalytics ? "default" : "outline"}
                   size="sm"
@@ -273,7 +274,7 @@ export default function PipelinePage() {
                   <BarChart3 className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Analytics</span>
                   {showAnalytics && (
-                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full" />
+                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
                   )}
                 </Button>
 
@@ -351,6 +352,20 @@ export default function PipelinePage() {
           </div>
         </div>
 
+        {/* Funnel Visualization */}
+        <div className="px-6 pt-4">
+          <PipelineFunnelViz 
+            stages={[
+              { id: 'lead', title: 'New Leads', count: 24, value: 2400000, color: 'bg-blue-100 dark:bg-blue-900/20' },
+              { id: 'qualified', title: 'Qualified', count: 18, value: 1980000, color: 'bg-green-100 dark:bg-green-900/20' },
+              { id: 'showing', title: 'Showing Scheduled', count: 12, value: 1560000, color: 'bg-orange-100 dark:bg-orange-900/20' },
+              { id: 'offer', title: 'Offer Made', count: 8, value: 1200000, color: 'bg-purple-100 dark:bg-purple-900/20' },
+              { id: 'contract', title: 'Under Contract', count: 5, value: 750000, color: 'bg-yellow-100 dark:bg-yellow-900/20' },
+              { id: 'closed', title: 'Closed', count: 3, value: 450000, color: 'bg-emerald-100 dark:bg-emerald-900/20' }
+            ]}
+          />
+        </div>
+
         {/* Main Content */}
         <div className={`flex gap-6 p-6 ${showAnalytics ? 'mr-80' : ''} transition-all duration-300`}>
           {/* Pipeline View */}
@@ -359,15 +374,31 @@ export default function PipelinePage() {
           </div>
         </div>
 
-        {/* Analytics Sidebar */}
+        {/* Analytics Sidebar - Collapsible Drawer */}
         {showAnalytics && (
           <motion.div
             initial={{ x: 320, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 320, opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-[calc(56px+80px+88px)] bottom-0 w-80 bg-white dark:bg-slate-900 border-l border-border shadow-xl z-10 overflow-y-auto"
+            className="fixed right-0 top-[calc(56px+80px+88px)] bottom-0 w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-l border-border shadow-xl z-10 overflow-y-auto"
           >
+            <div className="p-4 border-b border-border bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-blue-500" />
+                  Pipeline Analytics
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAnalytics(false)}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
             <PipelineAnalyticsSidebar 
               onClose={() => setShowAnalytics(false)}
               activeFilters={activeQuickFilters}

@@ -42,6 +42,10 @@
   --z-modal: 1050;
   --z-popover: 1060;
   --z-tooltip: 1070;
+
+  /* Sidebar Heights - Ensure no scrolling on common laptop screens */
+  --sidebar-max-height: calc(100vh - 112px); /* Account for header + footer */
+  --sidebar-content-max-height: calc(100vh - 160px); /* Additional buffer */
 }
 
 @theme inline {
@@ -1475,4 +1479,35 @@ body {
   box-sizing: border-box;
   width: 100% !important;
   height: 100% !important;
+}
+
+/* Sidebar height optimization - prevent scrolling on 1080px screens */
+@media screen and (max-height: 1080px) {
+  .sidebar-nav {
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+  }
+}
+
+@media screen and (max-height: 900px) {
+  .sidebar-nav {
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+  }
+}
+
+@media screen and (max-height: 768px) {
+  .sidebar-nav {
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+  }
+}
+
+/* Hide scrollbar but allow scrolling if needed */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }

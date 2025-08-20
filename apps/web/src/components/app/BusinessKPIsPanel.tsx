@@ -62,6 +62,44 @@ interface ContactsData {
   total: number;
 }
 
+// Simple Sparkline Component
+function Sparkline({ data, color = "blue" }: { data: number[]; color?: string }) {
+  if (!data || data.length === 0) return null;
+  
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  
+  const points = data.map((value, index) => {
+    const x = (index / (data.length - 1)) * 100;
+    const y = 100 - ((value - min) / range) * 80; // Leave 20% margin
+    return `${x},${y}`;
+  }).join(' ');
+
+  return (
+    <svg width="80" height="32" viewBox="0 0 100 100" className="overflow-visible">
+      <polyline
+        fill="none"
+        stroke={`var(--${color}-500)`}
+        strokeWidth="2"
+        points={points}
+        className={`stroke-${color}-500`}
+      />
+      {/* Gradient fill under the line */}
+      <defs>
+        <linearGradient id={`gradient-${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor={`var(--${color}-400)`} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={`var(--${color}-400)`} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon
+        fill={`url(#gradient-${color})`}
+        points={`0,100 ${points} 100,100`}
+      />
+    </svg>
+  );
+}
+
 export default function BusinessKPIsPanel({ className = '' }: BusinessKPIsPanelProps) {
   const [metrics, setMetrics] = useState<KPIMetric[]>([]);
   const [isLoading, setIsLoading] = useState(true);
