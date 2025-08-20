@@ -5,251 +5,255 @@ export const themes: Record<ThemeId, Theme> = {
   mississippi: {
     id: 'mississippi',
     name: 'Mississippi',
-    description: 'Deep navy blues with gold accents reminiscent of the riverboat era',
-    personality: 'Sophisticated and professional - perfect for established agents who value tradition and elegance',
+    description: 'Luxury riverboat elegance with deep navy and rich gold',
+    personality: 'Sophisticated riverboat luxury - opulent gold details on midnight navy',
     colors: {
-      // Primary brand colors - deep navy and river blues
-      primary: '#1E3A8A', // Deep navy blue
-      primaryHover: '#1E40AF', // Slightly lighter navy
-      primaryMuted: '#1E3A8A20', // Navy with transparency
+      // Primary brand colors - Rich gold/amber luxury
+      primary: '#D4AF37', // Pure gold
+      primaryHover: '#B8941F', // Darker gold
+      primaryMuted: 'rgba(212, 175, 55, 0.15)',
       
-      // Secondary accent colors - gold and amber
-      secondary: '#F59E0B', // Rich gold
-      secondaryHover: '#D97706', // Darker gold
-      secondaryMuted: '#F59E0B20', // Gold with transparency
+      // Secondary accent colors - Warm amber and copper
+      secondary: '#CD853F', // Peru/copper
+      secondaryHover: '#B8761C', // Darker copper
+      secondaryMuted: 'rgba(205, 133, 63, 0.15)',
       
-      // Background colors - dark river tones
-      background: '#0F172A', // Very dark navy
-      backgroundSecondary: '#1E293B', // Dark slate
-      backgroundTertiary: '#334155', // Medium slate
+      // Background colors - Deep luxury navy
+      background: '#0A0F1C', // Deepest navy
+      backgroundSecondary: 'rgba(15, 23, 42, 0.98)', // Rich overlay
+      backgroundTertiary: 'rgba(30, 41, 59, 0.95)', // Layered depth
       
-      // Surface colors - cards and panels
-      surface: '#1E293B', // Dark slate for cards
-      surfaceHover: '#334155', // Hover state
-      surfaceActive: '#475569', // Active state
+      // Surface colors - Mahogany-inspired luxury
+      surface: 'rgba(30, 41, 59, 0.92)', // Rich dark surface with transparency
+      surfaceHover: 'rgba(51, 65, 85, 0.95)', // Elegant hover
+      surfaceActive: 'rgba(71, 85, 105, 0.98)', // Luxurious active state
       
-      // Border colors
-      border: 'rgba(148, 163, 184, 0.1)', // Subtle slate
-      borderHover: 'rgba(148, 163, 184, 0.2)',
-      borderActive: 'rgba(245, 158, 11, 0.3)', // Gold tint
+      // Border colors - Subtle gold elegance
+      border: 'rgba(212, 175, 55, 0.15)', // Delicate gold borders
+      borderHover: 'rgba(212, 175, 55, 0.35)', // Enhanced gold
+      borderActive: 'rgba(212, 175, 55, 0.65)', // Rich gold focus
       
-      // Text colors
-      textPrimary: '#F8FAFC', // Almost white
-      textSecondary: '#CBD5E1', // Light slate
-      textMuted: '#94A3B8', // Medium slate
-      textInverse: '#0F172A', // Dark for light backgrounds
+      // Text colors - Elegant contrast
+      textPrimary: '#F8FAFC', // Pure white
+      textSecondary: '#E2E8F0', // Soft white
+      textMuted: '#CBD5E1', // Muted elegance
+      textInverse: '#0A0F1C', // Deep navy for light backgrounds
       
-      // Accent colors
-      accent: '#FBBF24', // Amber gold
-      accentHover: '#F59E0B',
-      accentMuted: '#FBBF2420',
+      // Accent colors - Riverboat luxury
+      accent: '#FBBF24', // Bright gold accent
+      accentHover: '#F59E0B', // Warm amber
+      accentMuted: 'rgba(251, 191, 36, 0.2)',
       
-      // Status colors
-      success: '#10B981', // Emerald green
-      warning: '#F59E0B', // Amber
-      error: '#EF4444', // Red
-      info: '#3B82F6', // Blue
+      // Status colors - Luxury themed
+      success: '#34D399', // Elegant emerald
+      warning: '#FBBF24', // Luxury gold
+      error: '#F87171', // Sophisticated coral
+      info: '#60A5FA', // Rich blue
       
-      // Special elements
-      shadow: 'rgba(0, 0, 0, 0.25)',
-      gradient: 'linear-gradient(135deg, #1E3A8A 0%, #F59E0B 100%)',
-      glassBg: 'rgba(30, 41, 59, 0.8)',
-      glassBlur: 'blur(12px)',
+      // Special elements - Premium depth
+      shadow: 'rgba(0, 0, 0, 0.5)', // Deep shadows
+      gradient: 'linear-gradient(135deg, #D4AF37 0%, #CD853F 50%, #B8941F 100%)',
+      glassBg: 'rgba(10, 15, 28, 0.85)', // Rich glass effect
+      glassBlur: 'blur(24px)', // Enhanced blur
     },
     patterns: {
-      subtle: 'data:image/svg+xml,%3Csvg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="rgba(245,158,11,0.03)"%3E%3Cpath d="M0 0h40v40H0z"/%3E%3Cpath d="M0 10h40M0 30h40" stroke="rgba(245,158,11,0.05)" stroke-width="1"/%3E%3C/g%3E%3C/svg%3E',
+      subtle: 'url("data:image/svg+xml,%3Csvg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23d4af37" fill-opacity="0.03"%3E%3Cpath d="M0 0h80v80H0V0zm40 40a20 20 0 1 1 0-40 20 20 0 0 1 0 40z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+      texture: 'linear-gradient(45deg, rgba(212,175,55,0.02) 25%, transparent 25%, transparent 75%, rgba(212,175,55,0.02) 75%)',
     },
     animations: {
-      river: 'mississippiRiver 8s linear infinite',
-      glow: 'mississippiGlow 3s ease-in-out infinite alternate',
+      river: 'mississippiRiver 15s ease-in-out infinite',
+      glow: 'mississippiGlow 4s ease-in-out infinite alternate',
     },
   },
 
   amazon: {
     id: 'amazon',
     name: 'Amazon',
-    description: 'Rich emerald greens and forest tones with natural wood accents',
-    personality: 'Lush and natural - ideal for eco-conscious agents and nature lovers',
+    description: 'Tropical rainforest with lush greens and natural textures',
+    personality: 'Living, breathing nature - vibrant forest canopy with organic flow',
     colors: {
-      // Primary brand colors - emerald and forest greens
-      primary: '#059669', // Emerald green
-      primaryHover: '#047857', // Darker emerald
-      primaryMuted: '#05966920', // Emerald with transparency
+      // Primary brand colors - Vibrant emerald life
+      primary: '#10B981', // Emerald green
+      primaryHover: '#059669', // Forest emerald
+      primaryMuted: 'rgba(16, 185, 129, 0.12)',
       
-      // Secondary accent colors - vibrant teal
-      secondary: '#0D9488', // Teal
-      secondaryHover: '#0F766E', // Darker teal
-      secondaryMuted: '#0D948820', // Teal with transparency
+      // Secondary accent colors - Natural earth tones
+      secondary: '#0891B2', // Tropical teal
+      secondaryHover: '#0E7490', // Deep teal
+      secondaryMuted: 'rgba(8, 145, 178, 0.12)',
       
-      // Background colors - deep forest tones
-      background: '#1A2E05', // Very dark forest green
-      backgroundSecondary: '#22543D', // Dark green
-      backgroundTertiary: '#2D5A3D', // Medium forest green
+      // Background colors - Deep forest canopy
+      background: '#0D1B0F', // Deep forest background
+      backgroundSecondary: 'rgba(20, 39, 23, 0.95)', // Layered canopy
+      backgroundTertiary: 'rgba(34, 84, 61, 0.90)', // Forest depth
       
-      // Surface colors
-      surface: '#22543D', // Dark green for cards
-      surfaceHover: '#2D5A3D', // Hover state
-      surfaceActive: '#38A169', // Active state with more vibrant green
+      // Surface colors - Natural wood and leaves
+      surface: 'rgba(20, 39, 23, 0.88)', // Natural surface
+      surfaceHover: 'rgba(34, 84, 61, 0.92)', // Organic hover
+      surfaceActive: 'rgba(45, 90, 61, 0.95)', // Living active state
       
-      // Border colors
-      border: 'rgba(16, 185, 129, 0.1)', // Subtle emerald
-      borderHover: 'rgba(16, 185, 129, 0.2)',
-      borderActive: 'rgba(13, 148, 136, 0.3)', // Teal tint
+      // Border colors - Organic growth patterns
+      border: 'rgba(16, 185, 129, 0.18)', // Living borders
+      borderHover: 'rgba(16, 185, 129, 0.35)', // Growing borders
+      borderActive: 'rgba(8, 145, 178, 0.55)', // Tropical focus
       
-      // Text colors
-      textPrimary: '#F7FAFC', // Almost white
-      textSecondary: '#E2E8F0', // Very light gray
-      textMuted: '#A0AEC0', // Medium gray
-      textInverse: '#1A2E05', // Dark for light backgrounds
+      // Text colors - Natural contrast
+      textPrimary: '#F0FDF4', // Fresh white
+      textSecondary: '#DCFCE7', // Soft green white
+      textMuted: '#BBF7D0', // Muted green
+      textInverse: '#0D1B0F', // Deep forest
       
-      // Accent colors
-      accent: '#38BDF8', // Sky blue (water accent)
-      accentHover: '#0EA5E9',
-      accentMuted: '#38BDF820',
+      // Accent colors - Tropical vibrancy
+      accent: '#06D6A0', // Tropical mint
+      accentHover: '#04C48C', // Vibrant green
+      accentMuted: 'rgba(6, 214, 160, 0.2)',
       
-      // Status colors
-      success: '#10B981', // Emerald
-      warning: '#F59E0B', // Amber
-      error: '#EF4444', // Red
-      info: '#06B6D4', // Cyan
+      // Status colors - Natural harmony
+      success: '#22C55E', // Fresh green
+      warning: '#FBBF24', // Golden sunlight
+      error: '#FB7185', // Tropical flower
+      info: '#06B6D4', // Crystal water
       
-      // Special elements
-      shadow: 'rgba(0, 0, 0, 0.3)',
-      gradient: 'linear-gradient(135deg, #059669 0%, #0D9488 100%)',
-      glassBg: 'rgba(34, 84, 61, 0.8)',
-      glassBlur: 'blur(12px)',
+      // Special elements - Organic depth
+      shadow: 'rgba(0, 0, 0, 0.4)', // Forest shadows
+      gradient: 'linear-gradient(135deg, #10B981 0%, #059669 35%, #0891B2 100%)',
+      glassBg: 'rgba(13, 27, 15, 0.82)', // Natural glass
+      glassBlur: 'blur(20px)', // Organic blur
     },
     patterns: {
-      subtle: 'data:image/svg+xml,%3Csvg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="rgba(13,148,136,0.03)"%3E%3Ccircle cx="10" cy="10" r="2"/%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/svg%3E',
+      subtle: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%2310b981" fill-opacity="0.04"%3E%3Cpath d="M30 30c8.284 0 15-6.716 15-15 0-8.284-6.716-15-15-15s-15 6.716-15 15c0 8.284 6.716 15 15 15zm0 30c8.284 0 15-6.716 15-15 0-8.284-6.716-15-15-15s-15 6.716-15 15c0 8.284 6.716 15 15 15z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+      texture: 'radial-gradient(ellipse at center, rgba(16,185,129,0.02) 0%, transparent 70%)',
     },
     animations: {
-      river: 'amazonRiver 8s linear infinite',
-      glow: 'amazonGlow 3s ease-in-out infinite alternate',
+      river: 'amazonRiver 18s ease-in-out infinite',
+      glow: 'amazonGlow 5s ease-in-out infinite alternate',
     },
   },
 
   thames: {
     id: 'thames',
     name: 'Thames',
-    description: 'Elegant silver and charcoal grays with cool blue fog accents',
-    personality: 'Clean and sophisticated - perfect for luxury real estate and minimalist preferences',
+    description: 'London fog elegance with misty greys and crystalline silver',
+    personality: 'Sophisticated fog - refined British elegance with crisp precision',
     colors: {
-      // Primary brand colors - elegant grays
-      primary: '#475569', // Slate gray
-      primaryHover: '#334155', // Darker slate
-      primaryMuted: '#47556920', // Slate with transparency
+      // Primary brand colors - Refined silver and platinum
+      primary: '#64748B', // Sophisticated slate
+      primaryHover: '#475569', // Deeper slate
+      primaryMuted: 'rgba(100, 116, 139, 0.15)',
       
-      // Secondary accent colors - London fog blue
-      secondary: '#0EA5E9', // Sky blue
-      secondaryHover: '#0284C7', // Darker sky blue
-      secondaryMuted: '#0EA5E920', // Blue with transparency
+      // Secondary accent colors - Misty blue elegance
+      secondary: '#0EA5E9', // London fog blue
+      secondaryHover: '#0284C7', // Deep fog blue
+      secondaryMuted: 'rgba(14, 165, 233, 0.12)',
       
-      // Background colors - sophisticated grays
-      background: '#0F172A', // Very dark slate
-      backgroundSecondary: '#1E293B', // Dark slate
-      backgroundTertiary: '#334155', // Medium slate
+      // Background colors - Foggy sophistication
+      background: '#F8FAFC', // Pure fog white
+      backgroundSecondary: 'rgba(241, 245, 249, 0.98)', // Misty overlay
+      backgroundTertiary: 'rgba(226, 232, 240, 0.95)', // Soft fog layer
       
-      // Surface colors
-      surface: '#1E293B', // Dark slate for cards
-      surfaceHover: '#334155', // Hover state
-      surfaceActive: '#475569', // Active state
+      // Surface colors - Crystalline elegance
+      surface: 'rgba(255, 255, 255, 0.95)', // Crystal surfaces
+      surfaceHover: 'rgba(248, 250, 252, 0.98)', // Refined hover
+      surfaceActive: 'rgba(241, 245, 249, 0.98)', // Elegant active
       
-      // Border colors
-      border: 'rgba(148, 163, 184, 0.1)', // Subtle slate
-      borderHover: 'rgba(148, 163, 184, 0.2)',
-      borderActive: 'rgba(14, 165, 233, 0.3)', // Blue tint
+      // Border colors - Sophisticated definition
+      border: 'rgba(100, 116, 139, 0.12)', // Subtle definition
+      borderHover: 'rgba(100, 116, 139, 0.25)', // Enhanced borders
+      borderActive: 'rgba(14, 165, 233, 0.35)', // Fog blue focus
       
-      // Text colors
-      textPrimary: '#F8FAFC', // Pure white
-      textSecondary: '#E2E8F0', // Light gray
-      textMuted: '#94A3B8', // Medium gray
-      textInverse: '#0F172A', // Dark for light backgrounds
+      // Text colors - Crisp readability
+      textPrimary: '#0F172A', // Deep charcoal
+      textSecondary: '#334155', // Medium charcoal
+      textMuted: '#64748B', // Sophisticated grey
+      textInverse: '#F8FAFC', // Pure white
       
-      // Accent colors
-      accent: '#38BDF8', // Bright sky blue
-      accentHover: '#0EA5E9',
-      accentMuted: '#38BDF820',
+      // Accent colors - London sophistication
+      accent: '#0EA5E9', // Thames blue
+      accentHover: '#0284C7', // Deep Thames
+      accentMuted: 'rgba(14, 165, 233, 0.15)',
       
-      // Status colors
-      success: '#10B981', // Emerald
-      warning: '#F59E0B', // Amber
-      error: '#EF4444', // Red
-      info: '#3B82F6', // Blue
+      // Status colors - Refined palette
+      success: '#10B981', // British racing green
+      warning: '#F59E0B', // London gold
+      error: '#EF4444', // Refined red
+      info: '#3B82F6', // Royal blue
       
-      // Special elements
-      shadow: 'rgba(0, 0, 0, 0.2)',
-      gradient: 'linear-gradient(135deg, #475569 0%, #0EA5E9 100%)',
-      glassBg: 'rgba(30, 41, 59, 0.9)',
-      glassBlur: 'blur(16px)',
+      // Special elements - Misty effects
+      shadow: 'rgba(15, 23, 42, 0.08)', // Soft shadows
+      gradient: 'linear-gradient(135deg, #64748B 0%, #94A3B8 50%, #0EA5E9 100%)',
+      glassBg: 'rgba(248, 250, 252, 0.92)', // Crystal glass
+      glassBlur: 'blur(32px)', // Sophisticated blur
     },
     patterns: {
-      subtle: 'data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" stroke="rgba(14,165,233,0.05)" stroke-width="1"%3E%3Cpath d="M0 30h60M30 0v60"/%3E%3C/g%3E%3C/svg%3E',
+      subtle: 'url("data:image/svg+xml,%3Csvg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg stroke="%2364748b" stroke-width="1" stroke-opacity="0.03"%3E%3Cpath d="M0 50h100M50 0v100"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+      texture: 'linear-gradient(90deg, rgba(100,116,139,0.01) 50%, transparent 50%)',
     },
     animations: {
-      river: 'thamesRiver 8s linear infinite',
-      glow: 'thamesGlow 3s ease-in-out infinite alternate',
+      river: 'thamesRiver 20s ease-in-out infinite',
+      glow: 'thamesGlow 6s ease-in-out infinite alternate',
     },
   },
 
   colorado: {
     id: 'colorado',
     name: 'Colorado',
-    description: 'Cool mountain blues and snow whites with fresh mint highlights',
-    personality: 'Clean and energizing - great for outdoor-loving agents and fresh perspectives',
+    description: 'Alpine fresh with crystalline blues and snow-white purity',
+    personality: 'Crisp mountain air - energizing freshness with crystal clarity',
     colors: {
-      // Primary brand colors - mountain blues
-      primary: '#1E40AF', // Royal blue
-      primaryHover: '#1D4ED8', // Brighter blue
-      primaryMuted: '#1E40AF20', // Blue with transparency
+      // Primary brand colors - Crystal blue mountains
+      primary: '#0EA5E9', // Sky blue
+      primaryHover: '#0284C7', // Deep sky
+      primaryMuted: 'rgba(14, 165, 233, 0.12)',
       
-      // Secondary accent colors - fresh mint
-      secondary: '#10B981', // Emerald mint
-      secondaryHover: '#059669', // Darker mint
-      secondaryMuted: '#10B98120', // Mint with transparency
+      // Secondary accent colors - Fresh mint snow
+      secondary: '#06D6A0', // Fresh mint
+      secondaryHover: '#04C48C', // Deep mint
+      secondaryMuted: 'rgba(6, 214, 160, 0.12)',
       
-      // Background colors - clean mountain tones
-      background: '#0C1629', // Deep mountain blue
-      backgroundSecondary: '#1E293B', // Slate blue
-      backgroundTertiary: '#334155', // Lighter slate
+      // Background colors - Pure snow and ice
+      background: '#FFFFFF', // Pure snow white
+      backgroundSecondary: 'rgba(248, 250, 252, 0.98)', // Snow crystal
+      backgroundTertiary: 'rgba(241, 245, 249, 0.95)', // Ice layer
       
-      // Surface colors
-      surface: '#1E293B', // Clean slate for cards
-      surfaceHover: '#334155', // Hover state
-      surfaceActive: '#3B82F6', // Active bright blue
+      // Surface colors - Crystalline purity
+      surface: 'rgba(255, 255, 255, 0.98)', // Crystal surfaces
+      surfaceHover: 'rgba(240, 249, 255, 0.98)', // Ice hover
+      surfaceActive: 'rgba(224, 242, 254, 0.98)', // Active frost
       
-      // Border colors
-      border: 'rgba(59, 130, 246, 0.1)', // Subtle blue
-      borderHover: 'rgba(59, 130, 246, 0.2)',
-      borderActive: 'rgba(16, 185, 129, 0.3)', // Mint tint
+      // Border colors - Fresh definition
+      border: 'rgba(14, 165, 233, 0.08)', // Gentle definition
+      borderHover: 'rgba(14, 165, 233, 0.18)', // Clear borders
+      borderActive: 'rgba(6, 214, 160, 0.28)', // Mint focus
       
-      // Text colors
-      textPrimary: '#F8FAFC', // Snow white
-      textSecondary: '#E2E8F0', // Light frost
-      textMuted: '#94A3B8', // Medium gray
-      textInverse: '#0C1629', // Dark for light backgrounds
+      // Text colors - Mountain clarity
+      textPrimary: '#0F172A', // Deep mountain
+      textSecondary: '#334155', // Stone grey
+      textMuted: '#64748B', // Mountain mist
+      textInverse: '#FFFFFF', // Pure white
       
-      // Accent colors
-      accent: '#06B6D4', // Cyan (glacier water)
-      accentHover: '#0891B2',
-      accentMuted: '#06B6D420',
+      // Accent colors - Alpine energy
+      accent: '#06D6A0', // Electric mint
+      accentHover: '#04C48C', // Vibrant mint
+      accentMuted: 'rgba(6, 214, 160, 0.15)',
       
-      // Status colors
-      success: '#10B981', // Mint green
-      warning: '#F59E0B', // Amber
-      error: '#EF4444', // Red
-      info: '#3B82F6', // Blue
+      // Status colors - Fresh mountain palette
+      success: '#22C55E', // Alpine green
+      warning: '#F59E0B', // Sunrise gold
+      error: '#EF4444', // Alpine rose
+      info: '#0EA5E9', // Glacier blue
       
-      // Special elements
-      shadow: 'rgba(0, 0, 0, 0.15)',
-      gradient: 'linear-gradient(135deg, #1E40AF 0%, #10B981 50%, #06B6D4 100%)',
-      glassBg: 'rgba(30, 41, 59, 0.7)',
-      glassBlur: 'blur(20px)',
+      // Special elements - Crystal effects
+      shadow: 'rgba(14, 165, 233, 0.08)', // Soft blue shadows
+      gradient: 'linear-gradient(135deg, #0EA5E9 0%, #06D6A0 50%, #22C55E 100%)',
+      glassBg: 'rgba(255, 255, 255, 0.95)', // Crystal glass
+      glassBlur: 'blur(20px)', // Fresh blur
     },
     patterns: {
-      subtle: 'data:image/svg+xml,%3Csvg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="rgba(6,182,212,0.03)"%3E%3Cpolygon points="40,0 80,40 40,80 0,40"/%3E%3C/g%3E%3C/svg%3E',
+      subtle: 'url("data:image/svg+xml,%3Csvg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%230ea5e9" fill-opacity="0.02"%3E%3Cpath d="M60 60l30-30v60l-30-30zm0 0l30 30h-60l30-30z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+      texture: 'linear-gradient(45deg, rgba(14,165,233,0.01) 25%, transparent 25%, transparent 75%, rgba(6,214,160,0.01) 75%)',
     },
     animations: {
-      river: 'coloradoRiver 8s linear infinite',
+      river: 'coloradoRiver 10s ease-in-out infinite',
       glow: 'coloradoGlow 3s ease-in-out infinite alternate',
     },
   },
@@ -257,63 +261,64 @@ export const themes: Record<ThemeId, Theme> = {
   nile: {
     id: 'nile',
     name: 'Nile',
-    description: 'Warm sandy beiges and desert golds with sunset purples and copper accents',
-    personality: 'Luxurious and elegant - perfect for high-end market focus and premium branding',
+    description: 'Desert sunset with warm sand and ancient luxurious bronze',
+    personality: 'Ancient luxury - warm desert sunset with terracotta and bronze elegance',
     colors: {
-      // Primary brand colors - desert golds
-      primary: '#D97706', // Rich amber gold
-      primaryHover: '#B45309', // Darker amber
-      primaryMuted: '#D9770620', // Gold with transparency
+      // Primary brand colors - Rich terracotta and gold
+      primary: '#CD7F32', // Rich bronze
+      primaryHover: '#B8651A', // Darker bronze
+      primaryMuted: 'rgba(205, 127, 50, 0.15)',
       
-      // Secondary accent colors - sunset purple
-      secondary: '#7C3AED', // Rich violet
-      secondaryHover: '#6D28D9', // Darker violet
-      secondaryMuted: '#7C3AED20', // Purple with transparency
+      // Secondary accent colors - Terracotta luxury
+      secondary: '#D2691E', // Chocolate terracotta
+      secondaryHover: '#B8441C', // Deep terracotta
+      secondaryMuted: 'rgba(210, 105, 30, 0.15)',
       
-      // Background colors - warm desert tones
-      background: '#1C1917', // Very dark brown
-      backgroundSecondary: '#292524', // Dark warm gray
-      backgroundTertiary: '#44403C', // Medium warm gray
+      // Background colors - Warm sand and desert
+      background: '#1A1512', // Deep desert night
+      backgroundSecondary: 'rgba(41, 31, 20, 0.98)', // Sandy overlay
+      backgroundTertiary: 'rgba(68, 51, 35, 0.95)', // Layered sand
       
-      // Surface colors
-      surface: '#292524', // Warm dark gray for cards
-      surfaceHover: '#44403C', // Hover state
-      surfaceActive: '#78716C', // Active state
+      // Surface colors - Ancient stone and bronze
+      surface: 'rgba(41, 31, 20, 0.92)', // Ancient surface
+      surfaceHover: 'rgba(68, 51, 35, 0.95)', // Warmed stone
+      surfaceActive: 'rgba(92, 69, 47, 0.98)', // Active bronze
       
-      // Border colors
-      border: 'rgba(217, 119, 6, 0.1)', // Subtle gold
-      borderHover: 'rgba(217, 119, 6, 0.2)',
-      borderActive: 'rgba(124, 58, 237, 0.3)', // Purple tint
+      // Border colors - Luxurious bronze definition
+      border: 'rgba(205, 127, 50, 0.18)', // Bronze borders
+      borderHover: 'rgba(205, 127, 50, 0.35)', // Enhanced bronze
+      borderActive: 'rgba(210, 105, 30, 0.55)', // Terracotta focus
       
-      // Text colors
-      textPrimary: '#FEF7ED', // Warm white (cream)
-      textSecondary: '#F3E8FF', // Light lavender
-      textMuted: '#A8A29E', // Warm gray
-      textInverse: '#1C1917', // Dark for light backgrounds
+      // Text colors - Desert elegance
+      textPrimary: '#FEF3E2', // Warm sand white
+      textSecondary: '#FAE8D4', // Soft sand
+      textMuted: '#D6BC9A', // Muted sand
+      textInverse: '#1A1512', // Deep desert
       
-      // Accent colors
-      accent: '#F59E0B', // Bright gold
-      accentHover: '#D97706',
-      accentMuted: '#F59E0B20',
+      // Accent colors - Sunset luxury
+      accent: '#DAA520', // Goldenrod sunset
+      accentHover: '#B8941F', // Deep sunset gold
+      accentMuted: 'rgba(218, 165, 32, 0.2)',
       
-      // Status colors
-      success: '#10B981', // Emerald
-      warning: '#F59E0B', // Amber gold
-      error: '#EF4444', // Red
-      info: '#8B5CF6', // Purple
+      // Status colors - Desert harmony
+      success: '#228B22', // Desert oasis green
+      warning: '#DAA520', // Sunset gold
+      error: '#CD5C5C', // Desert rose
+      info: '#4682B4', // Desert sky blue
       
-      // Special elements
-      shadow: 'rgba(0, 0, 0, 0.4)',
-      gradient: 'linear-gradient(135deg, #D97706 0%, #7C3AED 50%, #DC2626 100%)',
-      glassBg: 'rgba(41, 37, 36, 0.8)',
-      glassBlur: 'blur(12px)',
+      // Special elements - Ancient luxury
+      shadow: 'rgba(0, 0, 0, 0.45)', // Deep desert shadows
+      gradient: 'linear-gradient(135deg, #CD7F32 0%, #D2691E 40%, #DAA520 100%)',
+      glassBg: 'rgba(26, 21, 18, 0.85)', // Desert glass
+      glassBlur: 'blur(28px)', // Ancient blur
     },
     patterns: {
-      subtle: 'data:image/svg+xml,%3Csvg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="rgba(217,119,6,0.03)"%3E%3Cpath d="M25,5 L35,25 L25,45 L15,25 Z"/%3E%3C/g%3E%3C/svg%3E',
+      subtle: 'url("data:image/svg+xml,%3Csvg width="90" height="90" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23cd7f32" fill-opacity="0.04"%3E%3Cpath d="M45 45l22.5-22.5v45L45 45zm0 0l22.5 22.5h-45L45 45zm0 0L22.5 22.5v45L45 45zm0 0L22.5 67.5h45L45 45z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+      texture: 'radial-gradient(circle at 30% 70%, rgba(205,127,50,0.03) 0%, transparent 50%), linear-gradient(60deg, rgba(210,105,30,0.02) 25%, transparent 25%, transparent 75%, rgba(218,165,32,0.02) 75%)',
     },
     animations: {
-      river: 'nileRiver 8s linear infinite',
-      glow: 'nileGlow 3s ease-in-out infinite alternate',
+      river: 'nileRiver 12s ease-in-out infinite',
+      glow: 'nileGlow 4.5s ease-in-out infinite alternate',
     },
   },
 };

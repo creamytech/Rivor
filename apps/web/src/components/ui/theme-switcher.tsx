@@ -68,88 +68,202 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({
     const isActive = themeId === id;
     const isPreview = hoverPreview === id;
 
+    // Get theme-specific personality effects
+    const getThemeEffects = () => {
+      switch (id) {
+        case 'mississippi':
+          return {
+            shadow: '0 8px 32px rgba(212, 175, 55, 0.2), 0 0 20px rgba(205, 133, 63, 0.1)',
+            glowClass: 'theme-luxury-animation',
+            personality: '🛥️ Luxury Riverboat Elegance',
+          };
+        case 'amazon':
+          return {
+            shadow: '0 8px 32px rgba(16, 185, 129, 0.2), 0 0 20px rgba(8, 145, 178, 0.1)',
+            glowClass: 'theme-growth-animation',
+            personality: '🌿 Living, Breathing Nature',
+          };
+        case 'thames':
+          return {
+            shadow: '0 8px 32px rgba(100, 116, 139, 0.15), 0 0 20px rgba(14, 165, 233, 0.1)',
+            glowClass: 'theme-fog-animation',
+            personality: '🌫️ Sophisticated London Fog',
+          };
+        case 'colorado':
+          return {
+            shadow: '0 8px 32px rgba(14, 165, 233, 0.15), 0 0 20px rgba(6, 214, 160, 0.1)',
+            glowClass: 'theme-snow-animation',
+            personality: '🏔️ Crisp Mountain Air',
+          };
+        case 'nile':
+          return {
+            shadow: '0 8px 32px rgba(205, 127, 50, 0.2), 0 0 20px rgba(210, 105, 30, 0.1)',
+            glowClass: 'theme-sunset-animation',
+            personality: '🏜️ Ancient Desert Luxury',
+          };
+        default:
+          return {
+            shadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+            glowClass: '',
+            personality: '',
+          };
+      }
+    };
+
+    const effects = getThemeEffects();
+
     return (
       <motion.div
-        className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
+        className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-500 ${
           isActive 
             ? 'border-current ring-2 ring-current/20' 
             : 'border-transparent hover:border-current/50'
-        } ${isPreview ? 'ring-2 ring-current/30' : ''}`}
+        } ${isPreview ? 'ring-2 ring-current/30' : ''} ${effects.glowClass}`}
         style={{
           backgroundColor: theme.colors.surface,
           borderColor: isActive || isPreview ? theme.colors.primary : 'transparent',
           color: theme.colors.textPrimary,
+          boxShadow: isActive || isPreview ? effects.shadow : 'none',
         }}
         onClick={() => handleThemeSelect(id)}
         onMouseEnter={() => handleThemePreview(id)}
         onMouseLeave={() => handleThemePreview(null)}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={{ scale: 1.03, y: -4 }}
+        whileTap={{ scale: 0.97 }}
       >
-        {/* Theme Preview Visual */}
+        {/* Enhanced Theme Preview Visual */}
         <div className="mb-3">
           <div 
-            className="h-16 w-full rounded-lg mb-2 relative overflow-hidden"
+            className="h-20 w-full rounded-lg mb-2 relative overflow-hidden"
             style={{
               background: theme.colors.gradient,
             }}
           >
-            {/* Mini UI Elements */}
-            <div className="absolute top-2 left-2 right-2 flex gap-1">
+            {/* Background Pattern Overlay */}
+            {theme.patterns?.subtle && (
               <div 
-                className="h-1 w-4 rounded-full opacity-60"
+                className="absolute inset-0 opacity-10"
+                style={{
+                  backgroundImage: theme.patterns.subtle,
+                  backgroundSize: '40px 40px',
+                }}
+              />
+            )}
+
+            {/* Enhanced Mini UI Elements */}
+            <div className="absolute top-2 left-2 right-2 flex gap-2">
+              <motion.div 
+                className="h-2 w-6 rounded-full"
                 style={{ backgroundColor: theme.colors.textPrimary }}
+                initial={{ opacity: 0.4, width: '1rem' }}
+                animate={{ opacity: 0.8, width: '1.5rem' }}
+                transition={{ duration: 2, repeat: Infinity, repeatType: 'reverse' }}
               />
-              <div 
-                className="h-1 w-6 rounded-full opacity-40"
+              <motion.div 
+                className="h-2 w-8 rounded-full"
                 style={{ backgroundColor: theme.colors.textSecondary }}
-              />
-            </div>
-            <div className="absolute bottom-2 left-2 right-2 flex gap-1">
-              <div 
-                className="h-2 w-8 rounded opacity-80"
-                style={{ backgroundColor: theme.colors.accent }}
-              />
-              <div 
-                className="h-2 w-6 rounded opacity-60"
-                style={{ backgroundColor: theme.colors.secondary }}
+                initial={{ opacity: 0.3, scale: 0.8 }}
+                animate={{ opacity: 0.6, scale: 1 }}
+                transition={{ duration: 1.5, repeat: Infinity, repeatType: 'reverse', delay: 0.3 }}
               />
             </div>
             
-            {/* Flowing animation preview */}
+            {/* Theme-specific visual elements */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <motion.div
+                className="text-2xl"
+                animate={{ 
+                  scale: [1, 1.1, 1],
+                  rotate: id === 'mississippi' ? [0, 2, 0] : [0, 0, 0],
+                  filter: id === 'thames' ? ['blur(0px)', 'blur(1px)', 'blur(0px)'] : ['blur(0px)'],
+                }}
+                transition={{ 
+                  duration: id === 'nile' ? 4 : id === 'colorado' ? 2 : 3, 
+                  repeat: Infinity,
+                  ease: "easeInOut" 
+                }}
+              >
+                {id === 'mississippi' && '⚜️'}
+                {id === 'amazon' && '🌱'}
+                {id === 'thames' && '🌊'}
+                {id === 'colorado' && '❄️'}
+                {id === 'nile' && '🏛️'}
+              </motion.div>
+            </div>
+
+            <div className="absolute bottom-2 left-2 right-2 flex gap-1">
+              <motion.div 
+                className="h-2 w-10 rounded"
+                style={{ backgroundColor: theme.colors.accent }}
+                initial={{ opacity: 0.6, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 1, repeat: Infinity, repeatType: 'reverse' }}
+              />
+              <motion.div 
+                className="h-2 w-6 rounded"
+                style={{ backgroundColor: theme.colors.secondary }}
+                initial={{ opacity: 0.4, y: 2 }}
+                animate={{ opacity: 0.8, y: 0 }}
+                transition={{ duration: 1.2, repeat: Infinity, repeatType: 'reverse', delay: 0.4 }}
+              />
+            </div>
+            
+            {/* Theme-specific flowing animation */}
             <motion.div
-              className="absolute inset-0 opacity-30"
+              className="absolute inset-0"
               style={{
-                background: `linear-gradient(90deg, transparent 0%, ${theme.colors.textPrimary}40 50%, transparent 100%)`,
-                width: '50%',
+                background: `linear-gradient(90deg, transparent 0%, ${theme.colors.textPrimary}30 50%, transparent 100%)`,
+                width: '60%',
               }}
               animate={{
-                x: ['-100%', '200%'],
+                x: ['-100%', '160%'],
+                opacity: [0.2, 0.6, 0.2],
               }}
               transition={{
-                duration: 3,
+                duration: id === 'mississippi' ? 4 : id === 'amazon' ? 5 : id === 'thames' ? 6 : id === 'colorado' ? 3 : 4.5,
                 repeat: Infinity,
-                ease: "linear",
+                ease: "easeInOut",
               }}
             />
+
+            {/* Glass effect overlay for certain themes */}
+            {(id === 'thames' || id === 'colorado') && (
+              <div 
+                className="absolute inset-0 rounded-lg"
+                style={{
+                  background: theme.colors.glassBg,
+                  backdropFilter: theme.colors.glassBlur,
+                  opacity: 0.3,
+                }}
+              />
+            )}
           </div>
         </div>
 
-        {/* Theme Info */}
-        <div className="space-y-1">
+        {/* Enhanced Theme Info */}
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h4 className="font-semibold text-sm" style={{ color: theme.colors.textPrimary }}>
               {theme.name}
             </h4>
             {isActive && (
-              <Check className="h-4 w-4" style={{ color: theme.colors.primary }} />
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 200, damping: 15 }}
+              >
+                <Check className="h-4 w-4" style={{ color: theme.colors.primary }} />
+              </motion.div>
             )}
           </div>
           <p className="text-xs opacity-80 line-clamp-2" style={{ color: theme.colors.textSecondary }}>
             {theme.description}
           </p>
-          <div className="text-xs pt-1 border-t border-current/10" style={{ color: theme.colors.textMuted }}>
-            <em>{theme.personality}</em>
+          <div className="text-[11px] pt-1 border-t border-current/10" style={{ color: theme.colors.textMuted }}>
+            <span className="opacity-90">{effects.personality}</span>
+          </div>
+          <div className="text-xs pt-1" style={{ color: theme.colors.textMuted }}>
+            <em>"{theme.personality}"</em>
           </div>
         </div>
 
