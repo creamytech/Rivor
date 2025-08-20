@@ -62,19 +62,7 @@ const nextConfig = {
       crypto: false,
     };
     
-    // Define browser globals for server-side compatibility
-    config.plugins = config.plugins || [];
-    if (isServer) {
-      const webpack = require('webpack');
-      config.plugins.push(
-        new webpack.DefinePlugin({
-          'typeof window': JSON.stringify('undefined'),
-          'typeof document': JSON.stringify('undefined'),
-          'typeof self': JSON.stringify('undefined'),
-          'typeof navigator': JSON.stringify('undefined'),
-        })
-      );
-    }
+    // Server-side compatibility handled by polyfills in layout.tsx
     
     // Optimize externals for server-side only heavy packages
     config.externals = Array.isArray(config.externals) ? config.externals : [];
