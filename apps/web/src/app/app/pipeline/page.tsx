@@ -166,7 +166,7 @@ export default function PipelinePage() {
       <AppShell>
         {/* Enhanced Header Section */}
         <div 
-          className="sticky top-[calc(56px+80px)] z-20 backdrop-blur-sm border-b shadow-sm"
+          className="sticky top-16 z-20 backdrop-blur-sm border-b shadow-sm"
           style={{
             backgroundColor: `${currentTheme.colors.surfaceAlt}F0`, // Adding alpha for transparency
             borderColor: currentTheme.colors.border
@@ -394,7 +394,7 @@ export default function PipelinePage() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 320, opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-[calc(56px+80px+88px)] bottom-0 w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-l border-border shadow-xl z-10 overflow-y-auto"
+            className="fixed right-0 top-[calc(64px+88px)] bottom-0 w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-l border-border shadow-xl z-10 overflow-y-auto"
           >
             <div className="p-4 border-b border-border bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
               <div className="flex items-center justify-between">
