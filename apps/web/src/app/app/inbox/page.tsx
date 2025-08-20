@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import AppShell from "@/components/app/AppShell";
-import EnhancedInbox from "@/components/inbox/EnhancedInbox";
+import EnhancedRealEstateInbox from "@/components/inbox/EnhancedRealEstateInbox";
 import SegmentedControl from "@/components/app/SegmentedControl";
 import Toolbar, { ToolbarGroup, ToolbarItem } from "@/components/app/Toolbar";
 import { Button } from "@/components/ui/button";
@@ -160,9 +160,9 @@ export default function InboxPage() {
           </div>
         </div>
 
-        {/* Enhanced Inbox Component */}
-        <div className="px-6 pb-8">
-          <EnhancedInbox
+        {/* Enhanced Real Estate Inbox Component */}
+        <div className="h-[calc(100vh-200px)]">
+          <EnhancedRealEstateInbox
             activeTab={activeTab}
             searchQuery={searchQuery}
             selectedFilter={selectedFilter || ""}
