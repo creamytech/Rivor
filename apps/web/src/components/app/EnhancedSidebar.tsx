@@ -97,8 +97,8 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
   // Enhanced keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Toggle sidebar
-      if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
+      // Toggle sidebar collapse with ⌘B or Ctrl+B
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'b') {
         event.preventDefault();
         onToggleCollapse();
         return;

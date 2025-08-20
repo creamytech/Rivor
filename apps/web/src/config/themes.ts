@@ -1,4 +1,5 @@
 import { Theme, ThemeId } from '@/types/theme';
+import { getAccessibleThemes } from '@/lib/theme-accessibility';
 
 export const themes: Record<ThemeId, Theme> = {
   mississippi: {
@@ -318,3 +319,6 @@ export const themes: Record<ThemeId, Theme> = {
 };
 
 export const defaultTheme: ThemeId = 'mississippi';
+
+// Export themes with accessibility analysis
+export const accessibleThemes = getAccessibleThemes(themes);

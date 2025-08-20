@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Palette, Check, X, RotateCcw } from 'lucide-react';
+import { ChevronDown, Palette, Check, X, RotateCcw, Shield, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { ThemeId } from '@/types/theme';
 import { Button } from '@/components/ui/button';
@@ -204,6 +204,39 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Accessibility Indicator */}
+        {theme.accessibility && (
+          <div className="mt-2 pt-2 border-t border-current/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                {theme.accessibility.wcagLevel === 'AAA' && (
+                  <>
+                    <CheckCircle className="h-3 w-3 text-green-500" />
+                    <span className="text-[10px] text-green-600">AAA</span>
+                  </>
+                )}
+                {theme.accessibility.wcagLevel === 'AA' && (
+                  <>
+                    <Shield className="h-3 w-3 text-blue-500" />
+                    <span className="text-[10px] text-blue-600">AA</span>
+                  </>
+                )}
+                {theme.accessibility.wcagLevel === 'Fail' && (
+                  <>
+                    <AlertTriangle className="h-3 w-3 text-amber-500" />
+                    <span className="text-[10px] text-amber-600">Needs Fix</span>
+                  </>
+                )}
+              </div>
+              {theme.accessibility.needsOverlay && (
+                <div className="text-[9px] opacity-60" title="Auto-enhanced for better contrast">
+                  Enhanced
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </motion.div>
     );
   };
@@ -265,8 +298,23 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({
                           />
                         </div>
                         <div className="flex-1">
-                          <div className="font-medium text-sm" style={{ color: currentTheme.colors.textPrimary }}>
-                            {themes[id as ThemeId].name}
+                          <div className="flex items-center gap-2">
+                            <div className="font-medium text-sm" style={{ color: currentTheme.colors.textPrimary }}>
+                              {themes[id as ThemeId].name}
+                            </div>
+                            {themes[id as ThemeId].accessibility && (
+                              <div className="flex items-center">
+                                {themes[id as ThemeId].accessibility?.wcagLevel === 'AAA' && (
+                                  <CheckCircle className="h-3 w-3 text-green-500" title="WCAG AAA Compliant" />
+                                )}
+                                {themes[id as ThemeId].accessibility?.wcagLevel === 'AA' && (
+                                  <Shield className="h-3 w-3 text-blue-500" title="WCAG AA Compliant" />
+                                )}
+                                {themes[id as ThemeId].accessibility?.wcagLevel === 'Fail' && (
+                                  <AlertTriangle className="h-3 w-3 text-amber-500" title="Accessibility Enhanced" />
+                                )}
+                              </div>
+                            )}
                           </div>
                           <div className="text-xs" style={{ color: currentTheme.colors.textMuted }}>
                             {themes[id as ThemeId].description}

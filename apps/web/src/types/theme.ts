@@ -60,6 +60,12 @@ export interface Theme {
     river?: string;
     glow?: string;
   };
+  accessibility?: {
+    contrastOverlay?: string;
+    highContrastMode?: boolean;
+    wcagLevel?: 'AA' | 'AAA' | 'Fail';
+    needsOverlay?: boolean;
+  };
 }
 
 export type ThemeId = 'mississippi' | 'amazon' | 'thames' | 'colorado' | 'nile';

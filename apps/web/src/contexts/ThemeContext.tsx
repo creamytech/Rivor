@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Theme, ThemeId, ThemeContextValue } from '@/types/theme';
-import { themes, defaultTheme } from '@/config/themes';
+import { themes, defaultTheme, accessibleThemes } from '@/config/themes';
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
@@ -134,10 +134,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   };
 
   const value: ThemeContextValue = {
-    currentTheme: themes[themeId],
+    currentTheme: accessibleThemes[themeId],
     themeId,
     setTheme,
-    themes,
+    themes: accessibleThemes,
     isTransitioning,
   };
 
