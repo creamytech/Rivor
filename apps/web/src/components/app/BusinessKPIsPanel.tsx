@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useTheme } from '@/contexts/ThemeContext';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -101,6 +102,7 @@ function Sparkline({ data, color = "blue" }: { data: number[]; color?: string })
 }
 
 export default function BusinessKPIsPanel({ className = '' }: BusinessKPIsPanelProps) {
+  const { currentTheme } = useTheme();
   const [metrics, setMetrics] = useState<KPIMetric[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -402,7 +404,13 @@ export default function BusinessKPIsPanel({ className = '' }: BusinessKPIsPanelP
 
   if (isLoading) {
     return (
-      <Card className="border-0 bg-gradient-to-r from-white via-blue-50/30 to-white dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 shadow-xl">
+      <Card 
+        className="theme-card shadow-xl"
+        style={{
+          background: currentTheme.colors.surface,
+          border: `1px solid ${currentTheme.colors.border}`,
+        }}
+      >
         <CardContent className="p-8">
           <div className="animate-pulse">
             <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded-lg mb-6 w-1/3" />
@@ -428,7 +436,14 @@ export default function BusinessKPIsPanel({ className = '' }: BusinessKPIsPanelP
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
-      <Card className="border-0 bg-gradient-to-r from-white via-blue-50/30 to-white dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 shadow-xl backdrop-blur-sm">
+      <Card 
+        className="theme-card shadow-xl backdrop-blur-sm"
+        style={{
+          background: currentTheme.colors.glassBg,
+          border: `1px solid ${currentTheme.colors.border}`,
+          backdropFilter: currentTheme.colors.glassBlur,
+        }}
+      >
         <CardContent className="p-8">
           {/* Section Header */}
           <motion.div
@@ -437,10 +452,16 @@ export default function BusinessKPIsPanel({ className = '' }: BusinessKPIsPanelP
             transition={{ delay: 0.2, duration: 0.6 }}
             className="mb-8"
           >
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+            <h2 
+              className="text-2xl font-bold mb-2 theme-text-primary"
+              style={{ color: currentTheme.colors.textPrimary }}
+            >
               Business Performance
             </h2>
-            <p className="text-slate-600 dark:text-slate-400">
+            <p 
+              className="theme-text-secondary"
+              style={{ color: currentTheme.colors.textSecondary }}
+            >
               Real-time overview of your key business metrics and trends
             </p>
           </motion.div>
@@ -465,7 +486,10 @@ export default function BusinessKPIsPanel({ className = '' }: BusinessKPIsPanelP
                       </div>
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      <h3 
+                        className="text-sm font-semibold mb-1"
+                        style={{ color: currentTheme.colors.textSecondary }}
+                      >
                         {metric.label}
                       </h3>
                       <Badge variant="outline" className={`text-xs ${getChangeColor(metric.changeType)}`}>
@@ -479,10 +503,16 @@ export default function BusinessKPIsPanel({ className = '' }: BusinessKPIsPanelP
 
                   {/* Value */}
                   <div className="mb-4">
-                    <div className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-1">
+                    <div 
+                      className="text-3xl font-bold mb-1 theme-kpi-value"
+                      style={{ color: currentTheme.colors.primary }}
+                    >
                       {metric.value}
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                    <div 
+                      className="text-xs theme-kpi-label"
+                      style={{ color: currentTheme.colors.textMuted }}
+                    >
                       {metric.period}
                     </div>
                   </div>

@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ThemeSwitcher } from "@/components/ui/theme-switcher";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   BarChart3,
   Inbox,
@@ -27,7 +29,8 @@ import {
   Bell,
   HelpCircle,
   ExternalLink,
-  TrendingUp
+  TrendingUp,
+  Palette
 } from "lucide-react";
 
 interface NavItem {
@@ -48,6 +51,7 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
   const pathname = usePathname();
   const { data: session } = useSession();
   const [showQuickActionsMenu, setShowQuickActionsMenu] = useState(false);
+  const { currentTheme } = useTheme();
 
   // Close quick actions menu when clicking outside
   useEffect(() => {
@@ -180,30 +184,71 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
 
   return (
     <TooltipProvider>
-      <aside className={`
-        sticky top-0 h-screen hidden md:flex md:flex-col 
-        border-r border-[var(--border)] bg-[var(--muted)] z-40
-        transition-all duration-300 ease-in-out
-        ${isCollapsed ? 'w-[72px]' : 'w-64'}
-        relative overflow-hidden
-        ${isCollapsed ? 'hover:w-64 hover:shadow-xl group' : ''}
-      `}>
+      <aside 
+        className={`
+          sticky top-0 h-screen hidden md:flex md:flex-col 
+          theme-sidebar z-40
+          transition-all duration-300 ease-in-out
+          ${isCollapsed ? 'w-[72px]' : 'w-64'}
+          relative overflow-hidden
+          ${isCollapsed ? 'hover:w-64 hover:shadow-xl group' : ''}
+        `}
+        style={{
+          backgroundColor: currentTheme.colors.background,
+          borderRight: `1px solid ${currentTheme.colors.border}`,
+        }}
+      >
         {/* Enhanced River Flow Background Effect */}
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-blue-400 via-cyan-400 to-teal-400 animate-pulse"></div>
-          <div className="absolute inset-y-0 left-4 w-0.5 bg-gradient-to-b from-transparent via-blue-300 to-transparent animate-pulse" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute inset-y-0 left-8 w-0.25 bg-gradient-to-b from-transparent via-cyan-300 to-transparent animate-pulse" style={{ animationDelay: '2s' }}></div>
+          <div 
+            className="absolute inset-y-0 left-0 w-1 animate-pulse"
+            style={{
+              background: `linear-gradient(to bottom, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary}, ${currentTheme.colors.accent})`
+            }}
+          ></div>
+          <div 
+            className="absolute inset-y-0 left-4 w-0.5 animate-pulse" 
+            style={{ 
+              background: `linear-gradient(to bottom, transparent, ${currentTheme.colors.primary}40, transparent)`,
+              animationDelay: '1s' 
+            }}
+          ></div>
+          <div 
+            className="absolute inset-y-0 left-8 w-0.5 animate-pulse" 
+            style={{ 
+              background: `linear-gradient(to bottom, transparent, ${currentTheme.colors.secondary}40, transparent)`,
+              animationDelay: '2s' 
+            }}
+          ></div>
         </div>
 
         {/* Header with Logo and Collapse Toggle */}
-        <div className="relative z-10 h-14 flex items-center px-4 border-b border-[var(--border)]">
+        <div 
+          className="relative z-10 h-14 flex items-center px-4"
+          style={{
+            borderBottom: `1px solid ${currentTheme.colors.border}`
+          }}
+        >
           {!isCollapsed && (
             <div className="flex items-center gap-2 flex-1">
               <Link href="/app" className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-lg flex items-center justify-center">
+                <div 
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{
+                    background: currentTheme.colors.gradient
+                  }}
+                >
                   <span className="text-white font-bold text-sm">R</span>
                 </div>
-                <span className="font-semibold text-lg bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent">
+                <span 
+                  className="font-semibold text-lg theme-gradient-text"
+                  style={{
+                    background: currentTheme.colors.gradient,
+                    WebkitBackgroundClip: 'text',
+                    backgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent'
+                  }}
+                >
                   Rivor
                 </span>
               </Link>
@@ -413,8 +458,33 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
           </div>
         )}
 
+        {/* Theme Switcher */}
+        <div className="relative z-10 px-2 py-2">
+          {!isCollapsed ? (
+            <div className="mb-2">
+              <ThemeSwitcher showInNavigation compact />
+            </div>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex justify-center mb-2">
+                  <ThemeSwitcher showInNavigation compact />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Switch Theme</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+
         {/* User Profile Section - Condensed */}
-        <div className="relative z-10 px-2 py-1 border-t border-[var(--border)]">
+        <div 
+          className="relative z-10 px-2 py-1"
+          style={{
+            borderTop: `1px solid ${currentTheme.colors.border}`
+          }}
+        >
           {!isCollapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
