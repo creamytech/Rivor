@@ -1,5 +1,5 @@
 -- CreateTable
-CREATE TABLE "public"."User" (
+CREATE TABLE IF NOT EXISTS "public"."User" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "emailVerified" TIMESTAMP(3),
@@ -13,7 +13,7 @@ CREATE TABLE "public"."User" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."Account" (
+CREATE TABLE IF NOT EXISTS "public"."Account" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "type" TEXT NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE "public"."Account" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."Session" (
+CREATE TABLE IF NOT EXISTS "public"."Session" (
     "id" TEXT NOT NULL,
     "sessionToken" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -45,7 +45,7 @@ CREATE TABLE "public"."Session" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."VerificationToken" (
+CREATE TABLE IF NOT EXISTS "public"."VerificationToken" (
     "identifier" TEXT NOT NULL,
     "token" TEXT NOT NULL,
     "expires" TIMESTAMP(3) NOT NULL,
@@ -53,7 +53,7 @@ CREATE TABLE "public"."VerificationToken" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."Org" (
+CREATE TABLE IF NOT EXISTS "public"."Org" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "brandName" TEXT NOT NULL DEFAULT 'Rivor',
@@ -68,7 +68,7 @@ CREATE TABLE "public"."Org" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."OrgMember" (
+CREATE TABLE IF NOT EXISTS "public"."OrgMember" (
     "id" TEXT NOT NULL,
     "orgId" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -80,7 +80,7 @@ CREATE TABLE "public"."OrgMember" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."OAuthAccount" (
+CREATE TABLE IF NOT EXISTS "public"."OAuthAccount" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "provider" TEXT NOT NULL,
@@ -96,7 +96,7 @@ CREATE TABLE "public"."OAuthAccount" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."EmailAccount" (
+CREATE TABLE IF NOT EXISTS "public"."EmailAccount" (
     "id" TEXT NOT NULL,
     "orgId" TEXT NOT NULL,
     "provider" TEXT NOT NULL,
@@ -111,7 +111,7 @@ CREATE TABLE "public"."EmailAccount" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."EmailThread" (
+CREATE TABLE IF NOT EXISTS "public"."EmailThread" (
     "id" TEXT NOT NULL,
     "orgId" TEXT NOT NULL,
     "accountId" TEXT NOT NULL,
@@ -128,7 +128,7 @@ CREATE TABLE "public"."EmailThread" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."EmailMessage" (
+CREATE TABLE IF NOT EXISTS "public"."EmailMessage" (
     "id" TEXT NOT NULL,
     "threadId" TEXT NOT NULL,
     "orgId" TEXT NOT NULL,
@@ -151,7 +151,7 @@ CREATE TABLE "public"."EmailMessage" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."CalendarAccount" (
+CREATE TABLE IF NOT EXISTS "public"."CalendarAccount" (
     "id" TEXT NOT NULL,
     "orgId" TEXT NOT NULL,
     "provider" TEXT NOT NULL,
@@ -167,7 +167,7 @@ CREATE TABLE "public"."CalendarAccount" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."CalendarEvent" (
+CREATE TABLE IF NOT EXISTS "public"."CalendarEvent" (
     "id" TEXT NOT NULL,
     "orgId" TEXT NOT NULL,
     "accountId" TEXT NOT NULL,
@@ -186,7 +186,7 @@ CREATE TABLE "public"."CalendarEvent" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."Contact" (
+CREATE TABLE IF NOT EXISTS "public"."Contact" (
     "id" TEXT NOT NULL,
     "orgId" TEXT NOT NULL,
     "nameEnc" BYTEA,
@@ -209,7 +209,7 @@ CREATE TABLE "public"."Contact" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."Lead" (
+CREATE TABLE IF NOT EXISTS "public"."Lead" (
     "id" TEXT NOT NULL,
     "orgId" TEXT NOT NULL,
     "contactId" TEXT,
@@ -232,7 +232,7 @@ CREATE TABLE "public"."Lead" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."Task" (
+CREATE TABLE IF NOT EXISTS "public"."Task" (
     "id" TEXT NOT NULL,
     "orgId" TEXT NOT NULL,
     "title" TEXT NOT NULL,
@@ -250,7 +250,7 @@ CREATE TABLE "public"."Task" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."PipelineStage" (
+CREATE TABLE IF NOT EXISTS "public"."PipelineStage" (
     "id" TEXT NOT NULL,
     "orgId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -263,7 +263,7 @@ CREATE TABLE "public"."PipelineStage" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."WebhookSubscription" (
+CREATE TABLE IF NOT EXISTS "public"."WebhookSubscription" (
     "id" TEXT NOT NULL,
     "orgId" TEXT NOT NULL,
     "provider" TEXT NOT NULL,
@@ -275,7 +275,7 @@ CREATE TABLE "public"."WebhookSubscription" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."StripeCustomer" (
+CREATE TABLE IF NOT EXISTS "public"."StripeCustomer" (
     "id" TEXT NOT NULL,
     "orgId" TEXT NOT NULL,
     "customerId" TEXT NOT NULL,
@@ -286,7 +286,7 @@ CREATE TABLE "public"."StripeCustomer" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."Subscription" (
+CREATE TABLE IF NOT EXISTS "public"."Subscription" (
     "id" TEXT NOT NULL,
     "orgId" TEXT NOT NULL,
     "stripeCustomerId" TEXT NOT NULL,
@@ -302,7 +302,7 @@ CREATE TABLE "public"."Subscription" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."AuditLog" (
+CREATE TABLE IF NOT EXISTS "public"."AuditLog" (
     "id" TEXT NOT NULL,
     "orgId" TEXT NOT NULL,
     "actorId" TEXT,
@@ -317,37 +317,37 @@ CREATE TABLE "public"."AuditLog" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_email_key" ON "public"."User"("email");
+CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "public"."User"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Account_provider_providerAccountId_key" ON "public"."Account"("provider", "providerAccountId");
+CREATE UNIQUE INDEX IF NOT EXISTS "Account_provider_providerAccountId_key" ON "public"."Account"("provider", "providerAccountId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Session_sessionToken_key" ON "public"."Session"("sessionToken");
+CREATE UNIQUE INDEX IF NOT EXISTS "Session_sessionToken_key" ON "public"."Session"("sessionToken");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "VerificationToken_token_key" ON "public"."VerificationToken"("token");
+CREATE UNIQUE INDEX IF NOT EXISTS "VerificationToken_token_key" ON "public"."VerificationToken"("token");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "VerificationToken_identifier_token_key" ON "public"."VerificationToken"("identifier", "token");
+CREATE UNIQUE INDEX IF NOT EXISTS "VerificationToken_identifier_token_key" ON "public"."VerificationToken"("identifier", "token");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "OrgMember_orgId_userId_key" ON "public"."OrgMember"("orgId", "userId");
+CREATE UNIQUE INDEX IF NOT EXISTS "OrgMember_orgId_userId_key" ON "public"."OrgMember"("orgId", "userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "OAuthAccount_provider_providerId_key" ON "public"."OAuthAccount"("provider", "providerId");
+CREATE UNIQUE INDEX IF NOT EXISTS "OAuthAccount_provider_providerId_key" ON "public"."OAuthAccount"("provider", "providerId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "EmailMessage_orgId_messageId_key" ON "public"."EmailMessage"("orgId", "messageId");
+CREATE UNIQUE INDEX IF NOT EXISTS "EmailMessage_orgId_messageId_key" ON "public"."EmailMessage"("orgId", "messageId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Contact_orgId_emailIndex_key" ON "public"."Contact"("orgId", "emailIndex");
+CREATE UNIQUE INDEX IF NOT EXISTS "Contact_orgId_emailIndex_key" ON "public"."Contact"("orgId", "emailIndex");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "PipelineStage_orgId_order_key" ON "public"."PipelineStage"("orgId", "order");
+CREATE UNIQUE INDEX IF NOT EXISTS "PipelineStage_orgId_order_key" ON "public"."PipelineStage"("orgId", "order");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "StripeCustomer_customerId_key" ON "public"."StripeCustomer"("customerId");
+CREATE UNIQUE INDEX IF NOT EXISTS "StripeCustomer_customerId_key" ON "public"."StripeCustomer"("customerId");
 
 -- AddForeignKey
 ALTER TABLE "public"."Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
