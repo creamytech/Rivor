@@ -4,7 +4,11 @@
     "private": true,
     "scripts": {
         "dev": "next dev",
-        "build": "npm run db:generate && next build",
+        "prebuild": "node ../../scripts/optimize-build.js",
+    "build": "npm run db:generate && next build",
+    "postbuild": "node ../../scripts/performance-monitor.js --analyze --report",
+    "build:analyze": "ANALYZE=true npm run build",
+    "build:fast": "npm run db:generate && next build --no-lint",
         "start": "next start",
         "lint": "next lint",
         "test": "vitest",
@@ -16,7 +20,8 @@
         "e2e:debug": "playwright test --debug",
         "db:migrate:deploy": "cd ../../packages/db && (npx prisma migrate resolve --applied 20250127000002_oauth_provisioning_improvements || true) && (npx prisma migrate resolve --applied 20250127000003_add_push_tracking || true) && (npx prisma migrate resolve --applied 20250127000004_soc2_compliance_remove_plain_text || true) && (npx prisma migrate resolve --applied 20250815052658_initial || true) && (npx prisma migrate resolve --applied 20250815210000_add_calendar_account_unique_constraint || true) && (npx prisma migrate resolve --applied 20250820000000_resolve_migration_conflicts || true) && npx prisma migrate deploy",
         "db:generate": "cd ../../packages/db && npx prisma generate",
-        "db:health": "node ../../packages/db/health-check.js"
+        "db:health": "node ../../packages/db/health-check.js",
+        "preinstall": "npx only-allow npm"
     },
     "dependencies": {
         "@azure/msal-node": "^3.7.1",

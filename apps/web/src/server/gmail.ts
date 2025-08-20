@@ -1,4 +1,4 @@
-import { google } from 'googleapis';
+import { getGoogleApisLazy } from '@/lib/dynamic-imports';
 import { prisma } from './db';
 import { decryptForOrg, encryptForOrg } from './crypto';
 import { indexThread } from './indexer';
@@ -23,8 +23,16 @@ export interface GmailMessage {
 
 export class GmailService {
   private oauth2Client: import('google-auth-library').OAuth2Client;
+  private google: Awaited<ReturnType<typeof getGoogleApisLazy>> | null = null;
 
   constructor(accessToken: string, refreshToken?: string) {
+    // Will be initialized lazily in getGoogle()
+    this.oauth2Client = null as any;
+    this.initializeAuth(accessToken, refreshToken);
+  }
+
+  private async initializeAuth(accessToken: string, refreshToken?: string) {
+    const google = await this.getGoogle();
     this.oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
@@ -35,6 +43,13 @@ export class GmailService {
       access_token: accessToken,
       refresh_token: refreshToken,
     });
+  }
+
+  private async getGoogle() {
+    if (!this.google) {
+      this.google = await getGoogleApisLazy();
+    }
+    return this.google;
   }
 
   static async createFromAccount(orgId: string, emailAccountId: string): Promise<GmailService> {
@@ -94,6 +109,7 @@ export class GmailService {
   }
 
   async getGmail() {
+    const google = await this.getGoogle();
     return google.gmail({ version: 'v1', auth: this.oauth2Client });
   }
 

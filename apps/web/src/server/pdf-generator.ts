@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer';
+import { getPuppeteerLazy, type PuppeteerType } from '@/lib/dynamic-imports';
 import { logger } from '@/lib/logger';
 import { processMergeFields } from './documents';
 
@@ -21,9 +21,12 @@ export interface PDFGenerationOptions {
 }
 
 export async function generatePDF(options: PDFGenerationOptions): Promise<Buffer> {
-  let browser: puppeteer.Browser | null = null;
+  let browser: Awaited<ReturnType<PuppeteerType['launch']>> | null = null;
   
   try {
+    // Dynamically import puppeteer
+    const puppeteer = await getPuppeteerLazy();
+    
     // Process merge fields if data provided
     let processedContent = options.content;
     if (options.mergeData) {

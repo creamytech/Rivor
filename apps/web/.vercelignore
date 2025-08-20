@@ -1,0 +1,57 @@
+# Development files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+**/__tests__/**
+**/test/**
+**/tests/**
+coverage/**
+e2e/**
+
+# Documentation and markdown files
+**/*.md
+docs/**
+*.md
+
+# Config files that aren't needed for build
+.env.example
+.env.local
+.env.development
+.env.test
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build artifacts
+.next/**
+dist/**
+build/**
+.turbo/**
+*.tsbuildinfo
+
+# IDE and editor files
+.vscode/**
+.idea/**
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Development dependencies
+node_modules/.cache/**
+.eslintcache
+
+# Large binary files that don't need to be in the build
+**/*.zip
+**/*.tar.gz
+**/*.dmg
+**/*.pkg
+
+# Playwright and testing artifacts
+playwright-report/**
+test-results/**

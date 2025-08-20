@@ -1,12 +1,25 @@
-import OpenAI from 'openai';
+import { getOpenAILazy } from '@/lib/dynamic-imports';
 import { prisma } from '@/server/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth';
 
-// Initialize OpenAI client conditionally
-const openai = process.env.OPENAI_API_KEY ? new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-}) : null;
+// Initialize OpenAI client lazily
+let openaiInstance: any = null;
+
+const getOpenAI = async () => {
+  if (!process.env.OPENAI_API_KEY) {
+    return null;
+  }
+  
+  if (!openaiInstance) {
+    const OpenAI = await getOpenAILazy();
+    openaiInstance = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  
+  return openaiInstance;
+};
 
 interface ChatContext {
   type?:
@@ -394,6 +407,7 @@ Respond as a helpful AI assistant with access to the CRM data.`;
 
       let aiResponse = 'I apologize, but I encountered an error processing your request.';
       
+      const openai = await getOpenAI();
       if (!openai) {
         aiResponse = 'AI service is currently unavailable. The OpenAI API key is not configured. Please check your environment variables.';
       } else {

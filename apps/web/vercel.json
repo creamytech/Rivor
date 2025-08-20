@@ -1,6 +1,37 @@
 {
   "version": 2,
   "framework": "nextjs",
-  "installCommand": "npm install --legacy-peer-deps && npm --prefix ../../packages/db install && npm --prefix ../../packages/db run prisma:generate",
-  "buildCommand": "npm run db:migrate:deploy && npm run build"
+  "installCommand": "npm ci --legacy-peer-deps --prefer-offline && npm --prefix ../../packages/db ci && npm --prefix ../../packages/db run prisma:generate",
+  "buildCommand": "npm run db:migrate:deploy && npm run build",
+  "build": {
+    "env": {
+      "NPM_CONFIG_CACHE": ".npm",
+      "NEXT_TELEMETRY_DISABLED": "1",
+      "NODE_OPTIONS": "--max-old-space-size=4096"
+    }
+  },
+  "functions": {
+    "apps/web/src/app/api/chat/route.ts": {
+      "maxDuration": 30,
+      "memory": 512
+    },
+    "apps/web/src/app/api/sync/gmail/route.ts": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "apps/web/src/app/api/sync/calendar/route.ts": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "apps/web/src/app/api/documents/generate-pdf/route.ts": {
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/health/route",
+      "schedule": "0 */6 * * *"
+    }
+  ]
 }
