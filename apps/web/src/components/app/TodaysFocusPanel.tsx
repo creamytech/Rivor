@@ -416,23 +416,4 @@ export default function TodaysFocusPanel({ className = '' }: TodaysFocusPanelPro
       </Card>
     </motion.div>
   );
-
-  function toggleItemComplete(itemId: string) {
-    setFocusItems(prev => 
-      prev.map(item => 
-        item.id === itemId ? { ...item, completed: !item.completed } : item
-      )
-    );
-  }
-
-  function getTypeIcon(type: string) {
-    switch (type) {
-      case 'lead': return <Users className="h-5 w-5 text-blue-600" />;
-      case 'reply': return <Mail className="h-5 w-5 text-green-600" />;
-      case 'meeting': return <Calendar className="h-5 w-5 text-purple-600" />;
-      case 'showing': return <Home className="h-5 w-5 text-orange-600" />;
-      case 'deadline': return <AlertTriangle className="h-5 w-5 text-red-600" />;
-      default: return <Clock className="h-5 w-5 text-slate-600" />;
-    }
-  }
 }

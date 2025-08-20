@@ -422,13 +422,4 @@ export default function ActivityFeedPanel({ className = '' }: ActivityFeedPanelP
       </Card>
     </motion.div>
   );
-
-  function formatCurrency(amount: number) {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  }
 }

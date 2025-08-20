@@ -451,18 +451,4 @@ export default function PipelineOverviewPanel({ className = '' }: PipelineOvervi
       </Card>
     </motion.div>
   );
-
-  function formatCompactCurrency(amount: number) {
-    if (amount >= 1000000) {
-      return `$${(amount / 1000000).toFixed(1)}M`;
-    } else if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(0)}K`;
-    }
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  }
 }
