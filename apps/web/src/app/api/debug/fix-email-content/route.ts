@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
-import { prisma } from '@/server/db';
+import { prisma } from '@/lib/db-pool';
 import { encryptForOrg } from '@/server/crypto';
 import { logger } from '@/lib/logger';
 

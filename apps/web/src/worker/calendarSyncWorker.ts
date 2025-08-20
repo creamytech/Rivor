@@ -1,5 +1,5 @@
 import { Worker, Job } from 'bullmq';
-import { prisma } from '@/server/db';
+import { prisma } from '@/lib/db-pool';
 import { GoogleCalendarService } from '@/server/calendar';
 import { logger } from '@/lib/logger';
 

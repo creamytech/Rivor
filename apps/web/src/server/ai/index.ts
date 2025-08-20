@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { prisma } from '@/server/db';
+import { prisma } from '@/lib/db-pool';
 
 // Initialize OpenAI client
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({

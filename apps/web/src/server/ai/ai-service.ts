@@ -1,5 +1,5 @@
 import { getOpenAILazy } from '@/lib/dynamic-imports';
-import { prisma } from '@/server/db';
+import { prisma } from '@/lib/db-pool';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth';
 

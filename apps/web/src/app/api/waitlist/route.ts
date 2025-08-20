@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { prisma } from '@/server/db';
+import { prisma } from '@/lib/db-pool';
 import { logger } from '@/lib/logger';
 
 // Rate limiting - simple in-memory store (in production, use Redis)

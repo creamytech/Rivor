@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
-import { prisma } from '@/server/db';
+import { prisma } from '@/lib/db-pool';
 import { startAllWorkers } from '@/worker/startWorkers';
 import { getEmailSyncQueue, getEmailBackfillQueue } from '@/server/queue';
 import Redis from 'ioredis';

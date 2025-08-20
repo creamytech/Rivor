@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { enqueueEmailSync } from '@/server/queue';
-import { prisma } from '@/server/db';
+import { prisma } from '@/lib/db-pool';
 import { GmailService } from '@/server/gmail';
 import { logger } from '@/lib/logger';
 

@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { enqueueEmailSync } from '@/server/queue';
-import { prisma } from '@/server/db';
+import { prisma } from '@/lib/db-pool';
 import { MicrosoftGraphService } from '@/server/microsoft-graph';
 
 // Force dynamic rendering - this route uses request URL/query params

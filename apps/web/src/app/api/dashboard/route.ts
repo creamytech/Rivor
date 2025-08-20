@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@/server/auth';
 import { logger } from '@/lib/logger';
-import { prisma } from '@/server/db';
+import { prisma } from '@/lib/db-pool';
 import { decryptForOrg } from '@/server/crypto';
 
 export const dynamic = 'force-dynamic';

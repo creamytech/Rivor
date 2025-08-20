@@ -1,4 +1,4 @@
-import { prisma } from '@/server/db';
+import { prisma } from '@/lib/db-pool';
 import { auth } from '@/server/auth';
 
 interface AssistantParams {
