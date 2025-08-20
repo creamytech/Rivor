@@ -8,9 +8,14 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-xl border border-[var(--border)] bg-[var(--muted)] text-[var(--foreground)] shadow",
+      "rounded-xl border shadow",
       className
     )}
+    style={{
+      backgroundColor: 'var(--theme-surface, var(--muted))',
+      borderColor: 'var(--theme-border, var(--border))',
+      color: 'var(--theme-textOnSurface, var(--foreground))'
+    }}
     {...props}
   />
 ))
@@ -42,7 +47,10 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-sm text-[var(--muted-foreground)]", className)}
+    className={cn("text-sm", className)}
+    style={{
+      color: 'var(--theme-textMuted, var(--muted-foreground))'
+    }}
     {...props}
   />
 ))

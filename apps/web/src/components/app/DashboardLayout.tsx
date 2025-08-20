@@ -27,13 +27,31 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
 
   if (isLoading) {
     return (
-      <div className={cn("space-y-4 md:space-y-8 p-4 md:p-6", className)}>
-        {/* Loading skeleton with story-driven layout - Mobile optimized */}
-        <div className="h-20 md:h-32 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 to-slate-900 rounded-xl md:rounded-2xl animate-pulse" />
-        <div className="h-32 md:h-40 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 to-slate-900 rounded-xl md:rounded-2xl animate-pulse" />
-        <div className="h-48 md:h-64 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-slate-800 to-slate-900 rounded-xl md:rounded-2xl animate-pulse" />
-        <div className="h-56 md:h-80 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-slate-800 to-slate-900 rounded-xl md:rounded-2xl animate-pulse" />
-        <div className="h-12 md:h-16 bg-gradient-to-r from-orange-50 to-red-50 dark:from-slate-800 to-slate-900 rounded-lg md:rounded-xl animate-pulse" />
+      <div 
+        className={cn("space-y-4 md:space-y-8 p-4 md:p-6", className)}
+        style={{ backgroundColor: currentTheme.colors.background }}
+      >
+        {/* Loading skeleton with theme colors */}
+        <div 
+          className="h-20 md:h-32 rounded-xl md:rounded-2xl animate-pulse" 
+          style={{ backgroundColor: currentTheme.colors.surface }}
+        />
+        <div 
+          className="h-32 md:h-40 rounded-xl md:rounded-2xl animate-pulse" 
+          style={{ backgroundColor: currentTheme.colors.surface }}
+        />
+        <div 
+          className="h-48 md:h-64 rounded-xl md:rounded-2xl animate-pulse" 
+          style={{ backgroundColor: currentTheme.colors.surface }}
+        />
+        <div 
+          className="h-56 md:h-80 rounded-xl md:rounded-2xl animate-pulse" 
+          style={{ backgroundColor: currentTheme.colors.surface }}
+        />
+        <div 
+          className="h-12 md:h-16 rounded-lg md:rounded-xl animate-pulse" 
+          style={{ backgroundColor: currentTheme.colors.surface }}
+        />
       </div>
     );
   }
@@ -68,7 +86,10 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
           transition={{ delay: 0.3, duration: 0.8 }}
-          className="h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent dark:via-slate-600"
+          className="h-px"
+          style={{ 
+            background: `linear-gradient(to right, transparent, ${currentTheme.colors.border}, transparent)` 
+          }}
         />
 
         {/* Chapter 2: Today's Priorities */}
@@ -87,7 +108,10 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
           transition={{ delay: 0.6, duration: 0.8 }}
-          className="h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent dark:via-slate-600"
+          className="h-px"
+          style={{ 
+            background: `linear-gradient(to right, transparent, ${currentTheme.colors.border}, transparent)` 
+          }}
         />
 
         {/* Chapter 3: Pipeline Insights */}
@@ -106,7 +130,10 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
           transition={{ delay: 0.9, duration: 0.8 }}
-          className="h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent dark:via-slate-600"
+          className="h-px"
+          style={{ 
+            background: `linear-gradient(to right, transparent, ${currentTheme.colors.border}, transparent)` 
+          }}
         />
 
         {/* Chapter 4: Live Activity Stream */}
@@ -125,7 +152,10 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
           transition={{ delay: 1.2, duration: 0.8 }}
-          className="h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent dark:via-slate-600"
+          className="h-px"
+          style={{ 
+            background: `linear-gradient(to right, transparent, ${currentTheme.colors.border}, transparent)` 
+          }}
         />
 
         {/* Chapter 5: Weekly Activity Overview */}
@@ -144,7 +174,10 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
           transition={{ delay: 1.5, duration: 0.8 }}
-          className="h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent dark:via-slate-600"
+          className="h-px"
+          style={{ 
+            background: `linear-gradient(to right, transparent, ${currentTheme.colors.border}, transparent)` 
+          }}
         />
 
         {/* Chapter 6: System Health Footer */}

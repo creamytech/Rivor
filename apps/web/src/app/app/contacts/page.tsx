@@ -7,6 +7,7 @@ import EnhancedContacts from "@/components/contacts/EnhancedContacts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useTheme } from "@/contexts/ThemeContext";
 import { 
   Users, 
   Search, 
@@ -64,6 +65,7 @@ import {
 } from 'lucide-react';
 
 export default function ContactsPage() {
+  const { currentTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'all' | 'leads' | 'customers' | 'prospects'>('all');
@@ -224,7 +226,13 @@ export default function ContactsPage() {
       </div>
 
       {/* Smart Suggestions as Interactive Cards */}
-      <div className="px-6 py-4 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-b border-slate-200 dark:border-slate-700">
+      <div 
+        className="px-6 py-4 border-b"
+        style={{
+          backgroundColor: currentTheme.colors.surfaceAlt,
+          borderColor: currentTheme.colors.border
+        }}
+      >
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles className="h-4 w-4 text-emerald-600" />

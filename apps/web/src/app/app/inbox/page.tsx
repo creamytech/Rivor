@@ -6,6 +6,7 @@ import SegmentedControl from "@/components/app/SegmentedControl";
 import EnhancedCommandPalette from "@/components/app/EnhancedCommandPalette";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useTheme } from "@/contexts/ThemeContext";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +34,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export default function InboxPage() {
+  const { currentTheme } = useTheme();
   const [activeTab, setActiveTab] = useState("leads");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
@@ -92,10 +94,21 @@ export default function InboxPage() {
   }, []);
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+    <div 
+      className="relative min-h-screen"
+      style={{
+        background: `linear-gradient(135deg, ${currentTheme.colors.background} 0%, ${currentTheme.colors.backgroundSecondary} 100%)`
+      }}
+    >
       <AppShell>
         {/* Redesigned Header with Better Hierarchy */}
-        <div className="px-8 py-6 border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--background)98%,transparent)]">
+        <div 
+          className="px-8 py-6 border-b"
+          style={{
+            backgroundColor: currentTheme.colors.surfaceAlt,
+            borderColor: currentTheme.colors.border
+          }}
+        >
           {/* Top Header Row */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">

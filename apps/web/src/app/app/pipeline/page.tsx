@@ -5,6 +5,7 @@ import AppShell from "@/components/app/AppShell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   Select,
   SelectContent,
@@ -60,6 +61,7 @@ interface FilterPill {
 type ViewMode = 'kanban' | 'list' | 'timeline';
 
 export default function PipelinePage() {
+  const { currentTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -155,10 +157,21 @@ export default function PipelinePage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+    <div 
+      className="relative min-h-screen"
+      style={{
+        background: `linear-gradient(135deg, ${currentTheme.colors.background} 0%, ${currentTheme.colors.backgroundSecondary} 100%)`
+      }}
+    >
       <AppShell>
         {/* Enhanced Header Section */}
-        <div className="sticky top-[calc(56px+80px)] z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-b border-border shadow-sm">
+        <div 
+          className="sticky top-[calc(56px+80px)] z-20 backdrop-blur-sm border-b shadow-sm"
+          style={{
+            backgroundColor: `${currentTheme.colors.surfaceAlt}F0`, // Adding alpha for transparency
+            borderColor: currentTheme.colors.border
+          }}
+        >
           <div className="px-6 py-4">
             {/* Main Toolbar */}
             <div className="flex items-center justify-between w-full mb-4">

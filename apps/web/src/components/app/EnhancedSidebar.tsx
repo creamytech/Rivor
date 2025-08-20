@@ -9,9 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { useTheme } from "@/contexts/ThemeContext";
-import FloatingActionButton from "@/components/app/FloatingActionButton";
 import {
   BarChart3,
   Inbox,
@@ -56,8 +54,7 @@ interface NavItem {
   exactMatch?: boolean;
   badge?: number;
   badgeColor?: 'default' | 'destructive' | 'warning' | 'success';
-  group: 'core' | 'utilities' | 'quick-actions';
-  hotkey?: string;
+  group: 'core' | 'utilities';
   description?: string;
   widget?: {
     value: string | number;
@@ -95,53 +92,7 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showQuickActionsMenu]);
 
-  // Enhanced keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Toggle sidebar collapse with ⌘B or Ctrl+B
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'b') {
-        event.preventDefault();
-        onToggleCollapse();
-        return;
-      }
-
-      // Day-1 Navigation shortcuts
-      if (event.metaKey || event.ctrlKey) {
-        const shortcuts: { [key: string]: string } = {
-          'd': '/app',
-          'i': '/app/inbox',
-          'p': '/app/pipeline',
-          'c': '/app/contacts',
-          's': '/app/calendar',
-          't': '/app/tasks',
-          'a': '/app/chat',
-          ',': '/app/settings'
-        };
-
-        if (shortcuts[event.key]) {
-          event.preventDefault();
-          window.location.href = shortcuts[event.key];
-          return;
-        }
-
-        // Day-1 Quick actions shortcuts
-        const quickShortcuts: { [key: string]: () => void } = {
-          'n': () => window.location.href = '/app/pipeline/create',
-          'e': () => window.location.href = '/app/inbox/compose',
-          'm': () => window.location.href = '/app/calendar?action=create',
-          'k': () => window.location.href = '/app/contacts?action=create'
-        };
-
-        if (quickShortcuts[event.key]) {
-          event.preventDefault();
-          quickShortcuts[event.key]();
-        }
-      }
-    };
-    
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onToggleCollapse]);
+  // Simplified interaction - removed keyboard shortcuts for cleaner UX
 
   // Day-1 Core Navigation - Streamlined for launch
   const navItems: NavItem[] = [
@@ -152,7 +103,7 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
       icon: <Home className="h-4 w-4" />, 
       exactMatch: true, 
       group: 'core',
-      hotkey: '⌘D',
+      // removed hotkey: '⌘D',
       description: 'Today\'s focus and analytics',
       widget: {
         value: '$2.4M',
@@ -167,7 +118,7 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
       badge: 12,
       badgeColor: 'destructive',
       group: 'core',
-      hotkey: '⌘I',
+      // removed hotkey: '⌘I',
       description: 'AI-powered email management',
       widget: {
         value: 5,
@@ -181,7 +132,7 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
       badge: 8,
       badgeColor: 'warning',
       group: 'core',
-      hotkey: '⌘P',
+      // removed hotkey: '⌘P',
       description: 'Sales pipeline kanban',
       widget: {
         value: '24%',
@@ -196,7 +147,7 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
       badge: 3,
       badgeColor: 'warning',
       group: 'core',
-      hotkey: '⌘C',
+      // removed hotkey: '⌘C',
       description: 'Client and contact management',
       widget: {
         value: 348,
@@ -210,7 +161,7 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
       badge: 6,
       badgeColor: 'success',
       group: 'core',
-      hotkey: '⌘S',
+      // removed hotkey: '⌘S',
       description: 'Schedule meetings and showings',
       widget: {
         value: 3,
@@ -224,7 +175,7 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
       badge: 2,
       badgeColor: 'warning',
       group: 'core',
-      hotkey: '⌘T',
+      // removed hotkey: '⌘T',
       description: 'Task and reminder management'
     },
     { 
@@ -234,7 +185,7 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
       badge: 1,
       badgeColor: 'default',
       group: 'core',
-      hotkey: '⌘A',
+      // removed hotkey: '⌘A',
       description: 'AI-powered assistance'
     },
     
@@ -244,7 +195,7 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
       label: "Settings", 
       icon: <Settings className="h-4 w-4" />, 
       group: 'utilities',
-      hotkey: '⌘,',
+      // removed hotkey: '⌘,',
       description: 'App settings and preferences'
     }
   ];
@@ -254,31 +205,31 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
       label: "Add Lead", 
       icon: <Star className="h-4 w-4" />, 
       action: () => window.location.href = '/app/pipeline/create',
-      hotkey: '⌘N'
+      // removed hotkey: '⌘N'
     },
     { 
       label: "Compose Email", 
       icon: <Mail className="h-4 w-4" />, 
       action: () => window.location.href = '/app/inbox/compose',
-      hotkey: '⌘E'
+      // removed hotkey: '⌘E'
     },
     { 
       label: "Schedule Meeting", 
       icon: <Calendar className="h-4 w-4" />, 
       action: () => window.location.href = '/app/calendar?action=create',
-      hotkey: '⌘M'
+      // removed hotkey: '⌘M'
     },
     { 
       label: "Add Task", 
       icon: <Clock className="h-4 w-4" />, 
       action: () => window.location.href = '/app/tasks?action=create',
-      hotkey: '⌘T'
+      // removed hotkey: '⌘T'
     },
     { 
       label: "Add Contact", 
       icon: <User className="h-4 w-4" />, 
       action: () => window.location.href = '/app/contacts?action=create',
-      hotkey: '⌘K'
+      // removed hotkey: '⌘K'
     }
   ];
 
@@ -484,13 +435,13 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
             </div>
           )}
           {isCollapsed && (
-            <div className="flex flex-col items-center gap-2 w-full">
+            <div className="flex items-center justify-between w-full px-2">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link href="/app" className="group">
                     <div className="relative">
                       <div 
-                        className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-lg"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 group-hover:scale-105 shadow-lg"
                         style={{
                           background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`
                         }}
@@ -525,15 +476,22 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
                 </TooltipContent>
               </Tooltip>
               
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onToggleCollapse}
-                aria-label="Expand sidebar (⌘B)"
-                className="h-6 w-6 opacity-70 hover:opacity-100 transition-opacity"
-              >
-                <ChevronRight className="h-3 w-3" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onToggleCollapse}
+                    aria-label="Expand sidebar"
+                    className="h-6 w-6 opacity-70 hover:opacity-100 transition-all hover:scale-105"
+                  >
+                    <ChevronRight className="h-3 w-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Expand sidebar</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           )}
         </div>
@@ -615,11 +573,6 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
                               {!isCollapsed && (
                                 <div className="flex flex-col">
                                   <span className="leading-none">{item.label}</span>
-                                  {item.hotkey && (
-                                    <span className="text-[10px] text-muted-foreground mt-0.5">
-                                      {item.hotkey}
-                                    </span>
-                                  )}
                                 </div>
                               )}
                             </div>
@@ -674,14 +627,6 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
                               <p className="text-xs text-muted-foreground">
                                 {item.description}
                               </p>
-                            )}
-                            {item.hotkey && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <span>Shortcut:</span>
-                                <Badge variant="outline" className="text-[10px] px-1 py-0">
-                                  {item.hotkey}
-                                </Badge>
-                              </div>
                             )}
                             {item.widget && (
                               <div className="text-xs border-t pt-2">
@@ -770,11 +715,6 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
                               {!isCollapsed && (
                                 <div className="flex flex-col">
                                   <span className="leading-none">{item.label}</span>
-                                  {item.hotkey && (
-                                    <span className="text-[10px] text-muted-foreground mt-0.5">
-                                      {item.hotkey}
-                                    </span>
-                                  )}
                                 </div>
                               )}
                             </div>
@@ -793,14 +733,6 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
                                 {item.description}
                               </p>
                             )}
-                            {item.hotkey && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <span>Shortcut:</span>
-                                <Badge variant="outline" className="text-[10px] px-1 py-0">
-                                  {item.hotkey}
-                                </Badge>
-                              </div>
-                            )}
                           </div>
                         </TooltipContent>
                       )}
@@ -812,10 +744,29 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
           </nav>
         </div>
 
-        {/* FAB for collapsed mode */}
+        {/* Quick Actions for collapsed mode */}
         {isCollapsed && (
           <div className="relative z-10 px-2 pb-2">
-            <FloatingActionButton />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="w-full h-8 rounded-lg hover:scale-105 transition-all duration-200"
+                  style={{
+                    backgroundColor: currentTheme.colors.primary,
+                    borderColor: currentTheme.colors.primary,
+                    color: currentTheme.colors.textInverse
+                  }}
+                  onClick={() => setShowQuickActionsMenu(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Quick Actions</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         )}
 
@@ -869,7 +820,6 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
                         <Palette className="h-3 w-3 text-muted-foreground" />
                         <span className="text-xs text-muted-foreground">Theme</span>
                       </div>
-                      <ThemeSwitcher showInNavigation compact />
                     </div>
                     
                     {/* Action Buttons */}
@@ -926,14 +876,97 @@ export default function EnhancedSidebar({ isCollapsed, onToggleCollapse }: Enhan
                 </TooltipContent>
               </Tooltip>
               
-              <div className="w-full">
-                <ThemeSwitcher showInNavigation compact />
-              </div>
             </div>
           )}
         </div>
 
       </aside>
+
+      {/* Quick Actions Menu - Positioned to the right of sidebar */}
+      {showQuickActionsMenu && (
+        <div className="fixed inset-0 z-50 bg-black/20" onClick={() => setShowQuickActionsMenu(false)}>
+          <div 
+            className={`quick-actions-menu absolute top-16 shadow-2xl rounded-xl border p-4 min-w-[280px] ${
+              isCollapsed ? 'left-[88px]' : 'left-[272px]'
+            }`}
+            style={{
+              backgroundColor: currentTheme.colors.surface,
+              borderColor: currentTheme.colors.border
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3">
+              <h3 
+                className="font-semibold text-sm mb-1"
+                style={{ color: currentTheme.colors.textPrimary }}
+              >
+                Quick Actions
+              </h3>
+              <p 
+                className="text-xs"
+                style={{ color: currentTheme.colors.textMuted }}
+              >
+                Fast access to common tasks
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-16 flex flex-col gap-2 hover:scale-105 transition-all"
+                onClick={() => {
+                  window.location.href = '/app/pipeline/create';
+                  setShowQuickActionsMenu(false);
+                }}
+              >
+                <GitBranch className="h-5 w-5" />
+                <span className="text-xs">New Deal</span>
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-16 flex flex-col gap-2 hover:scale-105 transition-all"
+                onClick={() => {
+                  window.location.href = '/app/contacts?action=create';
+                  setShowQuickActionsMenu(false);
+                }}
+              >
+                <Users className="h-5 w-5" />
+                <span className="text-xs">Add Contact</span>
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-16 flex flex-col gap-2 hover:scale-105 transition-all"
+                onClick={() => {
+                  window.location.href = '/app/calendar?action=create';
+                  setShowQuickActionsMenu(false);
+                }}
+              >
+                <Calendar className="h-5 w-5" />
+                <span className="text-xs">Schedule</span>
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-16 flex flex-col gap-2 hover:scale-105 transition-all"
+                onClick={() => {
+                  window.location.href = '/app/inbox/compose';
+                  setShowQuickActionsMenu(false);
+                }}
+              >
+                <Mail className="h-5 w-5" />
+                <span className="text-xs">Send Email</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </TooltipProvider>
   );
 }
