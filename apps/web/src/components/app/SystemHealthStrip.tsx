@@ -19,7 +19,6 @@ import {
   Zap,
   Server,
   Key,
-  RefreshCw,
   Settings
 } from 'lucide-react';
 

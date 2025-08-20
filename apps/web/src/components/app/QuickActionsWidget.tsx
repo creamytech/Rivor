@@ -57,7 +57,7 @@ export default function QuickActionsWidget({
         id: 'add-lead',
         title: 'Add Lead',
         description: 'Create a new lead in your pipeline',
-        icon: <Target className="h-5 w-5" />,
+        icon: <Target className="h-6 w-6" />,
         color: 'bg-blue-500',
         url: '/app/pipeline/new',
         category: 'create',
@@ -67,7 +67,7 @@ export default function QuickActionsWidget({
         id: 'add-contact',
         title: 'Add Contact',
         description: 'Add a new contact to your database',
-        icon: <User className="h-5 w-5" />,
+        icon: <User className="h-6 w-6" />,
         color: 'bg-green-500',
         url: '/app/contacts/new',
         category: 'create',
@@ -77,7 +77,7 @@ export default function QuickActionsWidget({
         id: 'schedule-meeting',
         title: 'Schedule Meeting',
         description: 'Book a meeting or call',
-        icon: <Calendar className="h-5 w-5" />,
+        icon: <Calendar className="h-6 w-6" />,
         color: 'bg-purple-500',
         url: '/app/calendar/new',
         category: 'create',
@@ -87,7 +87,7 @@ export default function QuickActionsWidget({
         id: 'create-task',
         title: 'Create Task',
         description: 'Add a new task to your list',
-        icon: <CheckSquare className="h-5 w-5" />,
+        icon: <CheckSquare className="h-6 w-6" />,
         color: 'bg-orange-500',
         url: '/app/tasks/new',
         category: 'create',
@@ -97,7 +97,7 @@ export default function QuickActionsWidget({
         id: 'compose-email',
         title: 'Compose Email',
         description: 'Write a new email message',
-        icon: <Mail className="h-5 w-5" />,
+        icon: <Mail className="h-6 w-6" />,
         color: 'bg-pink-500',
         url: '/app/inbox/compose',
         category: 'create',
@@ -109,7 +109,7 @@ export default function QuickActionsWidget({
         id: 'view-pipeline',
         title: 'View Pipeline',
         description: 'See all your leads and deals',
-        icon: <BarChart3 className="h-5 w-5" />,
+        icon: <BarChart3 className="h-6 w-6" />,
         color: 'bg-emerald-500',
         url: '/app/pipeline',
         category: 'view'
@@ -118,7 +118,7 @@ export default function QuickActionsWidget({
         id: 'view-contacts',
         title: 'View Contacts',
         description: 'Browse your contact database',
-        icon: <Users className="h-5 w-5" />,
+        icon: <Users className="h-6 w-6" />,
         color: 'bg-teal-500',
         url: '/app/contacts',
         category: 'view'
@@ -127,7 +127,7 @@ export default function QuickActionsWidget({
         id: 'view-inbox',
         title: 'View Inbox',
         description: 'Check your email threads',
-        icon: <Mail className="h-5 w-5" />,
+        icon: <Mail className="h-6 w-6" />,
         color: 'bg-rose-500',
         url: '/app/inbox',
         category: 'view'
@@ -165,45 +165,46 @@ export default function QuickActionsWidget({
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.6 }}
-      className={cn("bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border border-white/20 dark:border-slate-700/20 rounded-2xl shadow-xl", className)}
+      className={cn("w-80 max-h-[80vh] overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-white/30 dark:border-slate-700/30 rounded-2xl shadow-2xl", className)}
     >
       <div className="p-6 pb-4">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-teal-500 shadow-lg">
-            <Zap className="h-5 w-5 text-white" />
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-teal-500 shadow-lg">
+            <Zap className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-foreground">Quick Actions</h3>
+            <h3 className="text-xl font-bold text-foreground">Quick Actions</h3>
             <p className="text-sm text-muted-foreground">Fast access to common tasks</p>
           </div>
         </div>
 
         {/* Category Filter */}
         {showCategories && (
-          <div className="flex items-center gap-2 mb-4 overflow-x-auto">
+          <div className="flex items-center gap-2 mb-6 overflow-x-auto">
             <Button
               variant={selectedCategory === 'all' ? 'default' : 'outline'}
-              size="sm"
+              size="default"
               onClick={() => setSelectedCategory('all')}
+              className="px-4 py-2 font-semibold"
             >
               All
             </Button>
             <Button
               variant={selectedCategory === 'create' ? 'default' : 'outline'}
-              size="sm"
+              size="default"
               onClick={() => setSelectedCategory('create')}
-              className="flex items-center gap-1"
+              className="flex items-center gap-2 px-4 py-2 font-semibold"
             >
-              <Plus className="h-3 w-3" />
+              <Plus className="h-4 w-4" />
               Create
             </Button>
             <Button
               variant={selectedCategory === 'view' ? 'default' : 'outline'}
-              size="sm"
+              size="default"
               onClick={() => setSelectedCategory('view')}
-              className="flex items-center gap-1"
+              className="flex items-center gap-2 px-4 py-2 font-semibold"
             >
-              <Eye className="h-3 w-3" />
+              <Eye className="h-4 w-4" />
               View
             </Button>
           </div>
@@ -221,17 +222,17 @@ export default function QuickActionsWidget({
             >
               <Button
                 variant="ghost"
-                className="w-full h-auto p-4 flex items-center gap-4 hover:bg-gradient-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-950/50 dark:hover:to-teal-950/50 transition-all duration-200 rounded-xl border border-border/50 hover:border-border group"
+                className="w-full h-auto p-5 flex items-center gap-4 hover:bg-gradient-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-950/50 dark:hover:to-teal-950/50 transition-all duration-200 rounded-xl border border-border/50 hover:border-blue-200 dark:hover:border-blue-700 group hover:shadow-lg"
                 onClick={() => window.location.href = action.url}
               >
-                <div className={cn("p-3 rounded-xl bg-gradient-to-br shadow-lg group-hover:shadow-xl transition-shadow", action.color)}>
+                <div className={cn("p-3.5 rounded-xl bg-gradient-to-br shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-200", action.color)}>
                   <div className="text-white">
                     {action.icon}
                   </div>
                 </div>
                 <div className="flex-1 text-left">
-                  <div className="font-semibold text-base text-foreground group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">{action.title}</div>
-                  <div className="text-sm text-muted-foreground line-clamp-1 mt-1">
+                  <div className="font-bold text-lg text-foreground group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">{action.title}</div>
+                  <div className="text-sm text-muted-foreground line-clamp-2 mt-1">
                     {action.description}
                   </div>
                   {action.badge && (
@@ -240,13 +241,13 @@ export default function QuickActionsWidget({
                     </Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col items-center gap-2">
                   {action.shortcut && (
-                    <Badge variant="secondary" className="text-xs px-2 py-1">
+                    <Badge variant="secondary" className="text-xs px-2 py-1 font-mono">
                       {action.shortcut}
                     </Badge>
                   )}
-                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-blue-500 transition-colors" />
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-200" />
                 </div>
               </Button>
             </motion.div>
