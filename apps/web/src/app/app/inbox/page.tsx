@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import AppShell from "@/components/app/AppShell";
 import EnhancedRealEstateInbox from "@/components/inbox/EnhancedRealEstateInbox";
 import SegmentedControl from "@/components/app/SegmentedControl";
+import EnhancedCommandPalette from "@/components/app/EnhancedCommandPalette";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -36,6 +37,7 @@ export default function InboxPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'date' | 'priority' | 'lead_score'>('date');
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [quickFilters, setQuickFilters] = useState([
     { id: "unread", label: "Unread", count: 24, active: false, icon: <Mail className="h-3 w-3" /> },
     { id: "high_priority", label: "High Priority", count: 8, active: false, icon: <AlertTriangle className="h-3 w-3" /> },
@@ -75,6 +77,19 @@ export default function InboxPage() {
 
   const activeFilterCount = quickFilters.filter(f => f.active).length;
   const activeSortOption = sortOptions.find(option => option.value === sortBy);
+
+  // Command palette keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
@@ -120,11 +135,24 @@ export default function InboxPage() {
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Search emails, contacts, or content..."
+                  placeholder="Search emails, contacts, or content... (⌘K for command palette)"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-12 py-3 bg-background border border-input rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent shadow-sm"
+                  onFocus={(e) => {
+                    if (!searchQuery) {
+                      e.target.placeholder = "Search emails, contacts, or content..."
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (!searchQuery) {
+                      e.target.placeholder = "Search emails, contacts, or content... (⌘K for command palette)"
+                    }
+                  }}
+                  className="w-full pl-12 pr-16 py-3 bg-background border border-input rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent shadow-sm"
                 />
+                <div className="absolute right-12 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+                  <kbd className="px-2 py-0.5 text-xs bg-muted border border-border rounded text-muted-foreground">⌘K</kbd>
+                </div>
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
@@ -136,32 +164,26 @@ export default function InboxPage() {
               </div>
             </div>
 
-            {/* Quick Filter Chips - Inline */}
+            {/* Quick Filter Segmented Control */}
             <div className="flex items-center gap-2 flex-1">
-              {quickFilters.map((filter) => (
-                <button
-                  key={filter.id}
-                  onClick={() => handleQuickFilter(filter.id)}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 whitespace-nowrap",
-                    filter.active 
-                      ? "bg-primary text-primary-foreground shadow-md" 
-                      : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground border border-border/50"
-                  )}
-                >
-                  {filter.icon}
-                  {filter.label}
-                  <Badge 
-                    variant={filter.active ? "secondary" : "outline"} 
-                    className={cn(
-                      "text-[10px] h-4 px-1 ml-1",
-                      filter.active ? "bg-primary-foreground/20 text-primary-foreground" : ""
-                    )}
-                  >
-                    {filter.count}
-                  </Badge>
-                </button>
-              ))}
+              <SegmentedControl
+                options={[
+                  { value: "all", label: "All", count: quickFilters.reduce((sum, f) => sum + f.count, 0) },
+                  { value: "unread", label: "Unread", count: 24 },
+                  { value: "high_priority", label: "High Priority", count: 8 },
+                  { value: "overdue", label: "Overdue", count: 3 }
+                ]}
+                value={selectedFilter || "all"}
+                onChange={(value) => setSelectedFilter(value === "all" ? null : value)}
+                className="flex-shrink-0"
+              />
+              
+              {/* Empty state hint when no filters active */}
+              {!selectedFilter && quickFilters.every(f => !f.active) && (
+                <div className="text-xs text-muted-foreground opacity-75">
+                  • Configure alerts in <button className="underline hover:text-primary">Notifications settings</button>
+                </div>
+              )}
             </div>
 
             {/* Compact Controls */}
@@ -238,6 +260,12 @@ export default function InboxPage() {
           />
         </div>
       </AppShell>
+      
+      {/* Command Palette */}
+      <EnhancedCommandPalette 
+        isOpen={commandPaletteOpen} 
+        setIsOpen={setCommandPaletteOpen} 
+      />
     </div>
   );
 }
