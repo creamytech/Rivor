@@ -5,7 +5,8 @@
  * Tracks build times, bundle sizes, and deployment metrics
  */
 
-const fs = require('fs-extra');
+const fs = require('fs').promises;
+const fsSync = require('fs');
 const path = require('path');
 const { performance } = require('perf_hooks');
 
@@ -50,7 +51,9 @@ class PerformanceMonitor {
     const webAppPath = path.join(__dirname, '..', 'apps', 'web');
     const nextBuildPath = path.join(webAppPath, '.next');
     
-    if (!await fs.pathExists(nextBuildPath)) {
+    try {
+      await fs.access(nextBuildPath);
+    } catch (error) {
       console.warn('⚠️  No build output found, skipping bundle analysis');
       return;
     }
@@ -78,7 +81,8 @@ class PerformanceMonitor {
     let totalCSSSize = 0;
     
     // Analyze JavaScript chunks
-    if (await fs.pathExists(jsPath)) {
+    try {
+      await fs.access(jsPath);
       const jsFiles = await fs.readdir(jsPath);
       for (const file of jsFiles) {
         if (file.endsWith('.js')) {
@@ -91,10 +95,13 @@ class PerformanceMonitor {
           }
         }
       }
+    } catch (error) {
+      // JS path doesn't exist
     }
     
     // Analyze CSS files
-    if (await fs.pathExists(cssPath)) {
+    try {
+      await fs.access(cssPath);
       const cssFiles = await fs.readdir(cssPath);
       for (const file of cssFiles) {
         if (file.endsWith('.css')) {
@@ -103,6 +110,8 @@ class PerformanceMonitor {
           totalCSSSize += stats.size;
         }
       }
+    } catch (error) {
+      // CSS path doesn't exist
     }
     
     this.metrics.bundleSizes.totalJS = totalJSSize;
@@ -126,7 +135,8 @@ class PerformanceMonitor {
 
   async analyzeDependencies(webAppPath) {
     const packageJsonPath = path.join(webAppPath, 'package.json');
-    const packageJson = await fs.readJson(packageJsonPath);
+    const packageJsonContent = await fs.readFile(packageJsonPath, 'utf8');
+    const packageJson = JSON.parse(packageJsonContent);
     
     const heavyDependencies = [
       'puppeteer',
@@ -175,10 +185,14 @@ class PerformanceMonitor {
     
     // Save report
     const reportsDir = path.join(__dirname, '..', 'reports');
-    await fs.ensureDir(reportsDir);
+    try {
+      await fs.mkdir(reportsDir, { recursive: true });
+    } catch (error) {
+      // Directory might already exist
+    }
     
     const reportPath = path.join(reportsDir, `performance-${Date.now()}.json`);
-    await fs.writeJson(reportPath, report, { spaces: 2 });
+    await fs.writeFile(reportPath, JSON.stringify(report, null, 2));
     
     console.log(`📄 Performance report saved: ${reportPath}`);
     return report;

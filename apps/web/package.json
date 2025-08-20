@@ -4,9 +4,9 @@
     "private": true,
     "scripts": {
         "dev": "next dev",
-        "prebuild": "node ../../scripts/optimize-build.js",
+        "prebuild": "node ../../scripts/optimize-build.js || echo 'Pre-build optimization skipped'",
     "build": "npm run db:generate && next build",
-    "postbuild": "node ../../scripts/performance-monitor.js --analyze --report",
+    "postbuild": "node ../../scripts/performance-monitor.js --analyze --report || echo 'Performance monitoring skipped'",
     "build:analyze": "ANALYZE=true npm run build",
     "build:fast": "npm run db:generate && next build --no-lint",
         "start": "next start",

@@ -5,7 +5,8 @@
  * Pre-optimizes assets and dependencies before the main build
  */
 
-const fs = require('fs-extra');
+const fs = require('fs').promises;
+const fsSync = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
@@ -54,9 +55,12 @@ async function cleanBuildArtifacts() {
   ];
   
   for (const cleanPath of pathsToClean) {
-    if (await fs.pathExists(cleanPath)) {
-      await fs.remove(cleanPath);
+    try {
+      await fs.access(cleanPath);
+      await fs.rm(cleanPath, { recursive: true, force: true });
       console.log(`  ✓ Cleaned ${path.relative(PROJECT_ROOT, cleanPath)}`);
+    } catch (error) {
+      // Path doesn't exist, skip
     }
   }
 }
@@ -91,7 +95,11 @@ async function optimizeDependencies() {
 async function preGenerateAssets() {
   // Pre-generate commonly used icons and assets
   const iconsDir = path.join(WEB_APP, 'public', 'icons');
-  await fs.ensureDir(iconsDir);
+  try {
+    await fs.mkdir(iconsDir, { recursive: true });
+  } catch (error) {
+    // Directory might already exist
+  }
   
   // Create optimized favicon variations
   const faviconSizes = [16, 32, 48, 64, 128, 256];
@@ -136,7 +144,7 @@ async function createBuildManifest() {
   };
   
   const manifestPath = path.join(WEB_APP, 'build-manifest.json');
-  await fs.writeJson(manifestPath, manifest, { spaces: 2 });
+  await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
   
   console.log('  ✓ Build manifest created');
 }
