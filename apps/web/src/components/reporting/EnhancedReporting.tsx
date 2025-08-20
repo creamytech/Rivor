@@ -59,6 +59,32 @@ interface EnhancedReportingProps {
   className?: string;
 }
 
+// Utility functions moved outside component scope to be accessible by nested components
+const getTrendIcon = (change: number) => {
+  if (change > 0) return <ArrowUpRight className="h-4 w-4 text-green-500" />;
+  if (change < 0) return <ArrowDownRight className="h-4 w-4 text-red-500" />;
+  return <Minus className="h-4 w-4 text-slate-400" />;
+};
+
+const getTrendColor = (change: number) => {
+  if (change > 0) return 'text-green-600 bg-green-50 border-green-200';
+  if (change < 0) return 'text-red-600 bg-red-50 border-red-200';
+  return 'text-slate-600 bg-slate-50 border-slate-200';
+};
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
+
+const formatPercent = (value: number) => {
+  return `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
+};
+
 export default function EnhancedReporting({ className = '' }: EnhancedReportingProps) {
   const [reportingData, setReportingData] = useState<ReportingData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -111,31 +137,6 @@ export default function EnhancedReporting({ className = '' }: EnhancedReportingP
     } catch (error) {
       console.error('Failed to export report:', error);
     }
-  };
-
-  const getTrendIcon = (change: number) => {
-    if (change > 0) return <ArrowUpRight className="h-4 w-4 text-green-500" />;
-    if (change < 0) return <ArrowDownRight className="h-4 w-4 text-red-500" />;
-    return <Minus className="h-4 w-4 text-slate-400" />;
-  };
-
-  const getTrendColor = (change: number) => {
-    if (change > 0) return 'text-green-600 bg-green-50 border-green-200';
-    if (change < 0) return 'text-red-600 bg-red-50 border-red-200';
-    return 'text-slate-600 bg-slate-50 border-slate-200';
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatPercent = (value: number) => {
-    return `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
   };
 
   const timeframeOptions = [
