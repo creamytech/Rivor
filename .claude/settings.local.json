@@ -17,7 +17,8 @@
       "Bash(npm ls:*)",
       "Bash(grep:*)",
       "Bash(find:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(echo:*)"
     ],
     "deny": [],
     "ask": [],
