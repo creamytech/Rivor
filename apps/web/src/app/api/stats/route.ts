@@ -9,6 +9,22 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(_req: NextRequest) {
   try {
+    // Skip auth in development
+    if (process.env.NODE_ENV === 'development') {
+      return NextResponse.json({
+        unreadCount: 5,
+        todayMeetings: 2,
+        upcomingMeetings: 8,
+        activeDeals: 12,
+        totalDeals: 45,
+        wonDeals: 28,
+        user: {
+          name: 'Dev User',
+          email: 'dev@example.com'
+        }
+      });
+    }
+
     const session = await auth();
     
     if (!session) {

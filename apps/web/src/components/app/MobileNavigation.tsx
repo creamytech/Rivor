@@ -25,6 +25,9 @@ import {
   User,
   LogOut,
   Palette,
+  CheckSquare,
+  Bot,
+  FolderOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -47,7 +50,7 @@ interface MobileNavigationProps {
 export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const { currentTheme } = useTheme();
+  const { theme } = useTheme();
   const [activeGroup, setActiveGroup] = useState<'primary' | 'secondary'>('primary');
   
   // Mobile optimizations
@@ -59,7 +62,7 @@ export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationP
     { 
       href: "/app", 
       label: "Dashboard", 
-      icon: <BarChart3 className="h-5 w-5" />, 
+      icon: <Home className="h-5 w-5" />, 
       group: 'primary' 
     },
     { 
@@ -77,21 +80,39 @@ export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationP
       group: 'primary' 
     },
     { 
-      href: "/app/calendar", 
-      label: "Calendar", 
-      icon: <Calendar className="h-5 w-5" />, 
-      group: 'primary' 
-    },
-    { 
       href: "/app/contacts", 
       label: "Contacts", 
       icon: <Users className="h-5 w-5" />, 
       group: 'primary' 
     },
     { 
-      href: "/app/chat", 
-      label: "Chat", 
-      icon: <MessageSquare className="h-5 w-5" />, 
+      href: "/app/calendar", 
+      label: "Calendar", 
+      icon: <Calendar className="h-5 w-5" />, 
+      group: 'primary' 
+    },
+    { 
+      href: "/app/tasks", 
+      label: "Tasks", 
+      icon: <CheckSquare className="h-5 w-5" />, 
+      group: 'primary' 
+    },
+    { 
+      href: "/app/ai-assistant", 
+      label: "AI Assistant", 
+      icon: <Bot className="h-5 w-5" />, 
+      group: 'primary' 
+    },
+    { 
+      href: "/app/documents", 
+      label: "Documents", 
+      icon: <FolderOpen className="h-5 w-5" />, 
+      group: 'primary' 
+    },
+    { 
+      href: "/app/reporting", 
+      label: "Reporting", 
+      icon: <BarChart3 className="h-5 w-5" />, 
       group: 'primary' 
     },
     
@@ -150,8 +171,8 @@ export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationP
       <header 
         className="md:hidden fixed top-0 left-0 right-0 z-50 h-14 border-b"
         style={{
-          backgroundColor: currentTheme.colors.surface,
-          borderColor: currentTheme.colors.border,
+          backgroundColor: 'var(--glass-surface)',
+          borderColor: 'var(--glass-border)',
         }}
       >
         <div className="flex items-center justify-between h-full px-4">
@@ -161,22 +182,22 @@ export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationP
               variant="ghost"
               size="icon"
               onClick={onToggle}
-              className="h-10 w-10"
-              style={{ color: currentTheme.colors.textPrimary }}
+              className="h-10 w-10 glass-theme-text"
+              style={{ color: 'var(--glass-text)' }}
             >
               <Menu className="h-5 w-5" />
             </Button>
             
             <Link href="/app" className="flex items-center gap-2">
               <div 
-                className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ background: currentTheme.colors.gradient }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center glass-theme-gradient"
+                style={{ background: 'var(--glass-gradient)' }}
               >
                 <span className="text-white font-bold text-sm">R</span>
               </div>
               <span 
-                className="font-semibold text-lg hidden xs:block"
-                style={{ color: currentTheme.colors.textPrimary }}
+                className="font-semibold text-lg hidden xs:block glass-theme-text"
+                style={{ color: 'var(--glass-text)' }}
               >
                 Rivor
               </span>
@@ -188,15 +209,15 @@ export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationP
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 relative"
-              style={{ color: currentTheme.colors.textSecondary }}
+              className="h-10 w-10 relative glass-theme-text-secondary"
+              style={{ color: 'var(--glass-text-secondary)' }}
             >
               <Bell className="h-5 w-5" />
               <Badge 
-                className="absolute -top-1 -right-1 h-5 w-5 text-xs p-0 flex items-center justify-center"
+                className="absolute -top-1 -right-1 h-5 w-5 text-xs p-0 flex items-center justify-center glass-theme-accent"
                 style={{
-                  backgroundColor: currentTheme.colors.accent,
-                  color: currentTheme.colors.textInverse,
+                  backgroundColor: 'var(--glass-accent)',
+                  color: 'var(--glass-text-inverse)',
                 }}
               >
                 3
@@ -205,8 +226,9 @@ export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationP
             
             <Avatar className="h-8 w-8">
               <AvatarFallback 
+                className="glass-theme-gradient"
                 style={{
-                  background: currentTheme.colors.gradient,
+                  background: 'var(--glass-gradient)',
                   color: 'white',
                 }}
               >
@@ -236,27 +258,27 @@ export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationP
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'tween', duration: 0.3 }}
-              className="md:hidden fixed top-0 left-0 bottom-0 z-50 w-80 max-w-[85vw] flex flex-col"
+              className="md:hidden fixed top-0 left-0 bottom-0 z-50 w-80 max-w-[85vw] flex flex-col glass-theme-bg"
               style={{
-                backgroundColor: currentTheme.colors.background,
-                borderRight: `1px solid ${currentTheme.colors.border}`,
+                backgroundColor: 'var(--glass-bg)',
+                borderRight: '1px solid var(--glass-border)',
               }}
             >
               {/* Header */}
               <div 
-                className="flex items-center justify-between p-4 border-b"
-                style={{ borderColor: currentTheme.colors.border }}
+                className="flex items-center justify-between p-4 border-b glass-theme-border"
+                style={{ borderColor: 'var(--glass-border)' }}
               >
                 <div className="flex items-center gap-2">
                   <div 
-                    className="w-8 h-8 rounded-lg flex items-center justify-center"
-                    style={{ background: currentTheme.colors.gradient }}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center glass-theme-gradient"
+                style={{ background: 'var(--glass-gradient)' }}
                   >
                     <span className="text-white font-bold text-sm">R</span>
                   </div>
                   <span 
-                    className="font-semibold text-lg"
-                    style={{ color: currentTheme.colors.textPrimary }}
+                    className="font-semibold text-lg glass-theme-text"
+                    style={{ color: 'var(--glass-text)' }}
                   >
                     Rivor
                   </span>
@@ -266,7 +288,8 @@ export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationP
                   variant="ghost"
                   size="icon"
                   onClick={onToggle}
-                  style={{ color: currentTheme.colors.textSecondary }}
+                  className="glass-theme-text-secondary"
+              style={{ color: 'var(--glass-text-secondary)' }}
                 >
                   <X className="h-5 w-5" />
                 </Button>
@@ -277,8 +300,8 @@ export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationP
                 {/* Primary Navigation */}
                 <div>
                   <h3 
-                    className="text-xs font-semibold uppercase tracking-wide mb-3"
-                    style={{ color: currentTheme.colors.textMuted }}
+                    className="text-xs font-semibold uppercase tracking-wide mb-3 glass-theme-text-muted"
+                    style={{ color: 'var(--glass-text-muted)' }}
                   >
                     Navigation
                   </h3>
@@ -295,20 +318,20 @@ export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationP
                           `}
                           style={{
                             backgroundColor: active 
-                              ? currentTheme.colors.primaryMuted 
-                              : 'transparent',
+                              ? 'var(--glass-primary-muted)' 
+                              : 'rgba(0, 0, 0, 0)',
                             color: active 
-                              ? currentTheme.colors.primary 
-                              : currentTheme.colors.textSecondary,
+                              ? 'var(--glass-primary)' 
+                              : 'var(--glass-text-secondary)',
                           }}
                           onMouseEnter={(e) => {
                             if (!active) {
-                              e.currentTarget.style.backgroundColor = currentTheme.colors.surfaceHover;
+                              e.currentTarget.style.backgroundColor = 'var(--glass-surface-hover)';
                             }
                           }}
                           onMouseLeave={(e) => {
                             if (!active) {
-                              e.currentTarget.style.backgroundColor = 'transparent';
+                              e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0)';
                             }
                           }}
                         >
@@ -318,8 +341,8 @@ export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationP
                             <Badge 
                               className="ml-auto h-5 w-5 text-xs p-0 flex items-center justify-center"
                               style={{
-                                backgroundColor: currentTheme.colors.accent,
-                                color: currentTheme.colors.textInverse,
+                                backgroundColor: 'var(--glass-accent)',
+                                color: 'var(--glass-text-inverse)',
                               }}
                             >
                               {item.badge}
@@ -334,8 +357,8 @@ export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationP
                 {/* Secondary Navigation */}
                 <div>
                   <h3 
-                    className="text-xs font-semibold uppercase tracking-wide mb-3"
-                    style={{ color: currentTheme.colors.textMuted }}
+                    className="text-xs font-semibold uppercase tracking-wide mb-3 glass-theme-text-muted"
+                    style={{ color: 'var(--glass-text-muted)' }}
                   >
                     More
                   </h3>
@@ -352,20 +375,20 @@ export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationP
                           `}
                           style={{
                             backgroundColor: active 
-                              ? currentTheme.colors.primaryMuted 
-                              : 'transparent',
+                              ? 'var(--glass-primary-muted)' 
+                              : 'rgba(0, 0, 0, 0)',
                             color: active 
-                              ? currentTheme.colors.primary 
-                              : currentTheme.colors.textSecondary,
+                              ? 'var(--glass-primary)' 
+                              : 'var(--glass-text-secondary)',
                           }}
                           onMouseEnter={(e) => {
                             if (!active) {
-                              e.currentTarget.style.backgroundColor = currentTheme.colors.surfaceHover;
+                              e.currentTarget.style.backgroundColor = 'var(--glass-surface-hover)';
                             }
                           }}
                           onMouseLeave={(e) => {
                             if (!active) {
-                              e.currentTarget.style.backgroundColor = 'transparent';
+                              e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0)';
                             }
                           }}
                         >
@@ -380,16 +403,16 @@ export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationP
                 {/* Theme Switcher */}
                 <div>
                   <h3 
-                    className="text-xs font-semibold uppercase tracking-wide mb-3"
-                    style={{ color: currentTheme.colors.textMuted }}
+                    className="text-xs font-semibold uppercase tracking-wide mb-3 glass-theme-text-muted"
+                    style={{ color: 'var(--glass-text-muted)' }}
                   >
                     Theme
                   </h3>
                   <div 
                     className="p-3 rounded-xl"
                     style={{
-                      backgroundColor: currentTheme.colors.surface,
-                      border: `1px solid ${currentTheme.colors.border}`,
+                      backgroundColor: 'var(--glass-surface)',
+                      border: '1px solid var(--glass-border)',
                     }}
                   >
                     <ThemeSwitcher showInNavigation compact />
@@ -399,22 +422,22 @@ export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationP
 
               {/* Footer - User Profile */}
               <div 
-                className="p-4 border-t"
-                style={{ borderColor: currentTheme.colors.border }}
+                className="p-4 border-t glass-theme-border"
+                style={{ borderColor: 'var(--glass-border)' }}
               >
                 <div 
-                  className="flex items-center gap-3 p-3 rounded-xl"
+                  className="flex items-center gap-3 p-3 rounded-xl glass-theme-surface"
                   style={{
-                    backgroundColor: currentTheme.colors.surface,
-                    border: `1px solid ${currentTheme.colors.border}`,
+                    backgroundColor: 'var(--glass-surface)',
+                    border: '1px solid var(--glass-border)',
                   }}
                 >
                   <Avatar className="h-10 w-10">
                     <AvatarImage src={session?.user?.image || ''} />
                     <AvatarFallback 
                       style={{
-                        background: currentTheme.colors.gradient,
-                        color: 'white',
+                        background: 'var(--glass-gradient)',
+                        color: 'var(--glass-text-inverse)',
                       }}
                     >
                       {getUserInitials()}
@@ -422,14 +445,14 @@ export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationP
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <p 
-                      className="font-medium text-sm truncate"
-                      style={{ color: currentTheme.colors.textPrimary }}
+                      className="font-medium text-sm truncate glass-theme-text"
+                    style={{ color: 'var(--glass-text)' }}
                     >
                       {session?.user?.name || session?.user?.email?.split('@')[0] || 'User'}
                     </p>
                     <p 
-                      className="text-xs truncate"
-                      style={{ color: currentTheme.colors.textMuted }}
+                      className="text-xs truncate glass-theme-text-muted"
+                    style={{ color: 'var(--glass-text-muted)' }}
                     >
                       {session?.user?.email}
                     </p>
@@ -437,8 +460,8 @@ export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationP
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
-                    style={{ color: currentTheme.colors.textSecondary }}
+                    className="h-8 w-8 glass-theme-text-secondary"
+              style={{ color: 'var(--glass-text-secondary)' }}
                   >
                     <LogOut className="h-4 w-4" />
                   </Button>
@@ -451,10 +474,10 @@ export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationP
 
       {/* Bottom Tab Navigation for Mobile */}
       <div 
-        className="md:hidden fixed bottom-0 left-0 right-0 z-30 border-t safe-area-pb"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-30 border-t safe-area-pb glass-theme-surface"
         style={{
-          backgroundColor: currentTheme.colors.surface,
-          borderColor: currentTheme.colors.border,
+          backgroundColor: 'var(--glass-surface)',
+          borderColor: 'var(--glass-border)',
           paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)',
         }}
       >
@@ -468,18 +491,18 @@ export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationP
                 className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-0"
                 style={{
                   color: active 
-                    ? currentTheme.colors.primary 
-                    : currentTheme.colors.textMuted,
+                    ? 'var(--glass-primary)' 
+                    : 'var(--glass-text-muted)',
                 }}
               >
                 <div className="relative">
                   {item.icon}
                   {item.badge && (
                     <Badge 
-                      className="absolute -top-2 -right-2 h-4 w-4 text-xs p-0 flex items-center justify-center"
+                      className="absolute -top-2 -right-2 h-4 w-4 text-xs p-0 flex items-center justify-center glass-theme-accent"
                       style={{
-                        backgroundColor: currentTheme.colors.accent,
-                        color: currentTheme.colors.textInverse,
+                        backgroundColor: 'var(--glass-accent)',
+                        color: 'var(--glass-text-inverse)',
                       }}
                     >
                       {item.badge}
@@ -496,8 +519,8 @@ export default function MobileNavigation({ isOpen, onToggle }: MobileNavigationP
           {/* More button */}
           <button
             onClick={onToggle}
-            className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors"
-            style={{ color: currentTheme.colors.textMuted }}
+            className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors glass-theme-text-muted"
+            style={{ color: 'var(--glass-text-muted)' }}
           >
             <Menu className="h-5 w-5" />
             <span className="text-xs font-medium">More</span>

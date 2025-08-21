@@ -49,8 +49,13 @@ export default function NotificationsPanel({ isOpen, onClose }: NotificationsPan
         const res = await fetch('/api/notifications');
         if (!res.ok) throw new Error('Failed to fetch notifications');
         const data = await res.json();
-        const parsed = data.map((n: any) => ({ ...n, timestamp: new Date(n.timestamp) }));
-        setNotifications(parsed);
+        if (Array.isArray(data)) {
+          const parsed = data.map((n: any) => ({ ...n, timestamp: new Date(n.timestamp) }));
+          setNotifications(parsed);
+        } else {
+          console.warn('Notifications API returned non-array data:', data);
+          setNotifications([]);
+        }
       } catch (err) {
         console.error('Error loading notifications', err);
       }
@@ -153,10 +158,10 @@ export default function NotificationsPanel({ isOpen, onClose }: NotificationsPan
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="fixed top-16 right-4 z-50 w-96 max-h-[600px] bg-white dark:bg-slate-900 rounded-lg shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
+          className="fixed top-16 right-4 z-50 w-96 max-h-[600px] glass-notification overflow-hidden"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+          <div className="flex items-center justify-between p-4 border-b border-[var(--glass-border)]">
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Bell className="h-5 w-5 text-slate-600 dark:text-slate-400" />

@@ -22,8 +22,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { taskId: st
     const { taskId } = params;
     const body = await req.json();
 
-    // Skip demo tasks
-    if (taskId.startsWith('demo-')) {
+    // Handle mock/demo tasks (for development)
+    if (taskId.startsWith('demo-') || taskId.startsWith('task-')) {
       return NextResponse.json({ success: true });
     }
 
@@ -81,8 +81,8 @@ export async function DELETE(req: NextRequest, { params }: { params: { taskId: s
 
     const { taskId } = params;
 
-    // Skip demo tasks
-    if (taskId.startsWith('demo-')) {
+    // Handle mock/demo tasks (for development)
+    if (taskId.startsWith('demo-') || taskId.startsWith('task-')) {
       return NextResponse.json({ success: true });
     }
 

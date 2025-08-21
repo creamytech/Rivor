@@ -5,8 +5,7 @@ import { motion } from 'framer-motion';
 
 export default function SettingsPage() {
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
-      <AppShell>
+    <AppShell>
         {/* Enhanced Settings Component */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -16,7 +15,6 @@ export default function SettingsPage() {
         >
           <EnhancedSettings />
         </motion.div>
-      </AppShell>
-    </div>
+    </AppShell>
   );
 }

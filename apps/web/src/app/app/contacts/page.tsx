@@ -1,305 +1,681 @@
 "use client";
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { useRouter } from "next/navigation";
 import AppShell from "@/components/app/AppShell";
-import EnhancedContacts from "@/components/contacts/EnhancedContacts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTheme } from "@/contexts/ThemeContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { 
   Users, 
   Search, 
   Filter, 
   Plus, 
-  Settings, 
   Download, 
   Upload,
-  Tag,
-  Building,
-  MapPin,
-  Calendar,
-  Clock,
-  Target,
-  Zap,
-  Sparkles,
-  CheckCircle,
-  XCircle,
-  Eye,
-  EyeOff,
   Phone,
   Mail,
-  MessageSquare,
-  CheckSquare,
+  MapPin,
+  Building,
   Star,
-  AlertTriangle,
   MoreHorizontal,
   Edit,
   Trash2,
-  Copy,
-  ExternalLink,
-  Phone as PhoneIcon,
-  Mail as MailIcon,
-  MapPin as MapPinIcon,
-  Calendar as CalendarIcon,
-  MessageSquare as MessageIcon,
-  CheckSquare as TaskIcon,
-  Star as StarIcon,
-  AlertTriangle as AlertIcon,
-  MoreHorizontal as MoreIcon,
-  Edit as EditIcon,
-  Trash2 as TrashIcon,
-  Copy as CopyIcon,
-  ExternalLink as ExternalLinkIcon,
-  Tag as TagIcon,
-  Building as BuildingIcon,
-  Clock as ClockIcon,
-  Target as TargetIcon,
-  Zap as ZapIcon,
-  Sparkles as SparklesIcon,
-  CheckCircle as CheckCircleIcon,
-  XCircle as XCircleIcon,
-  Eye as EyeIcon,
-  EyeOff as EyeOffIcon
+  Eye,
+  MessageSquare,
+  Calendar,
+  User,
+  CheckCircle,
+  Clock,
+  Target,
+  Tag
 } from 'lucide-react';
+import CreateContactModal from "@/components/contacts/CreateContactModal";
+
+interface Contact {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  position?: string;
+  location?: string;
+  status: 'lead' | 'prospect' | 'customer';
+  lastActivity: string;
+  tags: string[];
+  avatar?: string;
+  value?: number;
+}
 
 export default function ContactsPage() {
-  const { currentTheme } = useTheme();
+  const { theme } = useTheme();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
-  const [viewMode, setViewMode] = useState<'all' | 'leads' | 'customers' | 'prospects'>('all');
-  const [lifecycleStage, setLifecycleStage] = useState<'all' | 'new' | 'engaged' | 'qualified' | 'customer'>('all');
-  const [importing, setImporting] = useState(false);
-  const [exporting, setExporting] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState<string>('all');
+  const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedContactForDetails, setSelectedContactForDetails] = useState<Contact | null>(null);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const availableFilters = [
-    { id: 'enterprise', label: 'Enterprise', icon: BuildingIcon },
-    { id: 'startup', label: 'Startup', icon: TargetIcon },
-    { id: 'tech', label: 'Tech', icon: ZapIcon },
-    { id: 'decision-maker', label: 'Decision Maker', icon: StarIcon },
-    { id: 'verified-email', label: 'Verified Email', icon: CheckCircleIcon },
-    { id: 'verified-phone', label: 'Verified Phone', icon: PhoneIcon },
-    { id: 'high-engagement', label: 'High Engagement', icon: SparklesIcon },
-    { id: 'needs-follow-up', label: 'Needs Follow-up', icon: AlertIcon },
-  ];
+  // Mock data - in real app this would come from API
+  useEffect(() => {
+    const mockContacts: Contact[] = [
+      {
+        id: '1',
+        name: 'Sarah Johnson',
+        email: 'sarah.johnson@email.com',
+        phone: '+1 (555) 123-4567',
+        company: 'Tech Innovations Inc',
+        position: 'CEO',
+        location: 'San Francisco, CA',
+        status: 'lead',
+        lastActivity: '2 hours ago',
+        tags: ['high-value', 'decision-maker'],
+        value: 250000
+      },
+      {
+        id: '2',
+        name: 'Michael Chen',
+        email: 'mchen@startup.io',
+        phone: '+1 (555) 987-6543',
+        company: 'StartupIO',
+        position: 'CTO',
+        location: 'New York, NY',
+        status: 'prospect',
+        lastActivity: '1 day ago',
+        tags: ['tech', 'qualified'],
+        value: 150000
+      },
+      {
+        id: '3',
+        name: 'Emma Rodriguez',
+        email: 'emma.r@corporate.com',
+        phone: '+1 (555) 456-7890',
+        company: 'Corporate Solutions',
+        position: 'VP Marketing',
+        location: 'Austin, TX',
+        status: 'customer',
+        lastActivity: '3 days ago',
+        tags: ['enterprise', 'marketing'],
+        value: 500000
+      },
+      {
+        id: '4',
+        name: 'David Park',
+        email: 'd.park@investments.com',
+        phone: '+1 (555) 321-6547',
+        company: 'Investment Group',
+        position: 'Portfolio Manager',
+        location: 'Chicago, IL',
+        status: 'lead',
+        lastActivity: '1 week ago',
+        tags: ['finance', 'high-engagement'],
+        value: 800000
+      },
+      {
+        id: '5',
+        name: 'Lisa Thompson',
+        email: 'lisa.t@agency.com',
+        company: 'Creative Agency',
+        position: 'Creative Director',
+        location: 'Los Angeles, CA',
+        status: 'prospect',
+        lastActivity: '4 days ago',
+        tags: ['creative', 'needs-follow-up'],
+        value: 75000
+      }
+    ];
 
-  const lifecycleStages = [
-    { id: 'all', label: 'All Stages', icon: Users },
-    { id: 'new', label: 'New', icon: Plus },
-    { id: 'engaged', label: 'Engaged', icon: MessageIcon },
-    { id: 'qualified', label: 'Qualified', icon: TargetIcon },
-    { id: 'customer', label: 'Customer', icon: CheckCircleIcon },
-  ];
+    setTimeout(() => {
+      setContacts(mockContacts);
+      setLoading(false);
+    }, 800);
+  }, []);
 
-  const toggleFilter = (filterId: string) => {
-    setSelectedFilters(prev =>
-      prev.includes(filterId)
-        ? prev.filter(id => id !== filterId)
-        : [...prev, filterId]
+  const filteredContacts = contacts.filter(contact => {
+    if (selectedFilter !== 'all' && contact.status !== selectedFilter) return false;
+    if (searchQuery) {
+      return contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+             contact.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+             (contact.company && contact.company.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
+    return true;
+  });
+
+  const handleSelectContact = (contactId: string) => {
+    setSelectedContacts(prev => 
+      prev.includes(contactId) 
+        ? prev.filter(id => id !== contactId)
+        : [...prev, contactId]
     );
   };
 
-  const handleImport = async () => {
-    try {
-      setImporting(true);
-      await fetch('/api/crm/import', { method: 'POST' });
-    } finally {
-      setImporting(false);
+  const selectAllContacts = () => {
+    setSelectedContacts(
+      selectedContacts.length === filteredContacts.length 
+        ? [] 
+        : filteredContacts.map(c => c.id)
+    );
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'lead': return 'bg-blue-100 text-blue-800';
+      case 'prospect': return 'bg-yellow-100 text-yellow-800';
+      case 'customer': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const handleExport = async () => {
-    try {
-      setExporting(true);
-      const res = await fetch('/api/crm/export');
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'contacts.json';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-      }
-    } finally {
-      setExporting(false);
-    }
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
+
+  const formatValue = (value?: number) => {
+    if (!value) return '-';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
   };
 
   return (
-    <AppShell>
-      {/* Consolidated Sticky Filter Bar */}
-      <div className="sticky top-0 z-30 px-6 py-3 border-b border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-4">
-            {/* Search */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+    <div className={`${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'}`}>
+      <AppShell>
+        {/* Header */}
+        <div className="px-4 mt-4 mb-2 main-content-area">
+          <div className="glass-card p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl glass-card">
+                  <Users className="h-6 w-6" style={{ color: 'var(--glass-primary)' }} />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold" style={{ color: 'var(--glass-text)' }}>
+                    Contacts
+                  </h1>
+                  <p style={{ color: 'var(--glass-text-secondary)' }}>
+                    {filteredContacts.length} contacts • {selectedContacts.length} selected
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <Button 
+              variant="liquid"
+              size="lg"
+              className="px-6"
+              onClick={() => setShowCreateModal(true)}
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Add Contact
+            </Button>
+          </div>
+
+          {/* Search and Filters */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-1 max-w-2xl relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" 
+                style={{ color: 'var(--glass-text-muted)' }} />
               <Input
+                variant="pill"
                 placeholder="Search contacts, companies, or emails..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="w-full pl-12 pr-4 py-3 text-sm"
               />
             </div>
-
-            {/* Horizontal Filter Chips */}
-            <div className="flex items-center gap-2 flex-1">
-              {/* View Mode */}
-              <div className="flex items-center gap-1">
-                {['all', 'leads', 'prospects', 'customers'].map(mode => (
-                  <Button
-                    key={mode}
-                    variant={viewMode === mode ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode(mode as any)}
-                    className="text-xs h-7 px-2"
-                  >
-                    {mode.charAt(0).toUpperCase() + mode.slice(1)}
-                  </Button>
-                ))}
-              </div>
-              
-              <div className="w-px h-6 bg-border" />
-              
-              {/* Lifecycle Stages */}
-              <div className="flex items-center gap-1">
-                {lifecycleStages.slice(1).map(stage => (
-                  <Button
-                    key={stage.id}
-                    variant={lifecycleStage === stage.id ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setLifecycleStage(stage.id as any)}
-                    className="text-xs h-7 px-2"
-                  >
-                    <stage.icon className="h-3 w-3 mr-1" />
-                    {stage.label}
-                  </Button>
-                ))}
-              </div>
-              
-              <div className="w-px h-6 bg-border" />
-              
-              {/* Filter Tags */}
-              <div className="flex items-center gap-1 flex-wrap">
-                {availableFilters.slice(0, 4).map(filter => (
-                  <Button
-                    key={filter.id}
-                    variant={selectedFilters.includes(filter.id) ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => toggleFilter(filter.id)}
-                    className="text-xs h-7 px-2"
-                  >
-                    <filter.icon className="h-3 w-3 mr-1" />
-                    {filter.label}
-                  </Button>
-                ))}
-                {selectedFilters.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedFilters([])}
-                    className="text-xs h-7 px-2 text-red-600 hover:text-red-700"
-                  >
-                    Clear
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* Quick Actions */}
+            
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={handleImport} disabled={importing} className="h-7">
-                <Upload className="h-3 w-3 mr-1" />
-                Import
-              </Button>
-              <Button size="sm" variant="outline" onClick={handleExport} disabled={exporting} className="h-7">
-                <Download className="h-3 w-3 mr-1" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="liquid" size="sm">
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filter
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setSelectedFilter('all')}>
+                    All Contacts
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSelectedFilter('lead')}>
+                    Leads
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSelectedFilter('prospect')}>
+                    Prospects
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSelectedFilter('customer')}>
+                    Customers
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <Button variant="liquid" size="sm" onClick={() => alert('Export functionality coming soon!')}>
+                <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
+              
+              <Button variant="liquid" size="sm" onClick={() => alert('Import functionality coming soon!')}>
+                <Upload className="h-4 w-4 mr-2" />
+                Import
+              </Button>
+            </div>
+          </div>
+
+          {/* Filter Tabs */}
+          <div className="flex items-center gap-2">
+            {[
+              { key: 'all', label: 'All Contacts', count: contacts.length },
+              { key: 'lead', label: 'Leads', count: contacts.filter(c => c.status === 'lead').length },
+              { key: 'prospect', label: 'Prospects', count: contacts.filter(c => c.status === 'prospect').length },
+              { key: 'customer', label: 'Customers', count: contacts.filter(c => c.status === 'customer').length }
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setSelectedFilter(tab.key)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                  selectedFilter === tab.key
+                    ? "glass-badge"
+                    : "glass-badge-muted"
+                }`}
+              >
+                {tab.label}
+                <Badge variant="liquid" className="ml-2 text-xs">
+                  {tab.count}
+                </Badge>
+              </button>
+            ))}
+          </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 px-4 pb-4 main-content-area">
+          <div className="glass-card">
+            {/* Bulk Actions Bar */}
+            {selectedContacts.length > 0 && (
+              <div className="px-6 py-4 border-b" style={{ borderColor: 'var(--glass-border)' }}>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm" style={{ color: 'var(--glass-text-secondary)' }}>
+                    {selectedContacts.length} contacts selected
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button variant="liquid" size="sm" onClick={() => router.push('/app/inbox')}>
+                      <Mail className="h-4 w-4 mr-2" />
+                      Send Email
+                    </Button>
+                    <Button variant="liquid" size="sm" onClick={() => alert('Tag functionality coming soon!')}>
+                      <Tag className="h-4 w-4 mr-2" />
+                      Add Tags
+                    </Button>
+                    <Button variant="liquid" size="sm" onClick={() => setSelectedContacts([])}>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Table Header */}
+            <div className="px-6 py-4 border-b" style={{ borderColor: 'var(--glass-border)' }}>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={selectedContacts.length === filteredContacts.length}
+                  onChange={selectAllContacts}
+                  className="mr-4 rounded"
+                />
+                <div className="grid grid-cols-12 gap-4 w-full text-sm font-medium" 
+                     style={{ color: 'var(--glass-text-secondary)' }}>
+                  <div className="col-span-3">Contact</div>
+                  <div className="col-span-2">Company</div>
+                  <div className="col-span-2">Status</div>
+                  <div className="col-span-2">Last Activity</div>
+                  <div className="col-span-2">Value</div>
+                  <div className="col-span-1">Actions</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Contact List */}
+            <div className="divide-y" style={{ borderColor: 'var(--glass-border)' }}>
+              {loading ? (
+                <div className="px-6 py-8 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4" 
+                       style={{ borderColor: 'var(--glass-primary)' }}></div>
+                  <p style={{ color: 'var(--glass-text-muted)' }}>Loading contacts...</p>
+                </div>
+              ) : filteredContacts.length === 0 ? (
+                <div className="px-6 py-12 text-center">
+                  <Users className="h-12 w-12 mx-auto mb-4" style={{ color: 'var(--glass-text-muted)' }} />
+                  <h3 className="text-lg font-medium mb-2" style={{ color: 'var(--glass-text)' }}>
+                    No contacts found
+                  </h3>
+                  <p style={{ color: 'var(--glass-text-muted)' }}>
+                    {searchQuery ? 'Try adjusting your search terms' : 'Get started by adding your first contact'}
+                  </p>
+                  {!searchQuery && (
+                    <Button 
+                      variant="liquid" 
+                      className="mt-4"
+                      onClick={() => setShowCreateModal(true)}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Contact
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                filteredContacts.map((contact) => (
+                  <div 
+                    key={contact.id} 
+                    className="px-6 py-4 hover:bg-[var(--glass-surface-hover)] transition-colors"
+                  >
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedContacts.includes(contact.id)}
+                        onChange={() => handleSelectContact(contact.id)}
+                        className="mr-4 rounded"
+                      />
+                      
+                      <div className="grid grid-cols-12 gap-4 w-full items-center">
+                        {/* Contact Info */}
+                        <div className="col-span-3 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full glass-card flex items-center justify-center text-sm font-medium">
+                            {getInitials(contact.name)}
+                          </div>
+                          <div>
+                            <p className="font-medium" style={{ color: 'var(--glass-text)' }}>
+                              {contact.name}
+                            </p>
+                            <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                              {contact.email}
+                            </p>
+                            {contact.phone && (
+                              <p className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
+                                {contact.phone}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Company */}
+                        <div className="col-span-2">
+                          <p className="font-medium" style={{ color: 'var(--glass-text)' }}>
+                            {contact.company || '-'}
+                          </p>
+                          {contact.position && (
+                            <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                              {contact.position}
+                            </p>
+                          )}
+                        </div>
+                        
+                        {/* Status */}
+                        <div className="col-span-2">
+                          <Badge className={`${getStatusColor(contact.status)} border-0`}>
+                            {contact.status.charAt(0).toUpperCase() + contact.status.slice(1)}
+                          </Badge>
+                          <div className="flex items-center gap-1 mt-1">
+                            {contact.tags.map((tag) => (
+                              <Badge key={tag} variant="liquid" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        {/* Last Activity */}
+                        <div className="col-span-2">
+                          <p className="text-sm" style={{ color: 'var(--glass-text)' }}>
+                            {contact.lastActivity}
+                          </p>
+                        </div>
+                        
+                        {/* Value */}
+                        <div className="col-span-2">
+                          <p className="font-medium" style={{ color: 'var(--glass-text)' }}>
+                            {formatValue(contact.value)}
+                          </p>
+                        </div>
+                        
+                        {/* Actions */}
+                        <div className="col-span-1">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="liquid" size="sm" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => {
+                                setSelectedContactForDetails(contact);
+                                setShowDetailsModal(true);
+                              }}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setShowCreateModal(true)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit Contact
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => router.push('/app/inbox')}>
+                                <Mail className="h-4 w-4 mr-2" />
+                                Send Email
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => window.open(`sms:${contact.phone}`)}>
+                                <MessageSquare className="h-4 w-4 mr-2" />
+                                Send Message
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => router.push('/app/calendar')}>
+                                <Calendar className="h-4 w-4 mr-2" />
+                                Schedule Meeting
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-red-600" onClick={() => handleSelectContact(contact.id)}>
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete Contact
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Smart Suggestions as Interactive Cards */}
-      <div 
-        className="px-6 py-4 border-b"
-        style={{
-          backgroundColor: currentTheme.colors.surfaceAlt,
-          borderColor: currentTheme.colors.border
-        }}
-      >
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="h-4 w-4 text-emerald-600" />
-            <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-              Smart Suggestions - Take Action
-            </span>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {/* Follow-up Card */}
-            <div className="p-3 bg-white/60 dark:bg-slate-800/60 rounded-lg border border-green-200 dark:border-green-800 hover:shadow-md transition-all duration-200 cursor-pointer group">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span className="font-medium text-sm text-green-700 dark:text-green-300">Follow-up Needed</span>
+        {/* Contact Details Modal */}
+        <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
+          <DialogContent className="max-w-2xl glass-panel">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3" style={{ color: 'var(--glass-text)' }}>
+                <div className="w-12 h-12 rounded-full glass-card flex items-center justify-center font-medium text-lg">
+                  {selectedContactForDetails?.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                 </div>
-                <Badge className="bg-green-100 text-green-800 border-green-300 text-xs">12</Badge>
-              </div>
-              <p className="text-xs text-muted-foreground mb-2">Contacts haven't been contacted in 7+ days</p>
-              <Button size="sm" variant="outline" className="w-full h-7 text-xs group-hover:bg-green-50 group-hover:border-green-300">
-                Draft Follow-up Emails
-              </Button>
-            </div>
-            
-            {/* Duplicates Card */}
-            <div className="p-3 bg-white/60 dark:bg-slate-800/60 rounded-lg border border-orange-200 dark:border-orange-800 hover:shadow-md transition-all duration-200 cursor-pointer group">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Target className="h-4 w-4 text-orange-600" />
-                  <span className="font-medium text-sm text-orange-700 dark:text-orange-300">Duplicate Contacts</span>
+                <div>
+                  <h2 className="text-xl font-semibold">{selectedContactForDetails?.name}</h2>
+                  <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                    {selectedContactForDetails?.position && selectedContactForDetails?.company 
+                      ? `${selectedContactForDetails.position} at ${selectedContactForDetails.company}`
+                      : selectedContactForDetails?.company || 'Contact Details'
+                    }
+                  </p>
                 </div>
-                <Badge className="bg-orange-100 text-orange-800 border-orange-300 text-xs">5</Badge>
-              </div>
-              <p className="text-xs text-muted-foreground mb-2">Potential duplicate contacts detected</p>
-              <Button size="sm" variant="outline" className="w-full h-7 text-xs group-hover:bg-orange-50 group-hover:border-orange-300">
-                Review & Merge
-              </Button>
-            </div>
-            
-            {/* Enrichment Card */}
-            <div className="p-3 bg-white/60 dark:bg-slate-800/60 rounded-lg border border-purple-200 dark:border-purple-800 hover:shadow-md transition-all duration-200 cursor-pointer group">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-purple-600" />
-                  <span className="font-medium text-sm text-purple-700 dark:text-purple-300">Data Enrichment</span>
-                </div>
-                <Badge className="bg-purple-100 text-purple-800 border-purple-300 text-xs">23</Badge>
-              </div>
-              <p className="text-xs text-muted-foreground mb-2">Contacts missing phone numbers or addresses</p>
-              <Button size="sm" variant="outline" className="w-full h-7 text-xs group-hover:bg-purple-50 group-hover:border-purple-300">
-                Auto-Enrich Data
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+              </DialogTitle>
+            </DialogHeader>
 
-      {/* Table View Contacts */}
-      <div className="flex-1 overflow-hidden">
-        <EnhancedContacts 
-          className="h-full" 
-          searchQuery={searchQuery}
-          selectedFilters={selectedFilters}
-          defaultView="table"
-          showTableHeaders={true}
+            {selectedContactForDetails && (
+              <div className="space-y-6">
+                {/* Contact Information */}
+                <div>
+                  <h3 className="font-semibold mb-3" style={{ color: 'var(--glass-text)' }}>Contact Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="glass-card p-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Mail className="h-5 w-5" style={{ color: 'var(--glass-primary)' }} />
+                        <span className="font-medium" style={{ color: 'var(--glass-text)' }}>Email</span>
+                      </div>
+                      <p style={{ color: 'var(--glass-text-secondary)' }}>{selectedContactForDetails.email}</p>
+                    </div>
+
+                    {selectedContactForDetails.phone && (
+                      <div className="glass-card p-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <Phone className="h-5 w-5" style={{ color: 'var(--glass-primary)' }} />
+                          <span className="font-medium" style={{ color: 'var(--glass-text)' }}>Phone</span>
+                        </div>
+                        <p style={{ color: 'var(--glass-text-secondary)' }}>{selectedContactForDetails.phone}</p>
+                      </div>
+                    )}
+
+                    {selectedContactForDetails.location && (
+                      <div className="glass-card p-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <MapPin className="h-5 w-5" style={{ color: 'var(--glass-primary)' }} />
+                          <span className="font-medium" style={{ color: 'var(--glass-text)' }}>Location</span>
+                        </div>
+                        <p style={{ color: 'var(--glass-text-secondary)' }}>{selectedContactForDetails.location}</p>
+                      </div>
+                    )}
+
+                    {selectedContactForDetails.company && (
+                      <div className="glass-card p-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <Building className="h-5 w-5" style={{ color: 'var(--glass-primary)' }} />
+                          <span className="font-medium" style={{ color: 'var(--glass-text)' }}>Company</span>
+                        </div>
+                        <p style={{ color: 'var(--glass-text-secondary)' }}>
+                          {selectedContactForDetails.company}
+                          {selectedContactForDetails.position && (
+                            <span className="block text-sm opacity-70">{selectedContactForDetails.position}</span>
+                          )}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Contact Status & Tags */}
+                <div>
+                  <h3 className="font-semibold mb-3" style={{ color: 'var(--glass-text)' }}>Status & Tags</h3>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <Badge className={`${
+                      selectedContactForDetails.status === 'active' ? 'bg-green-100 text-green-800' :
+                      selectedContactForDetails.status === 'lead' ? 'bg-blue-100 text-blue-800' :
+                      selectedContactForDetails.status === 'prospect' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-gray-100 text-gray-800'
+                    } border-0`}>
+                      {selectedContactForDetails.status.charAt(0).toUpperCase() + selectedContactForDetails.status.slice(1)}
+                    </Badge>
+                    {selectedContactForDetails.tags?.map((tag) => (
+                      <Badge key={tag} variant="liquid" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div>
+                  <h3 className="font-semibold mb-3" style={{ color: 'var(--glass-text)' }}>Quick Actions</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <Button 
+                      variant="liquid" 
+                      className="justify-start" 
+                      onClick={() => window.open(`mailto:${selectedContactForDetails.email}`)}
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Email
+                    </Button>
+                    <Button 
+                      variant="liquid" 
+                      className="justify-start" 
+                      onClick={() => window.open(`tel:${selectedContactForDetails.phone}`)}
+                      disabled={!selectedContactForDetails.phone}
+                    >
+                      <Phone className="h-4 w-4 mr-2" />
+                      Call
+                    </Button>
+                    <Button 
+                      variant="liquid" 
+                      className="justify-start" 
+                      onClick={() => {
+                        setShowDetailsModal(false);
+                        router.push('/app/calendar');
+                      }}
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Schedule
+                    </Button>
+                    <Button 
+                      variant="liquid" 
+                      className="justify-start" 
+                      onClick={() => {
+                        setShowDetailsModal(false);
+                        setShowCreateModal(true);
+                      }}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Activity History Placeholder */}
+                <div>
+                  <h3 className="font-semibold mb-3" style={{ color: 'var(--glass-text)' }}>Recent Activity</h3>
+                  <div className="glass-card p-4">
+                    <p style={{ color: 'var(--glass-text-muted)' }} className="text-sm">
+                      Activity tracking will be available once integrated with the CRM system.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Contact Modal */}
+        <CreateContactModal
+          open={showCreateModal}
+          onOpenChange={setShowCreateModal}
+          onContactCreated={(contact) => {
+            setContacts(prev => [...prev, contact]);
+          }}
         />
-      </div>
-    </AppShell>
+      </AppShell>
+    </div>
   );
 }

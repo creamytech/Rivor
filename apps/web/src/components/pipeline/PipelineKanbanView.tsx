@@ -575,7 +575,11 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
                         variant="ghost" 
                         size="sm"
                         className="h-7 w-7 p-0 opacity-70 hover:opacity-100"
-                        onClick={() => {/* Add deal to this stage */}}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          // Add deal to this stage - placeholder
+                        }}
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
@@ -656,7 +660,11 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
                           variant="default" 
                           size="sm"
                           className={`bg-gradient-to-r ${stage.color.replace('bg-', 'from-')} ${stage.color.replace('bg-', 'to-')}/80 hover:${stage.color.replace('bg-', 'from-')}/90 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200`}
-                          onClick={() => {/* Create new deal in this stage */}}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            // Create new deal in this stage - placeholder
+                          }}
                         >
                           <Plus className="h-4 w-4 mr-2" />
                           Add Deal

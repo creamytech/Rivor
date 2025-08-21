@@ -4,22 +4,22 @@ import TasksList from "@/components/tasks/TasksList";
 import FlowRibbon from "@/components/river/FlowRibbon";
 import { ToastProvider } from "@/components/river/RiverToast";
 import TokenErrorBanner from "@/components/common/TokenErrorBanner";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function TasksPage() {
+  const { theme } = useTheme();
+  
   return (
-    <ToastProvider>
-      <div className="relative min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
-        <FlowRibbon />
+    <div className={`min-h-screen ${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'}`}>
+      <ToastProvider>
         <AppShell>
-          <div className="container py-6 space-y-6">
+          <FlowRibbon />
+          <div className="container mx-auto px-6 py-6">
             <TokenErrorBanner />
-            
-            <div className="space-y-6">
-              <TasksList className="min-h-[600px]" />
-            </div>
+            <TasksList />
           </div>
         </AppShell>
-      </div>
-    </ToastProvider>
+      </ToastProvider>
+    </div>
   );
 }

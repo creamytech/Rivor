@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
+import { useRouter } from "next/navigation";
 import { motion } from 'framer-motion';
 import AppShell from "@/components/app/AppShell";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ import {
   Clock,
   TrendingUp,
   AlertTriangle,
+  CheckCircle,
   X
 } from "lucide-react";
 import PipelineKanbanView from "@/components/pipeline/PipelineKanbanView";
@@ -61,7 +63,8 @@ interface FilterPill {
 type ViewMode = 'kanban' | 'list' | 'timeline';
 
 export default function PipelinePage() {
-  const { currentTheme } = useTheme();
+  const { theme } = useTheme();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -157,253 +160,205 @@ export default function PipelinePage() {
   };
 
   return (
-    <div 
-      className="relative min-h-screen"
-      style={{
-        background: `linear-gradient(135deg, ${currentTheme.colors.background} 0%, ${currentTheme.colors.backgroundSecondary} 100%)`
-      }}
-    >
+    <div className={`${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'}`}>
       <AppShell>
-        {/* Enhanced Header Section */}
-        <div 
-          className="sticky top-16 z-20 backdrop-blur-sm border-b shadow-sm"
-          style={{
-            backgroundColor: `${currentTheme.colors.surfaceAlt}F0`, // Adding alpha for transparency
-            borderColor: currentTheme.colors.border
-          }}
-        >
-          <div className="px-6 py-4">
-            {/* Main Toolbar */}
-            <div className="flex items-center justify-between w-full mb-4">
-              {/* Left Group - Search and Core Actions */}
-              <div className="flex items-center gap-4">
-                {/* Enhanced Search */}
-                <div className="relative">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Search deals, properties, or contacts..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-12 pr-12 py-3 w-96 bg-background border-input focus:ring-2 focus:ring-blue-500 focus:border-transparent rounded-xl shadow-sm"
-                  />
-                  {searchQuery && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
-                      onClick={() => setSearchQuery('')}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-                
-                {/* Advanced Filters - Collapsible Popover */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className={`h-10 ${selectedFilters.length > 0 ? "border-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}
-                    >
-                      <Filter className="h-4 w-4 mr-2" />
-                      Advanced Filters
-                      {selectedFilters.length > 0 && (
-                        <Badge variant="secondary" className="ml-2">
-                          {selectedFilters.length}
-                        </Badge>
-                      )}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-80">
-                    <DropdownMenuLabel>Advanced Filters</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <div className="p-3 space-y-3">
-                      <div>
-                        <label className="text-sm font-medium mb-1 block">Deal Stage</label>
-                        <Select value={advancedFilters.dealStage} onValueChange={(value) => setAdvancedFilters(prev => ({ ...prev, dealStage: value }))}>
-                          <SelectTrigger className="h-8">
-                            <SelectValue placeholder="Any stage" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="lead">New Lead</SelectItem>
-                            <SelectItem value="qualified">Qualified</SelectItem>
-                            <SelectItem value="showing">Showing Scheduled</SelectItem>
-                            <SelectItem value="offer">Offer Made</SelectItem>
-                            <SelectItem value="contract">Under Contract</SelectItem>
-                            <SelectItem value="closed">Closed</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium mb-1 block">Property Type</label>
-                        <Select value={advancedFilters.propertyType} onValueChange={(value) => setAdvancedFilters(prev => ({ ...prev, propertyType: value }))}>
-                          <SelectTrigger className="h-8">
-                            <SelectValue placeholder="Any type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="single-family">Single Family</SelectItem>
-                            <SelectItem value="condo">Condo</SelectItem>
-                            <SelectItem value="townhouse">Townhouse</SelectItem>
-                            <SelectItem value="multi-family">Multi-Family</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => setSelectedFilters(Object.keys(advancedFilters).filter(key => advancedFilters[key as keyof typeof advancedFilters]))}>Apply</Button>
-                        <Button variant="outline" size="sm" onClick={() => { setAdvancedFilters({ dealStage: '', propertyType: '', priceRange: { min: '', max: '' }, daysInStage: '', assignedAgent: '', leadSource: '', dealProbability: '', lastActivity: '' }); setSelectedFilters([]); }}>Clear</Button>
-                      </div>
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              
-              {/* Right Group - View Controls and Actions */}
+        {/* Liquid Glass Header */}
+        <div className="px-4 mt-4 mb-2 main-content-area">
+          <div className="glass-card glass-hover-pulse p-6">
+          {/* Header Row */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
-                {/* View Mode Toggle */}
-                <div className="flex items-center border border-border rounded-lg p-1 bg-muted/30">
-                  {(['kanban', 'list', 'timeline'] as ViewMode[]).map((view) => (
-                    <Button
-                      key={view}
-                      variant={viewMode === view ? "default" : "ghost"}
-                      size="sm"
-                      onClick={() => setViewMode(view)}
-                      className="flex items-center gap-2 px-3 h-8"
-                    >
-                      {getViewIcon(view)}
-                      <span className="capitalize hidden sm:inline">{view}</span>
-                    </Button>
-                  ))}
+                <div className="p-3 rounded-xl glass-card glass-hover-tilt">
+                  <Activity className="h-6 w-6" style={{ color: 'var(--glass-primary)' }} />
                 </div>
-
-                {/* Analytics Drawer Toggle - Collapsible */}
-                <Button
-                  variant={showAnalytics ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setShowAnalytics(!showAnalytics)}
-                  className="relative"
-                >
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Analytics</span>
-                  {showAnalytics && (
-                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                  )}
-                </Button>
-
-                {/* Action Buttons */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Download className="h-4 w-4 mr-2" />
-                      Export
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Export Options</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>Export as CSV</DropdownMenuItem>
-                    <DropdownMenuItem>Export as Excel</DropdownMenuItem>
-                    <DropdownMenuItem>Export Pipeline Report</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                <Button 
-                  variant="default" 
-                  size="sm"
-                  onClick={() => setShowCreateDeal(true)}
-                  className="bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Deal
-                </Button>
+                <div>
+                  <h1 className="text-2xl font-bold glass-text-glow">Pipeline</h1>
+                  <p style={{ color: 'var(--glass-text-secondary)' }}>
+                    Manage your deals and opportunities
+                  </p>
+                </div>
               </div>
             </div>
+            
+            <Button 
+              variant="liquid"
+              size="lg"
+              className="px-6"
+              onClick={() => setShowCreateDeal(true)}
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              New Deal
+            </Button>
+          </div>
 
-            {/* Quick Filters Chips - Horizontal Scrollable */}
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground font-medium flex-shrink-0">Quick filters:</span>
-              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                {quickFilters.map((filter) => (
-                  <motion.button
-                    key={filter.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    whileHover={{ scale: 1.05 }}
-                    onClick={() => toggleQuickFilter(filter.id)}
-                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
-                      filter.active 
-                        ? 'bg-blue-500 text-white shadow-md' 
-                        : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground border border-border/50'
+          {/* Search and Controls */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-1 max-w-2xl">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" 
+                  style={{ color: 'var(--glass-text-muted)' }} />
+                <Input
+                  variant="pill"
+                  placeholder="Search deals, properties, or contacts..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 text-sm glass-hover-pulse"
+                />
+                {searchQuery && (
+                  <Button
+                    variant="liquid"
+                    size="sm"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button variant="liquid" size="sm" className="glass-click-ripple" onClick={() => setShowAdvancedFilters(true)}>
+                <Filter className="h-4 w-4 mr-2" />
+                Filters
+                {selectedFilters.length > 0 && (
+                  <Badge variant="liquid" className="ml-2 text-xs">
+                    {selectedFilters.length}
+                  </Badge>
+                )}
+              </Button>
+              
+              {/* View Mode Toggle */}
+              <div className="flex items-center gap-2">
+                {(['kanban', 'list', 'timeline'] as ViewMode[]).map((view) => (
+                  <button
+                    key={view}
+                    onClick={() => setViewMode(view)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 glass-hover-pulse ${
+                      viewMode === view
+                        ? "glass-badge glass-text-glow"
+                        : "glass-badge-muted"
                     }`}
                   >
-                    {filter.label}
-                    <Badge 
-                      variant={filter.active ? "secondary" : "outline"} 
-                      className={`text-xs h-5 px-1.5 ${
-                        filter.active ? 'bg-white/20 text-white border-white/30' : ''
-                      }`}
-                    >
-                      {filter.count}
-                    </Badge>
-                  </motion.button>
+                    <div className="flex items-center gap-2">
+                      {getViewIcon(view)}
+                      <span className="capitalize">{view}</span>
+                    </div>
+                  </button>
                 ))}
               </div>
               
-              {hasActiveFilters && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearAllFilters}
-                  className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+              <Button variant="liquid" size="sm" className="glass-click-ripple" onClick={() => setShowAnalytics(!showAnalytics)}>
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Analytics
+              </Button>
+              
+              <Button variant="liquid" size="sm" className="glass-click-ripple" onClick={() => router.push('/app/reporting')}>
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </div>
+          </div>
+
+          {/* Quick Filters */}
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium flex-shrink-0" style={{ color: 'var(--glass-text-secondary)' }}>Quick filters:</span>
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+              {quickFilters.map((filter) => (
+                <motion.button
+                  key={filter.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  whileHover={{ scale: 1.05 }}
+                  onClick={() => toggleQuickFilter(filter.id)}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 glass-click-ripple ${
+                    filter.active 
+                      ? 'glass-badge glass-text-glow' 
+                      : 'glass-badge-muted'
+                  }`}
                 >
-                  <X className="h-3 w-3 mr-1" />
-                  Clear All
-                </Button>
-              )}
+                  {filter.label}
+                  <Badge 
+                    variant="liquid" 
+                    className="text-xs h-5 px-1.5"
+                  >
+                    {filter.count}
+                  </Badge>
+                </motion.button>
+              ))}
+            </div>
+            
+            {hasActiveFilters && (
+              <Button
+                variant="liquid"
+                size="sm"
+                onClick={clearAllFilters}
+                className="text-xs h-8 flex-shrink-0 glass-click-ripple"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Clear All
+              </Button>
+            )}
+          </div>
+          </div>
+        </div>
+
+        {/* Pipeline Metrics Overview */}
+        <div className="px-4 pb-4 main-content-area">
+          <div className="glass-card glass-hover-tilt p-6">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-6">
+              {[
+                { title: 'New Leads', count: 24, value: '$2.4M', color: 'from-blue-500 to-cyan-500', icon: <User className="h-5 w-5" /> },
+                { title: 'Qualified', count: 18, value: '$1.98M', color: 'from-green-500 to-emerald-500', icon: <CheckCircle className="h-5 w-5" /> },
+                { title: 'Showing', count: 12, value: '$1.56M', color: 'from-orange-500 to-yellow-500', icon: <Calendar className="h-5 w-5" /> },
+                { title: 'Offer Made', count: 8, value: '$1.2M', color: 'from-purple-500 to-pink-500', icon: <TrendingUp className="h-5 w-5" /> },
+                { title: 'Contract', count: 5, value: '$750K', color: 'from-yellow-500 to-orange-500', icon: <Home className="h-5 w-5" /> },
+                { title: 'Closed', count: 3, value: '$450K', color: 'from-emerald-500 to-teal-500', icon: <DollarSign className="h-5 w-5" /> }
+              ].map((stage, index) => (
+                <div key={stage.title} className="text-center glass-hover-pulse">
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${stage.color} mx-auto mb-3 flex items-center justify-center text-white`}>
+                    {stage.icon}
+                  </div>
+                  <h3 className="text-sm font-medium mb-1" style={{ color: 'var(--glass-text-secondary)' }}>
+                    {stage.title}
+                  </h3>
+                  <p className="text-2xl font-bold mb-1 glass-text-glow">
+                    {stage.count}
+                  </p>
+                  <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                    {stage.value}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Funnel Visualization */}
-        <div className="px-6 pt-4">
-          <PipelineFunnelViz 
-            stages={[
-              { id: 'lead', title: 'New Leads', count: 24, value: 2400000, color: 'bg-blue-100 dark:bg-blue-900/20' },
-              { id: 'qualified', title: 'Qualified', count: 18, value: 1980000, color: 'bg-green-100 dark:bg-green-900/20' },
-              { id: 'showing', title: 'Showing Scheduled', count: 12, value: 1560000, color: 'bg-orange-100 dark:bg-orange-900/20' },
-              { id: 'offer', title: 'Offer Made', count: 8, value: 1200000, color: 'bg-purple-100 dark:bg-purple-900/20' },
-              { id: 'contract', title: 'Under Contract', count: 5, value: 750000, color: 'bg-yellow-100 dark:bg-yellow-900/20' },
-              { id: 'closed', title: 'Closed', count: 3, value: 450000, color: 'bg-emerald-100 dark:bg-emerald-900/20' }
-            ]}
-          />
-        </div>
-
         {/* Main Content */}
-        <div className={`flex gap-6 p-6 ${showAnalytics ? 'mr-80' : ''} transition-all duration-300`}>
-          {/* Pipeline View */}
-          <div className="flex-1 min-w-0">
+        <div className="flex-1 px-4 pb-4 main-content-area">
+          <div className="glass-card">
             {renderPipelineView()}
           </div>
         </div>
 
-        {/* Analytics Sidebar - Collapsible Drawer */}
+        {/* Analytics Sidebar */}
         {showAnalytics && (
           <motion.div
             initial={{ x: 320, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 320, opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-[calc(64px+88px)] bottom-0 w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-l border-border shadow-xl z-10 overflow-y-auto"
+            className="fixed right-4 top-24 bottom-4 w-80 glass-card glass-hover-tilt shadow-xl z-10 overflow-y-auto"
           >
-            <div className="p-4 border-b border-border bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+            <div className="p-6 border-b" style={{ borderColor: 'var(--glass-border)' }}>
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-lg flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-blue-500" />
+                <h3 className="font-semibold text-lg flex items-center gap-2 glass-text-glow">
+                  <BarChart3 className="h-5 w-5" style={{ color: 'var(--glass-primary)' }} />
                   Pipeline Analytics
                 </h3>
                 <Button
-                  variant="ghost"
+                  variant="liquid"
                   size="sm"
                   onClick={() => setShowAnalytics(false)}
                   className="h-8 w-8 p-0"
@@ -412,11 +367,13 @@ export default function PipelinePage() {
                 </Button>
               </div>
             </div>
-            <PipelineAnalyticsSidebar 
-              onClose={() => setShowAnalytics(false)}
-              activeFilters={activeQuickFilters}
-              searchQuery={searchQuery}
-            />
+            <div className="p-6">
+              <PipelineAnalyticsSidebar 
+                onClose={() => setShowAnalytics(false)}
+                activeFilters={activeQuickFilters}
+                searchQuery={searchQuery}
+              />
+            </div>
           </motion.div>
         )}
 

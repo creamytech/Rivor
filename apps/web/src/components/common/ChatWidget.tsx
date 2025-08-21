@@ -14,7 +14,14 @@ export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
-  if (pathname?.startsWith("/app")) {
+  // Hide chat widget on app pages, auth pages, and landing page
+  if (
+    pathname?.startsWith("/app") ||
+    pathname?.startsWith("/auth") ||
+    pathname === "/" ||
+    pathname === "/landing" ||
+    pathname === "/signin"
+  ) {
     return null;
   }
 

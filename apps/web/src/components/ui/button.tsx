@@ -19,6 +19,7 @@ const buttonVariants = cva(
         primary: "bg-[var(--theme-primary)] text-[var(--theme-textInverse)] hover:bg-[var(--theme-primaryHover)] shadow-lg hover:shadow-xl transition-all duration-300",
         luxury: "bg-[var(--theme-gradient)] text-[var(--theme-textInverse)] hover:scale-[1.02] shadow-xl hover:shadow-2xl border border-[var(--theme-borderActive)] backdrop-blur-sm transition-all duration-300",
         glass: "bg-[var(--theme-glassBg)] backdrop-blur-[var(--theme-glassBlur)] border border-[var(--theme-borderHover)] text-[var(--theme-textPrimary)] hover:bg-[var(--theme-surfaceHover)] hover:border-[var(--theme-borderActive)] shadow-lg transition-all duration-300",
+        liquid: "glass-button glass-hover-pulse glass-click-ripple",
         accent: "bg-[var(--theme-accent)] text-[var(--theme-textInverse)] hover:bg-[var(--theme-accentHover)] shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300",
       },
       size: {

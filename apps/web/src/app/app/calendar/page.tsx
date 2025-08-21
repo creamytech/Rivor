@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import AppShell from "@/components/app/AppShell";
+import { useTheme } from "@/contexts/ThemeContext";
 import EnhancedCalendar from "@/components/calendar/EnhancedCalendar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,16 +50,36 @@ import {
   Target as TargetIcon,
   Briefcase as BriefcaseIcon,
   User as UserIcon,
-  Building as BuildingIcon
+  Building as BuildingIcon,
+  Check,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import CreateEventModal from "@/components/calendar/CreateEventModal";
 
 export default function CalendarPage() {
+  const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'my-events' | 'team' | 'all'>('my-events');
   const [meetingType, setMeetingType] = useState<'all' | 'intro' | 'demo' | 'follow-up' | 'internal'>('all');
   const [isSyncing, setIsSyncing] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const availableFilters = [
     { id: 'has-video', label: 'Video Calls', icon: VideoIcon },
@@ -84,6 +105,12 @@ export default function CalendarPage() {
         ? prev.filter(id => id !== filterId)
         : [...prev, filterId]
     );
+  };
+
+  const handleEventCreated = (newEvent: any) => {
+    console.log('Event created:', newEvent);
+    setShowCreateModal(false);
+    // Optionally refresh calendar data here
   };
 
   const handleSync = async () => {
@@ -118,169 +145,225 @@ export default function CalendarPage() {
   };
 
   return (
-    <AppShell>
-      {/* Search and Filter Bar */}
-      <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-4">
-            {/* Search */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                placeholder="Search events, attendees, or locations..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            {/* View Mode Toggle */}
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
-              <Button
-                variant={viewMode === 'my-events' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('my-events')}
-                className="text-xs"
+    <div className={`${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'}`}>
+      <AppShell>
+        <div className="px-4 mt-4 mb-2 main-content-area">
+          {/* Liquid Glass Header */}
+          <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="glass-card glass-border-active mb-6"
+          style={{ 
+            backgroundColor: 'var(--glass-surface)', 
+            color: 'var(--glass-text)',
+            backdropFilter: 'var(--glass-blur)'
+          }}
+        >
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="glass-icon-container">
+                  <Calendar className="h-6 w-6" style={{ color: 'var(--glass-primary)' }} />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold glass-text-gradient">Calendar</h1>
+                  <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                    Manage your schedule with intelligent insights
+                  </p>
+                </div>
+              </div>
+              
+              <Button 
+                variant="liquid"
+                size="lg"
+                className="glass-hover-glow"
+                onClick={() => setShowCreateModal(true)}
               >
-                My Events
-              </Button>
-              <Button
-                variant={viewMode === 'team' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('team')}
-                className="text-xs"
-              >
-                Team
-              </Button>
-              <Button
-                variant={viewMode === 'all' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('all')}
-                className="text-xs"
-              >
-                All
+                <Plus className="h-5 w-5 mr-2" />
+                New Event
               </Button>
             </div>
 
-            {/* Meeting Type Filter */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-600 dark:text-slate-400">Type:</span>
-              <div className="flex items-center gap-1">
-                {meetingTypes.map(type => (
+            {/* Search and Controls */}
+            <div className="flex items-center gap-4 mb-4">
+              {/* Enhanced Search */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" 
+                       style={{ color: 'var(--glass-text-muted)' }} />
+                <Input
+                  placeholder="Search events, attendees, or locations..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 glass-input"
+                />
+              </div>
+
+              {/* View Mode Toggle */}
+              <div className="glass-pill-container">
+                {['my-events', 'team', 'all'].map((mode) => (
                   <Button
-                    key={type.id}
-                    variant={meetingType === type.id ? 'default' : 'outline'}
+                    key={mode}
+                    variant={viewMode === mode ? 'liquid' : 'ghost'}
                     size="sm"
-                    onClick={() => setMeetingType(type.id as any)}
-                    className="text-xs h-8"
+                    onClick={() => setViewMode(mode as any)}
+                    className="glass-pill-button"
                   >
-                    <type.icon className="h-3 w-3 mr-1" />
-                    {type.label}
+                    {mode === 'my-events' ? 'My Events' : mode === 'team' ? 'Team' : 'All'}
                   </Button>
                 ))}
               </div>
-            </div>
 
-            {/* Quick Actions */}
-            <div className="flex items-center gap-2">
+              {/* Sync Button */}
               <Button 
-                size="sm" 
                 variant="outline"
+                size="sm"
                 onClick={handleSync}
                 disabled={isSyncing}
+                className="glass-button-secondary"
               >
                 <Download className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
                 {isSyncing ? 'Syncing...' : 'Sync'}
               </Button>
-              <Button size="sm" variant="outline">
-                <Upload className="h-4 w-4 mr-2" />
-                Import
-              </Button>
-              <Button size="sm" variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-              <Button size="sm" variant="outline">
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </Button>
+            </div>
+
+            {/* Meeting Type Filter - Dropdown */}
+            <div className="flex items-center gap-3">
+              <Select value={meetingType} onValueChange={(value) => setMeetingType(value as any)}>
+                <SelectTrigger className="w-48 glass-input">
+                  <SelectValue placeholder="Select meeting type" />
+                </SelectTrigger>
+                <SelectContent className="glass-dropdown">
+                  {meetingTypes.map(type => (
+                    <SelectItem key={type.id} value={type.id}>
+                      <div className="flex items-center gap-2">
+                        <type.icon className="h-4 w-4" />
+                        {type.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Advanced Filters Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="glass-button-secondary">
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filters
+                    {selectedFilters.length > 0 && (
+                      <span className="ml-2 px-2 py-1 text-xs rounded-full bg-blue-500 text-white">
+                        {selectedFilters.length}
+                      </span>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="glass-dropdown w-56">
+                  <DropdownMenuLabel>Event Filters</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {availableFilters.map(filter => (
+                    <DropdownMenuItem
+                      key={filter.id}
+                      onClick={() => toggleFilter(filter.id)}
+                      className="flex items-center gap-2"
+                    >
+                      <div className={cn(
+                        "w-4 h-4 border rounded flex items-center justify-center",
+                        selectedFilters.includes(filter.id) && "bg-blue-500 border-blue-500"
+                      )}>
+                        {selectedFilters.includes(filter.id) && <Check className="h-3 w-3 text-white" />}
+                      </div>
+                      <filter.icon className="h-4 w-4" />
+                      {filter.label}
+                    </DropdownMenuItem>
+                  ))}
+                  {selectedFilters.length > 0 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setSelectedFilters([])}>
+                        <X className="h-4 w-4 mr-2" />
+                        Clear all filters
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
+        </motion.div>
 
-          {/* Filter Chips */}
-          <div className="flex items-center gap-2 mt-3">
-            <span className="text-sm text-slate-600 dark:text-slate-400">Filters:</span>
-            <div className="flex items-center gap-2 flex-wrap">
-              {availableFilters.map(filter => (
-                <Button
-                  key={filter.id}
-                  variant={selectedFilters.includes(filter.id) ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => toggleFilter(filter.id)}
-                  className="text-xs h-7"
-                >
-                  <filter.icon className="h-3 w-3 mr-1" />
-                  {filter.label}
-                </Button>
-              ))}
-            </div>
-            {selectedFilters.length > 0 && (
-              <Button
-                variant="ghost"
+        {/* Smart Suggestions Glass Panel */}
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="glass-card glass-border mb-6"
+          style={{ 
+            backgroundColor: 'var(--glass-surface-subtle)', 
+            color: 'var(--glass-text)'
+          }}
+        >
+          <div className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="glass-icon-container-small">
+                  <Sparkles className="h-4 w-4" style={{ color: 'var(--glass-accent)' }} />
+                </div>
+                <span className="text-sm font-semibold glass-text-gradient">
+                  Smart Suggestions
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-4 text-sm">
+                <div className="glass-suggestion-pill">
+                  <Clock className="h-4 w-4 text-green-500" />
+                  <span>3 free slots tomorrow</span>
+                </div>
+                <div className="glass-suggestion-pill">
+                  <Target className="h-4 w-4 text-orange-500" />
+                  <span>TechCorp demo prep needed</span>
+                </div>
+                <div className="glass-suggestion-pill">
+                  <Zap className="h-4 w-4 text-purple-500" />
+                  <span>Auto-schedule follow-ups</span>
+                </div>
+              </div>
+              
+              <Button 
+                variant="liquid" 
                 size="sm"
-                onClick={() => setSelectedFilters([])}
-                className="text-xs h-7 text-slate-500 hover:text-slate-700"
+                className="glass-hover-pulse"
               >
-                Clear all
+                <Sparkles className="h-4 w-4 mr-2" />
+                Find Time
               </Button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Smart Suggestions */}
-      <div className="px-6 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-slate-200 dark:border-slate-700">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                Smart Suggestions
-              </span>
             </div>
-            <div className="flex items-center gap-3 text-sm">
-              <div className="flex items-center gap-1">
-                <Clock className="h-4 w-4 text-green-600" />
-                <span className="text-green-700 dark:text-green-300">
-                  3 free slots tomorrow
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Target className="h-4 w-4 text-orange-600" />
-                <span className="text-orange-700 dark:text-orange-300">
-                  TechCorp demo prep needed
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Zap className="h-4 w-4 text-purple-600" />
-                <span className="text-purple-700 dark:text-purple-300">
-                  Auto-schedule follow-ups
-                </span>
-              </div>
-            </div>
-            <Button size="sm" variant="outline" className="ml-auto">
-              <Sparkles className="h-4 w-4 mr-2" />
-              Find Time
-            </Button>
           </div>
-        </div>
-      </div>
+        </motion.div>
 
-      {/* Calendar Component */}
-      <div className="flex-1 overflow-hidden">
-        <EnhancedCalendar className="h-full" />
-      </div>
-    </AppShell>
+        {/* Calendar Component */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="glass-card glass-border-active flex-1"
+          style={{ 
+            backgroundColor: 'var(--glass-surface)', 
+            minHeight: '600px'
+          }}
+        >
+          <EnhancedCalendar className="h-full glass-calendar" />
+        </motion.div>
+        </div>
+      </AppShell>
+
+      {/* Create Event Modal */}
+      <CreateEventModal
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+        onEventCreated={handleEventCreated}
+      />
+    </div>
   );
 }
 

@@ -9,6 +9,21 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(_req: NextRequest) {
   try {
+    // Development bypass - return mock data
+    if (process.env.NODE_ENV === 'development') {
+      const mockSyncStatus = {
+        accountsTotal: 2,
+        accountsConnected: 2,
+        accountsBackfilling: 0,
+        accountsError: 0,
+        threadsTotal: 47,
+        lastSyncAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(), // 15 minutes ago
+        syncInProgress: false
+      };
+
+      return NextResponse.json(mockSyncStatus);
+    }
+
     const session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

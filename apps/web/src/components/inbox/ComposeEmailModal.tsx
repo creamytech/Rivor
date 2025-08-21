@@ -15,6 +15,8 @@ interface ComposeEmailModalProps {
   defaultSubject?: string;
   defaultBody?: string;
   onEmailSent?: (result: any) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   // Real estate specific props
   propertyInfo?: {
     address?: string;
@@ -37,11 +39,15 @@ export default function ComposeEmailModal({
   defaultSubject = '',
   defaultBody = '',
   onEmailSent,
+  open: externalOpen,
+  onOpenChange: externalOnOpenChange,
   propertyInfo,
   emailType = 'general',
   contactInfo
 }: ComposeEmailModalProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = externalOpen ?? internalOpen;
+  const setOpen = externalOnOpenChange ?? setInternalOpen;
   const [loading, setLoading] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showAIAssist, setShowAIAssist] = useState(false);
@@ -84,15 +90,17 @@ export default function ComposeEmailModal({
     setLoading(true);
 
     try {
-      const response = await fetch('/api/email/send', {
+      const response = await fetch('/api/inbox/compose', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...formData,
+          to: formData.to,
+          subject: formData.subject,
+          body: formData.body,
           threadId,
-          isHtml: true
+          type: threadId ? 'reply' : 'new'
         }),
       });
 
@@ -105,7 +113,17 @@ export default function ComposeEmailModal({
           description: 'Your email has been sent successfully.'
         });
         setOpen(false);
-        setFormData({ to: '', cc: '', bcc: '', subject: '', body: '' });
+        setFormData({ 
+          to: '', 
+          cc: '', 
+          bcc: '', 
+          subject: '', 
+          body: '',
+          priority: 'normal' as 'high' | 'normal' | 'low',
+          scheduleFor: '',
+          includePropertyAttachment: false,
+          followUpDate: ''
+        });
         onEmailSent?.(result);
       } else {
         addToast({
@@ -189,7 +207,7 @@ export default function ComposeEmailModal({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'var(--glass-surface)', color: 'var(--glass-text)' }}>
         <DialogHeader>
           <DialogTitle>
             {threadId ? 'Reply to Email' : 'Compose New Email'}

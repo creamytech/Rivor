@@ -60,28 +60,28 @@ export default function SignInPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-[var(--rivor-deep)] via-[var(--rivor-indigo)] to-[var(--rivor-deep)]" role="main">
-      {/* Enhanced background with multiple gradient layers */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[var(--rivor-teal)]/10 to-[var(--rivor-aqua)]/5" aria-hidden="true" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,var(--rivor-indigo)_0%,transparent_50%)] opacity-30" aria-hidden="true" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,var(--rivor-teal)_0%,transparent_50%)] opacity-20" aria-hidden="true" />
+      {/* Subtle static gradient layers with texture */}
+      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[var(--rivor-teal)]/8 to-[var(--rivor-aqua)]/4" aria-hidden="true" />
+      <div className="absolute inset-0 bg-gradient-to-bl from-[var(--rivor-indigo)]/15 via-transparent to-[var(--rivor-teal)]/10" aria-hidden="true" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,var(--rivor-indigo)_0%,transparent_50%)] opacity-25" aria-hidden="true" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,var(--rivor-teal)_0%,transparent_50%)] opacity-15" aria-hidden="true" />
       
-      {/* Floating elements with improved positioning and animations */}
-      <div className="absolute top-20 left-20 w-64 h-64 bg-gradient-to-br from-[var(--rivor-aqua)]/10 to-[var(--rivor-teal)]/5 rounded-full blur-xl animate-float" aria-hidden="true" />
-      <div className="absolute bottom-32 right-32 w-32 h-32 bg-gradient-to-tl from-[var(--rivor-indigo)]/15 to-transparent rounded-full blur-lg animate-float-delay" aria-hidden="true" />
-      <div className="absolute top-1/2 right-1/4 w-20 h-20 bg-[var(--rivor-aqua)]/10 rounded-full blur-md animate-pulse" aria-hidden="true" />
-      <div className="absolute top-1/4 left-1/2 w-16 h-16 bg-[var(--rivor-teal)]/8 rounded-full blur-sm animate-float" style={{animationDelay: '1.5s'}} aria-hidden="true" />
+      {/* Subtle static design elements */}
+      <div className="absolute top-20 left-20 w-48 h-48 bg-gradient-to-br from-[var(--rivor-aqua)]/6 to-[var(--rivor-teal)]/3 rounded-full blur-2xl" aria-hidden="true" />
+      <div className="absolute bottom-32 right-32 w-32 h-32 bg-gradient-to-tl from-[var(--rivor-indigo)]/8 to-transparent rounded-full blur-xl" aria-hidden="true" />
+      <div className="absolute top-1/2 right-1/4 w-16 h-16 bg-[var(--rivor-aqua)]/5 rounded-full blur-lg" aria-hidden="true" />
       
-      {/* Subtle grid pattern overlay */}
-      <div className="absolute inset-0 opacity-[0.02]" style={{backgroundImage: 'radial-gradient(circle at 1px 1px, var(--rivor-aqua) 1px, transparent 0)', backgroundSize: '20px 20px'}} aria-hidden="true" />
+      {/* Subtle texture overlay */}
+      <div className="absolute inset-0 opacity-[0.015]" style={{backgroundImage: 'radial-gradient(circle at 1px 1px, var(--rivor-aqua) 1px, transparent 0)', backgroundSize: '24px 24px'}} aria-hidden="true" />
       
-      <section className="relative z-10 min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8" aria-labelledby="signin-title">
-        <div className="card p-6 sm:p-8 lg:p-10 space-y-6 sm:space-y-8 animate-fade-up max-w-md mx-auto relative group">
+      <section className="relative z-10 min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8" aria-labelledby="signin-title">
+        <div className="card-strong p-4 sm:p-6 md:p-8 lg:p-10 space-y-4 sm:space-y-6 md:space-y-8 animate-fade-up w-full max-w-xs sm:max-w-sm md:max-w-md mx-auto relative group">
           {/* Card glow effect */}
           <div className="absolute -inset-1 bg-gradient-to-r from-[var(--rivor-indigo)]/20 via-[var(--rivor-teal)]/10 to-[var(--rivor-aqua)]/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500" aria-hidden="true" />
           <div className="relative z-10">
             <div className="text-center">
-              <div className="mb-8">
-                <Logo className="mx-auto h-12" size="lg" />
+              <div className="mb-6 sm:mb-8">
+                <Logo className="mx-auto h-10 sm:h-12" size="lg" />
                 <div className="flex items-center justify-center mt-3 space-x-1">
                   <Sparkles className="w-3 h-3 text-[var(--rivor-aqua)] animate-pulse" />
                   <div className="text-xs text-[var(--rivor-aqua)] font-medium tracking-wide">REAL ESTATE CRM</div>
@@ -90,12 +90,12 @@ export default function SignInPage() {
               </div>
             </div>
 
-            <div className="text-center space-y-4">
-              <h1 id="signin-title" className="text-display-md text-foreground leading-tight">
+            <div className="text-center space-y-3 sm:space-y-4">
+              <h1 id="signin-title" className="text-xl sm:text-2xl md:text-display-md text-foreground leading-tight font-semibold">
                 {getHeaderMessage()}
               </h1>
               <div className="space-y-2">
-                <p className="text-body-lg text-muted-foreground leading-relaxed">
+                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
                   {getSubMessage()}
                 </p>
                 <div className="flex items-center justify-center space-x-2 text-sm text-[var(--rivor-aqua)]/80">
@@ -107,7 +107,7 @@ export default function SignInPage() {
 
             {error && (
             <div 
-              className="card-subtle border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/20 p-4 animate-fade-up-delay-1"
+              className="widget-glass border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/20 p-4 animate-fade-up-delay-1"
               role="alert"
               aria-live="polite"
             >
@@ -147,7 +147,7 @@ export default function SignInPage() {
                   ref={firstButtonRef}
                   onClick={() => handleSignIn('google')}
                   disabled={isSigningIn}
-                  className="btn-primary hover-lift focus-flow w-full group relative flex items-center justify-center px-8 py-4 text-base font-semibold rounded-xl text-white bg-[#4285F4] hover:bg-[#3367D6] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 animate-fade-up-delay-2 shadow-lg shadow-[#4285F4]/25 hover:shadow-xl hover:shadow-[#4285F4]/40 border border-[#4285F4]/20"
+                  className="btn-primary hover-lift focus-flow w-full group relative flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold rounded-xl text-white bg-[#4285F4] hover:bg-[#3367D6] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 animate-fade-up-delay-2 shadow-lg shadow-[#4285F4]/25 hover:shadow-xl hover:shadow-[#4285F4]/40 border border-[#4285F4]/20 backdrop-filter backdrop-blur-sm"
                   aria-label="Sign in with Google. We never store your password; sign-in happens with your provider."
                   aria-describedby={error ? "error-description" : undefined}
                 >
@@ -175,7 +175,7 @@ export default function SignInPage() {
                 <button
                   onClick={() => handleSignIn('azure-ad')}
                   disabled={isSigningIn}
-                  className="btn-primary hover-lift focus-flow w-full group relative flex items-center justify-center px-8 py-4 text-base font-semibold rounded-xl text-white bg-[#0078D4] hover:bg-[#106EBE] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 animate-fade-up-delay-3 shadow-lg shadow-[#0078D4]/25 hover:shadow-xl hover:shadow-[#0078D4]/40 border border-[#0078D4]/20"
+                  className="btn-primary hover-lift focus-flow w-full group relative flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold rounded-xl text-white bg-[#0078D4] hover:bg-[#106EBE] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 animate-fade-up-delay-3 shadow-lg shadow-[#0078D4]/25 hover:shadow-xl hover:shadow-[#0078D4]/40 border border-[#0078D4]/20 backdrop-filter backdrop-blur-sm"
                   aria-label="Sign in with Microsoft. We never store your password; sign-in happens with your provider."
                   aria-describedby={error ? "error-description" : undefined}
                 >
@@ -197,7 +197,7 @@ export default function SignInPage() {
             )}
 
               {!loading && providers && Object.keys(providers).length === 0 && (
-                <div className="card-subtle text-center p-8 animate-fade-up-delay-2 border-amber-200/20 bg-amber-50/5">
+                <div className="widget-glass text-center p-8 animate-fade-up-delay-2 border-amber-200/20 bg-amber-50/5">
                   <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-to-br from-amber-400/20 to-amber-600/10 flex items-center justify-center">
                     <Shield className="w-8 h-8 text-amber-400" />
                   </div>
@@ -227,19 +227,19 @@ export default function SignInPage() {
           </div>
         </div>
 
-        <footer className="mt-12 text-center animate-fade-up-delay-5" role="contentinfo">
-          <div className="max-w-md mx-auto">
+        <footer className="mt-6 sm:mt-8 text-center animate-fade-up-delay-5 max-w-xs sm:max-w-sm md:max-w-md w-full" role="contentinfo">
+          <div className="w-full">
             {/* Trust badges */}
-            <div className="flex items-center justify-center space-x-6 sm:space-x-8 mb-6">
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground/80" role="img" aria-label="SOC 2 compliance ready">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400/20 to-green-600/10 flex items-center justify-center">
-                  <Shield className="w-4 h-4 text-green-400" aria-hidden="true" />
+            <div className="flex items-center justify-center space-x-4 sm:space-x-6 md:space-x-8 mb-4 sm:mb-6">
+              <div className="flex items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm text-muted-foreground/80" role="img" aria-label="SOC 2 compliance ready">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-green-400/20 to-green-600/10 flex items-center justify-center">
+                  <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" aria-hidden="true" />
                 </div>
                 <span className="font-medium">SOC 2 Ready</span>
               </div>
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground/80" role="img" aria-label="OAuth 2.0 authentication">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400/20 to-blue-600/10 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <div className="flex items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm text-muted-foreground/80" role="img" aria-label="OAuth 2.0 authentication">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-400/20 to-blue-600/10 flex items-center justify-center">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                   </svg>
                 </div>
@@ -250,11 +250,11 @@ export default function SignInPage() {
             {/* Security link */}
             <a 
               href="/security" 
-              className="inline-flex items-center space-x-2 text-sm text-[var(--rivor-teal)] hover:text-[var(--rivor-aqua)] transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[var(--rivor-teal)]/50 rounded-lg px-3 py-2"
+              className="inline-flex items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm text-[var(--rivor-teal)] hover:text-[var(--rivor-aqua)] transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[var(--rivor-teal)]/50 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2"
             >
-              <Users className="w-4 h-4" aria-hidden="true" />
+              <Users className="w-3 h-3 sm:w-4 sm:h-4" aria-hidden="true" />
               <span className="font-medium">View Security Details</span>
-              <ArrowRight className="w-3 h-3" />
+              <ArrowRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             </a>
           </div>
         </footer>

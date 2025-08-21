@@ -9,7 +9,7 @@ export default function LeadDetailPage() {
   );
 
   return (
-    <AppShell rightDrawer={right}>
+    <AppShell>
       <div className="container py-4">
         <header className="flex flex-wrap items-center gap-2 justify-between mb-3">
           <div>

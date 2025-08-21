@@ -2,8 +2,7 @@
 
 import dynamic from "next/dynamic";
 
-import ThemeProvider from "./ThemeProvider";
-import { ThemeProvider as RiverThemeProvider } from "@/contexts/ThemeContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { Toaster } from "@/components/ui/toaster";
 import { ToastProvider } from "@/components/river/RiverToast";
 
@@ -18,20 +17,18 @@ interface ClientProvidersProps {
 export default function ClientProviders({ children }: ClientProvidersProps) {
   return (
     <SessionProviderWrapper>
-      <RiverThemeProvider>
-        <ThemeProvider>
-          <TRPCProvider>
-            <ToastProvider>
-              {children}
-              <ClientRoot />
-              <Toaster />
-              <div id="portal-toasts" />
-              <div id="portal-modals" />
-              <div id="portal-drawers" />
-            </ToastProvider>
-          </TRPCProvider>
-        </ThemeProvider>
-      </RiverThemeProvider>
+      <ThemeProvider>
+        <TRPCProvider>
+          <ToastProvider>
+            {children}
+            <ClientRoot />
+            <Toaster />
+            <div id="portal-toasts" />
+            <div id="portal-modals" />
+            <div id="portal-drawers" />
+          </ToastProvider>
+        </TRPCProvider>
+      </ThemeProvider>
     </SessionProviderWrapper>
   );
 }

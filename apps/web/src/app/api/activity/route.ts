@@ -8,6 +8,84 @@ export const runtime = 'nodejs';
 export const fetchCache = 'force-no-store';
 
 export async function GET(_req: NextRequest) {
+  // Development bypass - return mock data
+  if (process.env.NODE_ENV === 'development') {
+    const mockActivities = [
+      {
+        id: 'activity-1',
+        type: 'email',
+        title: 'New inquiry from Sarah Johnson',
+        description: 'Interested in downtown investment property - sent initial property details',
+        date: new Date(Date.now() - 30 * 60 * 1000).toISOString() // 30 minutes ago
+      },
+      {
+        id: 'activity-2',
+        type: 'call',
+        title: 'Phone call with Michael Chen',
+        description: 'Discussed commercial office space requirements - 10,000 sq ft needed',
+        date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() // 2 hours ago
+      },
+      {
+        id: 'activity-3',
+        type: 'meeting',
+        title: 'Property showing scheduled',
+        description: 'Emma Rodriguez - family home viewing at 789 Pine St',
+        date: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString() // 3 hours ago
+      },
+      {
+        id: 'activity-4',
+        type: 'task',
+        title: 'Market analysis completed',
+        description: 'Prepared CMA report for residential properties in Houston area',
+        date: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString() // 6 hours ago
+      },
+      {
+        id: 'activity-5',
+        type: 'email',
+        title: 'Contract documents sent',
+        description: 'Purchase agreement sent to Emma Rodriguez for family home',
+        date: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString() // 8 hours ago
+      },
+      {
+        id: 'activity-6',
+        type: 'lead',
+        title: 'Lead status updated',
+        description: 'David Kim moved to "Closed Won" - luxury condo sale completed',
+        date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() // 1 day ago
+      },
+      {
+        id: 'activity-7',
+        type: 'meeting',
+        title: 'Client consultation',
+        description: 'Initial meeting with new client about investment portfolio',
+        date: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString() // 2 days ago
+      },
+      {
+        id: 'activity-8',
+        type: 'email',
+        title: 'Follow-up email sent',
+        description: 'Property investment opportunities shared with Johnson Properties',
+        date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() // 3 days ago
+      },
+      {
+        id: 'activity-9',
+        type: 'task',
+        title: 'Listing photos updated',
+        description: 'Professional photos uploaded for luxury condo listing',
+        date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString() // 4 days ago
+      },
+      {
+        id: 'activity-10',
+        type: 'call',
+        title: 'Referral partner call',
+        description: 'Monthly check-in with Kim Realty Group about mutual referrals',
+        date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() // 1 week ago
+      }
+    ];
+
+    return NextResponse.json({ activities: mockActivities });
+  }
+
   const session = await auth();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

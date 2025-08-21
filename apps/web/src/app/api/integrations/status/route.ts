@@ -7,6 +7,62 @@ export const runtime = 'nodejs';
 export const fetchCache = 'force-no-store';
 
 export async function GET() {
+  // Development bypass - return mock data
+  if (process.env.NODE_ENV === 'development') {
+    const mockIntegrationsStatus = {
+      overallStatus: 'all_connected' as const,
+      summary: {
+        totalAccounts: 3,
+        connectedAccounts: 3,
+        actionNeededAccounts: 0,
+        disconnectedAccounts: 0
+      },
+      emailAccounts: [
+        {
+          id: 'email-1',
+          provider: 'google',
+          email: 'john@realtygroup.com',
+          displayName: 'John Smith',
+          status: 'connected',
+          syncStatus: 'idle',
+          lastSyncedAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(), // 15 minutes ago
+          encryptionStatus: 'ok',
+          errorReason: null,
+          kmsErrorCode: null,
+          kmsErrorAt: null,
+          uiStatus: 'connected',
+          requiresRetry: false,
+          canReconnect: true
+        },
+        {
+          id: 'email-2',
+          provider: 'microsoft',
+          email: 'sarah@realtygroup.com',
+          displayName: 'Sarah Wilson',
+          status: 'connected',
+          syncStatus: 'idle',
+          lastSyncedAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
+          encryptionStatus: 'ok',
+          errorReason: null,
+          kmsErrorCode: null,
+          kmsErrorAt: null,
+          uiStatus: 'connected',
+          requiresRetry: false,
+          canReconnect: true
+        }
+      ],
+      tokenEncryption: {
+        totalTokens: 2,
+        okTokens: 2,
+        pendingTokens: 0,
+        failedTokens: 0
+      },
+      lastUpdated: new Date().toISOString()
+    };
+
+    return Response.json(mockIntegrationsStatus);
+  }
+
   const session = await auth();
   if (!session?.user?.email) {
     return new Response('Unauthorized', { status: 401 });

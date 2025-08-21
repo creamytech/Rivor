@@ -227,7 +227,7 @@ export default function AuditLogPage() {
   };
 
   return (
-    <AppShell rightDrawer={selectedEvent ? (
+    <AppShell>
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold">Event Details</h3>
@@ -317,7 +317,6 @@ export default function AuditLogPage() {
           </div>
         </div>
       </div>
-    ) : undefined}>
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div>

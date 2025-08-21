@@ -11,6 +11,89 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(req: NextRequest) {
   try {
+    // Development bypass - return mock data
+    if (process.env.NODE_ENV === 'development') {
+      const mockContacts = [
+        {
+          id: 'mock-1',
+          name: 'Sarah Johnson',
+          email: 'sarah.johnson@example.com',
+          company: 'Johnson Properties',
+          title: 'Real Estate Investor',
+          phone: '(555) 123-4567',
+          location: '123 Main St, Austin, TX 78701',
+          avatarUrl: null,
+          starred: true,
+          tags: ['hot-lead', 'investor'],
+          lastActivity: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+          emailCount: 5,
+          leadCount: 2,
+          source: 'email' as const,
+          createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 'mock-2',
+          name: 'Michael Chen',
+          email: 'michael.chen@techcorp.com',
+          company: 'Tech Corp',
+          title: 'VP of Real Estate',
+          phone: '(555) 987-6543',
+          location: '456 Oak Ave, Dallas, TX 75201',
+          avatarUrl: null,
+          starred: false,
+          tags: ['commercial', 'corporate'],
+          lastActivity: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago
+          emailCount: 12,
+          leadCount: 1,
+          source: 'manual' as const,
+          createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 'mock-3',
+          name: 'Emma Rodriguez',
+          email: 'emma@familyhomes.com',
+          company: 'Family Homes LLC',
+          title: 'Property Manager',
+          phone: '(555) 555-0123',
+          location: '789 Pine St, Houston, TX 77001',
+          avatarUrl: null,
+          starred: false,
+          tags: ['residential', 'property-management'],
+          lastActivity: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+          emailCount: 8,
+          leadCount: 3,
+          source: 'import' as const,
+          createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 'mock-4',
+          name: 'David Kim',
+          email: 'david.kim@kimrealty.com',
+          company: 'Kim Realty Group',
+          title: 'Senior Agent',
+          phone: '(555) 444-7890',
+          location: '321 Elm Dr, San Antonio, TX 78201',
+          avatarUrl: null,
+          starred: true,
+          tags: ['luxury', 'referral-partner'],
+          lastActivity: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
+          emailCount: 15,
+          leadCount: 0,
+          source: 'email' as const,
+          createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      ];
+
+      return NextResponse.json({
+        contacts: mockContacts,
+        total: mockContacts.length
+      });
+    }
+
     const session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

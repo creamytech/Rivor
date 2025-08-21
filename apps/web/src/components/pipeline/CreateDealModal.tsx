@@ -120,14 +120,50 @@ export default function CreateDealModal({ open, onOpenChange }: CreateDealModalP
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    console.log('Creating deal:', formData);
-    
-    setIsSubmitting(false);
-    setFormData(initialFormData);
-    onOpenChange(false);
+    try {
+      // Create the deal using the pipeline leads API
+      const response = await fetch('/api/pipeline/leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          company: formData.company,
+          contact: formData.contact,
+          email: formData.email,
+          phone: formData.phone,
+          value: parseFloat(formData.dealValue) || 0,
+          probability: parseFloat(formData.probability) || 50,
+          priority: formData.priority,
+          stage: formData.stage,
+          source: formData.source,
+          description: formData.description,
+          tags: formData.tags,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Deal created successfully:', result);
+        
+        // Reset form and close modal
+        setFormData(initialFormData);
+        onOpenChange(false);
+        
+        // Optionally reload the page to show the new deal
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        console.error('Error creating deal:', error);
+        alert('Failed to create deal. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error creating deal:', error);
+      alert('Failed to create deal. Please check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getPriorityColor = (priority: string) => {
@@ -141,7 +177,7 @@ export default function CreateDealModal({ open, onOpenChange }: CreateDealModalP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'var(--glass-surface)', color: 'var(--glass-text)' }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Plus className="h-5 w-5" />

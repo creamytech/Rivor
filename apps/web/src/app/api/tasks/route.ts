@@ -8,8 +8,87 @@ export const dynamic = 'force-dynamic';
 /**
  * Get tasks for the organization
  */
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
+    // Development bypass - return mock data
+    if (process.env.NODE_ENV === 'development') {
+      const mockTasks = [
+        {
+          id: 'task-1',
+          title: 'Follow up with Sarah Johnson',
+          description: 'Send property details for the Austin downtown listing',
+          status: 'pending' as const,
+          priority: 'high' as const,
+          dueAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days from now
+          completedAt: null,
+          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          createdBy: 'john@example.com',
+          assignedTo: 'john@example.com',
+          linkedEmailId: null,
+          linkedLeadId: 'lead-1',
+          linkedContactId: 'mock-1',
+          tags: ['follow-up', 'hot-lead']
+        },
+        {
+          id: 'task-2',
+          title: 'Schedule property showing',
+          description: 'Coordinate viewing for Michael Chen - commercial property on Oak Ave',
+          status: 'in_progress' as const,
+          priority: 'medium' as const,
+          dueAt: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day from now
+          completedAt: null,
+          createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          createdBy: 'sarah@example.com',
+          assignedTo: 'john@example.com',
+          linkedEmailId: 'email-123',
+          linkedLeadId: 'lead-2',
+          linkedContactId: 'mock-2',
+          tags: ['showing', 'commercial']
+        },
+        {
+          id: 'task-3',
+          title: 'Send market analysis report',
+          description: 'Prepare and send CMA for Emma Rodriguez properties',
+          status: 'completed' as const,
+          priority: 'medium' as const,
+          dueAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+          completedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago
+          createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+          createdBy: 'john@example.com',
+          assignedTo: 'sarah@example.com',
+          linkedEmailId: null,
+          linkedLeadId: 'lead-3',
+          linkedContactId: 'mock-3',
+          tags: ['analysis', 'residential']
+        },
+        {
+          id: 'task-4',
+          title: 'Update listing photos',
+          description: 'Get professional photos for luxury listing on Elm Dr',
+          status: 'pending' as const,
+          priority: 'low' as const,
+          dueAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week from now
+          completedAt: null,
+          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          createdBy: 'sarah@example.com',
+          assignedTo: 'john@example.com',
+          linkedEmailId: null,
+          linkedLeadId: null,
+          linkedContactId: 'mock-4',
+          tags: ['listing', 'photos']
+        }
+      ];
+
+      return NextResponse.json({
+        tasks: mockTasks,
+        total: mockTasks.length
+      });
+    }
+
     const session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

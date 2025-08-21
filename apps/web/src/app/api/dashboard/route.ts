@@ -10,6 +10,40 @@ export const fetchCache = 'force-no-store';
 
 export async function GET(_req: NextRequest) {
   try {
+    // Skip auth in development
+    if (process.env.NODE_ENV === 'development') {
+      return Response.json({
+        userName: 'Dev User',
+        showOnboarding: false,
+        hasEmailIntegration: true,
+        hasCalendarIntegration: true,
+        unreadCount: 5,
+        recentThreads: [
+          {
+            id: 'demo-1',
+            subject: 'Property Inquiry - 123 Main St',
+            participants: 'john.doe@example.com',
+            lastMessageAt: new Date(),
+            messageCount: 3,
+            unreadCount: 1
+          }
+        ],
+        upcomingEvents: [
+          {
+            id: 'demo-event-1',
+            title: 'Property Showing - 456 Oak Ave',
+            start: new Date(Date.now() + 86400000),
+            end: new Date(Date.now() + 86400000 + 3600000),
+            location: '456 Oak Ave'
+          }
+        ],
+        calendarStats: { todayCount: 2, upcomingCount: 5 },
+        pipelineStats: [],
+        totalActiveLeads: 12,
+        tokenHealth: []
+      });
+    }
+
     const session = await auth();
 
     if (!session?.user?.email) {

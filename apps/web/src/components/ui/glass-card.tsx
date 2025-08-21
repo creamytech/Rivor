@@ -11,20 +11,11 @@ interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
 const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
   ({ className, variant = 'default', intensity = 'medium', flowDirection = 'right', children, ...props }, ref) => {
     const baseClasses = cn(
-      "rounded-xl border border-white/20 backdrop-blur-md transition-all duration-300 relative overflow-hidden",
-      "hover:shadow-lg hover:shadow-blue-500/10",
+      "glass-card glass-hover-tilt glass-click-ripple",
       {
-        'bg-white/10': intensity === 'light',
-        'bg-white/20': intensity === 'medium',
-        'bg-white/30': intensity === 'strong',
-      },
-      {
-        'bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-teal-500/10': variant === 'gradient',
-        'hover:bg-gradient-to-br hover:from-blue-500/20 hover:via-purple-500/20 hover:to-teal-500/20': variant === 'gradient',
-      },
-      {
-        'bg-gradient-to-br from-blue-400/5 via-cyan-400/10 to-teal-400/5': variant === 'river-flow',
-        'hover:bg-gradient-to-br hover:from-blue-400/10 hover:via-cyan-400/15 hover:to-teal-400/10': variant === 'river-flow',
+        'glass-bubble': variant === 'gradient',
+        'glass-droplet': variant === 'ripple',
+        'glass-panel': variant === 'river-flow',
       },
       className
     )
@@ -72,7 +63,8 @@ const GlassCardTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn("font-semibold leading-none tracking-tight text-slate-900 dark:text-slate-100", className)}
+    className={cn("font-semibold leading-none tracking-tight glass-heading", className)}
+    style={{ color: 'var(--glass-text)' }}
     {...props}
   />
 ))
@@ -84,7 +76,8 @@ const GlassCardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-sm text-slate-600 dark:text-slate-400", className)}
+    className={cn("text-sm", className)}
+    style={{ color: 'var(--glass-text-secondary)' }}
     {...props}
   />
 ))

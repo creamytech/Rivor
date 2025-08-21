@@ -17,9 +17,8 @@ export default function ThreadDetailPage() {
 
   return (
     <ToastProvider>
-      <div className="relative min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
+      <AppShell>
         <FlowRibbon />
-        <AppShell>
           <div className="container py-6 space-y-6">
             <TokenErrorBanner />
             
@@ -29,8 +28,7 @@ export default function ThreadDetailPage() {
               className="min-h-[600px]"
             />
           </div>
-        </AppShell>
-      </div>
+      </AppShell>
     </ToastProvider>
   );
 }

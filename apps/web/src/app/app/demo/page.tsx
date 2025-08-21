@@ -32,8 +32,7 @@ export default function DemoPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      <AppShell>
+    <AppShell>
         <PageHeader
           title="UI Improvements Demo"
           subtitle="Showcasing the simplified header and balanced page content"
@@ -249,7 +248,6 @@ export default function DemoPage() {
             </div>
           </div>
         </div>
-      </AppShell>
-    </div>
+    </AppShell>
   );
 }

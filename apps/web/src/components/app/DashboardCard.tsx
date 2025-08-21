@@ -18,26 +18,32 @@ export default function DashboardCard({ children, className, ...props }: Dashboa
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      transition={{ duration: 0.5 }}
-      whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+      transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+      whileHover={{ 
+        scale: 1.02, 
+        transition: { duration: 0.4, ease: [0.23, 1, 0.32, 1] } 
+      }}
       className={cn(
-        'h-full w-full overflow-hidden flex flex-col p-6',
-        'bg-gradient-to-br from-white/95 to-white/80 dark:from-slate-900/95 dark:to-slate-800/80',
-        'border border-border/50 backdrop-blur-sm',
-        'hover:shadow-xl hover:border-border/80 transition-all duration-300',
-        'rounded-2xl relative group',
+        'card h-full w-full flex flex-col p-6',
+        'relative group',
         className
       )}
       style={{
-        boxShadow: riverTheme.elevation[2],
+        maxWidth: 'none',
+        width: '100%'
       }}
       {...props}
     >
-      {/* Subtle gradient overlay on hover */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
+      {/* Enhanced liquid glass gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-rivor-aqua/8 to-rivor-teal/6 opacity-0 group-hover:opacity-100 transition-all duration-500 rounded-[1.25rem] pointer-events-none" />
       
-      {/* Content container */}
-      <div className="relative z-10 h-full flex flex-col">
+      {/* Liquid shimmer effect on hover */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-rivor-aqua/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
+      </div>
+      
+      {/* Content container with enhanced z-index */}
+      <div className="relative z-20 h-full flex flex-col">
         {children}
       </div>
     </motion.div>

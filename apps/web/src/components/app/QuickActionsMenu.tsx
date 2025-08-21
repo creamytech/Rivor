@@ -225,18 +225,18 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center glass-overlay"
           onClick={onClose}
         >
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 20, opacity: 0 }}
-            className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-lg shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
+            className="relative w-full max-w-2xl glass-modal overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+            <div className="p-4 border-b border-[var(--glass-border)]">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
@@ -257,7 +257,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
                   
                   return (
                     <div key={category} className="mb-4">
-                      <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 mb-2">
+                      <h3 className="text-xs font-semibold text-[var(--glass-text-secondary)] uppercase tracking-wider px-2 mb-2">
                         {category}
                       </h3>
                       <div className="space-y-1">
@@ -272,10 +272,10 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
                                 action.action();
                                 onClose();
                               }}
-                              className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all ${
+                              className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all glass-hover-pulse ${
                                 isSelected
-                                  ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-                                  : 'hover:bg-slate-50 dark:hover:bg-slate-800 border-transparent'
+                                  ? 'bg-[var(--glass-surface-hover)] border-[var(--glass-primary)]'
+                                  : 'hover:bg-[var(--glass-surface-hover)] border-transparent'
                               } border`}
                             >
                               <div className="text-slate-600 dark:text-slate-400">

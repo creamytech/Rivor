@@ -60,7 +60,7 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({
   const getThemePreviewStyle = (theme: ThemeId) => {
     const themeConfig = themes[theme];
     return {
-      background: `linear-gradient(135deg, ${themeConfig.colors.primary} 0%, ${themeConfig.colors.secondary} 100%)`,
+      background: themeConfig.colors.gradient,
     };
   };
 
@@ -116,7 +116,7 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({
 
     return (
       <motion.div
-        className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-500 ${
+        className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-500 glass-theme-surface ${
           isActive 
             ? 'border-current ring-2 ring-current/20' 
             : 'border-transparent hover:border-current/50'
@@ -386,12 +386,12 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({
                 exit={{ opacity: 0, y: -10, scale: 0.95 }}
                 className="absolute right-0 top-full mt-2 w-72 sm:w-80 max-w-[90vw] z-50 rounded-xl border shadow-2xl"
                 style={{
-                  backgroundColor: currentTheme.colors.surface,
-                  borderColor: currentTheme.colors.border,
+                  backgroundColor: 'var(--glass-surface)',
+                  borderColor: 'var(--glass-border)',
                 }}
               >
                 <div className="p-3">
-                  <h3 className="font-semibold text-sm mb-3" style={{ color: currentTheme.colors.textPrimary }}>
+                  <h3 className="font-semibold text-sm mb-3 glass-theme-text" style={{ color: 'var(--glass-text)' }}>
                     Choose Your River Theme
                   </h3>
                   <div className="space-y-2">
@@ -413,7 +413,7 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <div className="font-medium text-sm" style={{ color: currentTheme.colors.textPrimary }}>
+                            <div className="font-medium text-sm glass-theme-text" style={{ color: 'var(--glass-text)' }}>
                               {themes[id as ThemeId].name}
                             </div>
                             {themes[id as ThemeId].accessibility && (
@@ -430,12 +430,12 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({
                               </div>
                             )}
                           </div>
-                          <div className="text-xs" style={{ color: currentTheme.colors.textMuted }}>
+                          <div className="text-xs glass-theme-text-muted" style={{ color: 'var(--glass-text-muted)' }}>
                             {themes[id as ThemeId].description}
                           </div>
                         </div>
                         {themeId === id && (
-                          <Check className="h-4 w-4" style={{ color: currentTheme.colors.primary }} />
+                          <Check className="h-4 w-4 glass-theme-primary" style={{ color: 'var(--glass-primary)' }} />
                         )}
                       </div>
                     ))}
@@ -453,10 +453,10 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({
     <>
       <div className="space-y-4">
         <div>
-          <h3 className="text-lg font-semibold mb-2" style={{ color: currentTheme.colors.textPrimary }}>
+          <h3 className="text-lg font-semibold mb-2 glass-theme-text" style={{ color: 'var(--glass-text)' }}>
             Theme Selection
           </h3>
-          <p className="text-sm" style={{ color: currentTheme.colors.textSecondary }}>
+          <p className="text-sm glass-theme-text-secondary" style={{ color: 'var(--glass-text-secondary)' }}>
             Choose a theme that matches your style and workflow preferences
           </p>
         </div>
@@ -475,24 +475,24 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
-            className="fixed bottom-6 right-6 z-50 bg-background border border-border rounded-xl shadow-2xl p-4 min-w-[320px]"
+            className="fixed bottom-6 right-6 z-50 bg-background border border-border rounded-xl shadow-2xl p-4 min-w-[320px] glass-theme-surface"
             style={{
-              backgroundColor: currentTheme.colors.surface,
-              borderColor: currentTheme.colors.border,
+              backgroundColor: 'var(--glass-surface)',
+              borderColor: 'var(--glass-border)',
             }}
           >
             <div className="flex items-start gap-3">
               <div 
-                className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: currentTheme.colors.primary }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center glass-theme-primary"
+                style={{ backgroundColor: 'var(--glass-primary)' }}
               >
                 <Check className="h-4 w-4 text-white" />
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-sm mb-1" style={{ color: currentTheme.colors.textPrimary }}>
+                <h4 className="font-semibold text-sm mb-1 glass-theme-text" style={{ color: 'var(--glass-text)' }}>
                   Theme Updated
                 </h4>
-                <p className="text-xs mb-3" style={{ color: currentTheme.colors.textSecondary }}>
+                <p className="text-xs mb-3 glass-theme-text-secondary" style={{ color: 'var(--glass-text-secondary)' }}>
                   Switched to {currentTheme.name}. You can undo this change.
                 </p>
                 <div className="flex gap-2">
@@ -509,8 +509,9 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({
                     onClick={handleConfirmTheme}
                     size="sm"
                     className="h-7 text-xs"
+                    className="glass-theme-primary"
                     style={{
-                      backgroundColor: currentTheme.colors.primary,
+                      backgroundColor: 'var(--glass-primary)',
                       color: 'white',
                       border: 'none'
                     }}

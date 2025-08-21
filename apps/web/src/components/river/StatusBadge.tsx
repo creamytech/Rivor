@@ -93,9 +93,9 @@ export default function StatusBadge({
     lg: 'h-5 w-5'
   };
 
-  const currentConfig = config[status];
-  const Icon = currentConfig.icon;
-  const shouldPulse = showPulse && currentConfig.pulse;
+  const currentConfig = config[status] || config.pending;
+  const Icon = currentConfig?.icon || Clock;
+  const shouldPulse = showPulse && currentConfig?.pulse;
 
   const prefersReducedMotion = typeof window !== 'undefined' 
     ? window.matchMedia('(prefers-reduced-motion: reduce)').matches 

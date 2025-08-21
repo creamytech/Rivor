@@ -16,7 +16,9 @@ import {
   TrendingUp,
   Plus,
   Edit3,
-  MessageSquare
+  MessageSquare,
+  LogOut,
+  Settings
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
@@ -25,9 +27,6 @@ import { useTheme } from "@/contexts/ThemeContext";
 import EnhancedSidebar from "./EnhancedSidebar";
 import MobileNavigation from "./MobileNavigation";
 import ChatAgent from "./ChatAgent";
-import NotificationsPanel from "./NotificationsPanel";
-import UserProfileDropdown from "./UserProfileDropdown";
-import QuickActionsMenu from "./QuickActionsMenu";
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -35,7 +34,7 @@ type AppShellProps = {
 };
 
 export default function AppShell({ children, rightDrawer }: AppShellProps) {
-  const { currentTheme } = useTheme();
+  const { theme } = useTheme();
   const [showDrawer, setShowDrawer] = useState(Boolean(rightDrawer));
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -43,8 +42,17 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [quickActionsPosition, setQuickActionsPosition] = useState({ top: 0, left: 0 });
+  const [notificationPosition, setNotificationPosition] = useState({ top: 0, right: 0 });
+  const [profilePosition, setProfilePosition] = useState({ top: 0, right: 0 });
   const [showMobileNav, setShowMobileNav] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [timeOfDay, setTimeOfDay] = useState('');
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [pageTransition, setPageTransition] = useState(false);
   const pathname = usePathname();
 
   const mobileNavItems = [
@@ -88,6 +96,69 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
     return () => window.removeEventListener('chat-agent:open', handler);
   }, []);
 
+  // Scroll-based blur enhancement
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrolled = window.scrollY > 20;
+      setIsScrolled(scrolled);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Time-based adaptive colors
+  useEffect(() => {
+    const updateTimeOfDay = () => {
+      const hour = new Date().getHours();
+      if (hour >= 5 && hour < 12) setTimeOfDay('morning');
+      else if (hour >= 12 && hour < 17) setTimeOfDay('afternoon');
+      else if (hour >= 17 && hour < 21) setTimeOfDay('evening');
+      else setTimeOfDay('night');
+    };
+
+    updateTimeOfDay();
+    const interval = setInterval(updateTimeOfDay, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, []);
+
+  // Page transition animation
+  useEffect(() => {
+    setPageTransition(true);
+    const timer = setTimeout(() => setPageTransition(false), 1500);
+    return () => clearTimeout(timer);
+  }, [pathname]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      
+      // Close quick actions if clicking outside
+      if (showQuickActions && !target.closest('.glass-quick-dropdown') && !target.closest('.glass-plus-orb')) {
+        setShowQuickActions(false);
+      }
+      
+      // Close search results if clicking outside
+      if (showSearchResults && !target.closest('.glass-search-results') && !target.closest('.glass-search-pill-enhanced')) {
+        setShowSearchResults(false);
+      }
+      
+      // Close notifications if clicking outside
+      if (showNotifications && !target.closest('.glass-notification-preview') && !target.closest('[aria-label="Notifications"]')) {
+        setShowNotifications(false);
+      }
+      
+      // Close profile menu if clicking outside
+      if (showUserProfile && !target.closest('.glass-profile-menu') && !target.closest('[aria-label="User profile"]')) {
+        setShowUserProfile(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showQuickActions, showSearchResults, showNotifications, showUserProfile]);
+
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
@@ -95,6 +166,36 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
   const getUserInitials = () => {
     // This would come from session in a real app
     return "U";
+  };
+
+  const handleQuickActionsToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const button = event.currentTarget;
+    const rect = button.getBoundingClientRect();
+    setQuickActionsPosition({
+      top: rect.bottom + 8,
+      left: rect.left
+    });
+    setShowQuickActions(!showQuickActions);
+  };
+
+  const handleNotificationToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const button = event.currentTarget;
+    const rect = button.getBoundingClientRect();
+    setNotificationPosition({
+      top: rect.bottom + 8,
+      right: window.innerWidth - rect.right
+    });
+    setShowNotifications(!showNotifications);
+  };
+
+  const handleProfileToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const button = event.currentTarget;
+    const rect = button.getBoundingClientRect();
+    setProfilePosition({
+      top: rect.bottom + 8,
+      right: window.innerWidth - rect.right
+    });
+    setShowUserProfile(!showUserProfile);
   };
 
   // Get contextual page info and creation CTA
@@ -146,17 +247,31 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
   const pageContext = getPageContext();
 
   return (
-    <div>
+    <div className={`${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'} min-h-screen`}>
+      {/* Subtle Background Pattern */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 opacity-10">
+        <div className="absolute w-96 h-96 top-[10%] left-[20%] rounded-full glass-surface-subtle blur-3xl" />
+        <div className="absolute w-64 h-64 top-[60%] right-[15%] rounded-full glass-surface-subtle blur-3xl" />
+      </div>
+
       {/* Mobile Navigation */}
       <MobileNavigation 
         isOpen={showMobileNav}
         onToggle={() => setShowMobileNav(!showMobileNav)}
       />
 
-      {/* Desktop Layout */}
-      <div className={`hidden md:grid min-h-screen transition-all duration-300 ease-in-out ${
-        isSidebarCollapsed ? 'grid-cols-[72px_1fr]' : 'grid-cols-[256px_1fr]'
-      }`}>
+      {/* Desktop Layout - Seamless Connection */}
+      <div 
+        className={`hidden md:grid min-h-screen transition-all duration-200 ease-out relative z-10 ${
+          isSidebarCollapsed ? 'grid-cols-[72px_1fr]' : 'grid-cols-[280px_1fr]'
+        }`}
+        style={{
+          gap: '0',
+          background: 'var(--glass-surface-subtle)',
+          backdropFilter: 'blur(32px) saturate(1.4)',
+          WebkitBackdropFilter: 'blur(32px) saturate(1.4)'
+        }}
+      >
         {/* Enhanced Sidebar */}
         <EnhancedSidebar 
           isCollapsed={isSidebarCollapsed} 
@@ -164,208 +279,190 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         />
       
         {/* Main Content Area */}
-        <div className="grid grid-rows-[64px_1fr]">
+        <div 
+          className="grid grid-rows-[64px_1fr] min-h-screen relative z-30"
+          style={{ 
+            background: 'transparent',
+            gap: '0'
+          }}
+        >
           <header 
-            className="sticky top-0 z-50 h-16 backdrop-blur-xl shadow-sm flex items-center border-b"
+            className={`glass-topbar-unified glass-topbar-highlights glass-topbar-scroll glass-topbar-shimmer glass-adaptive-surface sticky top-0 z-50 h-16 flex items-center ${
+              isScrolled ? 'scrolled' : ''
+            } ${timeOfDay ? `glass-adaptive-${timeOfDay}` : ''} ${pageTransition ? 'page-transition' : ''}`}
             style={{ 
-              backgroundColor: `${currentTheme.colors.surfaceAlt}F5`,
-              borderBottomColor: currentTheme.colors.border,
-              boxShadow: `0 1px 0 0 ${currentTheme.colors.border}40`
+              borderRadius: '0 !important',
+              borderLeft: 'none',
+              borderTop: 'none',
+              borderRight: 'none',
+              borderBottom: '1px solid var(--glass-border)',
+              background: 'var(--glass-surface-subtle)',
+              backdropFilter: 'blur(32px) saturate(1.4)',
+              WebkitBackdropFilter: 'blur(32px) saturate(1.4)',
+              boxShadow: 'inset 0 1px 0 var(--glass-highlight)'
             }}
           >
-            <div className="px-4 md:px-6 w-full flex items-center justify-between gap-4">
-              {/* Left Side: Mobile Logo + Breadcrumbs */}
-              <div className="flex items-center gap-4 flex-1 min-w-0">
+            {/* Ambient Background Orbs */}
+            <div className="glass-ambient-orbs">
+              <div className="glass-ambient-orb"></div>
+              <div className="glass-ambient-orb"></div>
+              <div className="glass-ambient-orb"></div>
+            </div>
+            <div className={`w-full flex items-center justify-between transition-all duration-300 relative z-10 ${
+              isSidebarCollapsed ? 'px-3 md:px-4' : 'px-4 md:px-6'
+            }`}>
+              {/* Left Side: Glowing Plus Button for Quick Actions */}
+              <div className="flex items-center gap-4">
                 {/* Mobile Logo (hidden on desktop) */}
                 <div className="md:hidden flex-shrink-0">
                   <Link href="/app" className="flex items-center gap-2" aria-label="Rivor dashboard">
                     <div 
-                      className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg"
-                      style={{ background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})` }}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg glass-droplet glass-logo-glow"
+                      style={{ 
+                        background: theme === 'black' 
+                          ? 'linear-gradient(135deg, #ffffff, rgba(255,255,255,0.8))'
+                          : 'linear-gradient(135deg, #000000, rgba(0,0,0,0.8))',
+                        color: theme === 'black' ? '#000000' : '#ffffff'
+                      }}
                     >
-                      <span className="text-white font-bold text-sm">R</span>
+                      <span className="font-bold text-sm">R</span>
                     </div>
                   </Link>
                 </div>
 
-                {/* Dynamic Breadcrumbs - truncate gracefully */}
-                <div className="hidden md:flex items-center gap-3 min-w-0 flex-1">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <pageContext.icon 
-                      className="h-5 w-5 flex-shrink-0" 
-                      style={{ color: currentTheme.colors.primary }}
-                    />
-                    <span 
-                      className="text-lg font-semibold truncate"
-                      style={{ color: currentTheme.colors.textOnSurfaceAlt }}
-                    >
-                      {pageContext.title}
-                    </span>
-                  </div>
-                  <div 
-                    className="h-4 w-px flex-shrink-0"
-                    style={{ backgroundColor: currentTheme.colors.border }}
-                  />
-                  <div 
-                    className="text-sm truncate"
-                    style={{ color: currentTheme.colors.textMuted }}
+                {/* Glowing Plus Button */}
+                <div className="hidden md:block relative">
+                  <button 
+                    className="glass-plus-orb"
+                    onClick={handleQuickActionsToggle}
+                    aria-label="Quick Actions Menu"
                   >
-                    {pageContext.subtitle}
-                  </div>
+                    <Plus className="h-5 w-5" style={{ color: 'var(--glass-text)' }} />
+                  </button>
+                  
                 </div>
               </div>
 
-              {/* Center: Hero Search */}
-              <div className="hidden md:flex flex-1 max-w-md mx-4">
+              {/* Center: Enhanced Search Bar with Smart Dropdown */}
+              <div className={`hidden md:flex flex-1 justify-center transition-all duration-300 ${
+                isSidebarCollapsed ? 'max-w-3xl' : 'max-w-2xl'
+              }`}>
                 <div className="relative w-full">
-                  <Search 
-                    className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4"
-                    style={{ color: currentTheme.colors.textMuted }}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Search contacts, deals, emails..."
-                    aria-label="Global search"
-                    className="w-full pl-12 pr-16 py-2.5 text-sm rounded-xl border-2 focus:outline-none focus:border-opacity-100 transition-all cursor-pointer hover:border-opacity-80 shadow-sm font-medium"
-                    style={{ 
-                      backgroundColor: currentTheme.colors.surface,
-                      color: currentTheme.colors.textOnSurface,
-                      borderColor: `${currentTheme.colors.border}80`,
-                      '--tw-ring-color': currentTheme.colors.primary
-                    } as any}
-                    onClick={() => setShowQuickActions(true)}
-                    readOnly
-                  />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <div 
-                      className="text-xs px-1.5 py-0.5 rounded font-medium border"
-                      style={{
-                        backgroundColor: currentTheme.colors.backgroundSecondary,
-                        color: currentTheme.colors.textMuted,
-                        borderColor: currentTheme.colors.border
+                  <div className="glass-search-pill-enhanced">
+                    <Search 
+                      className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 z-10"
+                      style={{ color: 'var(--glass-text-muted)' }}
+                    />
+                    <input
+                      type="text"
+                      placeholder={isSidebarCollapsed ? "Search everything..." : "Search contacts, deals, emails, documents..."}
+                      aria-label="Global search"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setShowSearchResults(e.target.value.length > 0);
                       }}
-                    >
-                      ⌘K
+                      onFocus={() => setShowSearchResults(searchQuery.length > 0 || true)} // Always show on focus for demo
+                      onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
+                      className="w-full pl-16 pr-24 text-base bg-transparent border-none outline-none font-medium py-5"
+                      style={{ 
+                        color: 'var(--glass-text)',
+                      }}
+                    />
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 z-10">
+                      <div 
+                        className="text-xs px-3 py-2 rounded-xl font-semibold border backdrop-blur-sm transition-all duration-200 hover:scale-105"
+                        style={{
+                          background: 'var(--glass-surface-subtle)',
+                          color: 'var(--glass-text-muted)',
+                          borderColor: 'var(--glass-border)',
+                          boxShadow: 'inset 0 1px 0 var(--glass-highlight), 0 2px 4px var(--glass-shadow)'
+                        }}
+                      >
+                        ⌘K
+                      </div>
                     </div>
                   </div>
+                  
                 </div>
               </div>
 
-              {/* Right Side: Navigation Actions */}
-              <div className="flex items-center gap-1 flex-shrink-0">
-                {/* Adaptive Creation Button - contextual per page */}
-                {(isSidebarCollapsed || isMobile) && (
-                  <Button 
-                    variant="default"
-                    size="sm"
-                    className="h-9 px-3 gap-1.5 bg-gradient-to-r shadow-sm hover:shadow-md transition-all"
-                    onClick={pageContext.ctaAction}
-                    aria-label={pageContext.ctaText}
-                    style={{ 
-                      background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`,
-                      color: currentTheme.colors.textInverse
-                    }}
-                  >
-                    <pageContext.ctaIcon className="h-4 w-4" />
-                    <span className="hidden sm:inline">{pageContext.ctaText}</span>
-                  </Button>
-                )}
-
-                {/* Connection Status Indicator */}
-                <div 
-                  className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border"
-                  style={{
-                    backgroundColor: currentTheme.colors.surface,
-                    borderColor: currentTheme.colors.border,
-                    color: currentTheme.colors.textMuted
+              {/* Right Side: Frosted Capsule with System Controls */}
+              <div className="glass-controls-capsule">
+                {/* Sync Status */}
+                <button
+                  onClick={() => {
+                    setSyncLoading(true);
+                    setTimeout(() => setSyncLoading(false), 2000);
                   }}
+                  className="glass-control-button glass-press-feedback"
+                  title="Sync Status"
                 >
-                  <div 
-                    className="w-2 h-2 rounded-full animate-pulse"
-                    style={{ backgroundColor: currentTheme.colors.success }}
-                  />
-                  <span>Synced</span>
-                </div>
+                  {syncLoading ? (
+                    <div className="glass-spinner-container">
+                      <div className="glass-spinner w-4 h-4"></div>
+                    </div>
+                  ) : (
+                    <div className="glass-sync-indicator connected"></div>
+                  )}
+                </button>
 
-                {/* Notifications with improved indicator */}
+                {/* Notifications */}
                 <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="relative h-9 w-9 rounded-lg border hover:shadow-sm transition-all"
-                    onClick={() => setShowNotifications(true)}
-                    aria-label="Notifications (3 unread)"
-                    style={{ 
-                      color: currentTheme.colors.textOnSurfaceAlt,
-                      borderColor: `${currentTheme.colors.border}60`,
-                      backgroundColor: showNotifications ? currentTheme.colors.surfaceAlt : 'transparent'
-                    }}
+                  <button
+                    className="glass-control-button glass-press-feedback"
+                    onClick={handleNotificationToggle}
+                    aria-label="Notifications"
                   >
-                    <Bell className="h-4 w-4" />
-                    <span 
-                      className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full flex items-center justify-center text-xs font-bold ring-2"
-                      style={{ 
-                        backgroundColor: currentTheme.colors.error,
-                        color: currentTheme.colors.textInverse,
-                        ringColor: currentTheme.colors.surfaceAlt
-                      }}
-                    >
-                      3
-                    </span>
-                  </Button>
-                </div>
+                    <Bell className="h-4 w-4" style={{ color: 'var(--glass-text)' }} />
+                    <div className="glass-notification-badge new">3</div>
+                  </button>
 
-                {/* Help */}
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-9 w-9 hidden lg:flex rounded-lg border hover:shadow-sm transition-all"
-                  aria-label="Help"
-                  style={{ 
-                    color: currentTheme.colors.textOnSurfaceAlt,
-                    borderColor: `${currentTheme.colors.border}60`
-                  }}
-                >
-                  <HelpCircle className="h-4 w-4" />
-                </Button>
+                </div>
 
                 {/* User Profile */}
-                <Button
-                  variant="ghost"
-                  className="h-9 px-2.5 gap-2 hidden lg:flex rounded-lg border hover:shadow-sm transition-all"
-                  onClick={() => setShowUserProfile(true)}
-                  aria-label="User profile"
-                  style={{ 
-                    color: currentTheme.colors.textOnSurfaceAlt,
-                    borderColor: `${currentTheme.colors.border}60`,
-                    backgroundColor: showUserProfile ? currentTheme.colors.surfaceAlt : 'transparent'
-                  }}
-                >
-                  <Avatar className="h-6 w-6">
-                    <AvatarFallback 
-                      className="text-white text-xs font-medium"
-                      style={{ background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})` }}
-                    >
-                      {getUserInitials()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <ChevronDown className="h-3 w-3 opacity-60" />
-                </Button>
+                <div className="relative">
+                  <button
+                    className="glass-control-button glass-profile-orb"
+                    onClick={handleProfileToggle}
+                    aria-label="User profile"
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback 
+                        className="text-xs font-medium"
+                        style={{ 
+                          background: theme === 'black' 
+                            ? 'linear-gradient(135deg, #ffffff, rgba(255,255,255,0.9))'
+                            : 'linear-gradient(135deg, #000000, rgba(0,0,0,0.9))',
+                          color: theme === 'black' ? '#000000' : '#ffffff',
+                          border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}
+                      >
+                        {getUserInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+
+                </div>
               </div>
             </div>
           </header>
 
           {/* Main Content */}
-          <main className={`overflow-auto h-[calc(100vh-64px)] pb-16 md:pb-0 ${rightDrawer && showDrawer ? "pr-[360px]" : ""}`}>
+          <main className={`overflow-auto h-[calc(100vh-64px)] pb-16 md:pb-0 relative ${rightDrawer && showDrawer ? "pr-[360px]" : ""}`}>
             {children}
           </main>
 
           {/* Right Drawer */}
           {showDrawer && (
-            <aside className="fixed right-0 top-16 w-[360px] h-[calc(100vh-64px)] border-l z-40" style={{
-              backgroundColor: currentTheme.colors.surfaceAlt,
-              borderColor: currentTheme.colors.border
-            }}>
+            <aside 
+              className="glass-panel fixed right-0 top-16 w-[360px] h-[calc(100vh-64px)] border-l z-30 overflow-auto"
+              style={{
+                background: 'var(--glass-surface)',
+                borderColor: 'var(--glass-border)',
+                borderRadius: '0'
+              }}
+            >
               {rightDrawer}
             </aside>
           )}
@@ -376,21 +473,29 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       <div className="md:hidden min-h-screen flex flex-col">
         {/* Mobile Header */}
         <header 
-          className="fixed top-0 left-0 right-0 z-50 h-16 backdrop-blur-xl shadow-sm flex items-center border-b"
+          className="glass-panel fixed top-0 left-0 right-0 z-40 h-16 flex items-center border-b"
           style={{ 
-            backgroundColor: `${currentTheme.colors.surfaceAlt}F5`,
-            borderBottomColor: currentTheme.colors.border,
-            boxShadow: `0 1px 0 0 ${currentTheme.colors.border}40`
+            background: 'var(--glass-surface)',
+            borderBottomColor: 'var(--glass-border)',
+            backdropFilter: 'blur(20px) saturate(1.2)',
+            WebkitBackdropFilter: 'blur(20px) saturate(1.2)',
+            borderRadius: '0',
+            boxShadow: `0 1px 0 0 var(--glass-border)`
           }}
         >
           <div className="px-4 w-full flex items-center justify-between gap-4">
             {/* Mobile Logo */}
             <Link href="/app" className="flex items-center gap-2" aria-label="Rivor dashboard">
               <div 
-                className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg"
-                style={{ background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})` }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg glass-droplet"
+                style={{ 
+                  background: theme === 'black' 
+                    ? 'linear-gradient(135deg, #ffffff, rgba(255,255,255,0.8))'
+                    : 'linear-gradient(135deg, #000000, rgba(0,0,0,0.8))',
+                  color: theme === 'black' ? '#000000' : '#ffffff'
+                }}
               >
-                <span className="text-white font-bold text-sm">R</span>
+                <span className="font-bold text-sm">R</span>
               </div>
             </Link>
             
@@ -428,23 +533,166 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         onClose={() => setShowChatAgent(false)} 
       />
 
-      {/* Notifications Panel */}
-      <NotificationsPanel 
-        isOpen={showNotifications} 
-        onClose={() => setShowNotifications(false)} 
-      />
 
-      {/* User Profile Dropdown */}
-      <UserProfileDropdown 
-        isOpen={showUserProfile} 
-        onClose={() => setShowUserProfile(false)} 
-      />
       
-      {/* Quick Actions Menu */}
-      <QuickActionsMenu
-        isOpen={showQuickActions}
-        onClose={() => setShowQuickActions(false)}
-      />
+
+      {/* Global Dropdowns - Outside header for proper z-index layering */}
+      
+      {/* Quick Actions Dropdown */}
+      <div 
+        className={`glass-quick-dropdown ${showQuickActions ? 'visible' : ''}`}
+        style={{
+          position: 'fixed',
+          top: `${quickActionsPosition.top}px`,
+          left: `${quickActionsPosition.left}px`,
+          width: '280px'
+        }}
+      >
+        <div className="space-y-2">
+          <div className="glass-quick-action-item" onClick={() => { /* Add Contact */ setShowQuickActions(false); }}>
+            <div className="glass-quick-action-icon">
+              <User className="h-4 w-4" style={{ color: 'var(--glass-text)' }} />
+            </div>
+            <div>
+              <div className="font-medium text-sm" style={{ color: 'var(--glass-text)' }}>Add Contact</div>
+              <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Create new contact</div>
+            </div>
+          </div>
+          <div className="glass-quick-action-item" onClick={() => { /* New Listing */ setShowQuickActions(false); }}>
+            <div className="glass-quick-action-icon">
+              <Building2 className="h-4 w-4" style={{ color: 'var(--glass-text)' }} />
+            </div>
+            <div>
+              <div className="font-medium text-sm" style={{ color: 'var(--glass-text)' }}>New Listing</div>
+              <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Add property listing</div>
+            </div>
+          </div>
+          <div className="glass-quick-action-item" onClick={() => { /* Schedule Meeting */ setShowQuickActions(false); }}>
+            <div className="glass-quick-action-icon">
+              <Calendar className="h-4 w-4" style={{ color: 'var(--glass-text)' }} />
+            </div>
+            <div>
+              <div className="font-medium text-sm" style={{ color: 'var(--glass-text)' }}>Schedule Meeting</div>
+              <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Book appointment</div>
+            </div>
+          </div>
+          <div className="glass-quick-action-item" onClick={() => { /* Send Email */ setShowQuickActions(false); }}>
+            <div className="glass-quick-action-icon">
+              <MessageSquare className="h-4 w-4" style={{ color: 'var(--glass-text)' }} />
+            </div>
+            <div>
+              <div className="font-medium text-sm" style={{ color: 'var(--glass-text)' }}>Send Email</div>
+              <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Compose message</div>
+            </div>
+          </div>
+          <div className="glass-quick-action-item" onClick={() => { /* View Reports */ setShowQuickActions(false); }}>
+            <div className="glass-quick-action-icon">
+              <BarChart3 className="h-4 w-4" style={{ color: 'var(--glass-text)' }} />
+            </div>
+            <div>
+              <div className="font-medium text-sm" style={{ color: 'var(--glass-text)' }}>View Reports</div>
+              <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Analytics dashboard</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Search Results Dropdown */}
+      <div className={`glass-search-results ${showSearchResults ? 'visible' : ''}`} style={{
+        position: 'fixed',
+        top: '76px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: isSidebarCollapsed ? '600px' : '500px',
+        maxWidth: '90vw'
+      }}>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 p-3 rounded-lg glass-hover-pulse">
+            <User className="h-4 w-4" style={{ color: 'var(--glass-text-muted)' }} />
+            <div>
+              <div className="font-medium text-sm" style={{ color: 'var(--glass-text)' }}>John Smith</div>
+              <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Contact • john@example.com</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-3 rounded-lg glass-hover-pulse">
+            <Building2 className="h-4 w-4" style={{ color: 'var(--glass-text-muted)' }} />
+            <div>
+              <div className="font-medium text-sm" style={{ color: 'var(--glass-text)' }}>Maple Street Property</div>
+              <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Listing • $450,000</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-3 rounded-lg glass-hover-pulse">
+            <MessageSquare className="h-4 w-4" style={{ color: 'var(--glass-text-muted)' }} />
+            <div>
+              <div className="font-medium text-sm" style={{ color: 'var(--glass-text)' }}>Email: Property Viewing</div>
+              <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Inbox • 2 hours ago</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Notification Dropdown */}
+      <div className={`glass-notification-preview ${showNotifications ? 'visible' : ''}`} style={{
+        position: 'fixed',
+        top: `${notificationPosition.top}px`,
+        right: `${notificationPosition.right}px`,
+        width: '320px'
+      }}>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 p-2 rounded-lg glass-hover-pulse">
+            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <div className="flex-1">
+              <p className="text-sm font-medium" style={{ color: 'var(--glass-text)' }}>New deal added</p>
+              <p className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Sarah Johnson - $250K</p>
+            </div>
+            <span className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>2m</span>
+          </div>
+          <div className="flex items-center gap-3 p-2 rounded-lg glass-hover-pulse">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <div className="flex-1">
+              <p className="text-sm font-medium" style={{ color: 'var(--glass-text)' }}>Meeting confirmed</p>
+              <p className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Property viewing at 3 PM</p>
+            </div>
+            <span className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>5m</span>
+          </div>
+          <div className="flex items-center gap-3 p-2 rounded-lg glass-hover-pulse">
+            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+            <div className="flex-1">
+              <p className="text-sm font-medium" style={{ color: 'var(--glass-text)' }}>Document signed</p>
+              <p className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Contract for Maple St</p>
+            </div>
+            <span className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>1h</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Profile Dropdown */}
+      <div className={`glass-profile-menu ${showUserProfile ? 'visible' : ''}`} style={{
+        position: 'fixed',
+        top: `${profilePosition.top}px`,
+        right: `${profilePosition.right}px`,
+        width: '240px'
+      }}>
+        <div className="space-y-1">
+          <a href="#" className="glass-profile-menu-item">
+            <User className="h-4 w-4" />
+            <span>View Profile</span>
+          </a>
+          <a href="#" className="glass-profile-menu-item">
+            <Settings className="h-4 w-4" />
+            <span>Settings</span>
+          </a>
+          <a href="#" className="glass-profile-menu-item">
+            <Bell className="h-4 w-4" />
+            <span>Notifications</span>
+          </a>
+          <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent my-2 opacity-20"></div>
+          <a href="#" className="glass-profile-menu-item text-red-500">
+            <LogOut className="h-4 w-4" />
+            <span>Sign Out</span>
+          </a>
+        </div>
+      </div>
 
       <Toaster />
     </div>

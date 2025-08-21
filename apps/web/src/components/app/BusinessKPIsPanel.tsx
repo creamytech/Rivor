@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useTheme } from '@/contexts/ThemeContext';
 import { 
@@ -404,14 +403,8 @@ export default function BusinessKPIsPanel({ className = '' }: BusinessKPIsPanelP
 
   if (isLoading) {
     return (
-      <Card 
-        className="theme-card shadow-xl"
-        style={{
-          background: currentTheme.colors.surface,
-          border: `1px solid ${currentTheme.colors.border}`,
-        }}
-      >
-        <CardContent className="p-8">
+      <div className="glass-card glass-hover-tilt">
+        <div className="p-8">
           <div className="animate-pulse">
             <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded-lg mb-6 w-1/3" />
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-8">
@@ -425,8 +418,8 @@ export default function BusinessKPIsPanel({ className = '' }: BusinessKPIsPanelP
               ))}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
@@ -436,15 +429,8 @@ export default function BusinessKPIsPanel({ className = '' }: BusinessKPIsPanelP
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
-      <Card 
-        className="theme-card shadow-xl backdrop-blur-sm"
-        style={{
-          background: currentTheme.colors.glassBg,
-          border: `1px solid ${currentTheme.colors.border}`,
-          backdropFilter: currentTheme.colors.glassBlur,
-        }}
-      >
-        <CardContent className="p-8">
+      <div className="glass-card glass-hover-tilt">
+        <div className="p-8">
           {/* Section Header */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -453,14 +439,14 @@ export default function BusinessKPIsPanel({ className = '' }: BusinessKPIsPanelP
             className="mb-8"
           >
             <h2 
-              className="text-2xl font-bold mb-2 theme-text-primary"
-              style={{ color: currentTheme.colors.textPrimary }}
+              className="text-2xl font-bold mb-2 theme-text-primary glass-theme-text"
+              style={{ color: 'var(--glass-text)' }}
             >
               Business Performance
             </h2>
             <p 
-              className="theme-text-secondary"
-              style={{ color: currentTheme.colors.textSecondary }}
+              className="theme-text-secondary glass-theme-text-muted"
+              style={{ color: 'var(--glass-text-muted)' }}
             >
               Real-time overview of your key business metrics and trends
             </p>
@@ -476,8 +462,8 @@ export default function BusinessKPIsPanel({ className = '' }: BusinessKPIsPanelP
                 transition={{ delay: 0.1 * index, duration: 0.6 }}
                 className="relative group"
               >
-                {/* Metric Container */}
-                <div className="relative p-6 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-2xl border border-white/20 dark:border-slate-700/20 hover:shadow-lg transition-all duration-300 group-hover:bg-white/80 dark:group-hover:bg-slate-800/80">
+                {/* Liquid Glass Metric Container */}
+                <div className="glass-card glass-hover-pulse glass-click-ripple p-6">
                   {/* Icon and Label */}
                   <div className="flex items-center gap-3 mb-4">
                     <div className={`p-2.5 rounded-xl bg-gradient-to-r ${metric.color} shadow-lg`}>
@@ -487,8 +473,8 @@ export default function BusinessKPIsPanel({ className = '' }: BusinessKPIsPanelP
                     </div>
                     <div className="flex-1">
                       <h3 
-                        className="text-sm font-semibold mb-1"
-                        style={{ color: currentTheme.colors.textSecondary }}
+                        className="text-sm font-semibold mb-1 glass-theme-text-secondary"
+                        style={{ color: 'var(--glass-text-muted)' }}
                       >
                         {metric.label}
                       </h3>
@@ -504,14 +490,14 @@ export default function BusinessKPIsPanel({ className = '' }: BusinessKPIsPanelP
                   {/* Value */}
                   <div className="mb-4">
                     <div 
-                      className="text-3xl font-bold mb-1 theme-kpi-value"
-                      style={{ color: currentTheme.colors.primary }}
+                      className="text-3xl font-bold mb-1 theme-kpi-value glass-theme-primary"
+                      style={{ color: 'var(--glass-primary)' }}
                     >
                       {metric.value}
                     </div>
                     <div 
-                      className="text-xs theme-kpi-label"
-                      style={{ color: currentTheme.colors.textMuted }}
+                      className="text-xs theme-kpi-label glass-theme-text-muted"
+                      style={{ color: 'var(--glass-text-muted)' }}
                     >
                       {metric.period}
                     </div>
@@ -560,8 +546,8 @@ export default function BusinessKPIsPanel({ className = '' }: BusinessKPIsPanelP
               </div>
             </div>
           </motion.div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </motion.div>
   );
 }

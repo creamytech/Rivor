@@ -180,42 +180,36 @@ export default function AIAssistantPage() {
   };
 
   return (
-    <div 
-      className="min-h-screen"
-      style={{
-        background: `linear-gradient(135deg, ${currentTheme.colors.background} 0%, ${currentTheme.colors.backgroundSecondary} 100%)`
-      }}
-    >
-      <AppShell>
+    <AppShell>
         {/* Modern Header */}
         <div 
-          className="sticky top-16 z-10 backdrop-blur-sm border-b"
+          className="sticky top-16 z-10 backdrop-blur-sm border-b glass-theme-surface"
           style={{
-            backgroundColor: `${currentTheme.colors.surfaceAlt}E6`,
-            borderColor: currentTheme.colors.border
+            backgroundColor: 'var(--glass-surface-alpha)',
+            borderColor: 'var(--glass-border)'
           }}
         >
           <div className="px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div 
-                  className="p-3 rounded-xl shadow-lg"
+                  className="p-3 rounded-xl shadow-lg glass-theme-gradient"
                   style={{
-                    background: `linear-gradient(135deg, ${currentTheme.colors.primary} 0%, ${currentTheme.colors.secondary} 100%)`
+                    background: 'var(--glass-gradient)'
                   }}
                 >
                   <Bot className="h-6 w-6 text-white" />
                 </div>
                 <div>
                   <h1 
-                    className="text-2xl font-bold"
-                    style={{ color: currentTheme.colors.textPrimary }}
+                    className="text-2xl font-bold glass-theme-text"
+                    style={{ color: 'var(--glass-text)' }}
                   >
                     AI Assistant
                   </h1>
                   <p 
-                    className="text-sm"
-                    style={{ color: currentTheme.colors.textMuted }}
+                    className="text-sm glass-theme-text-muted"
+                    style={{ color: 'var(--glass-text-muted)' }}
                   >
                     Your intelligent real estate companion
                   </p>
@@ -225,11 +219,11 @@ export default function AIAssistantPage() {
               <div className="flex items-center gap-3">
                 <Badge 
                   variant="outline"
-                  className="flex items-center gap-1.5 px-3 py-1"
+                  className="flex items-center gap-1.5 px-3 py-1 glass-theme-primary"
                   style={{
-                    borderColor: currentTheme.colors.primary,
-                    backgroundColor: currentTheme.colors.primaryMuted,
-                    color: currentTheme.colors.primary
+                    borderColor: 'var(--glass-primary)',
+                    backgroundColor: 'var(--glass-primary-muted)',
+                    color: 'var(--glass-primary)'
                   }}
                 >
                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
@@ -252,11 +246,11 @@ export default function AIAssistantPage() {
           {/* Chat Area */}
           <div className="flex-1 flex flex-col">
             {/* Quick Actions Section */}
-            <div className="p-6 border-b" style={{ borderColor: currentTheme.colors.border }}>
+            <div className="p-6 border-b glass-theme-border" style={{ borderColor: 'var(--glass-border)' }}>
               <div className="mb-4">
                 <h2 
-                  className="text-lg font-semibold mb-2"
-                  style={{ color: currentTheme.colors.textPrimary }}
+                  className="text-lg font-semibold mb-2 glass-theme-text"
+                  style={{ color: 'var(--glass-text)' }}
                 >
                   AI Tools & Actions
                 </h2>
@@ -269,8 +263,8 @@ export default function AIAssistantPage() {
                       onClick={() => setActiveCategory(category.id)}
                       className="flex items-center gap-2"
                       style={activeCategory === category.id ? {
-                        backgroundColor: currentTheme.colors.primary,
-                        color: currentTheme.colors.textInverse
+                        backgroundColor: 'var(--glass-primary)',
+                        color: 'var(--glass-text-inverse)'
                       } : {}}
                     >
                       {category.icon}
@@ -294,8 +288,8 @@ export default function AIAssistantPage() {
                         className="group cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105"
                         onClick={() => handleQuickAction(action)}
                         style={{
-                          backgroundColor: currentTheme.colors.surface,
-                          borderColor: currentTheme.colors.border
+                          backgroundColor: 'var(--glass-surface)',
+                          borderColor: 'var(--glass-border)'
                         }}
                       >
                         <CardContent className="p-4">
@@ -307,19 +301,19 @@ export default function AIAssistantPage() {
                             </div>
                             <div className="flex-1">
                               <h3 
-                                className="font-medium mb-1"
-                                style={{ color: currentTheme.colors.textPrimary }}
+                                className="font-medium mb-1 glass-theme-text"
+                                style={{ color: 'var(--glass-text)' }}
                               >
                                 {action.title}
                               </h3>
                               <p 
-                                className="text-sm"
-                                style={{ color: currentTheme.colors.textMuted }}
+                                className="text-sm glass-theme-text-muted"
+                                style={{ color: 'var(--glass-text-muted)' }}
                               >
                                 {action.description}
                               </p>
                             </div>
-                            <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: currentTheme.colors.textMuted }} />
+                            <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity glass-theme-text-muted" style={{ color: 'var(--glass-text-muted)' }} />
                           </div>
                         </CardContent>
                       </Card>
@@ -342,9 +336,9 @@ export default function AIAssistantPage() {
                     >
                       {message.type === 'ai' && (
                         <div 
-                          className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                          className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 glass-theme-gradient"
                           style={{
-                            background: `linear-gradient(135deg, ${currentTheme.colors.primary} 0%, ${currentTheme.colors.secondary} 100%)`
+                            background: 'var(--glass-gradient)'
                           }}
                         >
                           <Bot className="h-4 w-4 text-white" />
@@ -360,11 +354,11 @@ export default function AIAssistantPage() {
                           }`}
                           style={{
                             backgroundColor: message.type === 'user' 
-                              ? currentTheme.colors.primary 
-                              : currentTheme.colors.surface,
+                              ? 'var(--glass-primary)' 
+                              : 'var(--glass-surface)',
                             color: message.type === 'user' 
-                              ? currentTheme.colors.textInverse 
-                              : currentTheme.colors.textPrimary
+                              ? 'var(--glass-text-inverse)' 
+                              : 'var(--glass-text)'
                           }}
                         >
                           <p className="text-sm leading-relaxed">{message.content}</p>
@@ -378,8 +372,8 @@ export default function AIAssistantPage() {
                                   size="sm"
                                   className="text-xs"
                                   style={{
-                                    borderColor: currentTheme.colors.border,
-                                    backgroundColor: currentTheme.colors.backgroundSecondary
+                                    borderColor: 'var(--glass-border)',
+                                    backgroundColor: 'var(--glass-bg-secondary)'
                                   }}
                                 >
                                   {action.label}
@@ -390,8 +384,8 @@ export default function AIAssistantPage() {
                         </div>
                         
                         <p 
-                          className={`text-xs mt-1 ${message.type === 'user' ? 'text-right' : 'text-left'}`}
-                          style={{ color: currentTheme.colors.textMuted }}
+                          className={`text-xs mt-1 glass-theme-text-muted ${message.type === 'user' ? 'text-right' : 'text-left'}`}
+                          style={{ color: 'var(--glass-text-muted)' }}
                         >
                           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
@@ -399,12 +393,12 @@ export default function AIAssistantPage() {
                       
                       {message.type === 'user' && (
                         <div 
-                          className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                          style={{ backgroundColor: currentTheme.colors.surfaceActive }}
+                          className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 glass-theme-surface-active"
+                          style={{ backgroundColor: 'var(--glass-surface-active)' }}
                         >
                           <span 
-                            className="text-sm font-medium"
-                            style={{ color: currentTheme.colors.textPrimary }}
+                            className="text-sm font-medium glass-theme-text"
+                            style={{ color: 'var(--glass-text)' }}
                           >
                             U
                           </span>
@@ -421,21 +415,21 @@ export default function AIAssistantPage() {
                     className="flex gap-4 justify-start"
                   >
                     <div 
-                      className="w-8 h-8 rounded-full flex items-center justify-center"
+                      className="w-8 h-8 rounded-full flex items-center justify-center glass-theme-gradient"
                       style={{
-                        background: `linear-gradient(135deg, ${currentTheme.colors.primary} 0%, ${currentTheme.colors.secondary} 100%)`
+                        background: 'var(--glass-gradient)'
                       }}
                     >
                       <Bot className="h-4 w-4 text-white" />
                     </div>
                     <div 
-                      className="rounded-2xl rounded-bl-md p-4"
-                      style={{ backgroundColor: currentTheme.colors.surface }}
+                      className="rounded-2xl rounded-bl-md p-4 glass-theme-surface"
+                      style={{ backgroundColor: 'var(--glass-surface)' }}
                     >
                       <div className="flex gap-1">
-                        <div className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: currentTheme.colors.primary, animationDelay: '0ms' }} />
-                        <div className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: currentTheme.colors.primary, animationDelay: '150ms' }} />
-                        <div className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: currentTheme.colors.primary, animationDelay: '300ms' }} />
+                        <div className="w-2 h-2 rounded-full animate-bounce glass-theme-primary" style={{ backgroundColor: 'var(--glass-primary)', animationDelay: '0ms' }} />
+                        <div className="w-2 h-2 rounded-full animate-bounce glass-theme-primary" style={{ backgroundColor: 'var(--glass-primary)', animationDelay: '150ms' }} />
+                        <div className="w-2 h-2 rounded-full animate-bounce glass-theme-primary" style={{ backgroundColor: 'var(--glass-primary)', animationDelay: '300ms' }} />
                       </div>
                     </div>
                   </motion.div>
@@ -445,10 +439,10 @@ export default function AIAssistantPage() {
 
             {/* Input Area */}
             <div 
-              className="p-6 border-t"
+              className="p-6 border-t glass-theme-surface"
               style={{ 
-                borderColor: currentTheme.colors.border,
-                backgroundColor: currentTheme.colors.surface 
+                borderColor: 'var(--glass-border)',
+                backgroundColor: 'var(--glass-surface)' 
               }}
             >
               <div className="flex gap-3 items-end max-w-4xl">
@@ -459,9 +453,9 @@ export default function AIAssistantPage() {
                     placeholder="Ask me anything about your real estate business..."
                     className="min-h-[60px] resize-none"
                     style={{
-                      backgroundColor: currentTheme.colors.background,
-                      borderColor: currentTheme.colors.border,
-                      color: currentTheme.colors.textPrimary
+                      backgroundColor: 'var(--glass-bg)',
+                      borderColor: 'var(--glass-border)',
+                      color: 'var(--glass-text)'
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
@@ -481,9 +475,10 @@ export default function AIAssistantPage() {
                   <Button 
                     onClick={handleSendMessage}
                     disabled={!inputValue.trim()}
+                    className="glass-theme-primary"
                     style={{
-                      backgroundColor: currentTheme.colors.primary,
-                      color: currentTheme.colors.textInverse
+                      backgroundColor: 'var(--glass-primary)',
+                      color: 'var(--glass-text-inverse)'
                     }}
                   >
                     <Send className="h-4 w-4" />
@@ -493,7 +488,6 @@ export default function AIAssistantPage() {
             </div>
           </div>
         </div>
-      </AppShell>
-    </div>
+    </AppShell>
   );
 }

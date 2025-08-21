@@ -17,7 +17,7 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ className = '' }: DashboardLayoutProps) {
   const [isLoading, setIsLoading] = useState(true);
-  const { currentTheme } = useTheme();
+  const { theme } = useTheme();
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 800);
@@ -28,28 +28,28 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
     return (
       <div 
         className={cn("space-y-4 md:space-y-8 p-4 md:p-6", className)}
-        style={{ backgroundColor: currentTheme.colors.background }}
+        style={{ background: 'var(--glass-bg)' }}
       >
-        {/* Loading skeleton with theme colors */}
+        {/* Loading skeleton with glass theme */}
         <div 
-          className="h-20 md:h-32 rounded-xl md:rounded-2xl animate-pulse" 
-          style={{ backgroundColor: currentTheme.colors.surface }}
+          className="h-20 md:h-32 rounded-xl md:rounded-2xl animate-pulse glass-card" 
+          style={{ background: 'var(--glass-surface-subtle)' }}
         />
         <div 
-          className="h-32 md:h-40 rounded-xl md:rounded-2xl animate-pulse" 
-          style={{ backgroundColor: currentTheme.colors.surface }}
+          className="h-32 md:h-40 rounded-xl md:rounded-2xl animate-pulse glass-card" 
+          style={{ background: 'var(--glass-surface-subtle)' }}
         />
         <div 
-          className="h-48 md:h-64 rounded-xl md:rounded-2xl animate-pulse" 
-          style={{ backgroundColor: currentTheme.colors.surface }}
+          className="h-48 md:h-64 rounded-xl md:rounded-2xl animate-pulse glass-card" 
+          style={{ background: 'var(--glass-surface-subtle)' }}
         />
         <div 
-          className="h-56 md:h-80 rounded-xl md:rounded-2xl animate-pulse" 
-          style={{ backgroundColor: currentTheme.colors.surface }}
+          className="h-56 md:h-80 rounded-xl md:rounded-2xl animate-pulse glass-card" 
+          style={{ background: 'var(--glass-surface-subtle)' }}
         />
         <div 
-          className="h-12 md:h-16 rounded-lg md:rounded-xl animate-pulse" 
-          style={{ backgroundColor: currentTheme.colors.surface }}
+          className="h-12 md:h-16 rounded-lg md:rounded-xl animate-pulse glass-card" 
+          style={{ background: 'var(--glass-surface-subtle)' }}
         />
       </div>
     );
@@ -57,9 +57,9 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
 
   return (
     <div 
-      className="relative min-h-screen"
+      className={`relative ${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'}`}
       style={{
-        background: `linear-gradient(135deg, ${currentTheme.colors.background} 0%, ${currentTheme.colors.backgroundSecondary} 50%, ${currentTheme.colors.backgroundTertiary} 100%)`
+        background: 'var(--glass-bg)'
       }}
     >
 
@@ -83,7 +83,7 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
           transition={{ delay: 0.3, duration: 0.8 }}
           className="h-px"
           style={{ 
-            background: `linear-gradient(to right, transparent, ${currentTheme.colors.border}, transparent)` 
+            background: `linear-gradient(to right, transparent, var(--glass-border), transparent)` 
           }}
         />
 
@@ -105,7 +105,7 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
           transition={{ delay: 0.6, duration: 0.8 }}
           className="h-px"
           style={{ 
-            background: `linear-gradient(to right, transparent, ${currentTheme.colors.border}, transparent)` 
+            background: `linear-gradient(to right, transparent, var(--glass-border), transparent)` 
           }}
         />
 
@@ -127,7 +127,7 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
           transition={{ delay: 0.9, duration: 0.8 }}
           className="h-px"
           style={{ 
-            background: `linear-gradient(to right, transparent, ${currentTheme.colors.border}, transparent)` 
+            background: `linear-gradient(to right, transparent, var(--glass-border), transparent)` 
           }}
         />
 
@@ -149,7 +149,7 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
           transition={{ delay: 1.2, duration: 0.8 }}
           className="h-px"
           style={{ 
-            background: `linear-gradient(to right, transparent, ${currentTheme.colors.border}, transparent)` 
+            background: `linear-gradient(to right, transparent, var(--glass-border), transparent)` 
           }}
         />
 
@@ -171,7 +171,7 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
           transition={{ delay: 1.5, duration: 0.8 }}
           className="h-px"
           style={{ 
-            background: `linear-gradient(to right, transparent, ${currentTheme.colors.border}, transparent)` 
+            background: `linear-gradient(to right, transparent, var(--glass-border), transparent)` 
           }}
         />
 
