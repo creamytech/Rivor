@@ -110,7 +110,7 @@ export default function ComposeModal({ open, onOpenChange, replyTo }: ComposeMod
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-2xl mx-4 bg-white dark:bg-slate-900 rounded-lg shadow-xl"
+            className="relative w-full max-w-2xl mx-4 glass-modal glass-border-active glass-hover-glow rounded-lg shadow-xl"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">

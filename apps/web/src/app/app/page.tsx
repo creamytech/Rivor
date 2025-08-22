@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
 import AppShell from "@/components/app/AppShell";
+import MobileDashboard from "@/components/app/MobileDashboard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,6 +78,15 @@ export default function DashboardPage() {
   const [upcomingTasks, setUpcomingTasks] = useState<UpcomingTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -337,6 +347,17 @@ export default function DashboardPage() {
             Please sign in to access the dashboard.
           </p>
         </div>
+      </div>
+    );
+  }
+
+  // Mobile view
+  if (isMobile) {
+    return (
+      <div className={`${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'}`}>
+        <AppShell>
+          <MobileDashboard />
+        </AppShell>
       </div>
     );
   }

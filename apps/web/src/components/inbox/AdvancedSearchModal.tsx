@@ -125,7 +125,7 @@ export default function AdvancedSearchModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto glass-modal glass-border-active glass-hover-glow">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Search className="h-5 w-5 text-teal-500" />
@@ -381,7 +381,7 @@ export default function AdvancedSearchModal({
         {/* Save Search Dialog */}
         {showSaveDialog && (
           <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
-            <DialogContent className="sm:max-w-[400px]">
+            <DialogContent className="sm:max-w-[400px] glass-modal glass-border-active glass-hover-glow">
               <DialogHeader>
                 <DialogTitle>Save Search</DialogTitle>
                 <DialogDescription>

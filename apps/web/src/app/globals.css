@@ -56,6 +56,72 @@
   --z-tooltip: 60;
 }
 
+/* Fix dropdown z-index in modals */
+[data-radix-select-content] {
+  z-index: 99999 !important;
+  position: relative !important;
+}
+
+[data-radix-select-viewport] {
+  z-index: 99999 !important;
+}
+
+/* Ensure dropdowns appear above modals */
+.glass-modal [data-radix-select-content] {
+  z-index: 99999 !important;
+}
+
+.glass-modal [data-radix-select-trigger] {
+  position: relative;
+  z-index: 1;
+}
+
+/* Fix scrollbar glitching on modal hover */
+.glass-modal {
+  scrollbar-width: thin;
+  scrollbar-color: var(--glass-border) transparent;
+}
+
+.glass-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.glass-modal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.glass-modal::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+  border-radius: 4px;
+}
+
+.glass-modal::-webkit-scrollbar-thumb:hover {
+  background: var(--glass-border-strong);
+}
+
+/* Force stable scrollbar at all times */
+html {
+  overflow-y: scroll !important;
+  scrollbar-gutter: stable;
+}
+
+/* Prevent body scroll when modal is open but keep scrollbar */
+body:has([data-state="open"]) {
+  overflow: hidden !important;
+  padding-right: 0 !important;
+}
+
+/* Disable any hover effects that might cause layout changes */
+[data-state="open"] * {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+/* Prevent modal animations from affecting layout */
+[data-radix-dialog-content] {
+  will-change: auto !important;
+}
+
 /* ========================================
    GLASS THEME BACKGROUNDS & TEXTURES
    ======================================== */

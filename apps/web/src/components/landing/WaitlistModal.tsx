@@ -157,7 +157,7 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md mx-4 sm:mx-auto bg-[#121A28] border border-white/10 text-[#EAF2FF]">
+      <DialogContent className="max-w-md mx-4 sm:mx-auto glass-modal glass-border-active glass-hover-glow">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-center">
             {isSuccess ? "You're in!" : "Join the Rivor waitlist"}

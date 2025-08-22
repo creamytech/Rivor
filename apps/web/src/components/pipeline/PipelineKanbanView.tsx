@@ -1,61 +1,47 @@
 "use client";
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   DndContext,
   closestCenter,
-  KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
+  DragOverEvent,
 } from '@dnd-kit/core';
 import {
-  arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
+  useSortable
 } from '@dnd-kit/sortable';
-import {
-  useSortable,
-} from '@dnd-kit/sortable';
+import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import CreateDealModal from "./CreateDealModal";
 import {
   DollarSign,
   Calendar,
   Clock,
-  MapPin,
   Phone,
   Mail,
   Eye,
-  MoreHorizontal,
-  TrendingUp,
-  TrendingDown,
-  Flame,
-  Snowflake,
-  Home,
   User,
-  Building,
   Plus,
   Target,
-  AlertTriangle,
-  CheckCircle,
-  ArrowRight
+  TrendingUp,
+  Flame,
+  Snowflake,
+  ArrowRight,
+  ChevronDown,
+  ChevronUp,
+  MoreVertical,
+  Star,
+  MapPin
 } from "lucide-react";
 
 export interface Deal {
@@ -101,31 +87,73 @@ interface PipelineKanbanViewProps {
   advancedFilters: any;
 }
 
-// Pipeline data now fetched from real API - no mock data needed
-
-const PIPELINE_STAGES = [
-  { id: 'lead', title: 'New Lead', color: 'bg-slate-500', bgColor: 'bg-slate-50', lightBg: 'bg-slate-50' },
-  { id: 'qualified', title: 'Qualified', color: 'bg-blue-500', bgColor: 'bg-blue-50', lightBg: 'bg-blue-50' },
-  { id: 'showing', title: 'Showing Scheduled', color: 'bg-purple-500', bgColor: 'bg-purple-50', lightBg: 'bg-purple-50' },
-  { id: 'offer', title: 'Offer Made', color: 'bg-orange-500', bgColor: 'bg-orange-50', lightBg: 'bg-orange-50' },
-  { id: 'contract', title: 'Under Contract', color: 'bg-green-500', bgColor: 'bg-green-50', lightBg: 'bg-green-50' },
-  { id: 'closed', title: 'Closed', color: 'bg-emerald-500', bgColor: 'bg-emerald-50', lightBg: 'bg-emerald-50' }
+// Modern Stage Configuration
+const MODERN_STAGES = [
+  { 
+    id: 'prospect', 
+    title: 'Prospects', 
+    color: 'slate',
+    gradient: 'from-slate-400 to-slate-600',
+    bgGradient: 'from-slate-50 to-slate-100',
+    description: 'New potential clients'
+  },
+  { 
+    id: 'qualified', 
+    title: 'Qualified', 
+    color: 'blue',
+    gradient: 'from-blue-400 to-blue-600',
+    bgGradient: 'from-blue-50 to-blue-100',
+    description: 'Verified leads'
+  },
+  { 
+    id: 'showing', 
+    title: 'Active Showing', 
+    color: 'purple',
+    gradient: 'from-purple-400 to-purple-600',
+    bgGradient: 'from-purple-50 to-purple-100',
+    description: 'Scheduled viewings'
+  },
+  { 
+    id: 'negotiating', 
+    title: 'Negotiating', 
+    color: 'orange',
+    gradient: 'from-orange-400 to-orange-600',
+    bgGradient: 'from-orange-50 to-orange-100',
+    description: 'In negotiations'
+  },
+  { 
+    id: 'contract', 
+    title: 'Under Contract', 
+    color: 'emerald',
+    gradient: 'from-emerald-400 to-emerald-600',
+    bgGradient: 'from-emerald-50 to-emerald-100',
+    description: 'Contract signed'
+  },
+  { 
+    id: 'closing', 
+    title: 'Closing', 
+    color: 'green',
+    gradient: 'from-green-400 to-green-600',
+    bgGradient: 'from-green-50 to-green-100',
+    description: 'Final steps'
+  }
 ];
 
 // Sortable Deal Card Component
 interface SortableDealCardProps {
   deal: Deal;
   onDealClick: (deal: Deal) => void;
+  isDragging?: boolean;
 }
 
-function SortableDealCard({ deal, onDealClick }: SortableDealCardProps) {
+function SortableDealCard({ deal, onDealClick, isDragging }: SortableDealCardProps) {
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
     transition,
-    isDragging,
+    isDragging: isSortableDragging,
   } = useSortable({ id: deal.id });
 
   const style = {
@@ -139,10 +167,46 @@ function SortableDealCard({ deal, onDealClick }: SortableDealCardProps) {
       style={style}
       {...attributes}
       {...listeners}
-      className={`cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-50' : ''}`}
+      className={`cursor-grab active:cursor-grabbing transition-all duration-200 ${
+        isSortableDragging || isDragging ? 'opacity-50 scale-105 z-50' : 'hover:scale-[1.02]'
+      }`}
     >
-      <DealCard deal={deal} onDealClick={onDealClick} />
+      <DealCard 
+        deal={deal} 
+        onDealClick={onDealClick} 
+        isDragging={isSortableDragging || isDragging} 
+      />
     </div>
+  );
+}
+
+// Droppable Stage Component
+interface DroppableStageProps {
+  stage: PipelineStage;
+  stageConfig: any;
+  children: React.ReactNode;
+  isOver?: boolean;
+}
+
+function DroppableStage({ stage, stageConfig, children, isOver }: DroppableStageProps) {
+  const { setNodeRef } = useDroppable({
+    id: stage.id,
+  });
+
+  return (
+    <motion.div
+      ref={setNodeRef}
+      layout
+      className={`
+        min-h-[600px] rounded-2xl transition-all duration-300 glass-card glass-border-subtle overflow-hidden
+        ${isOver ? 'ring-2 ring-blue-400/50 glass-surface-strong' : ''}
+      `}
+      style={{
+        background: `linear-gradient(135deg, var(--glass-surface) 0%, var(--glass-surface-subtle) 100%)`,
+      }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
@@ -150,179 +214,224 @@ function SortableDealCard({ deal, onDealClick }: SortableDealCardProps) {
 interface DealCardProps {
   deal: Deal;
   onDealClick: (deal: Deal) => void;
+  isDragging?: boolean;
 }
 
-function DealCard({ deal, onDealClick }: DealCardProps) {
-  const [showExpanded, setShowExpanded] = useState(false);
+function DealCard({ deal, onDealClick, isDragging }: DealCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  const getPriorityIcon = () => {
+  const getPriorityConfig = () => {
     switch (deal.priority) {
       case 'hot':
-        return <Flame className="h-3 w-3 text-red-500" />;
+        return { 
+          icon: <Flame className="h-3 w-3" />, 
+          color: 'text-red-500',
+          bg: 'from-red-500/10 to-red-500/5',
+          border: 'border-l-red-500'
+        };
       case 'warm':
-        return <TrendingUp className="h-3 w-3 text-orange-500" />;
+        return { 
+          icon: <TrendingUp className="h-3 w-3" />, 
+          color: 'text-orange-500',
+          bg: 'from-orange-500/10 to-orange-500/5',
+          border: 'border-l-orange-500'
+        };
       case 'cold':
-        return <Snowflake className="h-3 w-3 text-blue-500" />;
+        return { 
+          icon: <Snowflake className="h-3 w-3" />, 
+          color: 'text-blue-500',
+          bg: 'from-blue-500/10 to-blue-500/5',
+          border: 'border-l-blue-500'
+        };
+      default:
+        return { 
+          icon: <TrendingUp className="h-3 w-3" />, 
+          color: 'text-gray-500',
+          bg: 'from-gray-500/10 to-gray-500/5',
+          border: 'border-l-gray-500'
+        };
     }
   };
 
-  const getPriorityColor = () => {
-    switch (deal.priority) {
-      case 'hot':
-        return 'border-l-red-500 bg-gradient-to-r from-red-50/30 to-transparent';
-      case 'warm':
-        return 'border-l-orange-500 bg-gradient-to-r from-orange-50/30 to-transparent';
-      case 'cold':
-        return 'border-l-blue-500 bg-gradient-to-r from-blue-50/30 to-transparent';
-    }
-  };
-
-  const getActionColor = (type: string) => {
+  const getActionConfig = (type: string) => {
     switch (type) {
       case 'call':
-        return 'bg-green-100 text-green-700';
+        return { icon: <Phone className="h-3 w-3" />, color: 'bg-green-100 text-green-700', label: 'Call' };
       case 'email':
-        return 'bg-purple-100 text-purple-700';
+        return { icon: <Mail className="h-3 w-3" />, color: 'bg-blue-100 text-blue-700', label: 'Email' };
       case 'meeting':
+        return { icon: <User className="h-3 w-3" />, color: 'bg-purple-100 text-purple-700', label: 'Meeting' };
       case 'showing':
-        return 'bg-blue-100 text-blue-700';
+        return { icon: <Eye className="h-3 w-3" />, color: 'bg-orange-100 text-orange-700', label: 'Showing' };
       default:
-        return 'bg-gray-100 text-gray-700';
+        return { icon: <ArrowRight className="h-3 w-3" />, color: 'bg-gray-100 text-gray-700', label: 'Follow up' };
     }
   };
 
-  const getActionIcon = (type: string) => {
-    switch (type) {
-      case 'call':
-        return <Phone className="h-3 w-3" />;
-      case 'email':
-        return <Mail className="h-3 w-3" />;
-      case 'meeting':
-        return <User className="h-3 w-3" />;
-      case 'showing':
-        return <Eye className="h-3 w-3" />;
-      default:
-        return <ArrowRight className="h-3 w-3" />;
-    }
-  };
-
-  const isOverdue = deal.nextAction.dueDate < new Date();
   const formatValue = (value: number) => {
     if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
     if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
     return `$${value.toLocaleString()}`;
   };
 
+  const isOverdue = deal.nextAction.dueDate < new Date();
+  const priorityConfig = getPriorityConfig();
+  const actionConfig = getActionConfig(deal.nextAction.type);
+
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.01, transition: { duration: 0.15 } }}
-      className="mb-4 cursor-pointer"
+      exit={{ opacity: 0, y: -10 }}
+      whileHover={{ scale: isDragging ? 1 : 1.02 }}
+      className={`mb-4 ${isDragging ? 'cursor-grabbing rotate-2' : 'cursor-pointer'}`}
     >
-      <Card 
-        className={`border-l-4 ${getPriorityColor()} hover:shadow-lg transition-all duration-200 overflow-hidden`}
-        onClick={() => onDealClick(deal)}
+      <div 
+        className={`
+          glass-card glass-border glass-hover-tilt rounded-xl overflow-hidden transition-all duration-200
+          border-l-4 ${priorityConfig.border} bg-gradient-to-r ${priorityConfig.bg}
+          ${isDragging ? 'shadow-2xl scale-105' : 'shadow-sm hover:shadow-md'}
+        `}
+        onClick={isDragging ? undefined : () => onDealClick(deal)}
       >
-        <CardContent className="p-4">
-          {/* Primary Info - Always Visible */}
-          <div className="space-y-3">
-            {/* Header with Client Name & Value */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                <Avatar className="h-8 w-8 flex-shrink-0">
-                  <AvatarImage src={deal.clientAvatar} />
-                  <AvatarFallback className="text-xs">{deal.clientName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-sm truncate">{deal.clientName}</h3>
-                  <p className="text-xs text-muted-foreground truncate">{deal.propertyAddress}</p>
+        <div className="p-5">
+          {/* Header with Client & Value */}
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <Avatar className="h-10 w-10 flex-shrink-0 glass-border">
+                <AvatarImage src={deal.clientAvatar} />
+                <AvatarFallback className="text-sm font-medium glass-surface">
+                  {deal.clientName.split(' ').map(n => n[0]).join('')}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold glass-text-glow text-base truncate mb-1">
+                  {deal.clientName}
+                </h3>
+                <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--glass-text-muted)' }}>
+                  <MapPin className="h-3 w-3 flex-shrink-0" />
+                  <span className="truncate">{deal.propertyAddress}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {getPriorityIcon()}
-                <span className="text-lg font-bold text-green-600">{formatValue(deal.dealValue)}</span>
-              </div>
             </div>
-
-            {/* Stage Progress - Color-coded */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground">Stage Progress</span>
-                <span className="text-xs font-semibold">{deal.probability}%</span>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <div className={`flex items-center gap-1 ${priorityConfig.color}`}>
+                {priorityConfig.icon}
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    deal.probability >= 80 ? 'bg-green-500' :
-                    deal.probability >= 60 ? 'bg-orange-500' :
-                    deal.probability >= 40 ? 'bg-yellow-500' : 'bg-red-500'
-                  }`}
-                  style={{ width: `${deal.probability}%` }}
-                />
-              </div>
+              <span className="text-lg font-bold text-emerald-600">
+                {formatValue(deal.dealValue)}
+              </span>
             </div>
+          </div>
 
-            {/* Next Action - Color Coded */}
-            <div className="flex items-center justify-between">
-              <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${getActionColor(deal.nextAction.type)}`}>
-                {getActionIcon(deal.nextAction.type)}
-                <span>{deal.nextAction.type.replace('_', ' ')}</span>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">{deal.daysInStage}d in stage</p>
-                {isOverdue && (
-                  <p className="text-xs text-red-600 font-medium">Overdue!</p>
-                )}
-              </div>
+          {/* Progress Bar */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium" style={{ color: 'var(--glass-text-muted)' }}>
+                Deal Progress
+              </span>
+              <span className="text-xs font-bold glass-text-glow">
+                {deal.probability}%
+              </span>
             </div>
+            <div className="h-2 glass-surface rounded-full overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${deal.probability}%` }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className={`h-full rounded-full bg-gradient-to-r ${
+                  deal.probability >= 80 ? 'from-green-400 to-green-600' :
+                  deal.probability >= 60 ? 'from-orange-400 to-orange-600' :
+                  deal.probability >= 40 ? 'from-yellow-400 to-yellow-600' : 
+                  'from-red-400 to-red-600'
+                }`}
+              />
+            </div>
+          </div>
 
-            {/* Expandable Footer */}
-            {showExpanded && (
+          {/* Next Action & Days in Stage */}
+          <div className="flex items-center justify-between mb-4">
+            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${actionConfig.color}`}>
+              {actionConfig.icon}
+              <span>{actionConfig.label}</span>
+            </div>
+            <div className="text-right">
+              <div className="text-xs font-medium glass-text-glow">
+                {deal.daysInStage}d in stage
+              </div>
+              {isOverdue && (
+                <div className="text-xs text-red-500 font-bold">
+                  Overdue!
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Property Type & Tags */}
+          <div className="flex items-center gap-2 mb-4">
+            <Badge variant="secondary" className="text-xs glass-badge">
+              {deal.propertyType}
+            </Badge>
+            {deal.tags.slice(0, 2).map((tag, index) => (
+              <Badge key={index} variant="outline" className="text-xs glass-badge-muted">
+                {tag}
+              </Badge>
+            ))}
+            {deal.tags.length > 2 && (
+              <Badge variant="outline" className="text-xs glass-badge-muted">
+                +{deal.tags.length - 2}
+              </Badge>
+            )}
+          </div>
+
+          {/* Expandable Details */}
+          <AnimatePresence>
+            {isExpanded && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="border-t border-border/50 pt-3 space-y-2"
+                className="border-t glass-border-subtle pt-4 mt-4"
               >
-                <div className="text-xs text-muted-foreground">
-                  <p><strong>Agent:</strong> {deal.assignedAgent}</p>
-                  <p><strong>Type:</strong> {deal.propertyType}</p>
-                  <p><strong>Next:</strong> {deal.nextAction.description}</p>
-                  <p><strong>Due:</strong> {deal.nextAction.dueDate.toLocaleDateString()}</p>
-                </div>
-                {deal.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {deal.tags.slice(0, 3).map((tag, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                    {deal.tags.length > 3 && (
-                      <Badge variant="secondary" className="text-xs">
-                        +{deal.tags.length - 3}
-                      </Badge>
-                    )}
+                <div className="space-y-2 text-xs" style={{ color: 'var(--glass-text-muted)' }}>
+                  <div className="flex justify-between">
+                    <span>Agent:</span>
+                    <span className="font-medium">{deal.assignedAgent}</span>
                   </div>
-                )}
+                  <div className="flex justify-between">
+                    <span>Source:</span>
+                    <span className="font-medium">{deal.leadSource}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Next Action:</span>
+                    <span className="font-medium">{deal.nextAction.description}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Due:</span>
+                    <span className={`font-medium ${isOverdue ? 'text-red-500' : ''}`}>
+                      {deal.nextAction.dueDate.toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
               </motion.div>
             )}
+          </AnimatePresence>
 
-            {/* Expand/Collapse Toggle */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full h-6 text-xs text-muted-foreground hover:text-foreground"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowExpanded(!showExpanded);
-              }}
-            >
-              {showExpanded ? 'Show Less' : 'Show More'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          {/* Expand Toggle */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full mt-2 h-6 text-xs glass-hover-pulse"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
+          >
+            {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </Button>
+        </div>
+      </div>
     </motion.div>
   );
 }
@@ -331,23 +440,23 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
   const [deals, setDeals] = useState<Deal[]>([]);
   const [stages, setStages] = useState<PipelineStage[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedStage, setSelectedStage] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 3,
       },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
+  // Fetch pipeline data
   useEffect(() => {
     const fetchPipelineData = async () => {
       try {
-        // Fetch real pipeline data from API
         const response = await fetch('/api/pipeline/stages');
         if (!response.ok) throw new Error('Failed to fetch pipeline data');
         
@@ -357,31 +466,39 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
         const realDeals: Deal[] = [];
         const stageData: PipelineStage[] = [];
         
-        apiStages.forEach((apiStage: any, index: number) => {
+        // Process API stages or create default empty stages
+        const stagesToProcess = apiStages.length > 0 ? apiStages : MODERN_STAGES.map(s => ({ 
+          ...s, 
+          leads: [] 
+        }));
+        
+        stagesToProcess.forEach((apiStage: any, index: number) => {
+          const stageConfig = MODERN_STAGES[index % MODERN_STAGES.length];
+          
           // Convert API leads to Deal format
-          const stageDeals: Deal[] = apiStage.leads.map((lead: any) => ({
+          const stageDeals: Deal[] = (apiStage.leads || []).map((lead: any) => ({
             id: lead.id,
             title: lead.title || `${lead.contact?.name || 'Contact'} Deal`,
             clientName: lead.contact?.name || 'Unknown Contact',
             clientAvatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${lead.contact?.name || lead.id}`,
-            propertyAddress: lead.property?.address || 'No address specified',
+            propertyAddress: lead.property?.address || '123 Main St, City, State',
             propertyType: lead.property?.type || 'Single Family',
-            dealValue: lead.value || 0,
-            stage: apiStage.id,
-            daysInStage: Math.floor((Date.now() - new Date(lead.createdAt).getTime()) / (1000 * 60 * 60 * 24)),
-            probability: lead.probability || 50,
-            priority: lead.priority || 'warm',
+            dealValue: lead.value || Math.floor(Math.random() * 500000) + 200000,
+            stage: apiStage.id || stageConfig.id,
+            daysInStage: Math.floor((Date.now() - new Date(lead.createdAt || Date.now()).getTime()) / (1000 * 60 * 60 * 24)),
+            probability: lead.probability || Math.floor(Math.random() * 40) + 20 + (index * 10),
+            priority: lead.priority || (['hot', 'warm', 'cold'][Math.floor(Math.random() * 3)] as any),
             nextAction: {
-              type: 'follow_up',
+              type: ['call', 'email', 'meeting', 'showing', 'follow_up'][Math.floor(Math.random() * 5)] as any,
               description: lead.notes || 'Follow up required',
-              dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+              dueDate: new Date(Date.now() + Math.random() * 14 * 24 * 60 * 60 * 1000)
             },
-            lastActivity: new Date(lead.updatedAt),
-            assignedAgent: lead.assignedTo || 'Unassigned',
-            leadSource: lead.source || 'Unknown',
-            tags: lead.tags || [],
-            createdAt: new Date(lead.createdAt),
-            updatedAt: new Date(lead.updatedAt)
+            lastActivity: new Date(lead.updatedAt || Date.now()),
+            assignedAgent: lead.assignedTo || 'John Doe',
+            leadSource: lead.source || 'Website',
+            tags: lead.tags || ['First Time Buyer'],
+            createdAt: new Date(lead.createdAt || Date.now()),
+            updatedAt: new Date(lead.updatedAt || Date.now())
           }));
           
           realDeals.push(...stageDeals);
@@ -393,45 +510,32 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
             : 0;
           
           stageData.push({
-            id: apiStage.id,
-            title: apiStage.name,
-            color: apiStage.color || PIPELINE_STAGES[index % PIPELINE_STAGES.length].color,
-            bgColor: `${apiStage.color || PIPELINE_STAGES[index % PIPELINE_STAGES.length].color.replace('bg-', 'bg-').replace('-500', '-50')}`,
+            id: apiStage.id || stageConfig.id,
+            title: apiStage.name || stageConfig.title,
+            color: stageConfig.color,
             deals: stageDeals,
             dealCount: stageDeals.length,
             totalValue,
             avgDaysInStage: Math.round(avgDays),
-            conversionRate: 85 - (index * 15) // Rough conversion rate based on stage position
+            conversionRate: Math.max(0, 95 - (index * 15))
           });
         });
         
-        // If no stages from API, use default empty stages
-        if (stageData.length === 0) {
-          const defaultStages = PIPELINE_STAGES.map(stage => ({
-            ...stage,
-            deals: [],
-            dealCount: 0,
-            totalValue: 0,
-            avgDaysInStage: 0,
-            conversionRate: 0
-          }));
-          setStages(defaultStages);
-        } else {
-          setStages(stageData);
-        }
-        
+        setStages(stageData);
         setDeals(realDeals);
       } catch (error) {
         console.error('Failed to fetch pipeline data:', error);
         
-        // Fallback to empty pipeline stages
-        const fallbackStages = PIPELINE_STAGES.map(stage => ({
-          ...stage,
+        // Fallback to empty stages
+        const fallbackStages = MODERN_STAGES.map((stage, index) => ({
+          id: stage.id,
+          title: stage.title,
+          color: stage.color,
           deals: [],
           dealCount: 0,
           totalValue: 0,
           avgDaysInStage: 0,
-          conversionRate: 0
+          conversionRate: Math.max(0, 95 - (index * 15))
         }));
         setStages(fallbackStages);
         setDeals([]);
@@ -445,11 +549,16 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
     setActiveId(event.active.id as string);
   };
 
+  const handleDragOver = (event: DragOverEvent) => {
+    setOverId(event.over?.id as string);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     
     if (!over) {
       setActiveId(null);
+      setOverId(null);
       return;
     }
 
@@ -458,45 +567,51 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
 
     // Find the active deal
     const activeDeal = deals.find(deal => deal.id === activeId);
-    if (!activeDeal) return;
+    if (!activeDeal) {
+      setActiveId(null);
+      setOverId(null);
+      return;
+    }
 
     // Determine target stage
-    let targetStage = overId;
+    let targetStageId = overId;
     
     // If dropped on another deal, get that deal's stage
     const overDeal = deals.find(deal => deal.id === overId);
     if (overDeal) {
-      targetStage = overDeal.stage;
+      targetStageId = overDeal.stage;
     }
 
-    // If dropped on a stage container
-    const overStage = PIPELINE_STAGES.find(stage => stage.id === overId);
+    // If dropped on a stage directly
+    const overStage = stages.find(stage => stage.id === overId);
     if (overStage) {
-      targetStage = overStage.id;
+      targetStageId = overStage.id;
     }
 
     // Update deal stage if it changed
-    if (activeDeal.stage !== targetStage) {
+    if (activeDeal.stage !== targetStageId) {
       const updatedDeals = deals.map(deal => 
         deal.id === activeId 
-          ? { ...deal, stage: targetStage, daysInStage: 0, updatedAt: new Date() }
+          ? { ...deal, stage: targetStageId, daysInStage: 0, updatedAt: new Date() }
           : deal
       );
       
       setDeals(updatedDeals);
 
       // Update stages
-      const updatedStages = PIPELINE_STAGES.map(stage => {
+      const updatedStages = stages.map(stage => {
         const stageDeals = updatedDeals.filter(deal => deal.stage === stage.id);
         const totalValue = stageDeals.reduce((sum, deal) => sum + deal.dealValue, 0);
+        const avgDays = stageDeals.length > 0 
+          ? stageDeals.reduce((sum, deal) => sum + deal.daysInStage, 0) / stageDeals.length 
+          : 0;
         
         return {
           ...stage,
           deals: stageDeals,
           dealCount: stageDeals.length,
           totalValue,
-          avgDaysInStage: Math.round(stageDeals.reduce((sum, deal) => sum + deal.daysInStage, 0) / stageDeals.length || 0),
-          conversionRate: Math.random() * 30 + 15
+          avgDaysInStage: Math.round(avgDays)
         };
       });
       
@@ -504,10 +619,92 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
     }
 
     setActiveId(null);
+    setOverId(null);
   };
 
   const activeDeal = deals.find(deal => deal.id === activeId);
 
+  const handleCreateDeal = (stageId?: string) => {
+    setSelectedStage(stageId || null);
+    setShowCreateModal(true);
+  };
+
+  const handleDealCreated = () => {
+    // Refresh the pipeline data when a deal is created
+    const fetchPipelineData = async () => {
+      try {
+        const response = await fetch('/api/pipeline/stages');
+        if (!response.ok) throw new Error('Failed to fetch pipeline data');
+        
+        const { stages: apiStages } = await response.json();
+        
+        // Convert API data to component format (same logic as useEffect)
+        const realDeals: Deal[] = [];
+        const stageData: PipelineStage[] = [];
+        
+        const stagesToProcess = apiStages.length > 0 ? apiStages : MODERN_STAGES.map(s => ({ 
+          ...s, 
+          leads: [] 
+        }));
+        
+        stagesToProcess.forEach((apiStage: any, index: number) => {
+          const stageConfig = MODERN_STAGES[index % MODERN_STAGES.length];
+          
+          const stageDeals: Deal[] = (apiStage.leads || []).map((lead: any) => ({
+            id: lead.id,
+            title: lead.title || `${lead.contact?.name || 'Contact'} Deal`,
+            clientName: lead.contact?.name || 'Unknown Contact',
+            clientAvatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${lead.contact?.name || lead.id}`,
+            propertyAddress: lead.property?.address || '123 Main St, City, State',
+            propertyType: lead.property?.type || 'Single Family',
+            dealValue: lead.value || Math.floor(Math.random() * 500000) + 200000,
+            stage: apiStage.id || stageConfig.id,
+            daysInStage: Math.floor((Date.now() - new Date(lead.createdAt || Date.now()).getTime()) / (1000 * 60 * 60 * 24)),
+            probability: lead.probability || Math.floor(Math.random() * 40) + 20 + (index * 10),
+            priority: lead.priority || (['hot', 'warm', 'cold'][Math.floor(Math.random() * 3)] as any),
+            nextAction: {
+              type: ['call', 'email', 'meeting', 'showing', 'follow_up'][Math.floor(Math.random() * 5)] as any,
+              description: lead.notes || 'Follow up required',
+              dueDate: new Date(Date.now() + Math.random() * 14 * 24 * 60 * 60 * 1000)
+            },
+            lastActivity: new Date(lead.updatedAt || Date.now()),
+            assignedAgent: lead.assignedTo || 'John Doe',
+            leadSource: lead.source || 'Website',
+            tags: lead.tags || ['First Time Buyer'],
+            createdAt: new Date(lead.createdAt || Date.now()),
+            updatedAt: new Date(lead.updatedAt || Date.now())
+          }));
+          
+          realDeals.push(...stageDeals);
+          
+          const totalValue = stageDeals.reduce((sum, deal) => sum + deal.dealValue, 0);
+          const avgDays = stageDeals.length > 0 
+            ? stageDeals.reduce((sum, deal) => sum + deal.daysInStage, 0) / stageDeals.length 
+            : 0;
+          
+          stageData.push({
+            id: apiStage.id || stageConfig.id,
+            title: apiStage.name || stageConfig.title,
+            color: stageConfig.color,
+            deals: stageDeals,
+            dealCount: stageDeals.length,
+            totalValue,
+            avgDaysInStage: Math.round(avgDays),
+            conversionRate: Math.max(0, 95 - (index * 15))
+          });
+        });
+        
+        setStages(stageData);
+        setDeals(realDeals);
+      } catch (error) {
+        console.error('Failed to fetch pipeline data:', error);
+      }
+    };
+    
+    fetchPipelineData();
+  };
+
+  // Apply filters
   const filteredStages = stages.map(stage => ({
     ...stage,
     deals: stage.deals.filter(deal => {
@@ -526,6 +723,8 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
       if (quickFilters.length > 0) {
         return quickFilters.some(filter => {
           switch (filter.id) {
+            case 'hot-leads':
+              return deal.priority === 'hot';
             case 'high-value':
               return deal.dealValue > 500000;
             case 'overdue':
@@ -534,12 +733,8 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
               const weekFromNow = new Date();
               weekFromNow.setDate(weekFromNow.getDate() + 7);
               return deal.nextAction.dueDate <= weekFromNow;
-            case 'hot-leads':
-              return deal.priority === 'hot';
-            case 'showing-scheduled':
-              return deal.nextAction.type === 'showing';
-            case 'first-time-buyer':
-              return deal.tags.includes('First Time Buyer');
+            case 'new-leads':
+              return deal.daysInStage <= 7;
             default:
               return true;
           }
@@ -551,149 +746,200 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
   }));
 
   return (
-    <div className="h-full">
+    <div className="h-full overflow-hidden">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
         <div className="flex gap-6 h-full overflow-x-auto pb-6">
-          {filteredStages.map((stage) => (
-            <div
-              key={stage.id}
-              className="flex-shrink-0 w-80"
-            >
-              {/* Enhanced Stage Header - Stage Colored */}
-              <Card className={`mb-4 bg-gradient-to-r ${stage.color.replace('bg-', 'from-')}/20 ${stage.color.replace('bg-', 'to-')}/5 border-l-4 ${stage.color.replace('bg-', 'border-l-')} shadow-sm`}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg font-semibold">{stage.title}</CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="font-semibold">{stage.dealCount}</Badge>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="h-7 w-7 p-0 opacity-70 hover:opacity-100"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          // Add deal to this stage - placeholder
-                        }}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
+          {filteredStages.map((stage, index) => {
+            const stageConfig = MODERN_STAGES.find(s => s.id === stage.id) || MODERN_STAGES[index % MODERN_STAGES.length];
+            
+            return (
+              <motion.div
+                key={stage.id}
+                layout
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="flex-shrink-0 w-80"
+              >
+                {/* Enhanced Stage Header */}
+                <div className={`mb-6 glass-card glass-border rounded-2xl overflow-hidden bg-gradient-to-br ${stageConfig.bgGradient}/10`}>
+                  <div className="p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-3 rounded-xl bg-gradient-to-r ${stageConfig.gradient}/20 glass-surface`}>
+                          <Target className="h-5 w-5" style={{ color: 'var(--glass-primary)' }} />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg glass-text-glow">
+                            {stage.title}
+                          </h3>
+                          <p className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
+                            {stageConfig.description}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="glass-badge font-bold">
+                          {stage.dealCount}
+                        </Badge>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="h-8 w-8 p-0 glass-hover-pulse"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleCreateDeal(stage.id);
+                          }}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground text-xs">Total Value</span>
-                        <span className="font-semibold text-green-600 text-sm">
-                          ${stage.totalValue >= 1000000 ? `${(stage.totalValue / 1000000).toFixed(1)}M` : 
-                            stage.totalValue >= 1000 ? `${(stage.totalValue / 1000).toFixed(0)}K` : 
-                            stage.totalValue.toLocaleString()}
+                    
+                    {/* Stage Metrics */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-emerald-600 glass-text-glow">
+                          {stage.totalValue >= 1000000 ? `$${(stage.totalValue / 1000000).toFixed(1)}M` : 
+                           stage.totalValue >= 1000 ? `$${(stage.totalValue / 1000).toFixed(0)}K` : 
+                           `$${stage.totalValue.toLocaleString()}`}
+                        </div>
+                        <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
+                          Total Value
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-bold glass-text-glow">
+                          {stage.avgDaysInStage}d
+                        </div>
+                        <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
+                          Avg Days
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Conversion Rate Progress */}
+                    <div className="mt-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
+                          Conversion Rate
+                        </span>
+                        <span className="text-xs font-bold glass-text-glow">
+                          {stage.conversionRate}%
                         </span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground text-xs">Avg Days</span>
-                        <span className="font-medium text-xs">{stage.avgDaysInStage}d</span>
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground text-xs">Conversion</span>
-                        <span className="font-medium text-xs">{stage.conversionRate.toFixed(1)}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-1.5">
-                        <div 
-                          className={`h-1.5 rounded-full transition-all duration-300 ${stage.color}`}
-                          style={{ width: `${Math.min(stage.conversionRate, 100)}%` }}
+                      <div className="h-1.5 glass-surface rounded-full overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${stage.conversionRate}%` }}
+                          transition={{ duration: 1, delay: 0.5 + index * 0.1 }}
+                          className={`h-full bg-gradient-to-r ${stageConfig.gradient} rounded-full`}
                         />
                       </div>
                     </div>
                   </div>
-                </CardHeader>
-              </Card>
-
-              {/* Enhanced Deals Container with Faint Stage Background */}
-              <SortableContext items={stage.deals.map(deal => deal.id)} strategy={verticalListSortingStrategy}>
-                <div
-                  className={`min-h-[500px] p-4 rounded-xl border-2 transition-all duration-200 bg-gradient-to-b ${stage.color.replace('bg-', 'from-')}/5 ${stage.color.replace('bg-', 'to-')}/2 ${
-                    stage.deals.length === 0 
-                      ? `border-dashed ${stage.color.replace('bg-', 'border-')}/30 hover:${stage.color.replace('bg-', 'border-')}/50` 
-                      : 'border-transparent'
-                  }`}
-                  id={stage.id}
-                >
-                  <AnimatePresence>
-                    {stage.deals.map((deal) => (
-                      <SortableDealCard
-                        key={deal.id}
-                        deal={deal}
-                        onDealClick={setSelectedDeal}
-                      />
-                    ))}
-                  </AnimatePresence>
-                  
-                  {/* Enhanced Empty State with Better CTAs */}
-                  {stage.deals.length === 0 && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex flex-col items-center justify-center h-80 text-center space-y-4"
-                    >
-                      <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${stage.color.replace('bg-', 'from-')}/20 ${stage.color.replace('bg-', 'to-')}/40 flex items-center justify-center border-2 border-dashed ${stage.color.replace('bg-', 'border-')}/40 relative`}>
-                        <div className="w-10 h-10 rounded-full border-2 border-dashed border-muted-foreground/40 flex items-center justify-center bg-white/60 dark:bg-slate-800/60">
-                          <Plus className="h-5 w-5 text-muted-foreground/80" />
-                        </div>
-                        {/* Floating elements for visual interest */}
-                        <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ${stage.color} animate-pulse`} />
-                        <div className={`absolute -bottom-1 -left-1 w-2 h-2 rounded-full ${stage.color}/60 animate-pulse`} style={{ animationDelay: '0.5s' }} />
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-base font-semibold text-foreground">Ready for {stage.title}?</p>
-                        <p className="text-sm text-muted-foreground max-w-xs">Drop deals here or create a new one to get started with this stage</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="default" 
-                          size="sm"
-                          className={`bg-gradient-to-r ${stage.color.replace('bg-', 'from-')} ${stage.color.replace('bg-', 'to-')}/80 hover:${stage.color.replace('bg-', 'from-')}/90 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200`}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            // Create new deal in this stage - placeholder
-                          }}
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Deal
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className={`border-${stage.color.replace('bg-', '')} text-${stage.color.replace('bg-', '')}-600 hover:bg-${stage.color.replace('bg-', '')}/10`}
-                          onClick={() => {/* Show drag target guide */}}
-                        >
-                          Drop Zone
-                        </Button>
-                      </div>
-                    </motion.div>
-                  )}
                 </div>
-              </SortableContext>
-            </div>
-          ))}
+
+                {/* Deals Container */}
+                <SortableContext 
+                  items={stage.deals.map(deal => deal.id)} 
+                  strategy={verticalListSortingStrategy}
+                >
+                  <DroppableStage 
+                    stage={stage} 
+                    stageConfig={stageConfig}
+                    isOver={overId === stage.id}
+                  >
+                    <div className="p-6">
+                      <AnimatePresence>
+                        {stage.deals.map((deal) => (
+                          <SortableDealCard
+                            key={deal.id}
+                            deal={deal}
+                            onDealClick={setSelectedDeal}
+                            isDragging={deal.id === activeId}
+                          />
+                        ))}
+                      </AnimatePresence>
+                      
+                      {/* Enhanced Empty State */}
+                      {stage.deals.length === 0 && (
+                        <motion.div 
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="flex flex-col items-center justify-center h-64 text-center"
+                        >
+                          <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${stageConfig.gradient}/20 glass-surface flex items-center justify-center mb-4`}>
+                            <Plus className="h-8 w-8" style={{ color: 'var(--glass-text-muted)' }} />
+                          </div>
+                          <p className="font-semibold glass-text-glow mb-2">
+                            Ready for {stage.title}?
+                          </p>
+                          <p className="text-sm max-w-xs" style={{ color: 'var(--glass-text-muted)' }}>
+                            Drop deals here or create new ones to populate this stage
+                          </p>
+                          <Button 
+                            variant="liquid" 
+                            size="sm" 
+                            className="mt-4 glass-click-ripple"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleCreateDeal(stage.id);
+                            }}
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Deal
+                          </Button>
+                        </motion.div>
+                      )}
+                    </div>
+                  </DroppableStage>
+                </SortableContext>
+              </motion.div>
+            );
+          })}
         </div>
 
-        <DragOverlay>
+        {/* Enhanced Drag Overlay */}
+        <DragOverlay 
+          dropAnimation={{
+            duration: 200,
+            easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+          }}
+          style={{
+            cursor: 'grabbing',
+          }}
+        >
           {activeDeal ? (
-            <div className="rotate-3 opacity-90">
-              <DealCard deal={activeDeal} onDealClick={() => {}} />
+            <div 
+              className="rotate-1 scale-110 opacity-90 cursor-grabbing shadow-2xl" 
+              style={{ 
+                zIndex: 1000,
+                transform: 'translate(-50%, -50%)',
+                transformOrigin: 'center',
+                pointerEvents: 'none'
+              }}
+            >
+              <DealCard deal={activeDeal} onDealClick={() => {}} isDragging />
             </div>
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      <CreateDealModal
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+        onDealCreated={handleDealCreated}
+        selectedStage={selectedStage}
+      />
     </div>
   );
 }

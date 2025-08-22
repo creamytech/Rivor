@@ -156,7 +156,7 @@ export default function PipelineAnalyticsSidebar({ onClose, activeFilters, searc
               onClick={() => setSelectedView(id as any)}
               className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 ${
                 selectedView === id
-                  ? 'bg-blue-500 text-white shadow-sm'
+                  ? 'bg-blue-500 text-white glass-hover-pulse'
                   : 'text-blue-700 dark:text-blue-300 hover:bg-white/80 dark:hover:bg-slate-700'
               }`}
             >
@@ -213,7 +213,7 @@ function OverviewSection({ data, formatValue, isLoading }: { data: any; formatVa
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-blue-100 dark:border-blue-800"
+              className="glass-card p-4 rounded-xl glass-hover-pulse border border-blue-100 dark:border-blue-800"
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -230,7 +230,7 @@ function OverviewSection({ data, formatValue, isLoading }: { data: any; formatVa
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-blue-100 dark:border-blue-800"
+              className="glass-card p-4 rounded-xl glass-hover-pulse border border-blue-100 dark:border-blue-800"
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -247,7 +247,7 @@ function OverviewSection({ data, formatValue, isLoading }: { data: any; formatVa
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-blue-100 dark:border-blue-800"
+              className="glass-card p-4 rounded-xl glass-hover-pulse border border-blue-100 dark:border-blue-800"
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -264,7 +264,7 @@ function OverviewSection({ data, formatValue, isLoading }: { data: any; formatVa
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-blue-100 dark:border-blue-800"
+              className="glass-card p-4 rounded-xl glass-hover-pulse border border-blue-100 dark:border-blue-800"
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -284,7 +284,7 @@ function OverviewSection({ data, formatValue, isLoading }: { data: any; formatVa
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-green-100 dark:border-green-800"
+              className="glass-card p-4 rounded-xl glass-hover-pulse border border-green-100 dark:border-green-800"
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium">Monthly Growth</span>
@@ -305,7 +305,7 @@ function OverviewSection({ data, formatValue, isLoading }: { data: any; formatVa
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-blue-100 dark:border-blue-800"
+              className="glass-card p-4 rounded-xl glass-hover-pulse border border-blue-100 dark:border-blue-800"
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium">Weekly Velocity</span>
@@ -340,7 +340,7 @@ function OverviewSection({ data, formatValue, isLoading }: { data: any; formatVa
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-orange-100 dark:border-orange-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+              className="glass-card p-3 rounded-lg border border-orange-100 dark:border-orange-800 glass-hover-tilt cursor-pointer"
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="font-medium text-sm truncate">{deal.client}</span>

@@ -226,7 +226,7 @@ export default function PipelineTimelineView({ searchQuery, quickFilters, advanc
       transition={{ delay: index * 0.1 }}
       className="relative"
     >
-      <Card className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm border-border shadow-sm hover:shadow-md transition-shadow">
+      <Card className="glass-card glass-hover-tilt">
         <CardContent className="p-6">
           {/* Deal Header */}
           <div className="flex items-start justify-between mb-4">
@@ -373,7 +373,7 @@ export default function PipelineTimelineView({ searchQuery, quickFilters, advanc
   return (
     <div className="space-y-6">
       {/* Timeline Controls */}
-      <Card className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm border-border shadow-sm">
+      <Card className="glass-card glass-hover-tilt">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -449,7 +449,7 @@ export default function PipelineTimelineView({ searchQuery, quickFilters, advanc
       </div>
 
       {mockDeals.length === 0 && (
-        <Card className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm border-border shadow-sm">
+        <Card className="glass-card glass-hover-tilt">
           <CardContent className="text-center py-12">
             <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium text-muted-foreground mb-2">No deals in timeline</h3>

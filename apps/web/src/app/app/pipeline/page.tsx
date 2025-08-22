@@ -1,95 +1,140 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { useRouter } from "next/navigation";
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import AppShell from "@/components/app/AppShell";
+import MobilePipeline from "@/components/app/MobilePipeline";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/contexts/ThemeContext";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Search,
   Filter,
   Plus,
-  Download,
-  Upload,
-  Settings,
   BarChart3,
-  Calendar,
-  DollarSign,
-  User,
   Grid3X3,
   List,
   Activity,
-  Home,
-  MapPin,
-  Clock,
   TrendingUp,
-  AlertTriangle,
-  CheckCircle,
+  Users,
+  DollarSign,
+  Clock,
+  Target,
+  Sparkles,
+  Zap,
+  ArrowRight,
   X
 } from "lucide-react";
 import PipelineKanbanView from "@/components/pipeline/PipelineKanbanView";
 import PipelineListView from "@/components/pipeline/PipelineListView";
-import PipelineTimelineView from "@/components/pipeline/PipelineTimelineView";
-import PipelineAnalyticsSidebar from "@/components/pipeline/PipelineAnalyticsSidebar";
+import PipelineAnalyticsView from "@/components/pipeline/PipelineAnalyticsView";
 import CreateDealModal from "@/components/pipeline/CreateDealModal";
-import AdvancedFiltersModal from "@/components/pipeline/AdvancedFiltersModal";
-import PipelineFunnelViz from "@/components/pipeline/PipelineFunnelViz";
 
-interface FilterPill {
+interface PipelineStats {
+  totalDeals: number;
+  totalValue: number;
+  averageDealSize: number;
+  conversionRate: number;
+  averageCycleTime: number;
+  hotLeads: number;
+}
+
+interface QuickFilter {
   id: string;
   label: string;
   count: number;
   active: boolean;
   color: string;
+  icon: React.ReactNode;
 }
 
-type ViewMode = 'kanban' | 'list' | 'timeline';
+type ViewMode = 'kanban' | 'list' | 'analytics';
 
 export default function PipelinePage() {
   const { theme } = useTheme();
-  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
-  const [showAnalytics, setShowAnalytics] = useState(false);
   const [showCreateDeal, setShowCreateDeal] = useState(false);
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
-  const [quickFilters, setQuickFilters] = useState<FilterPill[]>([
-    { id: 'high-value', label: "High Value", count: 12, active: false, color: 'bg-green-100 text-green-800' },
-    { id: 'overdue', label: "Overdue", count: 3, active: false, color: 'bg-red-100 text-red-800' },
-    { id: 'this-week', label: "This Week", count: 8, active: false, color: 'bg-blue-100 text-blue-800' },
-    { id: 'hot-leads', label: "Hot Leads", count: 5, active: false, color: 'bg-orange-100 text-orange-800' },
-    { id: 'showing-scheduled', label: "Showing Scheduled", count: 7, active: false, color: 'bg-purple-100 text-purple-800' },
-    { id: 'first-time-buyer', label: "First Time Buyer", count: 9, active: false, color: 'bg-teal-100 text-teal-800' }
+  const [showFilters, setShowFilters] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
+  const [stats, setStats] = useState<PipelineStats>({
+    totalDeals: 0,
+    totalValue: 0,
+    averageDealSize: 0,
+    conversionRate: 0,
+    averageCycleTime: 0,
+    hotLeads: 0
+  });
+
+  const [quickFilters, setQuickFilters] = useState<QuickFilter[]>([
+    { 
+      id: 'hot-leads', 
+      label: "Hot Leads", 
+      count: 8, 
+      active: false, 
+      color: 'from-red-500/20 to-orange-500/20 border-red-500/30',
+      icon: <Zap className="h-3 w-3" />
+    },
+    { 
+      id: 'high-value', 
+      label: "High Value", 
+      count: 12, 
+      active: false, 
+      color: 'from-emerald-500/20 to-green-500/20 border-emerald-500/30',
+      icon: <DollarSign className="h-3 w-3" />
+    },
+    { 
+      id: 'overdue', 
+      label: "Overdue", 
+      count: 3, 
+      active: false, 
+      color: 'from-red-500/20 to-pink-500/20 border-red-500/30',
+      icon: <Clock className="h-3 w-3" />
+    },
+    { 
+      id: 'this-week', 
+      label: "This Week", 
+      count: 15, 
+      active: false, 
+      color: 'from-blue-500/20 to-cyan-500/20 border-blue-500/30',
+      icon: <Target className="h-3 w-3" />
+    },
+    { 
+      id: 'new-leads', 
+      label: "New Leads", 
+      count: 6, 
+      active: false, 
+      color: 'from-purple-500/20 to-violet-500/20 border-purple-500/30',
+      icon: <Sparkles className="h-3 w-3" />
+    }
   ]);
 
-  const [advancedFilters, setAdvancedFilters] = useState({
-    dealStage: '',
-    propertyType: '',
-    priceRange: { min: '', max: '' },
-    daysInStage: '',
-    assignedAgent: '',
-    leadSource: '',
-    dealProbability: '',
-    lastActivity: ''
-  });
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+
+  // Fetch pipeline stats
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/pipeline/stats');
+        if (response.ok) {
+          const data = await response.json();
+          setStats(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch pipeline stats:', error);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   const toggleQuickFilter = (filterId: string) => {
     setQuickFilters(prev => 
@@ -99,35 +144,19 @@ export default function PipelinePage() {
           : filter
       )
     );
-  };
-
-  const removeFilter = (filterId: string) => {
-    setQuickFilters(prev => 
-      prev.map(filter => 
-        filter.id === filterId 
-          ? { ...filter, active: false }
-          : filter
-      )
+    
+    setActiveFilters(prev => 
+      prev.includes(filterId) 
+        ? prev.filter(id => id !== filterId)
+        : [...prev, filterId]
     );
   };
 
   const clearAllFilters = () => {
     setQuickFilters(prev => prev.map(filter => ({ ...filter, active: false })));
-    setAdvancedFilters({
-      dealStage: '',
-      propertyType: '',
-      priceRange: { min: '', max: '' },
-      daysInStage: '',
-      assignedAgent: '',
-      leadSource: '',
-      dealProbability: '',
-      lastActivity: ''
-    });
-    setSelectedFilters([]);
+    setActiveFilters([]);
+    setSearchQuery("");
   };
-
-  const activeQuickFilters = quickFilters.filter(filter => filter.active);
-  const hasActiveFilters = activeQuickFilters.length > 0 || selectedFilters.length > 0;
 
   const getViewIcon = (view: ViewMode) => {
     switch (view) {
@@ -135,260 +164,325 @@ export default function PipelinePage() {
         return <Grid3X3 className="h-4 w-4" />;
       case 'list':
         return <List className="h-4 w-4" />;
-      case 'timeline':
-        return <Activity className="h-4 w-4" />;
+      case 'analytics':
+        return <BarChart3 className="h-4 w-4" />;
     }
   };
 
-  const renderPipelineView = () => {
-    const commonProps = {
-      searchQuery,
-      quickFilters: activeQuickFilters,
-      advancedFilters,
-    };
+  const hasActiveFilters = quickFilters.some(f => f.active) || searchQuery.length > 0;
 
-    switch (viewMode) {
-      case 'kanban':
-        return <PipelineKanbanView {...commonProps} />;
-      case 'list':
-        return <PipelineListView {...commonProps} />;
-      case 'timeline':
-        return <PipelineTimelineView {...commonProps} />;
-      default:
-        return <PipelineKanbanView {...commonProps} />;
-    }
-  };
+  // Mobile view
+  if (isMobile) {
+    return (
+      <div className={`min-h-screen ${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'}`}>
+        <AppShell>
+          <MobilePipeline />
+        </AppShell>
+      </div>
+    );
+  }
 
   return (
-    <div className={`${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'}`}>
+    <div className={`min-h-screen ${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'}`}>
       <AppShell>
-        {/* Liquid Glass Header */}
-        <div className="px-4 mt-4 mb-2 main-content-area">
-          <div className="glass-card glass-hover-pulse p-6">
-          {/* Header Row */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-xl glass-card glass-hover-tilt">
-                  <Activity className="h-6 w-6" style={{ color: 'var(--glass-primary)' }} />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold glass-text-glow">Pipeline</h1>
-                  <p style={{ color: 'var(--glass-text-secondary)' }}>
-                    Manage your deals and opportunities
-                  </p>
-                </div>
-              </div>
-            </div>
+        <div className="flex-1 overflow-hidden">
+          {/* Liquid Glass Header */}
+          <div className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-teal-500/5" />
             
-            <Button 
-              variant="liquid"
-              size="lg"
-              className="px-6"
-              onClick={() => setShowCreateDeal(true)}
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              New Deal
-            </Button>
-          </div>
-
-          {/* Search and Controls */}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 max-w-2xl">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" 
-                  style={{ color: 'var(--glass-text-muted)' }} />
-                <Input
-                  variant="pill"
-                  placeholder="Search deals, properties, or contacts..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 text-sm glass-hover-pulse"
-                />
-                {searchQuery && (
-                  <Button
-                    variant="liquid"
-                    size="sm"
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
-                    onClick={() => setSearchQuery('')}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button variant="liquid" size="sm" className="glass-click-ripple" onClick={() => setShowAdvancedFilters(true)}>
-                <Filter className="h-4 w-4 mr-2" />
-                Filters
-                {selectedFilters.length > 0 && (
-                  <Badge variant="liquid" className="ml-2 text-xs">
-                    {selectedFilters.length}
-                  </Badge>
-                )}
-              </Button>
-              
-              {/* View Mode Toggle */}
-              <div className="flex items-center gap-2">
-                {(['kanban', 'list', 'timeline'] as ViewMode[]).map((view) => (
-                  <button
-                    key={view}
-                    onClick={() => setViewMode(view)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 glass-hover-pulse ${
-                      viewMode === view
-                        ? "glass-badge glass-text-glow"
-                        : "glass-badge-muted"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      {getViewIcon(view)}
-                      <span className="capitalize">{view}</span>
+            <div className="relative glass-card glass-border-subtle m-6 mb-4">
+              <div className="p-8">
+                {/* Main Header */}
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-6">
+                    <div className="p-4 rounded-2xl glass-surface glass-border glass-hover-glow">
+                      <Activity className="h-8 w-8" style={{ color: 'var(--glass-primary)' }} />
                     </div>
-                  </button>
-                ))}
-              </div>
-              
-              <Button variant="liquid" size="sm" className="glass-click-ripple" onClick={() => setShowAnalytics(!showAnalytics)}>
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Analytics
-              </Button>
-              
-              <Button variant="liquid" size="sm" className="glass-click-ripple" onClick={() => router.push('/app/reporting')}>
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-            </div>
-          </div>
-
-          {/* Quick Filters */}
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium flex-shrink-0" style={{ color: 'var(--glass-text-secondary)' }}>Quick filters:</span>
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
-              {quickFilters.map((filter) => (
-                <motion.button
-                  key={filter.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  whileHover={{ scale: 1.05 }}
-                  onClick={() => toggleQuickFilter(filter.id)}
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 glass-click-ripple ${
-                    filter.active 
-                      ? 'glass-badge glass-text-glow' 
-                      : 'glass-badge-muted'
-                  }`}
-                >
-                  {filter.label}
-                  <Badge 
-                    variant="liquid" 
-                    className="text-xs h-5 px-1.5"
-                  >
-                    {filter.count}
-                  </Badge>
-                </motion.button>
-              ))}
-            </div>
-            
-            {hasActiveFilters && (
-              <Button
-                variant="liquid"
-                size="sm"
-                onClick={clearAllFilters}
-                className="text-xs h-8 flex-shrink-0 glass-click-ripple"
-              >
-                <X className="h-3 w-3 mr-1" />
-                Clear All
-              </Button>
-            )}
-          </div>
-          </div>
-        </div>
-
-        {/* Pipeline Metrics Overview */}
-        <div className="px-4 pb-4 main-content-area">
-          <div className="glass-card glass-hover-tilt p-6">
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-6">
-              {[
-                { title: 'New Leads', count: 24, value: '$2.4M', color: 'from-blue-500 to-cyan-500', icon: <User className="h-5 w-5" /> },
-                { title: 'Qualified', count: 18, value: '$1.98M', color: 'from-green-500 to-emerald-500', icon: <CheckCircle className="h-5 w-5" /> },
-                { title: 'Showing', count: 12, value: '$1.56M', color: 'from-orange-500 to-yellow-500', icon: <Calendar className="h-5 w-5" /> },
-                { title: 'Offer Made', count: 8, value: '$1.2M', color: 'from-purple-500 to-pink-500', icon: <TrendingUp className="h-5 w-5" /> },
-                { title: 'Contract', count: 5, value: '$750K', color: 'from-yellow-500 to-orange-500', icon: <Home className="h-5 w-5" /> },
-                { title: 'Closed', count: 3, value: '$450K', color: 'from-emerald-500 to-teal-500', icon: <DollarSign className="h-5 w-5" /> }
-              ].map((stage, index) => (
-                <div key={stage.title} className="text-center glass-hover-pulse">
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${stage.color} mx-auto mb-3 flex items-center justify-center text-white`}>
-                    {stage.icon}
+                    <div>
+                      <h1 className="text-4xl font-bold glass-text-glow mb-2">
+                        Sales Pipeline
+                      </h1>
+                      <p className="text-lg" style={{ color: 'var(--glass-text-secondary)' }}>
+                        Track deals and opportunities with precision
+                      </p>
+                    </div>
                   </div>
-                  <h3 className="text-sm font-medium mb-1" style={{ color: 'var(--glass-text-secondary)' }}>
-                    {stage.title}
-                  </h3>
-                  <p className="text-2xl font-bold mb-1 glass-text-glow">
-                    {stage.count}
-                  </p>
-                  <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
-                    {stage.value}
-                  </p>
+                  
+                  <div className="flex items-center gap-4">
+                    <Button 
+                      variant="liquid"
+                      size="lg"
+                      className="px-8 py-3 text-lg font-medium glass-click-ripple"
+                      onClick={() => setShowCreateDeal(true)}
+                    >
+                      <Plus className="h-5 w-5 mr-3" />
+                      New Deal
+                    </Button>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
 
-        {/* Main Content */}
-        <div className="flex-1 px-4 pb-4 main-content-area">
-          <div className="glass-card">
-            {renderPipelineView()}
-          </div>
-        </div>
+                {/* Stats Overview */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                  {[
+                    { 
+                      label: 'Total Deals', 
+                      value: stats.totalDeals.toString(), 
+                      icon: Users,
+                      color: 'from-blue-500 to-cyan-500',
+                      change: '+12%'
+                    },
+                    { 
+                      label: 'Pipeline Value', 
+                      value: `$${(stats.totalValue / 1000000).toFixed(1)}M`, 
+                      icon: DollarSign,
+                      color: 'from-emerald-500 to-green-500',
+                      change: '+8%'
+                    },
+                    { 
+                      label: 'Avg Deal Size', 
+                      value: `$${(stats.averageDealSize / 1000).toFixed(0)}K`, 
+                      icon: Target,
+                      color: 'from-purple-500 to-violet-500',
+                      change: '+15%'
+                    },
+                    { 
+                      label: 'Conversion', 
+                      value: `${stats.conversionRate.toFixed(1)}%`, 
+                      icon: TrendingUp,
+                      color: 'from-orange-500 to-yellow-500',
+                      change: '+5%'
+                    },
+                    { 
+                      label: 'Avg Cycle', 
+                      value: `${stats.averageCycleTime}d`, 
+                      icon: Clock,
+                      color: 'from-cyan-500 to-blue-500',
+                      change: '-3d'
+                    },
+                    { 
+                      label: 'Hot Leads', 
+                      value: stats.hotLeads.toString(), 
+                      icon: Zap,
+                      color: 'from-red-500 to-orange-500',
+                      change: '+6'
+                    }
+                  ].map((stat, index) => (
+                    <motion.div
+                      key={stat.label}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="group"
+                    >
+                      <div className="glass-surface glass-border glass-hover-pulse rounded-xl p-4 transition-all duration-200 group-hover:glass-hover-glow">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className={`p-2 rounded-lg bg-gradient-to-r ${stat.color}/20`}>
+                            <stat.icon className="h-4 w-4" style={{ color: 'var(--glass-primary)' }} />
+                          </div>
+                          <span className="text-xs glass-badge px-2 py-1 rounded-full">
+                            {stat.change}
+                          </span>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-2xl font-bold glass-text-glow">
+                            {stat.value}
+                          </p>
+                          <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                            {stat.label}
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
 
-        {/* Analytics Sidebar */}
-        {showAnalytics && (
-          <motion.div
-            initial={{ x: 320, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 320, opacity: 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed right-4 top-24 bottom-4 w-80 glass-card glass-hover-tilt shadow-xl z-10 overflow-y-auto"
-          >
-            <div className="p-6 border-b" style={{ borderColor: 'var(--glass-border)' }}>
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-lg flex items-center gap-2 glass-text-glow">
-                  <BarChart3 className="h-5 w-5" style={{ color: 'var(--glass-primary)' }} />
-                  Pipeline Analytics
-                </h3>
-                <Button
-                  variant="liquid"
-                  size="sm"
-                  onClick={() => setShowAnalytics(false)}
-                  className="h-8 w-8 p-0"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                {/* Search and Controls */}
+                <div className="flex items-center gap-4 mb-6">
+                  {/* Enhanced Search */}
+                  <div className="flex-1 max-w-2xl relative group">
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 transition-colors duration-200" 
+                      style={{ color: searchQuery ? 'var(--glass-primary)' : 'var(--glass-text-muted)' }} />
+                    <Input
+                      variant="pill"
+                      placeholder="Search deals, clients, properties..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-12 pr-12 py-4 text-base glass-hover-glow transition-all duration-300"
+                    />
+                    <AnimatePresence>
+                      {searchQuery && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                        >
+                          <Button
+                            variant="liquid"
+                            size="sm"
+                            className="h-8 w-8 p-0 rounded-full glass-click-ripple"
+                            onClick={() => setSearchQuery('')}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  
+                  {/* View Mode Toggle */}
+                  <div className="glass-surface glass-border rounded-xl p-1 flex">
+                    {(['kanban', 'list', 'analytics'] as ViewMode[]).map((view) => (
+                      <button
+                        key={view}
+                        onClick={() => setViewMode(view)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 glass-hover-pulse flex items-center gap-2 ${
+                          viewMode === view
+                            ? "glass-surface-strong glass-text-glow shadow-lg"
+                            : "glass-hover-subtle"
+                        }`}
+                      >
+                        {getViewIcon(view)}
+                        <span className="capitalize">{view}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Filter Toggle */}
+                  <Button 
+                    variant="liquid" 
+                    size="sm" 
+                    className="glass-click-ripple"
+                    onClick={() => setShowFilters(!showFilters)}
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filters
+                    {activeFilters.length > 0 && (
+                      <span className="ml-2 glass-badge px-2 py-0.5 rounded-full text-xs">
+                        {activeFilters.length}
+                      </span>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Quick Filters */}
+                <AnimatePresence>
+                  {showFilters && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="flex items-center gap-3 pb-6">
+                        <span className="text-sm font-medium flex-shrink-0" style={{ color: 'var(--glass-text-secondary)' }}>
+                          Quick filters:
+                        </span>
+                        <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide">
+                          {quickFilters.map((filter, index) => (
+                            <motion.button
+                              key={filter.id}
+                              initial={{ opacity: 0, scale: 0.9, x: 20 }}
+                              animate={{ opacity: 1, scale: 1, x: 0 }}
+                              transition={{ delay: index * 0.05 }}
+                              onClick={() => toggleQuickFilter(filter.id)}
+                              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap glass-click-ripple ${
+                                filter.active 
+                                  ? `glass-surface-strong glass-text-glow bg-gradient-to-r ${filter.color} shadow-lg scale-105` 
+                                  : 'glass-surface glass-hover-pulse'
+                              }`}
+                            >
+                              {filter.icon}
+                              {filter.label}
+                              <span className={`glass-badge-muted px-1.5 py-0.5 rounded-full text-xs ${filter.active ? 'glass-badge' : ''}`}>
+                                {filter.count}
+                              </span>
+                            </motion.button>
+                          ))}
+                        </div>
+                        
+                        {hasActiveFilters && (
+                          <Button
+                            variant="liquid"
+                            size="sm"
+                            onClick={clearAllFilters}
+                            className="flex-shrink-0 glass-click-ripple"
+                          >
+                            <X className="h-3 w-3 mr-1" />
+                            Clear
+                          </Button>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
-            <div className="p-6">
-              <PipelineAnalyticsSidebar 
-                onClose={() => setShowAnalytics(false)}
-                activeFilters={activeQuickFilters}
-                searchQuery={searchQuery}
-              />
-            </div>
-          </motion.div>
-        )}
+          </div>
 
-        {/* Modals */}
+          {/* Main Pipeline Content */}
+          <div className="mx-6 mb-6">
+            <div className="glass-card glass-border-subtle rounded-2xl overflow-hidden">
+              <div className="p-6">
+                <AnimatePresence mode="wait">
+                  {viewMode === 'kanban' && (
+                    <motion.div
+                      key="kanban"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <PipelineKanbanView 
+                        searchQuery={searchQuery}
+                        quickFilters={quickFilters.filter(f => f.active)}
+                        advancedFilters={{}}
+                      />
+                    </motion.div>
+                  )}
+                  
+                  {viewMode === 'list' && (
+                    <motion.div
+                      key="list"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <PipelineListView 
+                        searchQuery={searchQuery}
+                        quickFilters={quickFilters.filter(f => f.active)}
+                        advancedFilters={{}}
+                      />
+                    </motion.div>
+                  )}
+                  
+                  {viewMode === 'analytics' && (
+                    <motion.div
+                      key="analytics"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <PipelineAnalyticsView 
+                        searchQuery={searchQuery}
+                        quickFilters={quickFilters.filter(f => f.active)}
+                        advancedFilters={{}}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Create Deal Modal */}
         <CreateDealModal
           open={showCreateDeal}
           onOpenChange={setShowCreateDeal}
-        />
-
-        <AdvancedFiltersModal
-          open={showAdvancedFilters}
-          onOpenChange={setShowAdvancedFilters}
-          filters={advancedFilters}
-          onFiltersChange={setAdvancedFilters}
-          onApplyFilters={setSelectedFilters}
         />
       </AppShell>
     </div>

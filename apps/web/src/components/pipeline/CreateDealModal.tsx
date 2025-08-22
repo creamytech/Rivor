@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Dialog,
@@ -41,6 +41,8 @@ import {
 interface CreateDealModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDealCreated?: () => void;
+  selectedStage?: string | null;
 }
 
 interface FormData {
@@ -96,10 +98,20 @@ const initialFormData: FormData = {
   tags: []
 };
 
-export default function CreateDealModal({ open, onOpenChange }: CreateDealModalProps) {
+export default function CreateDealModal({ open, onOpenChange, onDealCreated, selectedStage }: CreateDealModalProps) {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [currentTag, setCurrentTag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Simple body scroll management  
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [open]);
 
   const updateFormData = (field: keyof FormData, value: string | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -128,17 +140,17 @@ export default function CreateDealModal({ open, onOpenChange }: CreateDealModalP
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: formData.title,
-          company: formData.company,
-          contact: formData.contact,
-          email: formData.email,
-          phone: formData.phone,
+          title: `${formData.clientName} - ${formData.propertyAddress}`,
+          company: formData.clientName,
+          contact: formData.clientName,
+          email: formData.clientEmail,
+          phone: formData.clientPhone,
           value: parseFloat(formData.dealValue) || 0,
           probability: parseFloat(formData.probability) || 50,
           priority: formData.priority,
-          stage: formData.stage,
-          source: formData.source,
-          description: formData.description,
+          stage: selectedStage || 'prospect',
+          source: formData.leadSource,
+          description: formData.notes,
           tags: formData.tags,
         }),
       });
@@ -151,8 +163,10 @@ export default function CreateDealModal({ open, onOpenChange }: CreateDealModalP
         setFormData(initialFormData);
         onOpenChange(false);
         
-        // Optionally reload the page to show the new deal
-        window.location.reload();
+        // Call the callback to refresh the pipeline data
+        if (onDealCreated) {
+          onDealCreated();
+        }
       } else {
         const error = await response.json();
         console.error('Error creating deal:', error);
@@ -176,38 +190,43 @@ export default function CreateDealModal({ open, onOpenChange }: CreateDealModalP
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'var(--glass-surface)', color: 'var(--glass-text)' }}>
+    <Dialog 
+      open={open} 
+      onOpenChange={onOpenChange}
+    >
+      <DialogContent 
+        className="max-w-4xl max-h-[85vh] overflow-y-auto glass-modal glass-border-active glass-hover-glow"
+      >
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <Plus className="h-5 w-5" />
+          <DialogTitle className="flex items-center gap-2 text-xl glass-text-glow">
+            <Plus className="h-5 w-5" style={{ color: 'var(--glass-primary)' }} />
             Create New Deal
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <Tabs defaultValue="client" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="client" className="flex items-center gap-2">
+            <TabsList className="grid w-full grid-cols-4 glass-surface glass-border glass-hover-pulse">
+              <TabsTrigger value="client" className="flex items-center gap-2 glass-hover-pulse data-[state=active]:glass-badge data-[state=active]:glass-text-glow">
                 <User className="h-4 w-4" />
                 Client
               </TabsTrigger>
-              <TabsTrigger value="property" className="flex items-center gap-2">
+              <TabsTrigger value="property" className="flex items-center gap-2 glass-hover-pulse data-[state=active]:glass-badge data-[state=active]:glass-text-glow">
                 <Home className="h-4 w-4" />
                 Property
               </TabsTrigger>
-              <TabsTrigger value="deal" className="flex items-center gap-2">
+              <TabsTrigger value="deal" className="flex items-center gap-2 glass-hover-pulse data-[state=active]:glass-badge data-[state=active]:glass-text-glow">
                 <DollarSign className="h-4 w-4" />
                 Deal
               </TabsTrigger>
-              <TabsTrigger value="details" className="flex items-center gap-2">
+              <TabsTrigger value="details" className="flex items-center gap-2 glass-hover-pulse data-[state=active]:glass-badge data-[state=active]:glass-text-glow">
                 <Target className="h-4 w-4" />
                 Details
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="client" className="space-y-4">
-              <Card>
+              <Card className="glass-card glass-hover-tilt">
                 <CardContent className="p-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -217,6 +236,7 @@ export default function CreateDealModal({ open, onOpenChange }: CreateDealModalP
                         value={formData.clientName}
                         onChange={(e) => updateFormData('clientName', e.target.value)}
                         placeholder="Enter client full name"
+                        className="glass-input glass-hover-pulse"
                         required
                       />
                     </div>
@@ -227,7 +247,7 @@ export default function CreateDealModal({ open, onOpenChange }: CreateDealModalP
                         value={formData.clientType} 
                         onValueChange={(value) => updateFormData('clientType', value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="glass-input glass-hover-pulse">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -273,7 +293,7 @@ export default function CreateDealModal({ open, onOpenChange }: CreateDealModalP
             </TabsContent>
 
             <TabsContent value="property" className="space-y-4">
-              <Card>
+              <Card className="glass-card glass-hover-tilt">
                 <CardContent className="p-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2 space-y-2">
@@ -297,7 +317,7 @@ export default function CreateDealModal({ open, onOpenChange }: CreateDealModalP
                         value={formData.propertyType} 
                         onValueChange={(value) => updateFormData('propertyType', value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="glass-input glass-hover-pulse">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -364,7 +384,7 @@ export default function CreateDealModal({ open, onOpenChange }: CreateDealModalP
             </TabsContent>
 
             <TabsContent value="deal" className="space-y-4">
-              <Card>
+              <Card className="glass-card glass-hover-tilt">
                 <CardContent className="p-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -373,7 +393,7 @@ export default function CreateDealModal({ open, onOpenChange }: CreateDealModalP
                         value={formData.dealType} 
                         onValueChange={(value) => updateFormData('dealType', value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="glass-input glass-hover-pulse">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -391,7 +411,7 @@ export default function CreateDealModal({ open, onOpenChange }: CreateDealModalP
                         value={formData.priority} 
                         onValueChange={(value) => updateFormData('priority', value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="glass-input glass-hover-pulse">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -471,7 +491,7 @@ export default function CreateDealModal({ open, onOpenChange }: CreateDealModalP
             </TabsContent>
 
             <TabsContent value="details" className="space-y-4">
-              <Card>
+              <Card className="glass-card glass-hover-tilt">
                 <CardContent className="p-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -480,7 +500,7 @@ export default function CreateDealModal({ open, onOpenChange }: CreateDealModalP
                         value={formData.leadSource} 
                         onValueChange={(value) => updateFormData('leadSource', value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="glass-input glass-hover-pulse">
                           <SelectValue placeholder="Select lead source" />
                         </SelectTrigger>
                         <SelectContent>
@@ -502,7 +522,7 @@ export default function CreateDealModal({ open, onOpenChange }: CreateDealModalP
                         value={formData.assignedAgent} 
                         onValueChange={(value) => updateFormData('assignedAgent', value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="glass-input glass-hover-pulse">
                           <SelectValue placeholder="Select agent" />
                         </SelectTrigger>
                         <SelectContent>
@@ -566,7 +586,7 @@ export default function CreateDealModal({ open, onOpenChange }: CreateDealModalP
           </Tabs>
 
           {/* Form Actions */}
-          <div className="flex items-center justify-between pt-4 border-t">
+          <div className="flex items-center justify-between pt-4 border-t glass-border">
             <div className="flex items-center gap-2">
               <Badge className={getPriorityColor(formData.priority)}>
                 <Star className="h-3 w-3 mr-1" />
@@ -581,13 +601,19 @@ export default function CreateDealModal({ open, onOpenChange }: CreateDealModalP
             </div>
             
             <div className="flex gap-3">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+                className="glass-button glass-hover-pulse"
+              >
                 Cancel
               </Button>
               <Button 
                 type="submit" 
                 disabled={isSubmitting || !formData.clientName || !formData.propertyAddress || !formData.dealValue}
-                className="bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600"
+                variant="liquid"
+                className="glass-button-primary glass-hover-glow glass-click-ripple"
               >
                 {isSubmitting ? (
                   <motion.div

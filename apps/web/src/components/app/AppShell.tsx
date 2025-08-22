@@ -25,8 +25,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTheme } from "@/contexts/ThemeContext";
 import EnhancedSidebar from "./EnhancedSidebar";
-import MobileNavigation from "./MobileNavigation";
+import MobileShell from "./MobileShell";
 import ChatAgent from "./ChatAgent";
+import ComposeEmailModal from "@/components/inbox/ComposeEmailModal";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { signOut } from "next-auth/react";
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -44,23 +50,113 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [contactFormData, setContactFormData] = useState({ name: '', email: '', phone: '', notes: '' });
+  const [listingFormData, setListingFormData] = useState({ address: '', price: '', beds: '', baths: '', sqft: '', description: '' });
+  const [meetingFormData, setMeetingFormData] = useState({ title: '', date: '', time: '', attendees: '', notes: '' });
+  const [modalLoading, setModalLoading] = useState(false);
   const [quickActionsPosition, setQuickActionsPosition] = useState({ top: 0, left: 0 });
   const [notificationPosition, setNotificationPosition] = useState({ top: 0, right: 0 });
   const [profilePosition, setProfilePosition] = useState({ top: 0, right: 0 });
-  const [showMobileNav, setShowMobileNav] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [timeOfDay, setTimeOfDay] = useState('');
   const [syncLoading, setSyncLoading] = useState(false);
   const [pageTransition, setPageTransition] = useState(false);
+  const [showComposeModal, setShowComposeModal] = useState(false);
+  const [showCreateContactModal, setShowCreateContactModal] = useState(false);
+  const [showCreateListingModal, setShowCreateListingModal] = useState(false);
+  const [showScheduleMeetingModal, setShowScheduleMeetingModal] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch notifications
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const response = await fetch('/api/notifications');
+        if (response.ok) {
+          const data = await response.json();
+          setNotifications(data);
+          // Count unread notifications
+          const unread = data.filter((notif: any) => !notif.isRead).length;
+          setUnreadCount(unread);
+        }
+      } catch (error) {
+        console.error('Failed to fetch notifications:', error);
+      }
+    };
+
+    fetchNotifications();
+    // Refresh notifications every 30 seconds
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Search functionality
+  useEffect(() => {
+    const performSearch = async () => {
+      if (searchQuery.length < 2) {
+        setSearchResults([]);
+        return;
+      }
+
+      setSearchLoading(true);
+      try {
+        // Search across multiple endpoints
+        const [contactsRes, dealsRes] = await Promise.all([
+          fetch(`/api/contacts?search=${encodeURIComponent(searchQuery)}`),
+          fetch(`/api/pipeline/stages?search=${encodeURIComponent(searchQuery)}`)
+        ]);
+
+        const results = [];
+        
+        if (contactsRes.ok) {
+          const contactsData = await contactsRes.json();
+          const contacts = contactsData.contacts || contactsData || [];
+          contacts.slice(0, 3).forEach((contact: any) => {
+            results.push({
+              id: `contact-${contact.id}`,
+              type: 'contact',
+              title: contact.name || contact.firstName + ' ' + contact.lastName,
+              subtitle: `Contact • ${contact.email || 'No email'}`,
+              icon: 'User',
+              href: `/app/contacts/${contact.id}`
+            });
+          });
+        }
+
+        if (dealsRes.ok) {
+          const dealsData = await dealsRes.json();
+          const stages = dealsData.stages || [];
+          const deals = stages.flatMap((stage: any) => stage.deals || []);
+          deals.slice(0, 3).forEach((deal: any) => {
+            results.push({
+              id: `deal-${deal.id}`,
+              type: 'deal',
+              title: deal.title || deal.dealTitle,
+              subtitle: `Deal • $${deal.dealValue?.toLocaleString() || '0'}`,
+              icon: 'TrendingUp',
+              href: `/app/pipeline?deal=${deal.id}`
+            });
+          });
+        }
+
+        setSearchResults(results);
+      } catch (error) {
+        console.error('Search failed:', error);
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(performSearch, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery]);
   const pathname = usePathname();
 
-  const mobileNavItems = [
-    { href: "/app", label: "Dashboard", icon: BarChart3 },
-    { href: "/app/properties", label: "Properties", icon: Building2 },
-    { href: "/app/showings", label: "Showings", icon: Calendar },
-    { href: "/app/insights", label: "Insights", icon: TrendingUp }
-  ];
   
   useEffect(() => setShowDrawer(Boolean(rightDrawer)), [rightDrawer]);
 
@@ -209,8 +305,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         ctaIcon: Edit3,
         ctaAction: () => {
           // Trigger compose modal or navigate to compose
-          console.log('Compose email');
-        }
+                  }
       };
     }
     if (pathname.includes('/contacts')) {
@@ -254,11 +349,6 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         <div className="absolute w-64 h-64 top-[60%] right-[15%] rounded-full glass-surface-subtle blur-3xl" />
       </div>
 
-      {/* Mobile Navigation */}
-      <MobileNavigation 
-        isOpen={showMobileNav}
-        onToggle={() => setShowMobileNav(!showMobileNav)}
-      />
 
       {/* Desktop Layout - Seamless Connection */}
       <div 
@@ -415,7 +505,9 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                     aria-label="Notifications"
                   >
                     <Bell className="h-4 w-4" style={{ color: 'var(--glass-text)' }} />
-                    <div className="glass-notification-badge new">3</div>
+                    {unreadCount > 0 && (
+                      <div className="glass-notification-badge new">{unreadCount}</div>
+                    )}
                   </button>
 
                 </div>
@@ -470,61 +562,10 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       </div>
 
       {/* Mobile Layout */}
-      <div className="md:hidden min-h-screen flex flex-col">
-        {/* Mobile Header */}
-        <header 
-          className="glass-panel fixed top-0 left-0 right-0 z-40 h-16 flex items-center border-b"
-          style={{ 
-            background: 'var(--glass-surface)',
-            borderBottomColor: 'var(--glass-border)',
-            backdropFilter: 'blur(20px) saturate(1.2)',
-            WebkitBackdropFilter: 'blur(20px) saturate(1.2)',
-            borderRadius: '0',
-            boxShadow: `0 1px 0 0 var(--glass-border)`
-          }}
-        >
-          <div className="px-4 w-full flex items-center justify-between gap-4">
-            {/* Mobile Logo */}
-            <Link href="/app" className="flex items-center gap-2" aria-label="Rivor dashboard">
-              <div 
-                className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg glass-droplet"
-                style={{ 
-                  background: theme === 'black' 
-                    ? 'linear-gradient(135deg, #ffffff, rgba(255,255,255,0.8))'
-                    : 'linear-gradient(135deg, #000000, rgba(0,0,0,0.8))',
-                  color: theme === 'black' ? '#000000' : '#ffffff'
-                }}
-              >
-                <span className="font-bold text-sm">R</span>
-              </div>
-            </Link>
-            
-            {/* Mobile Actions */}
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-9 w-9"
-                onClick={() => setShowNotifications(true)}
-              >
-                <Bell className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-9 w-9"
-                onClick={() => setShowMobileNav(true)}
-              >
-                <User className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </header>
-
-        {/* Mobile Content */}
-        <main className="flex-1 overflow-auto pt-16 pb-20">
+      <div className="md:hidden">
+        <MobileShell>
           {children}
-        </main>
+        </MobileShell>
       </div>
 
       {/* Chat Agent */}
@@ -549,7 +590,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         }}
       >
         <div className="space-y-2">
-          <div className="glass-quick-action-item" onClick={() => { /* Add Contact */ setShowQuickActions(false); }}>
+          <div className="glass-quick-action-item" onClick={() => { setShowCreateContactModal(true); setShowQuickActions(false); }}>
             <div className="glass-quick-action-icon">
               <User className="h-4 w-4" style={{ color: 'var(--glass-text)' }} />
             </div>
@@ -558,7 +599,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Create new contact</div>
             </div>
           </div>
-          <div className="glass-quick-action-item" onClick={() => { /* New Listing */ setShowQuickActions(false); }}>
+          <div className="glass-quick-action-item" onClick={() => { setShowCreateListingModal(true); setShowQuickActions(false); }}>
             <div className="glass-quick-action-icon">
               <Building2 className="h-4 w-4" style={{ color: 'var(--glass-text)' }} />
             </div>
@@ -567,7 +608,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Add property listing</div>
             </div>
           </div>
-          <div className="glass-quick-action-item" onClick={() => { /* Schedule Meeting */ setShowQuickActions(false); }}>
+          <div className="glass-quick-action-item" onClick={() => { setShowScheduleMeetingModal(true); setShowQuickActions(false); }}>
             <div className="glass-quick-action-icon">
               <Calendar className="h-4 w-4" style={{ color: 'var(--glass-text)' }} />
             </div>
@@ -576,7 +617,11 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Book appointment</div>
             </div>
           </div>
-          <div className="glass-quick-action-item" onClick={() => { /* Send Email */ setShowQuickActions(false); }}>
+          <div className="glass-quick-action-item" onClick={() => { 
+             
+            setShowComposeModal(true); 
+            setShowQuickActions(false); 
+          }}>
             <div className="glass-quick-action-icon">
               <MessageSquare className="h-4 w-4" style={{ color: 'var(--glass-text)' }} />
             </div>
@@ -585,7 +630,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Compose message</div>
             </div>
           </div>
-          <div className="glass-quick-action-item" onClick={() => { /* View Reports */ setShowQuickActions(false); }}>
+          <Link href="/app/reporting" className="glass-quick-action-item" onClick={() => setShowQuickActions(false)}>
             <div className="glass-quick-action-icon">
               <BarChart3 className="h-4 w-4" style={{ color: 'var(--glass-text)' }} />
             </div>
@@ -593,7 +638,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               <div className="font-medium text-sm" style={{ color: 'var(--glass-text)' }}>View Reports</div>
               <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Analytics dashboard</div>
             </div>
-          </div>
+          </Link>
         </div>
       </div>
 
@@ -607,27 +652,42 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         maxWidth: '90vw'
       }}>
         <div className="space-y-3">
-          <div className="flex items-center gap-3 p-3 rounded-lg glass-hover-pulse">
-            <User className="h-4 w-4" style={{ color: 'var(--glass-text-muted)' }} />
-            <div>
-              <div className="font-medium text-sm" style={{ color: 'var(--glass-text)' }}>John Smith</div>
-              <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Contact • john@example.com</div>
+          {searchLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="glass-spinner w-5 h-5"></div>
             </div>
-          </div>
-          <div className="flex items-center gap-3 p-3 rounded-lg glass-hover-pulse">
-            <Building2 className="h-4 w-4" style={{ color: 'var(--glass-text-muted)' }} />
-            <div>
-              <div className="font-medium text-sm" style={{ color: 'var(--glass-text)' }}>Maple Street Property</div>
-              <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Listing • $450,000</div>
+          ) : searchResults.length > 0 ? (
+            searchResults.map((result: any) => {
+              const IconComponent = result.icon === 'User' ? User : 
+                                 result.icon === 'TrendingUp' ? TrendingUp :
+                                 result.icon === 'Building2' ? Building2 : MessageSquare;
+              
+              return (
+                <Link 
+                  key={result.id} 
+                  href={result.href}
+                  className="flex items-center gap-3 p-3 rounded-lg glass-hover-pulse"
+                  onClick={() => setShowSearchResults(false)}
+                >
+                  <IconComponent className="h-4 w-4" style={{ color: 'var(--glass-text-muted)' }} />
+                  <div>
+                    <div className="font-medium text-sm" style={{ color: 'var(--glass-text)' }}>{result.title}</div>
+                    <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>{result.subtitle}</div>
+                  </div>
+                </Link>
+              );
+            })
+          ) : searchQuery.length > 0 ? (
+            <div className="text-center py-8">
+              <Search className="h-8 w-8 mx-auto mb-2 opacity-50" style={{ color: 'var(--glass-text-muted)' }} />
+              <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>No results found</p>
             </div>
-          </div>
-          <div className="flex items-center gap-3 p-3 rounded-lg glass-hover-pulse">
-            <MessageSquare className="h-4 w-4" style={{ color: 'var(--glass-text-muted)' }} />
-            <div>
-              <div className="font-medium text-sm" style={{ color: 'var(--glass-text)' }}>Email: Property Viewing</div>
-              <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Inbox • 2 hours ago</div>
+          ) : (
+            <div className="text-center py-8">
+              <Search className="h-8 w-8 mx-auto mb-2 opacity-50" style={{ color: 'var(--glass-text-muted)' }} />
+              <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>Start typing to search...</p>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -639,30 +699,59 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         width: '320px'
       }}>
         <div className="space-y-3">
-          <div className="flex items-center gap-3 p-2 rounded-lg glass-hover-pulse">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-            <div className="flex-1">
-              <p className="text-sm font-medium" style={{ color: 'var(--glass-text)' }}>New deal added</p>
-              <p className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Sarah Johnson - $250K</p>
+          {notifications.length > 0 ? (
+            notifications.slice(0, 5).map((notification: any) => {
+              const getNotificationColor = (type: string, priority: string) => {
+                if (priority === 'high') return 'bg-red-500';
+                if (priority === 'medium') return 'bg-orange-500';
+                switch (type) {
+                  case 'lead': return 'bg-blue-500';
+                  case 'email': return 'bg-purple-500';
+                  case 'meeting': return 'bg-green-500';
+                  case 'task': return 'bg-yellow-500';
+                  case 'integration': return 'bg-indigo-500';
+                  case 'system': return 'bg-gray-500';
+                  default: return 'bg-blue-500';
+                }
+              };
+              
+              const getTimeAgo = (timestamp: string) => {
+                const now = new Date();
+                const time = new Date(timestamp);
+                const diffMs = now.getTime() - time.getTime();
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMs / 3600000);
+                const diffDays = Math.floor(diffMs / 86400000);
+                
+                if (diffMins < 1) return 'now';
+                if (diffMins < 60) return `${diffMins}m`;
+                if (diffHours < 24) return `${diffHours}h`;
+                return `${diffDays}d`;
+              };
+              
+              return (
+                <div key={notification.id} className="flex items-center gap-3 p-2 rounded-lg glass-hover-pulse">
+                  <div className={`w-2 h-2 rounded-full ${getNotificationColor(notification.type, notification.priority)}`}></div>
+                  <div className="flex-1">
+                    <p className={`text-sm ${notification.isRead ? 'font-normal' : 'font-medium'}`} style={{ color: 'var(--glass-text)' }}>
+                      {notification.title}
+                    </p>
+                    <p className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
+                      {notification.message}
+                    </p>
+                  </div>
+                  <span className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
+                    {getTimeAgo(notification.timestamp)}
+                  </span>
+                </div>
+              );
+            })
+          ) : (
+            <div className="text-center py-8">
+              <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" style={{ color: 'var(--glass-text-muted)' }} />
+              <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>No notifications</p>
             </div>
-            <span className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>2m</span>
-          </div>
-          <div className="flex items-center gap-3 p-2 rounded-lg glass-hover-pulse">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <div className="flex-1">
-              <p className="text-sm font-medium" style={{ color: 'var(--glass-text)' }}>Meeting confirmed</p>
-              <p className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Property viewing at 3 PM</p>
-            </div>
-            <span className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>5m</span>
-          </div>
-          <div className="flex items-center gap-3 p-2 rounded-lg glass-hover-pulse">
-            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-            <div className="flex-1">
-              <p className="text-sm font-medium" style={{ color: 'var(--glass-text)' }}>Document signed</p>
-              <p className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Contract for Maple St</p>
-            </div>
-            <span className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>1h</span>
-          </div>
+          )}
         </div>
       </div>
 
@@ -674,25 +763,306 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         width: '240px'
       }}>
         <div className="space-y-1">
-          <a href="#" className="glass-profile-menu-item">
+          <Link href="/app/settings" className="glass-profile-menu-item" onClick={() => setShowUserProfile(false)}>
             <User className="h-4 w-4" />
             <span>View Profile</span>
-          </a>
-          <a href="#" className="glass-profile-menu-item">
+          </Link>
+          <Link href="/app/settings" className="glass-profile-menu-item" onClick={() => setShowUserProfile(false)}>
             <Settings className="h-4 w-4" />
             <span>Settings</span>
-          </a>
-          <a href="#" className="glass-profile-menu-item">
+          </Link>
+          <button className="glass-profile-menu-item w-full text-left" onClick={() => { setShowNotifications(true); setShowUserProfile(false); }}>
             <Bell className="h-4 w-4" />
             <span>Notifications</span>
-          </a>
+          </button>
           <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent my-2 opacity-20"></div>
-          <a href="#" className="glass-profile-menu-item text-red-500">
+          <button 
+            onClick={() => { 
+              setShowUserProfile(false); 
+              signOut({ callbackUrl: '/auth/signin' }); 
+            }}
+            className="glass-profile-menu-item text-red-500 w-full text-left"
+          >
             <LogOut className="h-4 w-4" />
             <span>Sign Out</span>
-          </a>
+          </button>
         </div>
       </div>
+
+      {/* Modals */}
+      <ComposeEmailModal
+        trigger={null}
+        open={showComposeModal}
+        onOpenChange={setShowComposeModal}
+      />
+
+      <Dialog open={showCreateContactModal} onOpenChange={setShowCreateContactModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Contact</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="contact-name">Full Name</Label>
+              <Input 
+                id="contact-name" 
+                placeholder="Enter contact name" 
+                value={contactFormData.name}
+                onChange={(e) => setContactFormData({...contactFormData, name: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="contact-email">Email</Label>
+              <Input 
+                id="contact-email" 
+                type="email" 
+                placeholder="Enter email address" 
+                value={contactFormData.email}
+                onChange={(e) => setContactFormData({...contactFormData, email: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="contact-phone">Phone</Label>
+              <Input 
+                id="contact-phone" 
+                placeholder="Enter phone number" 
+                value={contactFormData.phone}
+                onChange={(e) => setContactFormData({...contactFormData, phone: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="contact-notes">Notes</Label>
+              <Textarea 
+                id="contact-notes" 
+                placeholder="Additional notes..." 
+                value={contactFormData.notes}
+                onChange={(e) => setContactFormData({...contactFormData, notes: e.target.value})}
+              />
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button variant="outline" onClick={() => setShowCreateContactModal(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button 
+                variant="liquid" 
+                className="flex-1"
+                onClick={async () => {
+                  setModalLoading(true);
+                  try {
+                    const response = await fetch('/api/contacts', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(contactFormData)
+                    });
+                    if (response.ok) {
+                      setShowCreateContactModal(false);
+                      setContactFormData({ name: '', email: '', phone: '', notes: '' });
+                      // TODO: Show success toast
+                    }
+                  } catch (error) {
+                    console.error('Failed to create contact:', error);
+                  } finally {
+                    setModalLoading(false);
+                  }
+                }}
+                disabled={modalLoading}
+              >
+                {modalLoading ? 'Saving...' : 'Save Contact'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCreateListingModal} onOpenChange={setShowCreateListingModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New Listing</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="listing-address">Property Address</Label>
+                <Input 
+                  id="listing-address" 
+                  placeholder="Enter property address" 
+                  value={listingFormData.address}
+                  onChange={(e) => setListingFormData({...listingFormData, address: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="listing-price">Price</Label>
+                <Input 
+                  id="listing-price" 
+                  placeholder="$0" 
+                  value={listingFormData.price}
+                  onChange={(e) => setListingFormData({...listingFormData, price: e.target.value})}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="listing-beds">Bedrooms</Label>
+                <Input 
+                  id="listing-beds" 
+                  type="number" 
+                  placeholder="0" 
+                  value={listingFormData.beds}
+                  onChange={(e) => setListingFormData({...listingFormData, beds: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="listing-baths">Bathrooms</Label>
+                <Input 
+                  id="listing-baths" 
+                  type="number" 
+                  placeholder="0" 
+                  value={listingFormData.baths}
+                  onChange={(e) => setListingFormData({...listingFormData, baths: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="listing-sqft">Square Feet</Label>
+                <Input 
+                  id="listing-sqft" 
+                  type="number" 
+                  placeholder="0" 
+                  value={listingFormData.sqft}
+                  onChange={(e) => setListingFormData({...listingFormData, sqft: e.target.value})}
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="listing-description">Description</Label>
+              <Textarea 
+                id="listing-description" 
+                placeholder="Property description..." 
+                value={listingFormData.description}
+                onChange={(e) => setListingFormData({...listingFormData, description: e.target.value})}
+              />
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button variant="outline" onClick={() => setShowCreateListingModal(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button 
+                variant="liquid" 
+                className="flex-1"
+                onClick={async () => {
+                  setModalLoading(true);
+                  try {
+                    const response = await fetch('/api/listings', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(listingFormData)
+                    });
+                    if (response.ok) {
+                      setShowCreateListingModal(false);
+                      setListingFormData({ address: '', price: '', beds: '', baths: '', sqft: '', description: '' });
+                      // TODO: Show success toast
+                    }
+                  } catch (error) {
+                    console.error('Failed to create listing:', error);
+                  } finally {
+                    setModalLoading(false);
+                  }
+                }}
+                disabled={modalLoading}
+              >
+                {modalLoading ? 'Creating...' : 'Create Listing'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showScheduleMeetingModal} onOpenChange={setShowScheduleMeetingModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Schedule Meeting</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="meeting-title">Meeting Title</Label>
+              <Input 
+                id="meeting-title" 
+                placeholder="Enter meeting title" 
+                value={meetingFormData.title}
+                onChange={(e) => setMeetingFormData({...meetingFormData, title: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="meeting-date">Date</Label>
+                <Input 
+                  id="meeting-date" 
+                  type="date" 
+                  value={meetingFormData.date}
+                  onChange={(e) => setMeetingFormData({...meetingFormData, date: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="meeting-time">Time</Label>
+                <Input 
+                  id="meeting-time" 
+                  type="time" 
+                  value={meetingFormData.time}
+                  onChange={(e) => setMeetingFormData({...meetingFormData, time: e.target.value})}
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="meeting-attendees">Attendees</Label>
+              <Input 
+                id="meeting-attendees" 
+                placeholder="Enter email addresses" 
+                value={meetingFormData.attendees}
+                onChange={(e) => setMeetingFormData({...meetingFormData, attendees: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="meeting-notes">Notes</Label>
+              <Textarea 
+                id="meeting-notes" 
+                placeholder="Meeting agenda or notes..." 
+                value={meetingFormData.notes}
+                onChange={(e) => setMeetingFormData({...meetingFormData, notes: e.target.value})}
+              />
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button variant="outline" onClick={() => setShowScheduleMeetingModal(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button 
+                variant="liquid" 
+                className="flex-1"
+                onClick={async () => {
+                  setModalLoading(true);
+                  try {
+                    const response = await fetch('/api/meetings', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(meetingFormData)
+                    });
+                    if (response.ok) {
+                      setShowScheduleMeetingModal(false);
+                      setMeetingFormData({ title: '', date: '', time: '', attendees: '', notes: '' });
+                      // TODO: Show success toast
+                    }
+                  } catch (error) {
+                    console.error('Failed to schedule meeting:', error);
+                  } finally {
+                    setModalLoading(false);
+                  }
+                }}
+                disabled={modalLoading}
+              >
+                {modalLoading ? 'Scheduling...' : 'Schedule Meeting'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Toaster />
     </div>

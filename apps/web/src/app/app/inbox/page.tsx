@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/app/AppShell";
+import MobileInbox from "@/components/app/MobileInbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -84,6 +85,15 @@ export default function InboxPage() {
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [showComposeModal, setShowComposeModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   const [replyToEmail, setReplyToEmail] = useState<{ email: string; name: string; subject: string; threadId: string } | null>(null);
 
   // Load emails from API
@@ -337,6 +347,17 @@ export default function InboxPage() {
     setReplyToEmail(null);
   };
 
+  // Mobile view
+  if (isMobile) {
+    return (
+      <div className={`${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'}`}>
+        <AppShell>
+          <MobileInbox />
+        </AppShell>
+      </div>
+    );
+  }
+
   return (
     <div className={`${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'}`}>
       <AppShell>
@@ -369,7 +390,10 @@ export default function InboxPage() {
                 variant="liquid"
                 size="lg"
                 className="px-6"
-                onClick={() => setShowComposeModal(true)}
+                onClick={() => {
+                  console.log('Compose button clicked in inbox');
+                  setShowComposeModal(true);
+                }}
               >
                 <Edit3 className="h-5 w-5 mr-2" />
                 Compose

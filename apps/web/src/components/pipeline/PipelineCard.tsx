@@ -77,9 +77,8 @@ export default function PipelineCard({ lead, isDragging = false }: PipelineCardP
       {...attributes}
       {...listeners}
       className={cn(
-        'group relative bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700',
-        'hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing',
-        isBeingDragged && 'shadow-lg ring-2 ring-teal-400/50 rotate-2'
+        'group relative glass-card rounded-xl p-4 cursor-grab active:cursor-grabbing glass-hover-tilt',
+        isBeingDragged && 'glass-border-active ring-2 ring-teal-400/50 rotate-2'
       )}
       whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
       whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}

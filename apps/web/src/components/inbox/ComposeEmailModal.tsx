@@ -199,15 +199,12 @@ export default function ComposeEmailModal({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Compose
-          </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'var(--glass-surface)', color: 'var(--glass-text)' }}>
+      {trigger && (
+        <DialogTrigger asChild>
+          {trigger}
+        </DialogTrigger>
+      )}
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto glass-modal glass-border-active glass-hover-glow">
         <DialogHeader>
           <DialogTitle>
             {threadId ? 'Reply to Email' : 'Compose New Email'}

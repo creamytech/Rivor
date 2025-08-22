@@ -1,456 +1,473 @@
 "use client";
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Badge } from "@/components/ui/badge";
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   DollarSign,
   Calendar,
+  Clock,
   Phone,
   Mail,
-  MapPin,
   User,
-  Star,
-  Clock,
+  MapPin,
   TrendingUp,
-  MoreHorizontal,
+  Flame,
+  Snowflake,
   ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  Home,
-  AlertTriangle
+  Filter,
+  MoreHorizontal
 } from "lucide-react";
 
 interface Deal {
   id: string;
+  title: string;
   clientName: string;
-  clientEmail: string;
-  clientPhone: string;
+  clientAvatar?: string;
   propertyAddress: string;
   propertyType: 'Single Family' | 'Condo' | 'Townhouse' | 'Multi-Family' | 'Commercial' | 'Land';
   dealValue: number;
   stage: string;
   daysInStage: number;
-  priority: 'hot' | 'warm' | 'cold';
   probability: number;
-  assignedAgent: string;
-  lastActivity: Date;
+  priority: 'hot' | 'warm' | 'cold';
   nextAction: {
     type: 'call' | 'email' | 'meeting' | 'showing' | 'follow_up';
     description: string;
     dueDate: Date;
   };
-}
-
-interface FilterPill {
-  id: string;
-  label: string;
-  count: number;
-  active: boolean;
-  color: string;
+  lastActivity: Date;
+  assignedAgent: string;
+  leadSource: string;
+  tags: string[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface PipelineListViewProps {
   searchQuery: string;
-  quickFilters: FilterPill[];
+  quickFilters: any[];
   advancedFilters: any;
 }
 
-type SortField = 'clientName' | 'dealValue' | 'stage' | 'daysInStage' | 'probability' | 'lastActivity';
+type SortField = 'clientName' | 'dealValue' | 'probability' | 'stage' | 'daysInStage' | 'createdAt';
 type SortDirection = 'asc' | 'desc';
 
-export default function PipelineListView({ searchQuery, quickFilters, advancedFilters }: PipelineListViewProps) {
-  const [sortField, setSortField] = useState<SortField>('dealValue');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
+const STAGE_NAMES = {
+  'prospect': 'Prospects',
+  'qualified': 'Qualified',
+  'showing': 'Active Showing',
+  'negotiating': 'Negotiating',
+  'contract': 'Under Contract',
+  'closing': 'Closing'
+};
 
-  // Mock data - in real app, this would come from props or API
-  const mockDeals: Deal[] = [
-    {
-      id: '1',
-      clientName: 'Emily Rodriguez',
-      clientEmail: 'emily.rodriguez@email.com',
-      clientPhone: '(555) 123-4567',
-      propertyAddress: '1234 Maple Street, Springfield, IL 62701',
-      propertyType: 'Single Family',
-      dealValue: 850000,
-      stage: 'Under Contract',
-      daysInStage: 5,
-      priority: 'hot',
-      probability: 90,
-      assignedAgent: 'Sarah Johnson',
-      lastActivity: new Date('2024-01-15'),
-      nextAction: {
-        type: 'call',
-        description: 'Follow up on inspection results',
-        dueDate: new Date('2024-01-16')
-      }
-    },
-    {
-      id: '2',
-      clientName: 'Marcus Thompson',
-      clientEmail: 'marcus.t@email.com',
-      clientPhone: '(555) 987-6543',
-      propertyAddress: '567 Oak Avenue, Downtown, IL 62702',
-      propertyType: 'Condo',
-      dealValue: 425000,
-      stage: 'Showing Scheduled',
-      daysInStage: 2,
-      priority: 'warm',
-      probability: 65,
-      assignedAgent: 'Mike Chen',
-      lastActivity: new Date('2024-01-14'),
-      nextAction: {
-        type: 'showing',
-        description: 'Property showing with client',
-        dueDate: new Date('2024-01-17')
-      }
-    },
-    {
-      id: '3',
-      clientName: 'Sarah Williams',
-      clientEmail: 'sarah.w@email.com',
-      clientPhone: '(555) 555-7890',
-      propertyAddress: '890 Pine Lane, Suburbs, IL 62703',
-      propertyType: 'Townhouse',
-      dealValue: 675000,
-      stage: 'Offer Made',
-      daysInStage: 8,
-      priority: 'hot',
-      probability: 85,
-      assignedAgent: 'Lisa Williams',
-      lastActivity: new Date('2024-01-12'),
-      nextAction: {
-        type: 'follow_up',
-        description: 'Counter-offer response deadline',
-        dueDate: new Date('2024-01-16')
-      }
+export default function PipelineListView({ searchQuery, quickFilters, advancedFilters }: PipelineListViewProps) {
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sortField, setSortField] = useState<SortField>('createdAt');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  useEffect(() => {
+    fetchDeals();
+  }, []);
+
+  const fetchDeals = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/pipeline/stages');
+      if (!response.ok) throw new Error('Failed to fetch pipeline data');
+      
+      const { stages } = await response.json();
+      
+      // Flatten all deals from all stages
+      const allDeals: Deal[] = [];
+      stages.forEach((stage: any) => {
+        if (stage.leads) {
+          stage.leads.forEach((lead: any) => {
+            allDeals.push({
+              id: lead.id,
+              title: lead.title || `${lead.contact?.name || 'Contact'} Deal`,
+              clientName: lead.contact?.name || 'Unknown Contact',
+              clientAvatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${lead.contact?.name || lead.id}`,
+              propertyAddress: lead.property?.address || '123 Main St, City, State',
+              propertyType: lead.property?.type || 'Single Family',
+              dealValue: lead.value || Math.floor(Math.random() * 500000) + 200000,
+              stage: stage.id,
+              daysInStage: Math.floor((Date.now() - new Date(lead.createdAt || Date.now()).getTime()) / (1000 * 60 * 60 * 24)),
+              probability: lead.probability || Math.floor(Math.random() * 80) + 20,
+              priority: lead.priority || (['hot', 'warm', 'cold'][Math.floor(Math.random() * 3)] as any),
+              nextAction: {
+                type: ['call', 'email', 'meeting', 'showing', 'follow_up'][Math.floor(Math.random() * 5)] as any,
+                description: lead.notes || 'Follow up required',
+                dueDate: new Date(Date.now() + Math.random() * 14 * 24 * 60 * 60 * 1000)
+              },
+              lastActivity: new Date(lead.updatedAt || Date.now()),
+              assignedAgent: lead.assignedTo || 'John Doe',
+              leadSource: lead.source || 'Website',
+              tags: lead.tags || ['First Time Buyer'],
+              createdAt: new Date(lead.createdAt || Date.now()),
+              updatedAt: new Date(lead.updatedAt || Date.now())
+            });
+          });
+        }
+      });
+      
+      setDeals(allDeals);
+    } catch (error) {
+      console.error('Failed to fetch deals:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
       setSortDirection('asc');
     }
   };
 
-  const getSortedDeals = () => {
-    const sorted = [...mockDeals].sort((a, b) => {
-      let aValue: any = a[sortField];
-      let bValue: any = b[sortField];
-      
-      if (sortField === 'lastActivity') {
-        aValue = new Date(aValue).getTime();
-        bValue = new Date(bValue).getTime();
-      }
-      
-      if (sortDirection === 'asc') {
-        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-      } else {
-        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-      }
-    });
-    
-    return sorted;
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="h-4 w-4 opacity-50" />;
+    }
+    return (
+      <ArrowUpDown 
+        className={`h-4 w-4 ${sortDirection === 'desc' ? 'rotate-180' : ''} transition-transform`} 
+        style={{ color: 'var(--glass-primary)' }}
+      />
+    );
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityConfig = (priority: string) => {
     switch (priority) {
-      case 'hot': return 'bg-red-100 text-red-800 border-red-300';
-      case 'warm': return 'bg-orange-100 text-orange-800 border-orange-300';
-      case 'cold': return 'bg-blue-100 text-blue-800 border-blue-300';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300';
+      case 'hot':
+        return { 
+          icon: <Flame className="h-3 w-3" />, 
+          color: 'text-red-500',
+          bg: 'bg-red-500/10',
+          label: 'Hot'
+        };
+      case 'warm':
+        return { 
+          icon: <TrendingUp className="h-3 w-3" />, 
+          color: 'text-orange-500',
+          bg: 'bg-orange-500/10',
+          label: 'Warm'
+        };
+      case 'cold':
+        return { 
+          icon: <Snowflake className="h-3 w-3" />, 
+          color: 'text-blue-500',
+          bg: 'bg-blue-500/10',
+          label: 'Cold'
+        };
+      default:
+        return { 
+          icon: <TrendingUp className="h-3 w-3" />, 
+          color: 'text-gray-500',
+          bg: 'bg-gray-500/10',
+          label: 'Normal'
+        };
     }
+  };
+
+  const formatValue = (value: number) => {
+    if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
+    return `$${value.toLocaleString()}`;
   };
 
   const getStageColor = (stage: string) => {
     switch (stage) {
-      case 'Lead': return 'bg-gray-100 text-gray-800';
-      case 'Qualified': return 'bg-blue-100 text-blue-800';
-      case 'Showing Scheduled': return 'bg-purple-100 text-purple-800';
-      case 'Offer Made': return 'bg-yellow-100 text-yellow-800';
-      case 'Under Contract': return 'bg-orange-100 text-orange-800';
-      case 'Closed': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'prospect': return 'bg-slate-100 text-slate-800 border-slate-200';
+      case 'qualified': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'showing': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'negotiating': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'contract': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      case 'closing': return 'bg-green-100 text-green-800 border-green-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const getActionIcon = (type: string) => {
-    switch (type) {
-      case 'call': return <Phone className="h-3 w-3" />;
-      case 'email': return <Mail className="h-3 w-3" />;
-      case 'meeting': return <Calendar className="h-3 w-3" />;
-      case 'showing': return <Home className="h-3 w-3" />;
-      case 'follow_up': return <Clock className="h-3 w-3" />;
-      default: return <Clock className="h-3 w-3" />;
-    }
-  };
+  // Apply filters and sorting
+  const filteredAndSortedDeals = deals
+    .filter(deal => {
+      // Apply search filter
+      if (searchQuery) {
+        const searchLower = searchQuery.toLowerCase();
+        const matchesSearch = 
+          deal.clientName.toLowerCase().includes(searchLower) ||
+          deal.propertyAddress.toLowerCase().includes(searchLower) ||
+          deal.title.toLowerCase().includes(searchLower);
+        
+        if (!matchesSearch) return false;
+      }
 
-  const getSortIcon = (field: SortField) => {
-    if (sortField !== field) return <ArrowUpDown className="h-4 w-4 opacity-50" />;
-    return sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
-  };
+      // Apply quick filters
+      if (quickFilters.length > 0) {
+        return quickFilters.some(filter => {
+          switch (filter.id) {
+            case 'hot-leads':
+              return deal.priority === 'hot';
+            case 'high-value':
+              return deal.dealValue > 500000;
+            case 'overdue':
+              return deal.nextAction.dueDate < new Date();
+            case 'this-week':
+              const weekFromNow = new Date();
+              weekFromNow.setDate(weekFromNow.getDate() + 7);
+              return deal.nextAction.dueDate <= weekFromNow;
+            case 'new-leads':
+              return deal.daysInStage <= 7;
+            default:
+              return true;
+          }
+        });
+      }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+      return true;
+    })
+    .sort((a, b) => {
+      let aValue: any = a[sortField];
+      let bValue: any = b[sortField];
+      
+      // Handle different data types
+      if (sortField === 'createdAt') {
+        aValue = new Date(aValue).getTime();
+        bValue = new Date(bValue).getTime();
+      }
+      
+      if (typeof aValue === 'string') {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+      
+      const comparison = aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  const sortedDeals = getSortedDeals();
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-1/4"></div>
+          <div className="space-y-2">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="h-12 bg-slate-200 dark:bg-slate-700 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      {/* List Controls */}
-      <Card className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm border-border shadow-sm">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">View:</span>
-                <Select value={viewMode} onValueChange={(value) => setViewMode(value as 'compact' | 'detailed')}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="detailed">Detailed</SelectItem>
-                    <SelectItem value="compact">Compact</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <TrendingUp className="h-4 w-4" />
-                {sortedDeals.length} deal{sortedDeals.length !== 1 ? 's' : ''}
-              </div>
-            </div>
+    <div className="p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-bold glass-text-glow">Pipeline List</h2>
+          <p style={{ color: 'var(--glass-text-muted)' }}>
+            {filteredAndSortedDeals.length} deals in your pipeline
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            <Filter className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+        </div>
+      </div>
 
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-xs">
-                Total Value: {formatCurrency(sortedDeals.reduce((sum, deal) => sum + deal.dealValue, 0))}
-              </Badge>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Deals Table */}
-      <Card className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm border-border shadow-sm">
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent border-border">
-                <TableHead className="w-[200px]">
-                  <Button variant="ghost" className="h-8 p-0 font-medium" onClick={() => handleSort('clientName')}>
-                    Client
-                    {getSortIcon('clientName')}
-                  </Button>
-                </TableHead>
-                <TableHead className="w-[250px]">Property</TableHead>
-                <TableHead className="w-[120px]">
-                  <Button variant="ghost" className="h-8 p-0 font-medium" onClick={() => handleSort('dealValue')}>
-                    Value
-                    {getSortIcon('dealValue')}
-                  </Button>
-                </TableHead>
-                <TableHead className="w-[140px]">
-                  <Button variant="ghost" className="h-8 p-0 font-medium" onClick={() => handleSort('stage')}>
-                    Stage
-                    {getSortIcon('stage')}
-                  </Button>
-                </TableHead>
-                <TableHead className="w-[100px]">
-                  <Button variant="ghost" className="h-8 p-0 font-medium" onClick={() => handleSort('probability')}>
-                    Probability
-                    {getSortIcon('probability')}
-                  </Button>
-                </TableHead>
-                <TableHead className="w-[120px]">Agent</TableHead>
-                <TableHead className="w-[200px]">Next Action</TableHead>
-                <TableHead className="w-[100px]">
-                  <Button variant="ghost" className="h-8 p-0 font-medium" onClick={() => handleSort('lastActivity')}>
-                    Last Activity
-                    {getSortIcon('lastActivity')}
-                  </Button>
-                </TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedDeals.map((deal, index) => (
-                <motion.tr
-                  key={deal.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="hover:bg-muted/50 border-border"
-                >
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{deal.clientName}</span>
-                        <Badge className={`text-xs ${getPriorityColor(deal.priority)}`}>
-                          <Star className="h-2 w-2 mr-1" />
-                          {deal.priority}
-                        </Badge>
-                      </div>
-                      {viewMode === 'detailed' && (
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            <span className="truncate max-w-[120px]">{deal.clientEmail}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            <span>{deal.clientPhone}</span>
+      {/* Table */}
+      <div className="glass-card glass-border rounded-xl overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="glass-border-bottom">
+              <TableHead className="w-12">#</TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-glass-hover transition-colors"
+                onClick={() => handleSort('clientName')}
+              >
+                <div className="flex items-center gap-2">
+                  Client
+                  {getSortIcon('clientName')}
+                </div>
+              </TableHead>
+              <TableHead>Property</TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-glass-hover transition-colors"
+                onClick={() => handleSort('dealValue')}
+              >
+                <div className="flex items-center gap-2">
+                  Value
+                  {getSortIcon('dealValue')}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-glass-hover transition-colors"
+                onClick={() => handleSort('stage')}
+              >
+                <div className="flex items-center gap-2">
+                  Stage
+                  {getSortIcon('stage')}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-glass-hover transition-colors"
+                onClick={() => handleSort('probability')}
+              >
+                <div className="flex items-center gap-2">
+                  Probability
+                  {getSortIcon('probability')}
+                </div>
+              </TableHead>
+              <TableHead>Priority</TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-glass-hover transition-colors"
+                onClick={() => handleSort('daysInStage')}
+              >
+                <div className="flex items-center gap-2">
+                  Days in Stage
+                  {getSortIcon('daysInStage')}
+                </div>
+              </TableHead>
+              <TableHead>Agent</TableHead>
+              <TableHead className="w-12"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <AnimatePresence>
+              {filteredAndSortedDeals.map((deal, index) => {
+                const priorityConfig = getPriorityConfig(deal.priority);
+                const isOverdue = deal.nextAction.dueDate < new Date();
+                
+                return (
+                  <motion.tr
+                    key={deal.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ delay: index * 0.02 }}
+                    className="glass-hover cursor-pointer transition-colors"
+                  >
+                    <TableCell className="font-medium text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                      {index + 1}
+                    </TableCell>
+                    
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={deal.clientAvatar} />
+                          <AvatarFallback className="text-xs">
+                            {deal.clientName.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium glass-text-glow">{deal.clientName}</div>
+                          <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
+                            {deal.leadSource}
                           </div>
                         </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                        <span className="text-sm truncate">{deal.propertyAddress}</span>
                       </div>
-                      <Badge variant="outline" className="text-xs">
-                        {deal.propertyType}
+                    </TableCell>
+                    
+                    <TableCell>
+                      <div className="max-w-xs">
+                        <div className="flex items-center gap-1 text-sm font-medium">
+                          <MapPin className="h-3 w-3" />
+                          <span className="truncate">{deal.propertyAddress}</span>
+                        </div>
+                        <Badge variant="secondary" className="mt-1 text-xs">
+                          {deal.propertyType}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    
+                    <TableCell>
+                      <div className="font-bold text-emerald-600">
+                        {formatValue(deal.dealValue)}
+                      </div>
+                    </TableCell>
+                    
+                    <TableCell>
+                      <Badge className={`text-xs ${getStageColor(deal.stage)}`}>
+                        {STAGE_NAMES[deal.stage as keyof typeof STAGE_NAMES] || deal.stage}
                       </Badge>
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell>
-                    <div className="font-semibold text-lg">
-                      {formatCurrency(deal.dealValue)}
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell>
-                    <div className="space-y-1">
-                      <Badge className={getStageColor(deal.stage)}>
-                        {deal.stage}
-                      </Badge>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        {deal.daysInStage} day{deal.daysInStage !== 1 ? 's' : ''}
-                      </div>
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full" 
-                          style={{ width: `${deal.probability}%` }}
-                        />
-                      </div>
-                      <span className="text-sm font-medium">{deal.probability}%</span>
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{deal.assignedAgent}</span>
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell>
-                    <div className="space-y-1">
+                    </TableCell>
+                    
+                    <TableCell>
                       <div className="flex items-center gap-2">
-                        {getActionIcon(deal.nextAction.type)}
-                        <span className="text-sm truncate max-w-[150px]">
-                          {deal.nextAction.description}
-                        </span>
+                        <div className="w-12 h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full ${
+                              deal.probability >= 80 ? 'bg-green-500' :
+                              deal.probability >= 60 ? 'bg-orange-500' :
+                              deal.probability >= 40 ? 'bg-yellow-500' : 'bg-red-500'
+                            }`}
+                            style={{ width: `${deal.probability}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium">{deal.probability}%</span>
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
-                        Due: {formatDate(deal.nextAction.dueDate)}
-                        {new Date(deal.nextAction.dueDate) < new Date() && (
-                          <AlertTriangle className="h-3 w-3 text-red-500 ml-1" />
+                    </TableCell>
+                    
+                    <TableCell>
+                      <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${priorityConfig.bg} ${priorityConfig.color}`}>
+                        {priorityConfig.icon}
+                        <span>{priorityConfig.label}</span>
+                      </div>
+                    </TableCell>
+                    
+                    <TableCell>
+                      <div className="text-center">
+                        <div className="font-medium">{deal.daysInStage}d</div>
+                        {isOverdue && (
+                          <div className="text-xs text-red-500 font-bold">Overdue!</div>
                         )}
                       </div>
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell>
-                    <span className="text-sm text-muted-foreground">
-                      {formatDate(deal.lastActivity)}
-                    </span>
-                  </TableCell>
-                  
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
-                        <DropdownMenuItem>Edit Deal</DropdownMenuItem>
-                        <DropdownMenuItem>Change Stage</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>Schedule Activity</DropdownMenuItem>
-                        <DropdownMenuItem>Add Note</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600">Delete Deal</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </motion.tr>
-              ))}
-            </TableBody>
-          </Table>
-          
-          {sortedDeals.length === 0 && (
-            <div className="text-center py-12">
-              <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-muted-foreground mb-2">No deals found</h3>
-              <p className="text-sm text-muted-foreground">
-                Try adjusting your search or filters to see more deals.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                    </TableCell>
+                    
+                    <TableCell>
+                      <div className="text-sm">{deal.assignedAgent}</div>
+                    </TableCell>
+                    
+                    <TableCell>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </motion.tr>
+                );
+              })}
+            </AnimatePresence>
+          </TableBody>
+        </Table>
+        
+        {filteredAndSortedDeals.length === 0 && (
+          <div className="text-center py-12">
+            <TrendingUp className="h-12 w-12 mx-auto mb-4" style={{ color: 'var(--glass-text-muted)' }} />
+            <h3 className="text-lg font-medium glass-text-glow mb-2">No deals found</h3>
+            <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+              Try adjusting your search or filters to see more deals.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

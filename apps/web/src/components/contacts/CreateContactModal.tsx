@@ -124,10 +124,7 @@ export default function CreateContactModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
-        className="max-w-2xl max-h-[90vh] overflow-y-auto" 
-        style={{ backgroundColor: 'var(--glass-surface)', color: 'var(--glass-text)' }}
-      >
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto glass-modal glass-border-active glass-hover-glow">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Plus className="h-5 w-5" />
