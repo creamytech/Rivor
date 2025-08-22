@@ -9,6 +9,7 @@ import SkeletonFlow from '@/components/river/SkeletonFlow';
 import StatusBadge from '@/components/river/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useMobileDetection } from '@/hooks/useMobileDetection';
 import { 
   Search, 
   CheckSquare,
@@ -63,6 +64,7 @@ export default function TasksList({ className }: TasksListProps): JSX.Element {
   const [currentFilter, setCurrentFilter] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const { addToast } = useToast();
+  const { isMobile } = useMobileDetection();
 
   const filters = [
     { id: 'all', label: 'All Tasks', count: tasks.length },
@@ -272,14 +274,14 @@ export default function TasksList({ className }: TasksListProps): JSX.Element {
           backdropFilter: 'var(--glass-blur)'
         }}
       >
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
+        <div className={`${isMobile ? 'p-4' : 'p-6'}`}>
+          <div className={`${isMobile ? 'flex flex-col gap-4' : 'flex items-center justify-between'} mb-6`}>
             <div className="flex items-center gap-4">
               <div className="glass-icon-container">
                 <CheckSquare className="h-6 w-6" style={{ color: 'var(--glass-primary)' }} />
               </div>
               <div>
-                <h1 className="text-2xl font-bold glass-text-gradient">Tasks</h1>
+                <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold glass-text-gradient`}>Tasks</h1>
                 <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
                   Stay organized and productive
                 </p>
@@ -288,8 +290,8 @@ export default function TasksList({ className }: TasksListProps): JSX.Element {
             
             <Button 
               variant="liquid"
-              size="lg"
-              className="glass-hover-glow"
+              size={isMobile ? "default" : "lg"}
+              className={`glass-hover-glow ${isMobile ? 'w-full' : ''}`}
               onClick={() => setShowCreateModal(true)}
             >
               <Plus className="h-5 w-5 mr-2" />
@@ -298,9 +300,9 @@ export default function TasksList({ className }: TasksListProps): JSX.Element {
           </div>
 
           {/* Search and Filters */}
-          <div className="flex items-center gap-4 mb-4">
+          <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex items-center gap-4'} mb-4`}>
             {/* Enhanced Search */}
-            <div className="relative flex-1 max-w-md">
+            <div className={`relative ${isMobile ? 'w-full' : 'flex-1 max-w-md'}`}>
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" 
                      style={{ color: 'var(--glass-text-muted)' }} />
               <Input
@@ -312,16 +314,16 @@ export default function TasksList({ className }: TasksListProps): JSX.Element {
             </div>
 
             {/* Filter Pills */}
-            <div className="glass-pill-container">
+            <div className={`${isMobile ? 'overflow-x-auto scrollbar-hide' : ''} glass-pill-container`}>
               {filters.map((filter) => (
                 <Button
                   key={filter.id}
                   variant={currentFilter === filter.id ? 'liquid' : 'ghost'}
                   size="sm"
                   onClick={() => setCurrentFilter(filter.id)}
-                  className="glass-pill-button"
+                  className={`glass-pill-button ${isMobile ? 'flex-shrink-0' : ''}`}
                 >
-                  {filter.label}
+                  {isMobile ? filter.label.split(' ')[0] : filter.label}
                   {filter.count > 0 && (
                     <span className="ml-2 px-2 py-1 text-xs rounded-full bg-white/20">
                       {filter.count}
@@ -402,59 +404,62 @@ export default function TasksList({ className }: TasksListProps): JSX.Element {
 
                     {/* Task Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <h3 className={cn(
-                            'font-semibold text-lg',
-                            task.status === 'completed' && 'line-through',
-                          )} style={{ color: 'var(--glass-text)' }}>
-                            {task.title}
-                          </h3>
+                      <div className={`${isMobile ? 'flex flex-col gap-2' : 'flex items-start justify-between'} mb-3`}>
+                        <div className={`${isMobile ? 'flex items-center justify-between w-full' : 'flex items-center gap-3'}`}>
+                          <div className={`${isMobile ? 'flex flex-col' : 'flex items-center gap-3'}`}>
+                            <h3 className={cn(
+                              isMobile ? 'font-semibold text-base' : 'font-semibold text-lg',
+                              task.status === 'completed' && 'line-through',
+                            )} style={{ color: 'var(--glass-text)' }}>
+                              {task.title}
+                            </h3>
+                            
+                            {/* Priority Indicator */}
+                            <span className={cn(
+                              'glass-category-pill',
+                              task.priority === 'high' && 'glass-priority-high',
+                              task.priority === 'medium' && 'glass-priority-medium',
+                              task.priority === 'low' && 'glass-priority-low',
+                              isMobile && 'text-xs'
+                            )}>
+                              <Flag className="h-3 w-3" />
+                              {task.priority}
+                            </span>
+                          </div>
                           
-                          {/* Priority Indicator */}
-                          <span className={cn(
-                            'glass-category-pill',
-                            task.priority === 'high' && 'glass-priority-high',
-                            task.priority === 'medium' && 'glass-priority-medium',
-                            task.priority === 'low' && 'glass-priority-low'
-                          )}>
-                            <Flag className="h-3 w-3" />
-                            {task.priority}
-                          </span>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="glass-button-small flex-shrink-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="glass-dropdown">
+                              <DropdownMenuItem>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              {task.status === 'completed' ? (
+                                <DropdownMenuItem onClick={() => handleTaskAction(task.id, 'reopen')}>
+                                  <X className="h-4 w-4 mr-2" />
+                                  Reopen
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem onClick={() => handleTaskAction(task.id, 'complete')}>
+                                  <Check className="h-4 w-4 mr-2" />
+                                  Complete
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                onClick={() => handleTaskAction(task.id, 'delete')}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
-                        
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="glass-button-small">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="glass-dropdown">
-                            <DropdownMenuItem>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            {task.status === 'completed' ? (
-                              <DropdownMenuItem onClick={() => handleTaskAction(task.id, 'reopen')}>
-                                <X className="h-4 w-4 mr-2" />
-                                Reopen
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem onClick={() => handleTaskAction(task.id, 'complete')}>
-                                <Check className="h-4 w-4 mr-2" />
-                                Complete
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              onClick={() => handleTaskAction(task.id, 'delete')}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
                       </div>
 
                       {task.description && (
@@ -467,43 +472,93 @@ export default function TasksList({ className }: TasksListProps): JSX.Element {
                       )}
 
                       {/* Enhanced Task Metadata */}
-                      <div className="flex items-center gap-6 text-sm">
-                        {/* Status Badge */}
-                        <span className={cn(
-                          'glass-category-pill',
-                          task.status === 'completed' && 'glass-status-completed',
-                          task.status === 'in_progress' && 'glass-status-in-progress',
-                          task.status === 'pending' && 'glass-status-todo'
-                        )}>
-                          <CheckSquare className="h-3 w-3" />
-                          {task.status.replace('_', ' ')}
-                        </span>
+                      <div className={`${isMobile ? 'flex flex-col gap-2' : 'flex items-center gap-6'} text-sm`}>
+                        {isMobile ? (
+                          <>
+                            <div className="flex items-center gap-2">
+                              {/* Status Badge */}
+                              <span className={cn(
+                                'glass-category-pill',
+                                task.status === 'completed' && 'glass-status-completed',
+                                task.status === 'in_progress' && 'glass-status-in-progress',
+                                task.status === 'pending' && 'glass-status-todo'
+                              )}>
+                                <CheckSquare className="h-3 w-3" />
+                                {task.status.replace('_', ' ')}
+                              </span>
+                              
+                              {/* Due Date */}
+                              {task.dueAt && (
+                                <div className={cn(
+                                  'flex items-center gap-2 glass-category-pill',
+                                  isOverdue(task) && 'text-red-600 border-red-300 bg-red-50'
+                                )}>
+                                  <Calendar className="h-3 w-3" />
+                                  <span>{formatDueDate(task.dueAt)}</span>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {(task.assignedTo || task.completedAt) && (
+                              <div className="flex items-center gap-2">
+                                {/* Assigned User */}
+                                {task.assignedTo && (
+                                  <div className="flex items-center gap-2 glass-category-pill">
+                                    <User className="h-3 w-3" />
+                                    <span>{task.assignedTo}</span>
+                                  </div>
+                                )}
 
-                        {/* Due Date */}
-                        {task.dueAt && (
-                          <div className={cn(
-                            'flex items-center gap-2 glass-category-pill',
-                            isOverdue(task) && 'text-red-600 border-red-300 bg-red-50'
-                          )}>
-                            <Calendar className="h-3 w-3" />
-                            <span>{formatDueDate(task.dueAt)}</span>
-                          </div>
-                        )}
+                                {/* Completion time */}
+                                {task.completedAt && (
+                                  <div className="flex items-center gap-2 glass-category-pill glass-status-completed">
+                                    <Clock className="h-3 w-3" />
+                                    <span>Completed {new Date(task.completedAt).toLocaleDateString()}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            {/* Status Badge */}
+                            <span className={cn(
+                              'glass-category-pill',
+                              task.status === 'completed' && 'glass-status-completed',
+                              task.status === 'in_progress' && 'glass-status-in-progress',
+                              task.status === 'pending' && 'glass-status-todo'
+                            )}>
+                              <CheckSquare className="h-3 w-3" />
+                              {task.status.replace('_', ' ')}
+                            </span>
 
-                        {/* Assigned User */}
-                        {task.assignedTo && (
-                          <div className="flex items-center gap-2 glass-category-pill">
-                            <User className="h-3 w-3" />
-                            <span>{task.assignedTo}</span>
-                          </div>
-                        )}
+                            {/* Due Date */}
+                            {task.dueAt && (
+                              <div className={cn(
+                                'flex items-center gap-2 glass-category-pill',
+                                isOverdue(task) && 'text-red-600 border-red-300 bg-red-50'
+                              )}>
+                                <Calendar className="h-3 w-3" />
+                                <span>{formatDueDate(task.dueAt)}</span>
+                              </div>
+                            )}
 
-                        {/* Completion time */}
-                        {task.completedAt && (
-                          <div className="flex items-center gap-2 glass-category-pill glass-status-completed">
-                            <Clock className="h-3 w-3" />
-                            <span>Completed {new Date(task.completedAt).toLocaleDateString()}</span>
-                          </div>
+                            {/* Assigned User */}
+                            {task.assignedTo && (
+                              <div className="flex items-center gap-2 glass-category-pill">
+                                <User className="h-3 w-3" />
+                                <span>{task.assignedTo}</span>
+                              </div>
+                            )}
+
+                            {/* Completion time */}
+                            {task.completedAt && (
+                              <div className="flex items-center gap-2 glass-category-pill glass-status-completed">
+                                <Clock className="h-3 w-3" />
+                                <span>Completed {new Date(task.completedAt).toLocaleDateString()}</span>
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
 

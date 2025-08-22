@@ -330,7 +330,7 @@ export default function ContactsPage() {
           </div>
 
           {/* Filter Tabs */}
-          <div className="flex items-center gap-2">
+          <div className={`${isMobile ? 'overflow-x-auto scrollbar-hide' : ''} flex items-center gap-2`}>
             {[
               { key: 'all', label: 'All Contacts', count: contacts.length },
               { key: 'lead', label: 'Leads', count: contacts.filter(c => c.status === 'lead').length },
@@ -340,13 +340,13 @@ export default function ContactsPage() {
               <button
                 key={tab.key}
                 onClick={() => setSelectedFilter(tab.key)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                className={`${isMobile ? 'flex-shrink-0' : ''} px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                   selectedFilter === tab.key
                     ? "glass-badge"
                     : "glass-badge-muted"
                 }`}
               >
-                {tab.label}
+                {isMobile ? tab.label.split(' ')[0] : tab.label}
                 <Badge variant="liquid" className="ml-2 text-xs">
                   {tab.count}
                 </Badge>
@@ -361,21 +361,21 @@ export default function ContactsPage() {
           <div className="glass-card">
             {/* Bulk Actions Bar */}
             {selectedContacts.length > 0 && (
-              <div className="px-6 py-4 border-b" style={{ borderColor: 'var(--glass-border)' }}>
-                <div className="flex items-center justify-between">
+              <div className={`${isMobile ? 'px-4' : 'px-6'} py-4 border-b`} style={{ borderColor: 'var(--glass-border)' }}>
+                <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex items-center justify-between'}`}>
                   <span className="text-sm" style={{ color: 'var(--glass-text-secondary)' }}>
                     {selectedContacts.length} contacts selected
                   </span>
-                  <div className="flex items-center gap-2">
-                    <Button variant="liquid" size="sm" onClick={() => router.push('/app/inbox')}>
+                  <div className={`${isMobile ? 'flex flex-col gap-2' : 'flex items-center gap-2'}`}>
+                    <Button variant="liquid" size="sm" className={isMobile ? 'w-full' : ''} onClick={() => router.push('/app/inbox')}>
                       <Mail className="h-4 w-4 mr-2" />
                       Send Email
                     </Button>
-                    <Button variant="liquid" size="sm" onClick={() => alert('Tag functionality coming soon!')}>
+                    <Button variant="liquid" size="sm" className={isMobile ? 'w-full' : ''} onClick={() => alert('Tag functionality coming soon!')}>
                       <Tag className="h-4 w-4 mr-2" />
                       Add Tags
                     </Button>
-                    <Button variant="liquid" size="sm" onClick={() => setSelectedContacts([])}>
+                    <Button variant="liquid" size="sm" className={isMobile ? 'w-full' : ''} onClick={() => setSelectedContacts([])}>
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete
                     </Button>
@@ -385,25 +385,27 @@ export default function ContactsPage() {
             )}
 
             {/* Table Header */}
-            <div className="px-6 py-4 border-b" style={{ borderColor: 'var(--glass-border)' }}>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={selectedContacts.length === filteredContacts.length}
-                  onChange={selectAllContacts}
-                  className="mr-4 rounded"
-                />
-                <div className="grid grid-cols-12 gap-4 w-full text-sm font-medium" 
-                     style={{ color: 'var(--glass-text-secondary)' }}>
-                  <div className="col-span-3">Contact</div>
-                  <div className="col-span-2">Company</div>
-                  <div className="col-span-2">Status</div>
-                  <div className="col-span-2">Last Activity</div>
-                  <div className="col-span-2">Value</div>
-                  <div className="col-span-1">Actions</div>
+            {!isMobile && (
+              <div className="px-6 py-4 border-b" style={{ borderColor: 'var(--glass-border)' }}>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedContacts.length === filteredContacts.length}
+                    onChange={selectAllContacts}
+                    className="mr-4 rounded"
+                  />
+                  <div className="grid grid-cols-12 gap-4 w-full text-sm font-medium" 
+                       style={{ color: 'var(--glass-text-secondary)' }}>
+                    <div className="col-span-3">Contact</div>
+                    <div className="col-span-2">Company</div>
+                    <div className="col-span-2">Status</div>
+                    <div className="col-span-2">Last Activity</div>
+                    <div className="col-span-2">Value</div>
+                    <div className="col-span-1">Actions</div>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Contact List */}
             <div className="divide-y" style={{ borderColor: 'var(--glass-border)' }}>
@@ -435,122 +437,237 @@ export default function ContactsPage() {
                 </div>
               ) : (
                 filteredContacts.map((contact) => (
-                  <div 
-                    key={contact.id} 
-                    className="px-6 py-4 hover:bg-[var(--glass-surface-hover)] transition-colors"
-                  >
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={selectedContacts.includes(contact.id)}
-                        onChange={() => handleSelectContact(contact.id)}
-                        className="mr-4 rounded"
-                      />
-                      
-                      <div className="grid grid-cols-12 gap-4 w-full items-center">
-                        {/* Contact Info */}
-                        <div className="col-span-3 flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full glass-card flex items-center justify-center text-sm font-medium">
-                            {getInitials(contact.name)}
-                          </div>
-                          <div>
-                            <p className="font-medium" style={{ color: 'var(--glass-text)' }}>
-                              {contact.name}
-                            </p>
-                            <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
-                              {contact.email}
-                            </p>
-                            {contact.phone && (
-                              <p className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
-                                {contact.phone}
+                  isMobile ? (
+                    // Mobile Card Layout
+                    <div 
+                      key={contact.id} 
+                      className="p-4 hover:bg-[var(--glass-surface-hover)] transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedContacts.includes(contact.id)}
+                          onChange={() => handleSelectContact(contact.id)}
+                          className="mt-1 rounded"
+                        />
+                        
+                        <div className="w-12 h-12 rounded-full glass-card flex items-center justify-center text-sm font-medium flex-shrink-0">
+                          {getInitials(contact.name)}
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate" style={{ color: 'var(--glass-text)' }}>
+                                {contact.name}
                               </p>
-                            )}
+                              <p className="text-sm truncate" style={{ color: 'var(--glass-text-muted)' }}>
+                                {contact.email}
+                              </p>
+                              {contact.phone && (
+                                <p className="text-xs truncate" style={{ color: 'var(--glass-text-muted)' }}>
+                                  {contact.phone}
+                                </p>
+                              )}
+                            </div>
+                            
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="liquid" size="sm" className="h-8 w-8 p-0 flex-shrink-0">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => {
+                                  setSelectedContactForDetails(contact);
+                                  setShowDetailsModal(true);
+                                }}>
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setShowCreateModal(true)}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit Contact
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => router.push('/app/inbox')}>
+                                  <Mail className="h-4 w-4 mr-2" />
+                                  Send Email
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => window.open(`sms:${contact.phone}`)}>
+                                  <MessageSquare className="h-4 w-4 mr-2" />
+                                  Send Message
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => router.push('/app/calendar')}>
+                                  <Calendar className="h-4 w-4 mr-2" />
+                                  Schedule Meeting
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="text-red-600" onClick={() => handleSelectContact(contact.id)}>
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete Contact
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
-                        </div>
-                        
-                        {/* Company */}
-                        <div className="col-span-2">
-                          <p className="font-medium" style={{ color: 'var(--glass-text)' }}>
-                            {contact.company || '-'}
-                          </p>
-                          {contact.position && (
-                            <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
-                              {contact.position}
-                            </p>
-                          )}
-                        </div>
-                        
-                        {/* Status */}
-                        <div className="col-span-2">
-                          <Badge className={`${getStatusColor(contact.status)} border-0`}>
-                            {contact.status.charAt(0).toUpperCase() + contact.status.slice(1)}
-                          </Badge>
-                          <div className="flex items-center gap-1 mt-1">
-                            {contact.tags.map((tag) => (
-                              <Badge key={tag} variant="liquid" className="text-xs">
-                                {tag}
+                          
+                          <div className="mt-2 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Badge className={`${getStatusColor(contact.status)} border-0 text-xs`}>
+                                {contact.status.charAt(0).toUpperCase() + contact.status.slice(1)}
                               </Badge>
-                            ))}
+                              {contact.company && (
+                                <span className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
+                                  {contact.company}
+                                </span>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex flex-wrap gap-1">
+                                {contact.tags.slice(0, 2).map((tag) => (
+                                  <Badge key={tag} variant="liquid" className="text-xs">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                                {contact.tags.length > 2 && (
+                                  <Badge variant="liquid" className="text-xs">
+                                    +{contact.tags.length - 2}
+                                  </Badge>
+                                )}
+                              </div>
+                              
+                              <div className="text-right">
+                                <p className="text-xs font-medium" style={{ color: 'var(--glass-text)' }}>
+                                  {formatValue(contact.value)}
+                                </p>
+                                <p className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
+                                  {contact.lastActivity}
+                                </p>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                        
-                        {/* Last Activity */}
-                        <div className="col-span-2">
-                          <p className="text-sm" style={{ color: 'var(--glass-text)' }}>
-                            {contact.lastActivity}
-                          </p>
-                        </div>
-                        
-                        {/* Value */}
-                        <div className="col-span-2">
-                          <p className="font-medium" style={{ color: 'var(--glass-text)' }}>
-                            {formatValue(contact.value)}
-                          </p>
-                        </div>
-                        
-                        {/* Actions */}
-                        <div className="col-span-1">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="liquid" size="sm" className="h-8 w-8 p-0">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => {
-                                setSelectedContactForDetails(contact);
-                                setShowDetailsModal(true);
-                              }}>
-                                <Eye className="h-4 w-4 mr-2" />
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => setShowCreateModal(true)}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Edit Contact
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => router.push('/app/inbox')}>
-                                <Mail className="h-4 w-4 mr-2" />
-                                Send Email
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => window.open(`sms:${contact.phone}`)}>
-                                <MessageSquare className="h-4 w-4 mr-2" />
-                                Send Message
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => router.push('/app/calendar')}>
-                                <Calendar className="h-4 w-4 mr-2" />
-                                Schedule Meeting
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-red-600" onClick={() => handleSelectContact(contact.id)}>
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete Contact
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    // Desktop Table Layout
+                    <div 
+                      key={contact.id} 
+                      className="px-6 py-4 hover:bg-[var(--glass-surface-hover)] transition-colors"
+                    >
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedContacts.includes(contact.id)}
+                          onChange={() => handleSelectContact(contact.id)}
+                          className="mr-4 rounded"
+                        />
+                        
+                        <div className="grid grid-cols-12 gap-4 w-full items-center">
+                          {/* Contact Info */}
+                          <div className="col-span-3 flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full glass-card flex items-center justify-center text-sm font-medium">
+                              {getInitials(contact.name)}
+                            </div>
+                            <div>
+                              <p className="font-medium" style={{ color: 'var(--glass-text)' }}>
+                                {contact.name}
+                              </p>
+                              <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                                {contact.email}
+                              </p>
+                              {contact.phone && (
+                                <p className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
+                                  {contact.phone}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Company */}
+                          <div className="col-span-2">
+                            <p className="font-medium" style={{ color: 'var(--glass-text)' }}>
+                              {contact.company || '-'}
+                            </p>
+                            {contact.position && (
+                              <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                                {contact.position}
+                              </p>
+                            )}
+                          </div>
+                          
+                          {/* Status */}
+                          <div className="col-span-2">
+                            <Badge className={`${getStatusColor(contact.status)} border-0`}>
+                              {contact.status.charAt(0).toUpperCase() + contact.status.slice(1)}
+                            </Badge>
+                            <div className="flex items-center gap-1 mt-1">
+                              {contact.tags.map((tag) => (
+                                <Badge key={tag} variant="liquid" className="text-xs">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          {/* Last Activity */}
+                          <div className="col-span-2">
+                            <p className="text-sm" style={{ color: 'var(--glass-text)' }}>
+                              {contact.lastActivity}
+                            </p>
+                          </div>
+                          
+                          {/* Value */}
+                          <div className="col-span-2">
+                            <p className="font-medium" style={{ color: 'var(--glass-text)' }}>
+                              {formatValue(contact.value)}
+                            </p>
+                          </div>
+                          
+                          {/* Actions */}
+                          <div className="col-span-1">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="liquid" size="sm" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => {
+                                  setSelectedContactForDetails(contact);
+                                  setShowDetailsModal(true);
+                                }}>
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setShowCreateModal(true)}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit Contact
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => router.push('/app/inbox')}>
+                                  <Mail className="h-4 w-4 mr-2" />
+                                  Send Email
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => window.open(`sms:${contact.phone}`)}>
+                                  <MessageSquare className="h-4 w-4 mr-2" />
+                                  Send Message
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => router.push('/app/calendar')}>
+                                  <Calendar className="h-4 w-4 mr-2" />
+                                  Schedule Meeting
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="text-red-600" onClick={() => handleSelectContact(contact.id)}>
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete Contact
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
                 ))
               )}
             </div>

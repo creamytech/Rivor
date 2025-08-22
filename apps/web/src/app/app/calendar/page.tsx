@@ -178,8 +178,8 @@ export default function CalendarPage() {
               
               <Button 
                 variant="liquid"
-                size="lg"
-                className="glass-hover-glow"
+                size={isMobile ? "default" : "lg"}
+                className={`glass-hover-glow ${isMobile ? 'w-full' : ''}`}
                 onClick={() => setShowCreateModal(true)}
               >
                 <Plus className="h-5 w-5 mr-2" />
@@ -233,9 +233,9 @@ export default function CalendarPage() {
             </div>
 
             {/* Meeting Type Filter - Dropdown */}
-            <div className="flex items-center gap-3">
+            <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex items-center gap-3'}`}>
               <Select value={meetingType} onValueChange={(value) => setMeetingType(value as any)}>
-                <SelectTrigger className="w-48 glass-input">
+                <SelectTrigger className={`${isMobile ? 'w-full' : 'w-48'} glass-input`}>
                   <SelectValue placeholder="Select meeting type" />
                 </SelectTrigger>
                 <SelectContent className="glass-dropdown">
@@ -253,9 +253,9 @@ export default function CalendarPage() {
               {/* Advanced Filters Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="glass-button-secondary">
+                  <Button variant="outline" className={`glass-button-secondary ${isMobile ? 'w-full' : ''}`}>
                     <Filter className="h-4 w-4 mr-2" />
-                    Filters
+                    {isMobile ? 'Event Filters' : 'Filters'}
                     {selectedFilters.length > 0 && (
                       <span className="ml-2 px-2 py-1 text-xs rounded-full bg-blue-500 text-white">
                         {selectedFilters.length}
@@ -309,40 +309,77 @@ export default function CalendarPage() {
           }}
         >
           <div className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="glass-icon-container-small">
-                  <Sparkles className="h-4 w-4" style={{ color: 'var(--glass-accent)' }} />
+            {isMobile ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="glass-icon-container-small">
+                    <Sparkles className="h-4 w-4" style={{ color: 'var(--glass-accent)' }} />
+                  </div>
+                  <span className="text-sm font-semibold glass-text-gradient">
+                    Smart Suggestions
+                  </span>
                 </div>
-                <span className="text-sm font-semibold glass-text-gradient">
-                  Smart Suggestions
-                </span>
+                
+                <div className="grid grid-cols-1 gap-2 text-sm">
+                  <div className="glass-suggestion-pill">
+                    <Clock className="h-4 w-4 text-green-500" />
+                    <span>3 free slots tomorrow</span>
+                  </div>
+                  <div className="glass-suggestion-pill">
+                    <Target className="h-4 w-4 text-orange-500" />
+                    <span>TechCorp demo prep needed</span>
+                  </div>
+                  <div className="glass-suggestion-pill">
+                    <Zap className="h-4 w-4 text-purple-500" />
+                    <span>Auto-schedule follow-ups</span>
+                  </div>
+                </div>
+                
+                <Button 
+                  variant="liquid" 
+                  size="sm"
+                  className="glass-hover-pulse w-full"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Find Time
+                </Button>
               </div>
-              
-              <div className="flex items-center gap-4 text-sm">
-                <div className="glass-suggestion-pill">
-                  <Clock className="h-4 w-4 text-green-500" />
-                  <span>3 free slots tomorrow</span>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="glass-icon-container-small">
+                    <Sparkles className="h-4 w-4" style={{ color: 'var(--glass-accent)' }} />
+                  </div>
+                  <span className="text-sm font-semibold glass-text-gradient">
+                    Smart Suggestions
+                  </span>
                 </div>
-                <div className="glass-suggestion-pill">
-                  <Target className="h-4 w-4 text-orange-500" />
-                  <span>TechCorp demo prep needed</span>
+                
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="glass-suggestion-pill">
+                    <Clock className="h-4 w-4 text-green-500" />
+                    <span>3 free slots tomorrow</span>
+                  </div>
+                  <div className="glass-suggestion-pill">
+                    <Target className="h-4 w-4 text-orange-500" />
+                    <span>TechCorp demo prep needed</span>
+                  </div>
+                  <div className="glass-suggestion-pill">
+                    <Zap className="h-4 w-4 text-purple-500" />
+                    <span>Auto-schedule follow-ups</span>
+                  </div>
                 </div>
-                <div className="glass-suggestion-pill">
-                  <Zap className="h-4 w-4 text-purple-500" />
-                  <span>Auto-schedule follow-ups</span>
-                </div>
+                
+                <Button 
+                  variant="liquid" 
+                  size="sm"
+                  className="glass-hover-pulse"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Find Time
+                </Button>
               </div>
-              
-              <Button 
-                variant="liquid" 
-                size="sm"
-                className="glass-hover-pulse"
-              >
-                <Sparkles className="h-4 w-4 mr-2" />
-                Find Time
-              </Button>
-            </div>
+            )}
           </div>
         </motion.div>
 
@@ -354,10 +391,12 @@ export default function CalendarPage() {
           className="glass-card glass-border-active flex-1"
           style={{ 
             backgroundColor: 'var(--glass-surface)', 
-            minHeight: '600px'
+            minHeight: isMobile ? '500px' : '600px'
           }}
         >
-          <EnhancedCalendar className="h-full glass-calendar" />
+          <div className={`${isMobile ? 'overflow-x-auto' : ''}`}>
+            <EnhancedCalendar className={`h-full glass-calendar ${isMobile ? 'min-w-[600px]' : ''}`} />
+          </div>
         </motion.div>
         </div>
       </AppShell>

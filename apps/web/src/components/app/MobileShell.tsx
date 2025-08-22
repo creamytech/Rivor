@@ -34,6 +34,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import GlassThemeToggle from "@/components/ui/GlassThemeToggle";
 
 interface MobileShellProps {
   children: React.ReactNode;
@@ -442,6 +443,13 @@ export default function MobileShell({ children }: MobileShellProps) {
                   </div>
                 </div>
               </nav>
+
+              {/* Theme Toggle Section */}
+              <div className="p-4 border-t" style={{ borderColor: 'var(--glass-border)' }}>
+                <div className="flex items-center justify-center">
+                  <GlassThemeToggle />
+                </div>
+              </div>
 
               {/* User Profile Footer */}
               <div className="p-4 border-t" style={{ borderColor: 'var(--glass-border)' }}>
