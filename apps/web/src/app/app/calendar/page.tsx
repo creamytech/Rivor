@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import AppShell from "@/components/app/AppShell";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useMobileDetection } from "@/hooks/useMobileDetection";
 import EnhancedCalendar from "@/components/calendar/EnhancedCalendar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,6 +75,7 @@ import CreateEventModal from "@/components/calendar/CreateEventModal";
 
 export default function CalendarPage() {
   const { theme } = useTheme();
+  const { isMobile } = useMobileDetection();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'my-events' | 'team' | 'all'>('my-events');
@@ -160,14 +162,14 @@ export default function CalendarPage() {
             backdropFilter: 'var(--glass-blur)'
           }}
         >
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
+          <div className={`${isMobile ? 'p-4' : 'p-6'}`}>
+            <div className={`${isMobile ? 'flex flex-col gap-4' : 'flex items-center justify-between'} mb-6`}>
               <div className="flex items-center gap-4">
                 <div className="glass-icon-container">
                   <Calendar className="h-6 w-6" style={{ color: 'var(--glass-primary)' }} />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold glass-text-gradient">Calendar</h1>
+                  <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold glass-text-gradient`}>Calendar</h1>
                   <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
                     Manage your schedule with intelligent insights
                   </p>
@@ -186,45 +188,48 @@ export default function CalendarPage() {
             </div>
 
             {/* Search and Controls */}
-            <div className="flex items-center gap-4 mb-4">
+            <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex items-center gap-4'} mb-4`}>
               {/* Enhanced Search */}
-              <div className="relative flex-1 max-w-md">
+              <div className={`relative ${isMobile ? 'w-full' : 'flex-1 max-w-md'}`}>
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" 
                        style={{ color: 'var(--glass-text-muted)' }} />
                 <Input
-                  placeholder="Search events, attendees, or locations..."
+                  placeholder={isMobile ? "Search events..." : "Search events, attendees, or locations..."}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 glass-input"
                 />
               </div>
 
-              {/* View Mode Toggle */}
-              <div className="glass-pill-container">
-                {['my-events', 'team', 'all'].map((mode) => (
-                  <Button
-                    key={mode}
-                    variant={viewMode === mode ? 'liquid' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode(mode as any)}
-                    className="glass-pill-button"
-                  >
-                    {mode === 'my-events' ? 'My Events' : mode === 'team' ? 'Team' : 'All'}
-                  </Button>
-                ))}
-              </div>
+              {/* Mobile Controls Row */}
+              <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex items-center gap-4'}`}>
+                {/* View Mode Toggle */}
+                <div className={`glass-pill-container ${isMobile ? 'justify-center' : ''}`}>
+                  {['my-events', 'team', 'all'].map((mode) => (
+                    <Button
+                      key={mode}
+                      variant={viewMode === mode ? 'liquid' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode(mode as any)}
+                      className="glass-pill-button"
+                    >
+                      {mode === 'my-events' ? 'My Events' : mode === 'team' ? 'Team' : 'All'}
+                    </Button>
+                  ))}
+                </div>
 
-              {/* Sync Button */}
-              <Button 
-                variant="outline"
-                size="sm"
-                onClick={handleSync}
-                disabled={isSyncing}
-                className="glass-button-secondary"
-              >
-                <Download className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-                {isSyncing ? 'Syncing...' : 'Sync'}
-              </Button>
+                {/* Sync Button */}
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSync}
+                  disabled={isSyncing}
+                  className={`glass-button-secondary ${isMobile ? 'w-full' : ''}`}
+                >
+                  <Download className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                  {isSyncing ? 'Syncing...' : 'Sync'}
+                </Button>
+              </div>
             </div>
 
             {/* Meeting Type Filter - Dropdown */}

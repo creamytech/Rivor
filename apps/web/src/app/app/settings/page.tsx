@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AppShell from '@/components/app/AppShell';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useMobileDetection } from '@/hooks/useMobileDetection';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -111,6 +112,7 @@ interface UserSettings {
 
 export default function SettingsPage() {
   const { theme } = useTheme();
+  const { isMobile } = useMobileDetection();
   const [activeTab, setActiveTab] = useState('profile');
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -322,14 +324,15 @@ export default function SettingsPage() {
             </div>
           </motion.div>
 
-          <div className="grid grid-cols-12 gap-6">
+          <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'grid-cols-12'}`}>
             {/* Settings Sidebar */}
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="col-span-3"
-            >
+            {!isMobile && (
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="col-span-3"
+              >
               <div className="glass-card glass-border mb-6"
                    style={{ backgroundColor: 'var(--glass-surface)' }}>
                 <div className="p-4">
@@ -391,18 +394,55 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
-            </motion.div>
+              </motion.div>
+            )}
+
+            {/* Mobile Settings Navigation */}
+            {isMobile && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="mb-4"
+              >
+                <div className="glass-card glass-border"
+                     style={{ backgroundColor: 'var(--glass-surface)' }}>
+                  <div className="p-3">
+                    <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+                      {sections.map((section) => (
+                        <button
+                          key={section.id}
+                          onClick={() => setActiveTab(section.id)}
+                          className={cn(
+                            'flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 whitespace-nowrap text-sm',
+                            'glass-button-hover flex-shrink-0',
+                            activeTab === section.id 
+                              ? 'glass-button-active' 
+                              : 'glass-button-secondary'
+                          )}
+                        >
+                          <div className={`text-${section.color}-500`}>
+                            {section.icon}
+                          </div>
+                          <span>{section.title}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
             {/* Main Settings Content */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="col-span-9"
+              className={isMobile ? 'col-span-1' : 'col-span-9'}
             >
               <div className="glass-card glass-border-active"
                    style={{ backgroundColor: 'var(--glass-surface)' }}>
-                <div className="p-6">
+                <div className={`${isMobile ? 'p-4' : 'p-6'}`}>
                   <AnimatePresence mode="wait">
                     {/* Profile Settings */}
                     {activeTab === 'profile' && (

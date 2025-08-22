@@ -124,17 +124,44 @@ export default function MobileShell({ children }: MobileShellProps) {
     };
   }, [showSidebar, showSearch, showNotifications, showProfile]);
 
-  // Enhanced swipe gestures for sidebar
+  // Enhanced swipe gestures for main content
   useMobileGestures(mainContentRef, {
-    onSwipeRight: () => {
-      if (!showSidebar) {
-        setShowSidebar(true);
-      }
-    },
     onSwipeLeft: () => {
       if (showSidebar) {
+        // Close sidebar if open
         setShowSidebar(false);
+      } else {
+        // Navigate to next tab if sidebar is closed
+        const mainTabs = navItems.slice(0, 4);
+        if (activeTabIndex < mainTabs.length - 1) {
+          const newIndex = activeTabIndex + 1;
+          setActiveTabIndex(newIndex);
+          router.push(mainTabs[newIndex].href);
+        }
       }
+    },
+    onSwipeRight: () => {
+      if (!showSidebar) {
+        // Check if we can navigate to previous tab
+        const mainTabs = navItems.slice(0, 4);
+        if (activeTabIndex > 0) {
+          const newIndex = activeTabIndex - 1;
+          setActiveTabIndex(newIndex);
+          router.push(mainTabs[newIndex].href);
+        } else {
+          // Open sidebar if at first tab
+          setShowSidebar(true);
+        }
+      }
+    },
+    threshold: 50,
+    velocity: 0.3
+  });
+  
+  // Swipe gestures for sidebar to close
+  useMobileGestures(sidebarRef, {
+    onSwipeLeft: () => {
+      setShowSidebar(false);
     },
     threshold: 50,
     velocity: 0.3
@@ -156,21 +183,6 @@ export default function MobileShell({ children }: MobileShellProps) {
     return item?.label || "Rivor";
   };
 
-  const handleTabSwipe = (direction: 'left' | 'right') => {
-    const mainTabs = navItems.slice(0, 4);
-    let newIndex = activeTabIndex;
-    
-    if (direction === 'left' && activeTabIndex > 0) {
-      newIndex = activeTabIndex - 1;
-    } else if (direction === 'right' && activeTabIndex < mainTabs.length - 1) {
-      newIndex = activeTabIndex + 1;
-    }
-    
-    if (newIndex !== activeTabIndex) {
-      setActiveTabIndex(newIndex);
-      router.push(mainTabs[newIndex].href);
-    }
-  };
 
   return (
     <div className={`${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'} min-h-screen relative overflow-hidden`}>
@@ -340,8 +352,6 @@ export default function MobileShell({ children }: MobileShellProps) {
                 WebkitBackdropFilter: 'blur(32px) saturate(1.4)',
                 borderRight: '1px solid var(--glass-border)',
               }}
-              onPanStart={handlePanStart}
-              onPanEnd={handlePanEnd}
             >
               {/* Sidebar Header */}
               <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--glass-border)' }}>

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AppShell from '@/components/app/AppShell';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useMobileDetection } from '@/hooks/useMobileDetection';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -72,6 +73,7 @@ interface ReportData {
 
 export default function ReportingPage() {
   const { theme } = useTheme();
+  const { isMobile } = useMobileDetection();
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState('month');
@@ -222,16 +224,18 @@ export default function ReportingPage() {
               backdropFilter: 'var(--glass-blur)'
             }}
           >
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
+            <div className={`${isMobile ? 'p-4' : 'p-6'}`}>
+              <div className={`${isMobile ? 'flex flex-col gap-4' : 'flex items-center justify-between'} mb-6`}>
                 <div className="flex items-center gap-4">
                   <div className="glass-icon-container">
                     <BarChart3 className="h-6 w-6" style={{ color: 'var(--glass-primary)' }} />
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold glass-text-gradient">Analytics & Reporting</h1>
+                    <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold glass-text-gradient`}>
+                      {isMobile ? 'Analytics' : 'Analytics & Reporting'}
+                    </h1>
                     <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
-                      Performance insights and business analytics
+                      {isMobile ? 'Performance insights' : 'Performance insights and business analytics'}
                     </p>
                   </div>
                 </div>

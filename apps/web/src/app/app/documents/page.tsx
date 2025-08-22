@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AppShell from '@/components/app/AppShell';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useMobileDetection } from '@/hooks/useMobileDetection';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -83,6 +84,7 @@ interface Folder {
 
 export default function DocumentsPage() {
   const { theme } = useTheme();
+  const { isMobile } = useMobileDetection();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -284,33 +286,33 @@ export default function DocumentsPage() {
               backdropFilter: 'var(--glass-blur)'
             }}
           >
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
+            <div className={`${isMobile ? 'p-4' : 'p-6'}`}>
+              <div className={`${isMobile ? 'flex flex-col gap-4' : 'flex items-center justify-between'} mb-6`}>
                 <div className="flex items-center gap-4">
                   <div className="glass-icon-container">
                     <FileText className="h-6 w-6" style={{ color: 'var(--glass-primary)' }} />
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold glass-text-gradient">Documents</h1>
+                    <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold glass-text-gradient`}>Documents</h1>
                     <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
-                      Manage contracts, templates, and real estate documents
+                      {isMobile ? 'Manage documents' : 'Manage contracts, templates, and real estate documents'}
                     </p>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3">
+                <div className={`${isMobile ? 'flex flex-col gap-2 w-full' : 'flex items-center gap-3'}`}>
                   <Button 
                     variant="outline"
                     size="sm"
-                    className="glass-button-secondary"
+                    className={`glass-button-secondary ${isMobile ? 'w-full' : ''}`}
                   >
                     <Upload className="h-4 w-4 mr-2" />
                     Upload
                   </Button>
                   <Button 
                     variant="liquid"
-                    size="lg"
-                    className="glass-hover-glow"
+                    size={isMobile ? "default" : "lg"}
+                    className={`glass-hover-glow ${isMobile ? 'w-full' : ''}`}
                     onClick={() => setShowCreateModal(true)}
                   >
                     <Plus className="h-5 w-5 mr-2" />

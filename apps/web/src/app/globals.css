@@ -3953,3 +3953,13 @@ header:not(.md\\:hidden),
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+
+/* Scrollbar hide utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, and Opera */
+}

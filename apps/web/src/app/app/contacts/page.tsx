@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useMobileDetection } from "@/hooks/useMobileDetection";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,6 +68,7 @@ interface Contact {
 
 export default function ContactsPage() {
   const { theme } = useTheme();
+  const { isMobile } = useMobileDetection();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
@@ -207,15 +209,15 @@ export default function ContactsPage() {
       <AppShell>
         {/* Header */}
         <div className="px-4 mt-4 mb-2 main-content-area">
-          <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className={`glass-card ${isMobile ? 'p-4' : 'p-6'}`}>
+          <div className={`${isMobile ? 'flex flex-col gap-4' : 'flex items-center justify-between'} mb-6`}>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
                 <div className="p-3 rounded-xl glass-card">
                   <Users className="h-6 w-6" style={{ color: 'var(--glass-primary)' }} />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold" style={{ color: 'var(--glass-text)' }}>
+                  <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold`} style={{ color: 'var(--glass-text)' }}>
                     Contacts
                   </h1>
                   <p style={{ color: 'var(--glass-text-secondary)' }}>
@@ -227,8 +229,8 @@ export default function ContactsPage() {
             
             <Button 
               variant="liquid"
-              size="lg"
-              className="px-6"
+              size={isMobile ? "default" : "lg"}
+              className={`${isMobile ? 'w-full' : 'px-6'}`}
               onClick={() => setShowCreateModal(true)}
             >
               <Plus className="h-5 w-5 mr-2" />
@@ -237,54 +239,93 @@ export default function ContactsPage() {
           </div>
 
           {/* Search and Filters */}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 max-w-2xl relative">
+          <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex items-center gap-4'} mb-6`}>
+            <div className={`${isMobile ? 'w-full' : 'flex-1 max-w-2xl'} relative`}>
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" 
                 style={{ color: 'var(--glass-text-muted)' }} />
               <Input
                 variant="pill"
-                placeholder="Search contacts, companies, or emails..."
+                placeholder={isMobile ? "Search contacts..." : "Search contacts, companies, or emails..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 text-sm"
               />
             </div>
             
-            <div className="flex items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="liquid" size="sm">
-                    <Filter className="h-4 w-4 mr-2" />
-                    Filter
+            <div className={`${isMobile ? 'flex flex-col gap-2 w-full' : 'flex items-center gap-2'}`}>
+              {isMobile ? (
+                <div className="flex gap-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="liquid" size="sm" className="flex-1">
+                        <Filter className="h-4 w-4 mr-2" />
+                        Filter
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setSelectedFilter('all')}>
+                        All Contacts
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedFilter('lead')}>
+                        Leads
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedFilter('prospect')}>
+                        Prospects
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedFilter('customer')}>
+                        Customers
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  
+                  <Button variant="liquid" size="sm" className="flex-1" onClick={() => alert('Export functionality coming soon!')}>
+                    <Download className="h-4 w-4" />
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setSelectedFilter('all')}>
-                    All Contacts
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSelectedFilter('lead')}>
-                    Leads
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSelectedFilter('prospect')}>
-                    Prospects
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSelectedFilter('customer')}>
-                    Customers
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              
-              <Button variant="liquid" size="sm" onClick={() => alert('Export functionality coming soon!')}>
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-              
-              <Button variant="liquid" size="sm" onClick={() => alert('Import functionality coming soon!')}>
-                <Upload className="h-4 w-4 mr-2" />
-                Import
-              </Button>
+                  
+                  <Button variant="liquid" size="sm" className="flex-1" onClick={() => alert('Import functionality coming soon!')}>
+                    <Upload className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="liquid" size="sm">
+                        <Filter className="h-4 w-4 mr-2" />
+                        Filter
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setSelectedFilter('all')}>
+                        All Contacts
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedFilter('lead')}>
+                        Leads
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedFilter('prospect')}>
+                        Prospects
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedFilter('customer')}>
+                        Customers
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  
+                  <Button variant="liquid" size="sm" onClick={() => alert('Export functionality coming soon!')}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export
+                  </Button>
+                  
+                  <Button variant="liquid" size="sm" onClick={() => alert('Import functionality coming soon!')}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Import
+                  </Button>
+                </>
+              )}
             </div>
           </div>
 
