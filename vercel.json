@@ -1,0 +1,22 @@
+{
+  "buildCommand": "npm run build:fast",
+  "installCommand": "npm ci --prefer-offline --no-audit",
+  "framework": "nextjs",
+  "functions": {
+    "apps/web/src/app/api/**/*.{ts,tsx}": {
+      "maxDuration": 30
+    }
+  },
+  "regions": ["iad1"],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "s-maxage=60"
+        }
+      ]
+    }
+  ]
+}

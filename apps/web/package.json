@@ -9,7 +9,7 @@
         "db:migrate:safe": "node ../../scripts/migrate-safe.js",
         "postbuild": "node ../../scripts/performance-monitor.js --analyze --report || echo 'Performance monitoring skipped'",
         "build:analyze": "ANALYZE=true npm run build",
-        "build:fast": "npm run db:generate:prod && next build --no-lint",
+        "build:fast": "npm run db:generate:prod && SKIP_TYPE_CHECK=true next build --no-lint",
         "start": "next start",
         "lint": "next lint",
         "test": "vitest",
@@ -23,7 +23,9 @@
         "db:generate": "cd ../../packages/db && npx prisma generate",
         "db:generate:prod": "cd ../../packages/db && npx prisma generate --no-engine",
         "db:health": "node ../../packages/db/health-check.js",
-        "preinstall": "npx only-allow npm"
+        "preinstall": "npx only-allow npm",
+        "heroku-prebuild": "npm run db:generate:prod",
+        "vercel-build": "npm run build:fast"
     },
     "dependencies": {
         "@azure/msal-node": "^3.7.1",

@@ -20,6 +20,11 @@ const nextConfig = {
   experimental: {
     externalDir: true,
     optimizeCss: true,
+    turbo: {
+      rules: {
+        '*.tsx': ['swc-loader'],
+      },
+    },
   },
   serverExternalPackages: [
     'puppeteer',
