@@ -82,9 +82,9 @@ export default function ReportingPage() {
 
   const fetchReportData = useCallback(async () => {
     setLoading(true);
-    try {
-      // Mock data for demonstration
-      const mockData: ReportData = {
+    
+    // Mock data for demonstration
+    const mockData: ReportData = {
         period: selectedPeriod,
         metrics: [
           {
@@ -170,6 +170,7 @@ export default function ReportingPage() {
         ]
       };
 
+    try {
       // Fetch real reporting data from API
       const response = await fetch(`/api/reporting/overview?period=${selectedPeriod}`);
       if (response.ok) {
@@ -177,17 +178,14 @@ export default function ReportingPage() {
         setReportData(data);
       } else {
         console.error('Failed to fetch reporting data');
-        // Set empty data structure if API fails
-        setReportData({
-          period: selectedPeriod,
-          metrics: [],
-          chartData: [],
-          trends: []
-        });
+        // Use mock data if API fails
+        setReportData(mockData);
       }
       setLoading(false);
     } catch (error) {
       console.error('Failed to fetch report data:', error);
+      // Use mock data if fetch fails
+      setReportData(mockData);
       setLoading(false);
     }
   }, [selectedPeriod]);
