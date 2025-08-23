@@ -40,7 +40,7 @@ export default function Navigation({ onWaitlistClick }: NavigationProps) {
     <nav 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled 
-          ? 'bg-[#0E1420]/95 backdrop-blur-md border-b border-white/5' 
+          ? 'glass-card border-b border-white/20' 
           : 'bg-transparent'
       }`}
     >
@@ -52,7 +52,7 @@ export default function Navigation({ onWaitlistClick }: NavigationProps) {
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center"
           >
-            <div className="text-2xl font-bold bg-gradient-to-r from-[#1E5EFF] via-[#16C4D9] to-[#3AF6C3] bg-clip-text text-transparent">
+            <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent">
               Rivor
             </div>
           </motion.div>
@@ -63,14 +63,14 @@ export default function Navigation({ onWaitlistClick }: NavigationProps) {
               <button
                 key={link.label}
                 onClick={() => scrollToSection(link.href.slice(1))}
-                className="text-[#9CB3D9] hover:text-[#EAF2FF] transition-colors text-sm font-medium"
+                className="text-white/80 hover:text-white transition-colors text-sm font-medium"
               >
                 {link.label}
               </button>
             ))}
             <Button
               onClick={onWaitlistClick}
-              className="rounded-xl px-5 py-2 font-medium text-slate-900 bg-gradient-to-r from-[#1E5EFF] via-[#16C4D9] to-[#3AF6C3] hover:opacity-95 focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-[#0E1420] transition-all"
+              className="rounded-xl px-5 py-2 font-medium text-white bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 hover:opacity-95 focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-black transition-all"
               aria-label="Join the Rivor waitlist"
             >
               Join Waitlist
@@ -81,7 +81,7 @@ export default function Navigation({ onWaitlistClick }: NavigationProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="md:hidden p-2 text-[#9CB3D9] hover:text-[#EAF2FF]"
+            className="md:hidden p-2 text-white/80 hover:text-white"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle navigation menu"
             aria-expanded={isMenuOpen}
@@ -98,14 +98,14 @@ export default function Navigation({ onWaitlistClick }: NavigationProps) {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-[#121A28] border-t border-white/10"
+            className="md:hidden glass-card border-t border-white/20"
           >
             <div className="px-6 py-4 space-y-4">
               {navLinks.map((link) => (
                 <button
                   key={link.label}
                   onClick={() => scrollToSection(link.href.slice(1))}
-                  className="block text-[#9CB3D9] hover:text-[#EAF2FF] transition-colors text-sm font-medium w-full text-left"
+                  className="block text-white/80 hover:text-white transition-colors text-sm font-medium w-full text-left"
                 >
                   {link.label}
                 </button>
@@ -115,7 +115,7 @@ export default function Navigation({ onWaitlistClick }: NavigationProps) {
                   onWaitlistClick();
                   setIsMenuOpen(false);
                 }}
-                className="w-full rounded-xl px-5 py-2 font-medium text-slate-900 bg-gradient-to-r from-[#1E5EFF] via-[#16C4D9] to-[#3AF6C3] hover:opacity-95 focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-[#121A28] transition-all mt-4"
+                className="w-full rounded-xl px-5 py-2 font-medium text-white bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 hover:opacity-95 focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-black transition-all mt-4"
                 aria-label="Join the Rivor waitlist"
               >
                 Join Waitlist

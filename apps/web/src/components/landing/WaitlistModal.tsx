@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, Twitter, Linkedin, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,19 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
   const [isSuccess, setIsSuccess] = useState(false);
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const [submitError, setSubmitError] = useState('');
+
+  // Force dark theme for modal
+  useEffect(() => {
+    if (isOpen && typeof window !== 'undefined') {
+      // Add dark theme data attribute to modal elements
+      const modal = document.querySelector('[data-radix-dialog-content]');
+      if (modal) {
+        modal.setAttribute('data-glass-theme', 'black');
+        (modal as HTMLElement).style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
+        (modal as HTMLElement).style.color = '#ffffff';
+      }
+    }
+  }, [isOpen]);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
