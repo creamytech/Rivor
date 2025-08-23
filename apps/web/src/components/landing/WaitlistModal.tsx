@@ -157,7 +157,7 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md mx-4 sm:mx-auto glass-modal glass-border-active glass-hover-glow">
+      <DialogContent className="max-w-md mx-4 sm:mx-auto glass-modal glass-border-active glass-hover-glow bg-black/95 backdrop-blur-xl border border-white/30">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-center">
             {isSuccess ? "You're in!" : "Join the Rivor waitlist"}
@@ -179,13 +179,13 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
               
               <div className="space-y-2">
                 <h3 className="text-lg font-medium">You're in!</h3>
-                <p className="text-[#9CB3D9]">
+                <p className="text-white/80">
                   We'll email you soon with early access updates.
                 </p>
               </div>
 
               <div className="space-y-3">
-                <p className="text-sm text-[#6E85AC]">Share the word:</p>
+                <p className="text-sm text-white/70">Share the word:</p>
                 <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                   <Button
                     variant="outline"
@@ -233,7 +233,7 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="bg-[#0E1420] border-white/20 focus:border-[#16C4D9] text-[#EAF2FF]"
+                  className="bg-black/80 border-white/30 focus:border-cyan-400 text-white"
                   placeholder="you@company.com"
                   required
                   aria-describedby={errors.email ? "email-error" : undefined}
@@ -253,7 +253,7 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
                   id="firstName"
                   value={formData.firstName}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                  className="bg-[#0E1420] border-white/20 focus:border-[#16C4D9] text-[#EAF2FF]"
+                  className="bg-black/80 border-white/30 focus:border-cyan-400 text-white"
                   placeholder="Your first name"
                 />
               </div>
@@ -263,10 +263,10 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
                   Role
                 </Label>
                 <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
-                  <SelectTrigger className="bg-[#0E1420] border-white/20 focus:border-[#16C4D9] text-[#EAF2FF]">
+                  <SelectTrigger className="bg-black/80 border-white/30 focus:border-cyan-400 text-white">
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#121A28] border-white/20">
+                  <SelectContent className="bg-black/95 border-white/30">
                     <SelectItem value="agent">Agent</SelectItem>
                     <SelectItem value="broker">Broker</SelectItem>
                     <SelectItem value="team">Team</SelectItem>
@@ -294,11 +294,11 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
                   id="consent"
                   checked={formData.consent}
                   onChange={(e) => setFormData({ ...formData, consent: e.target.checked })}
-                  className="mt-1 h-4 w-4 text-[#16C4D9] bg-[#0E1420] border-white/20 rounded focus:ring-[#16C4D9] focus:ring-2"
+                  className="mt-1 h-4 w-4 text-cyan-400 bg-black/80 border-white/30 rounded focus:ring-cyan-400 focus:ring-2"
                   required
                   aria-describedby={errors.consent ? "consent-error" : undefined}
                 />
-                <Label htmlFor="consent" className="text-sm text-[#9CB3D9] leading-5">
+                <Label htmlFor="consent" className="text-sm text-white/80 leading-5">
                   Email me about early access and product updates
                 </Label>
               </div>
@@ -317,7 +317,7 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full rounded-xl px-5 py-3 font-medium text-slate-900 bg-gradient-to-r from-[#1E5EFF] via-[#16C4D9] to-[#3AF6C3] hover:opacity-95 focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-[#121A28] transition-all disabled:opacity-50"
+                className="w-full rounded-xl px-5 py-3 font-medium text-white bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 hover:opacity-95 focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-black transition-all disabled:opacity-50"
               >
                 {isSubmitting ? 'Joining...' : 'Join Waitlist'}
               </Button>
