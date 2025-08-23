@@ -3321,18 +3321,48 @@ header:not(.md\\:hidden),
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Glass Modal with improved liquid glass effects */
+/* Glass Modal with improved liquid glass effects - More opaque */
 .glass-modal {
   position: relative;
-  background: var(--glass-surface-strong);
-  backdrop-filter: blur(16px) saturate(1.1) brightness(1.05);
-  -webkit-backdrop-filter: blur(16px) saturate(1.1) brightness(1.05);
-  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px) saturate(1.2) brightness(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2) brightness(1.1);
+  border: 1px solid var(--glass-border-strong);
   box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 16px 64px rgba(0, 0, 0, 0.25),
-    0 4px 16px rgba(0, 0, 0, 0.15);
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 20px 80px rgba(0, 0, 0, 0.3),
+    0 8px 32px rgba(0, 0, 0, 0.2);
   transition: var(--glass-transition-fast);
+}
+
+/* Dark theme modal adjustments */
+[data-glass-theme="black"] .glass-modal {
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+[data-glass-theme="white"] .glass-modal {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+/* Glass cards inside modals - more opaque */
+.glass-modal .glass-card,
+.glass-modal [class*="glass-card"] {
+  background: rgba(255, 255, 255, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+[data-glass-theme="black"] .glass-modal .glass-card,
+[data-glass-theme="black"] .glass-modal [class*="glass-card"] {
+  background: rgba(0, 0, 0, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-glass-theme="white"] .glass-modal .glass-card,
+[data-glass-theme="white"] .glass-modal [class*="glass-card"] {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
 }
 
 /* Subtle modal border effect - removed flashy glow */

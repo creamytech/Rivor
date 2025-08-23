@@ -118,6 +118,35 @@ export default function CalendarPage() {
   const handleSync = async () => {
     setIsSyncing(true);
     try {
+      // First check sync status
+      const statusResponse = await fetch('/api/sync/calendar/status');
+      const statusResult = await statusResponse.json();
+      
+      console.log('Calendar sync status:', statusResult);
+      
+      // If no calendar account exists, try to set it up first
+      if (!statusResult.connected && statusResult.message?.includes('No Google Calendar account connected')) {
+        console.log('Setting up calendar account...');
+        const setupResponse = await fetch('/api/sync/calendar/setup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const setupResult = await setupResponse.json();
+        console.log('Calendar setup result:', setupResult);
+        
+        if (!setupResponse.ok) {
+          alert(`Calendar setup failed: ${setupResult.message || setupResult.error}`);
+          if (setupResult.action === 'connect_google_first') {
+            if (confirm('Connect Google account now?')) {
+              window.location.href = '/api/auth/signin/google';
+            }
+          }
+          return;
+        }
+      }
+      
+      // Now perform the actual sync
       const response = await fetch('/api/sync/calendar', {
         method: 'POST',
         headers: {
@@ -129,18 +158,22 @@ export default function CalendarPage() {
 
       if (response.ok) {
         console.log('Calendar sync successful:', result);
-        // The calendar component will automatically refresh on next render
-        window.location.reload(); // Simple refresh to show new events
+        alert(`Calendar sync successful! ${result.stats?.eventsCreated || 0} events created, ${result.stats?.eventsUpdated || 0} events updated.`);
+        // Refresh to show new events
+        window.location.reload();
       } else {
         console.error('Calendar sync failed:', result);
-        if (result.action === 'connect_calendar') {
-          window.location.href = '/api/auth/signin/google';
-        } else if (result.action === 'reauthenticate_calendar') {
-          window.location.href = '/api/auth/signin/google';
+        alert(`Calendar sync failed: ${result.message || result.error}`);
+        
+        if (result.action === 'connect_google_first' || result.action === 'reauthenticate_google') {
+          if (confirm('Reconnect Google account now?')) {
+            window.location.href = '/api/auth/signin/google';
+          }
         }
       }
     } catch (error) {
       console.error('Calendar sync request failed:', error);
+      alert('Calendar sync failed due to network error. Please try again.');
     } finally {
       setIsSyncing(false);
     }

@@ -9,6 +9,7 @@ import MobileDashboard from "@/components/app/MobileDashboard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import {
   BarChart3,
   TrendingUp,
@@ -33,7 +34,8 @@ import {
   Star,
   Filter,
   RefreshCw,
-  MoreHorizontal
+  MoreHorizontal,
+  X
 } from "lucide-react";
 
 interface DashboardMetric {
@@ -79,6 +81,13 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [showCustomizeModal, setShowCustomizeModal] = useState(false);
+  const [visibleWidgets, setVisibleWidgets] = useState({
+    metrics: true,
+    recentActivity: true,
+    upcomingTasks: true,
+    quickActions: true
+  });
 
   // Detect mobile
   useEffect(() => {
@@ -86,6 +95,19 @@ export default function DashboardPage() {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Load dashboard preferences
+  useEffect(() => {
+    try {
+      const savedPrefs = localStorage.getItem('rivor-dashboard-preferences');
+      if (savedPrefs) {
+        const prefs = JSON.parse(savedPrefs);
+        setVisibleWidgets(prefs.visibleWidgets || visibleWidgets);
+      }
+    } catch (error) {
+      console.error('Failed to load dashboard preferences:', error);
+    }
   }, []);
 
   useEffect(() => {
@@ -336,6 +358,38 @@ export default function DashboardPage() {
     ));
   };
 
+  const savePreferences = (newPrefs: typeof visibleWidgets) => {
+    try {
+      const preferences = {
+        visibleWidgets: newPrefs,
+        lastUpdated: new Date().toISOString()
+      };
+      localStorage.setItem('rivor-dashboard-preferences', JSON.stringify(preferences));
+      setVisibleWidgets(newPrefs);
+    } catch (error) {
+      console.error('Failed to save dashboard preferences:', error);
+    }
+  };
+
+  const handleWidgetToggle = (widget: keyof typeof visibleWidgets) => {
+    const newPrefs = {
+      ...visibleWidgets,
+      [widget]: !visibleWidgets[widget]
+    };
+    savePreferences(newPrefs);
+  };
+
+  const resetDashboard = () => {
+    const defaultPrefs = {
+      metrics: true,
+      recentActivity: true,
+      upcomingTasks: true,
+      quickActions: true
+    };
+    savePreferences(defaultPrefs);
+    setShowCustomizeModal(false);
+  };
+
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'email': return <Mail className="h-4 w-4" />;
@@ -454,7 +508,7 @@ export default function DashboardPage() {
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
-              <Button variant="liquid" size="sm">
+              <Button variant="liquid" size="sm" onClick={() => setShowCustomizeModal(true)}>
                 <Filter className="h-4 w-4 mr-2" />
                 Customize
               </Button>
@@ -466,6 +520,7 @@ export default function DashboardPage() {
         {/* Main Content */}
         <div className="flex-1 px-4 pb-4 space-y-4 main-content-area">
           {/* KPI Metrics Grid */}
+          {visibleWidgets.metrics && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4">
             {loading ? (
               Array.from({ length: 6 }).map((_, i) => (
@@ -523,10 +578,13 @@ export default function DashboardPage() {
               ))
             )}
           </div>
+          )}
 
           {/* Main Dashboard Grid */}
+          {(visibleWidgets.recentActivity || visibleWidgets.upcomingTasks) && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Recent Activity */}
+            {visibleWidgets.recentActivity && (
             <div className="lg:col-span-2 glass-card">
               <div className="p-6 border-b" style={{ borderColor: 'var(--glass-border)' }}>
                 <div className="flex items-center justify-between">
@@ -605,8 +663,10 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
+            )}
 
             {/* Upcoming Tasks */}
+            {visibleWidgets.upcomingTasks && (
             <div className="glass-card">
               <div className="p-6 border-b" style={{ borderColor: 'var(--glass-border)' }}>
                 <div className="flex items-center justify-between">
@@ -682,9 +742,12 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
+            )}
           </div>
+          )}
 
           {/* Quick Actions */}
+          {visibleWidgets.quickActions && (
           <div className="glass-card p-6">
             <h3 className="font-semibold text-lg mb-4" style={{ color: 'var(--glass-text)' }}>
               Quick Actions
@@ -712,6 +775,82 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
+          )}
+
+          {/* Customize Dashboard Modal */}
+          {showCustomizeModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowCustomizeModal(false)} />
+              <div className="relative w-full max-w-md mx-4 glass-modal rounded-xl p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold" style={{ color: 'var(--glass-text)' }}>
+                    Customize Dashboard
+                  </h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowCustomizeModal(false)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium mb-3" style={{ color: 'var(--glass-text)' }}>
+                      Show/Hide Widgets
+                    </h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span style={{ color: 'var(--glass-text-secondary)' }}>Metrics Cards</span>
+                        <Switch
+                          checked={visibleWidgets.metrics}
+                          onCheckedChange={() => handleWidgetToggle('metrics')}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span style={{ color: 'var(--glass-text-secondary)' }}>Recent Activity</span>
+                        <Switch
+                          checked={visibleWidgets.recentActivity}
+                          onCheckedChange={() => handleWidgetToggle('recentActivity')}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span style={{ color: 'var(--glass-text-secondary)' }}>Today's Tasks</span>
+                        <Switch
+                          checked={visibleWidgets.upcomingTasks}
+                          onCheckedChange={() => handleWidgetToggle('upcomingTasks')}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span style={{ color: 'var(--glass-text-secondary)' }}>Quick Actions</span>
+                        <Switch
+                          checked={visibleWidgets.quickActions}
+                          onCheckedChange={() => handleWidgetToggle('quickActions')}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-4 border-t" style={{ borderColor: 'var(--glass-border)' }}>
+                    <Button
+                      variant="outline"
+                      onClick={resetDashboard}
+                      className="flex-1"
+                    >
+                      Reset to Default
+                    </Button>
+                    <Button
+                      onClick={() => setShowCustomizeModal(false)}
+                      className="flex-1"
+                    >
+                      Done
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </AppShell>
     </div>

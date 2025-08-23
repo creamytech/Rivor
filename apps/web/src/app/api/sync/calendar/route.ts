@@ -19,18 +19,51 @@ export async function POST(req: NextRequest) {
     }
 
     // Get the user's Calendar account
-    const calendarAccount = await prisma.calendarAccount.findFirst({
+    let calendarAccount = await prisma.calendarAccount.findFirst({
       where: {
         orgId,
         provider: 'google'
       }
     });
 
+    // Auto-create calendar account if it doesn't exist but email account does
     if (!calendarAccount) {
-      return NextResponse.json({ 
-        error: 'No connected Google Calendar account found',
-        action: 'connect_calendar'
-      }, { status: 404 });
+      const emailAccount = await prisma.emailAccount.findFirst({
+        where: {
+          orgId,
+          provider: 'google'
+        }
+      });
+
+      if (!emailAccount) {
+        return NextResponse.json({ 
+          error: 'No connected Google account found',
+          message: 'Please connect your Google account first in Settings → Integrations',
+          action: 'connect_google_first'
+        }, { status: 404 });
+      }
+
+      if (!emailAccount.externalAccountId) {
+        return NextResponse.json({ 
+          error: 'Google account missing external ID',
+          message: 'Please reconnect your Google account',
+          action: 'reconnect_google'
+        }, { status: 400 });
+      }
+
+      // Create calendar account
+      calendarAccount = await prisma.calendarAccount.create({
+        data: {
+          orgId,
+          provider: 'google',
+          status: 'connected'
+        }
+      });
+
+      logger.info('Auto-created calendar account during sync', {
+        orgId,
+        calendarAccountId: calendarAccount.id
+      });
     }
 
     logger.info('Manual Calendar sync initiated', {

@@ -65,6 +65,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { ThemeSwitcher } from '@/components/ui/theme-switcher';
 
 interface SettingsSection {
   id: string;
@@ -158,22 +159,97 @@ export default function SettingsPage() {
   ];
 
   useEffect(() => {
-    fetchSettings();
+    loadSettings();
   }, []);
 
-  const fetchSettings = async () => {
+  const loadSettings = () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/user/settings');
-      if (!response.ok) {
-        throw new Error('Failed to fetch settings');
+      // Load from localStorage with defaults
+      const defaultSettings: UserSettings = {
+        profile: {
+          name: 'Real Estate Agent',
+          email: 'agent@rivor.com',
+          company: 'Rivor Real Estate',
+          phone: '+1 (555) 123-4567',
+          timezone: 'America/New_York',
+          language: 'en-US'
+        },
+        notifications: {
+          emailNotifications: true,
+          pushNotifications: true,
+          leadAlerts: true,
+          taskReminders: true,
+          weeklyReports: false
+        },
+        appearance: {
+          theme: 'system',
+          accentColor: 'blue',
+          compactMode: false,
+          animations: true
+        },
+        integrations: {
+          googleCalendar: false,
+          docusign: false,
+          zoom: false,
+          slack: false
+        },
+        privacy: {
+          dataSharing: true,
+          analytics: true,
+          marketingEmails: false,
+          twoFactorAuth: false
+        }
+      };
+
+      // Try to load saved settings
+      const savedSettings = localStorage.getItem('rivor-user-settings');
+      if (savedSettings) {
+        const parsedSettings = JSON.parse(savedSettings);
+        setSettings({ ...defaultSettings, ...parsedSettings });
+      } else {
+        setSettings(defaultSettings);
+        localStorage.setItem('rivor-user-settings', JSON.stringify(defaultSettings));
       }
-      
-      const settingsData = await response.json();
-      setSettings(settingsData);
-      setLoading(false);
     } catch (error) {
-      console.error('Failed to fetch settings:', error);
+      console.error('Failed to load settings:', error);
+      // Fallback to default settings
+      setSettings({
+        profile: {
+          name: 'Real Estate Agent',
+          email: 'agent@rivor.com', 
+          company: 'Rivor Real Estate',
+          phone: '+1 (555) 123-4567',
+          timezone: 'America/New_York',
+          language: 'en-US'
+        },
+        notifications: {
+          emailNotifications: true,
+          pushNotifications: true,
+          leadAlerts: true,
+          taskReminders: true,
+          weeklyReports: false
+        },
+        appearance: {
+          theme: 'system',
+          accentColor: 'blue',
+          compactMode: false,
+          animations: true
+        },
+        integrations: {
+          googleCalendar: false,
+          docusign: false,
+          zoom: false,
+          slack: false
+        },
+        privacy: {
+          dataSharing: true,
+          analytics: true,
+          marketingEmails: false,
+          twoFactorAuth: false
+        }
+      });
+    } finally {
       setLoading(false);
     }
   };
@@ -181,24 +257,17 @@ export default function SettingsPage() {
   const saveSettings = async () => {
     setSaving(true);
     try {
-      const response = await fetch('/api/user/settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(settings),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save settings');
-      }
-
-      const result = await response.json();
-      console.log('Settings saved successfully:', result);
-      
-      // Update local state with server response if needed
-      if (result.settings) {
-        setSettings(result.settings);
+      // Save to localStorage
+      if (settings) {
+        localStorage.setItem('rivor-user-settings', JSON.stringify(settings));
+        console.log('Settings saved successfully to localStorage');
+        
+        // If theme changes, update the theme context
+        if (settings.appearance.theme === 'dark') {
+          // Set black theme
+        } else if (settings.appearance.theme === 'light') {
+          // Set white theme  
+        }
       }
     } catch (error) {
       console.error('Failed to save settings:', error);
@@ -210,18 +279,30 @@ export default function SettingsPage() {
   const updateSetting = (section: keyof UserSettings, key: string, value: any) => {
     if (!settings) return;
     
-    setSettings(prev => ({
-      ...prev!,
+    const newSettings = {
+      ...settings,
       [section]: {
-        ...prev![section],
+        ...settings[section],
         [key]: value
       }
-    }));
+    };
+    
+    setSettings(newSettings);
+    
+    // Auto-save to localStorage
+    try {
+      localStorage.setItem('rivor-user-settings', JSON.stringify(newSettings));
+      console.log(`Updated ${section}.${key} to:`, value);
+    } catch (error) {
+      console.error('Failed to auto-save setting:', error);
+    }
   };
 
   const resetSettings = () => {
     setShowResetModal(false);
-    fetchSettings();
+    // Clear localStorage and reload default settings
+    localStorage.removeItem('rivor-user-settings');
+    loadSettings();
   };
 
   if (loading) {
@@ -606,32 +687,9 @@ export default function SettingsPage() {
                         </div>
 
                         <div className="space-y-6">
-                          {/* Theme Selection */}
+                          {/* Theme Selection - Working Theme Switcher */}
                           <div>
-                            <h3 className="text-sm font-medium mb-3" style={{ color: 'var(--glass-text)' }}>
-                              Theme Mode
-                            </h3>
-                            <div className="grid grid-cols-3 gap-3">
-                              {[
-                                { value: 'light', label: 'Light', icon: <Sun className="h-4 w-4" /> },
-                                { value: 'dark', label: 'Dark', icon: <Moon className="h-4 w-4" /> },
-                                { value: 'system', label: 'System', icon: <Monitor className="h-4 w-4" /> }
-                              ].map((themeOption) => (
-                                <button
-                                  key={themeOption.value}
-                                  onClick={() => updateSetting('appearance', 'theme', themeOption.value)}
-                                  className={cn(
-                                    'flex items-center gap-2 p-3 rounded-lg border-2 transition-all',
-                                    settings?.appearance.theme === themeOption.value
-                                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
-                                  )}
-                                >
-                                  {themeOption.icon}
-                                  <span className="text-sm font-medium">{themeOption.label}</span>
-                                </button>
-                              ))}
-                            </div>
+                            <ThemeSwitcher />
                           </div>
 
                           {/* Other Appearance Options */}
@@ -664,6 +722,31 @@ export default function SettingsPage() {
                                 checked={settings?.appearance.animations || false}
                                 onCheckedChange={(checked) => updateSetting('appearance', 'animations', checked)}
                               />
+                            </div>
+
+                            <div className="flex items-center justify-between p-4 rounded-lg bg-white/30 dark:bg-black/20">
+                              <div>
+                                <h3 className="text-sm font-medium" style={{ color: 'var(--glass-text)' }}>
+                                  Welcome Walkthrough
+                                </h3>
+                                <p className="text-xs mt-1" style={{ color: 'var(--glass-text-muted)' }}>
+                                  Take the tour again to learn about Rivor's features
+                                </p>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  localStorage.removeItem('rivor-onboarding-completed');
+                                  localStorage.removeItem('rivor-onboarding-completed-date');
+                                  localStorage.removeItem('rivor-onboarding-skipped-date');
+                                  window.location.reload();
+                                }}
+                                className="flex items-center gap-2"
+                              >
+                                <Sparkles className="h-4 w-4" />
+                                Restart Tour
+                              </Button>
                             </div>
                           </div>
                         </div>
