@@ -80,9 +80,29 @@ export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Mock data - in real app this would come from API
+  // Fetch real contacts from API
   useEffect(() => {
-    const mockContacts: Contact[] = [
+    const fetchContacts = async () => {
+      try {
+        const response = await fetch('/api/contacts');
+        if (response.ok) {
+          const data = await response.json();
+          setContacts(data.contacts || []);
+        } else {
+          console.error('Failed to fetch contacts');
+          setContacts([]);
+        }
+      } catch (error) {
+        console.error('Error fetching contacts:', error);
+        setContacts([]);
+      }
+      setLoading(false);
+    };
+    
+    fetchContacts();
+    
+    // Keep the old mock data as fallback (commented out)
+    /*const mockContacts: Contact[] = [
       {
         id: '1',
         name: 'Sarah Johnson',
@@ -149,10 +169,7 @@ export default function ContactsPage() {
       }
     ];
 
-    setTimeout(() => {
-      setContacts(mockContacts);
-      setLoading(false);
-    }, 800);
+    */
   }, []);
 
   const filteredContacts = contacts.filter(contact => {

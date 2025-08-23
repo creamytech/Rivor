@@ -99,8 +99,24 @@ export default function DocumentsPage() {
   const fetchDocuments = useCallback(async () => {
     setLoading(true);
     try {
-      // Mock data for demonstration
-      const mockDocuments: Document[] = [
+      // Fetch real documents from API
+      const documentsResponse = await fetch('/api/documents');
+      const foldersResponse = await fetch('/api/documents/folders');
+      
+      if (documentsResponse.ok && foldersResponse.ok) {
+        const documentsData = await documentsResponse.json();
+        const foldersData = await foldersResponse.json();
+        
+        setDocuments(documentsData.documents || []);
+        setFolders(foldersData.folders || []);
+      } else {
+        console.error('Failed to fetch documents or folders');
+        setDocuments([]);
+        setFolders([]);
+      }
+      
+      // Old mock data (kept as reference)
+      /*const mockDocuments: Document[] = [
         {
           id: 'doc-1',
           name: 'Purchase Agreement - Johnson Property',
@@ -176,8 +192,7 @@ export default function DocumentsPage() {
         { id: 'archived', name: 'Archived', documentCount: 24, color: 'gray', icon: <Archive className="h-4 w-4" /> }
       ];
 
-      setDocuments(mockDocuments);
-      setFolders(mockFolders);
+      */
     } catch (error) {
       console.error('Failed to fetch documents:', error);
     } finally {

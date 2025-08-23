@@ -255,12 +255,76 @@ export default function DashboardPage() {
         }
       ];
 
-      setTimeout(() => {
-        setMetrics(mockMetrics);
-        setRecentActivities(mockActivities);
-        setUpcomingTasks(mockTasks);
-        setLoading(false);
-      }, 800);
+      try {
+        // Fetch real dashboard data from the API
+        const response = await fetch('/api/dashboard');
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Map API response to dashboard metrics format, keeping the visual structure
+          const realMetrics: DashboardMetric[] = [
+            {
+              id: 'active-leads',
+              label: 'Active Leads',
+              value: data.activeLeads || 0,
+              change: data.leadsChange || 0,
+              changeType: data.leadsChange >= 0 ? 'increase' : 'decrease',
+              icon: <Users className="h-5 w-5" />,
+              color: 'from-blue-500 to-cyan-500',
+              period: 'vs last month'
+            },
+            {
+              id: 'total-contacts',
+              label: 'Total Contacts',
+              value: data.totalContacts || 0,
+              change: data.contactsChange || 0,
+              changeType: data.contactsChange >= 0 ? 'increase' : 'decrease',
+              icon: <Home className="h-5 w-5" />,
+              color: 'from-green-500 to-emerald-500',
+              period: 'this month'
+            },
+            {
+              id: 'unread-emails',
+              label: 'Unread Emails',
+              value: data.unreadEmails || 0,
+              change: 0,
+              changeType: 'neutral',
+              icon: <Mail className="h-5 w-5" />,
+              color: 'from-indigo-500 to-blue-500',
+              period: 'current'
+            },
+            {
+              id: 'upcoming-tasks',
+              label: 'Upcoming Tasks',
+              value: data.upcomingTasks || 0,
+              change: 0,
+              changeType: 'neutral',
+              icon: <Calendar className="h-5 w-5" />,
+              color: 'from-teal-500 to-green-500',
+              period: 'next 7 days'
+            }
+          ];
+
+          // Use real data or empty arrays
+          setMetrics(realMetrics);
+          setRecentActivities(data.recentActivities || []);
+          setUpcomingTasks(data.upcomingTasks || []);
+        } else {
+          console.error('Failed to fetch dashboard data');
+          // Set empty arrays if API fails
+          setMetrics([]);
+          setRecentActivities([]);
+          setUpcomingTasks([]);
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        // Set empty arrays if API fails
+        setMetrics([]);
+        setRecentActivities([]);
+        setUpcomingTasks([]);
+      }
+      
+      setLoading(false);
     };
 
     fetchDashboardData();

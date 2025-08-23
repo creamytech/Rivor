@@ -170,10 +170,22 @@ export default function ReportingPage() {
         ]
       };
 
-      setTimeout(() => {
-        setReportData(mockData);
-        setLoading(false);
-      }, 1000);
+      // Fetch real reporting data from API
+      const response = await fetch(`/api/reporting/overview?period=${selectedPeriod}`);
+      if (response.ok) {
+        const data = await response.json();
+        setReportData(data);
+      } else {
+        console.error('Failed to fetch reporting data');
+        // Set empty data structure if API fails
+        setReportData({
+          period: selectedPeriod,
+          metrics: [],
+          chartData: [],
+          trends: []
+        });
+      }
+      setLoading(false);
     } catch (error) {
       console.error('Failed to fetch report data:', error);
       setLoading(false);
