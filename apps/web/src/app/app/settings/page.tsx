@@ -43,7 +43,8 @@ import {
   Plus,
   Sparkles,
   Zap,
-  Target
+  Target,
+  Calendar
 } from 'lucide-react';
 import {
   Select,
