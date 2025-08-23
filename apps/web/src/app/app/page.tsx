@@ -545,7 +545,7 @@ export default function DashboardPage() {
             metricColumns === '4' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' :
             metricColumns === '6' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6' :
             'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6'
-          }`}
+          }`}>
             {loading ? (
               Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="glass-card p-6">
