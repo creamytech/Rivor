@@ -50,7 +50,52 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
   // Force dark theme for modal
   useEffect(() => {
     if (isOpen && typeof window !== 'undefined') {
-      // Add dark theme data attribute to modal elements
+      // Inject CSS to force dark theme on all modal elements
+      const styleId = 'waitlist-modal-dark-theme';
+      let styleElement = document.getElementById(styleId) as HTMLStyleElement;
+      
+      if (!styleElement) {
+        styleElement = document.createElement('style');
+        styleElement.id = styleId;
+        document.head.appendChild(styleElement);
+      }
+      
+      styleElement.textContent = `
+        [data-radix-dialog-overlay] {
+          background: rgba(0, 0, 0, 0.8) !important;
+        }
+        [data-radix-dialog-content] {
+          background: rgba(0, 0, 0, 0.95) !important;
+          backdrop-filter: blur(24px) saturate(1.2) !important;
+          border: 1px solid rgba(255, 255, 255, 0.3) !important;
+          color: #ffffff !important;
+        }
+        [data-radix-dialog-content] * {
+          color: #ffffff !important;
+        }
+        [data-radix-dialog-content] input {
+          background: rgba(0, 0, 0, 0.8) !important;
+          border-color: rgba(255, 255, 255, 0.3) !important;
+          color: #ffffff !important;
+        }
+        [data-radix-dialog-content] textarea {
+          background: rgba(0, 0, 0, 0.8) !important;
+          border-color: rgba(255, 255, 255, 0.3) !important;
+          color: #ffffff !important;
+        }
+        [data-radix-dialog-content] [data-radix-select-trigger] {
+          background: rgba(0, 0, 0, 0.8) !important;
+          border-color: rgba(255, 255, 255, 0.3) !important;
+          color: #ffffff !important;
+        }
+        [data-radix-select-content] {
+          background: rgba(0, 0, 0, 0.95) !important;
+          border-color: rgba(255, 255, 255, 0.3) !important;
+          color: #ffffff !important;
+        }
+      `;
+      
+      // Also apply styles directly to modal elements
       const modal = document.querySelector('[data-radix-dialog-content]');
       if (modal) {
         modal.setAttribute('data-glass-theme', 'black');
@@ -58,6 +103,16 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
         (modal as HTMLElement).style.color = '#ffffff';
       }
     }
+    
+    return () => {
+      // Clean up style element when modal closes
+      if (!isOpen) {
+        const styleElement = document.getElementById('waitlist-modal-dark-theme');
+        if (styleElement) {
+          styleElement.remove();
+        }
+      }
+    };
   }, [isOpen]);
 
   const validateEmail = (email: string) => {
@@ -170,7 +225,15 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md mx-4 sm:mx-auto glass-modal glass-border-active glass-hover-glow bg-black/95 backdrop-blur-xl border border-white/30">
+        <DialogContent 
+          className="max-w-md mx-4 sm:mx-auto glass-modal glass-border-active glass-hover-glow"
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            backdropFilter: 'blur(24px) saturate(1.2)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            color: '#ffffff'
+          }}
+        >
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-center">
             {isSuccess ? "You're in!" : "Join the Rivor waitlist"}
@@ -247,6 +310,11 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="bg-black/80 border-white/30 focus:border-cyan-400 text-white"
+                  style={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    color: '#ffffff'
+                  }}
                   placeholder="you@company.com"
                   required
                   aria-describedby={errors.email ? "email-error" : undefined}
@@ -267,6 +335,11 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
                   value={formData.firstName}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                   className="bg-black/80 border-white/30 focus:border-cyan-400 text-white"
+                  style={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    color: '#ffffff'
+                  }}
                   placeholder="Your first name"
                 />
               </div>
@@ -276,10 +349,24 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
                   Role
                 </Label>
                 <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
-                  <SelectTrigger className="bg-black/80 border-white/30 focus:border-cyan-400 text-white">
+                  <SelectTrigger 
+                    className="bg-black/80 border-white/30 focus:border-cyan-400 text-white"
+                    style={{
+                      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                      borderColor: 'rgba(255, 255, 255, 0.3)',
+                      color: '#ffffff'
+                    }}
+                  >
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
-                  <SelectContent className="bg-black/95 border-white/30">
+                  <SelectContent 
+                    className="bg-black/95 border-white/30"
+                    style={{
+                      backgroundColor: 'rgba(0, 0, 0, 0.95)',
+                      borderColor: 'rgba(255, 255, 255, 0.3)',
+                      color: '#ffffff'
+                    }}
+                  >
                     <SelectItem value="agent">Agent</SelectItem>
                     <SelectItem value="broker">Broker</SelectItem>
                     <SelectItem value="team">Team</SelectItem>
@@ -296,7 +383,12 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
                   id="note"
                   value={formData.note}
                   onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                  className="bg-[#0E1420] border-white/20 focus:border-[#16C4D9] text-[#EAF2FF] min-h-[80px]"
+                  className="bg-black/80 border-white/30 focus:border-cyan-400 text-white min-h-[80px]"
+                  style={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    color: '#ffffff'
+                  }}
                   placeholder="Tell us about your workflow challenges..."
                 />
               </div>
