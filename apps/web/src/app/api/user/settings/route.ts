@@ -43,6 +43,45 @@ interface UserSettings {
 }
 
 export async function GET() {
+  // Skip auth in development
+  if (process.env.NODE_ENV === 'development') {
+    return Response.json({
+      profile: {
+        name: 'Dev User',
+        email: 'dev@test.com',
+        company: 'Dev Company',
+        phone: '555-123-4567',
+        timezone: 'America/New_York',
+        language: 'en-US'
+      },
+      notifications: {
+        emailNotifications: true,
+        pushNotifications: true,
+        leadAlerts: true,
+        taskReminders: true,
+        weeklyReports: false
+      },
+      appearance: {
+        theme: 'system',
+        accentColor: 'blue',
+        compactMode: false,
+        animations: true
+      },
+      integrations: {
+        googleCalendar: false,
+        docusign: false,
+        zoom: false,
+        slack: false
+      },
+      privacy: {
+        dataSharing: false,
+        analytics: true,
+        marketingEmails: false,
+        twoFactorAuth: false
+      }
+    });
+  }
+
   const session = await auth();
   if (!session?.user?.email) {
     return new Response('Unauthorized', { status: 401 });
@@ -124,6 +163,16 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  // Skip auth in development
+  if (process.env.NODE_ENV === 'development') {
+    const settings = await request.json();
+    return Response.json({
+      success: true,
+      settings,
+      message: 'Settings updated successfully (dev mode)'
+    });
+  }
+
   const session = await auth();
   if (!session?.user?.email) {
     return new Response('Unauthorized', { status: 401 });

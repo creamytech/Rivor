@@ -7,6 +7,27 @@ export const runtime = 'nodejs';
 export const fetchCache = 'force-no-store';
 
 export async function GET() {
+  // Skip auth in development
+  if (process.env.NODE_ENV === 'development') {
+    return Response.json({
+      id: 'dev-user-1',
+      name: 'Dev User',
+      email: 'dev@test.com',
+      image: null,
+      timezone: 'America/New_York',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      emailVerified: true,
+      organization: {
+        id: 'dev-org-1',
+        name: 'Dev Organization',
+        brandName: 'Dev Company',
+        role: 'owner',
+        joinedAt: new Date().toISOString()
+      }
+    });
+  }
+
   const session = await auth();
   if (!session?.user?.email) {
     return new Response('Unauthorized', { status: 401 });
@@ -66,6 +87,20 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  // Skip auth in development
+  if (process.env.NODE_ENV === 'development') {
+    const body = await request.json();
+    return Response.json({
+      id: 'dev-user-1',
+      name: body.name || 'Dev User',
+      email: 'dev@test.com',
+      image: null,
+      timezone: body.timezone || 'America/New_York',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+  }
+
   const session = await auth();
   if (!session?.user?.email) {
     return new Response('Unauthorized', { status: 401 });

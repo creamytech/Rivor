@@ -6,6 +6,31 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    // Skip auth in development
+    if (process.env.NODE_ENV === 'development') {
+      return NextResponse.json({ 
+        notifications: [
+          {
+            id: '1',
+            type: 'lead',
+            title: 'New Lead Detected',
+            message: 'AI detected a potential lead from john@example.com',
+            timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
+            isRead: false,
+            priority: 'high'
+          },
+          {
+            id: '2',
+            type: 'task',
+            title: 'Follow-up Required',
+            message: 'Property inquiry from Sarah needs response within 24 hours',
+            timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
+            isRead: false,
+            priority: 'medium'
+          }
+        ]
+      });
+    }
 
     const session = await auth();
     if (!session?.user?.email) {

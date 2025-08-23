@@ -16,9 +16,67 @@ interface OnboardingStep {
 }
 
 export async function GET() {
+  // Skip auth in development
+  if (process.env.NODE_ENV === 'development') {
+    return Response.json({
+      steps: [
+        {
+          id: 'profile_setup',
+          title: 'Complete Your Profile',
+          description: 'Add your name, phone number, and company information',
+          completed: true,
+          required: true,
+          order: 1
+        },
+        {
+          id: 'email_integration',
+          title: 'Connect Your Email',
+          description: 'Integrate Gmail to start managing your email communications',
+          completed: false,
+          required: true,
+          order: 2
+        },
+        {
+          id: 'calendar_integration',
+          title: 'Connect Your Calendar',
+          description: 'Sync your Google Calendar to manage appointments and events',
+          completed: false,
+          required: false,
+          order: 3
+        },
+        {
+          id: 'ai_chat',
+          title: 'Meet Your AI Assistant',
+          description: 'Chat with our AI to personalize your experience and learn your communication style',
+          completed: false,
+          required: true,
+          order: 4
+        },
+        {
+          id: 'first_lead',
+          title: 'Create Your First Lead',
+          description: 'Add a contact and create your first lead to get started',
+          completed: false,
+          required: false,
+          order: 5
+        }
+      ],
+      progress: 20,
+      completedSteps: 1,
+      totalSteps: 5,
+      isComplete: false,
+      isFirstTime: true
+    });
+  }
+
   const session = await auth();
   if (!session?.user?.email) {
     return new Response('Unauthorized', { status: 401 });
+  }
+
+  const orgId = (session as { orgId?: string }).orgId;
+  if (!orgId) {
+    return new Response('Organization not found', { status: 403 });
   }
 
   try {
@@ -26,6 +84,7 @@ export async function GET() {
       where: { email: session.user.email },
       include: {
         orgMembers: {
+          where: { orgId },
           include: { 
             org: {
               include: {
@@ -113,6 +172,21 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  // Skip auth in development
+  if (process.env.NODE_ENV === 'development') {
+    const { stepId, completed } = await request.json();
+    return Response.json({
+      success: true,
+      message: `Step ${stepId} marked as ${completed ? 'completed' : 'incomplete'}`,
+      steps: [],
+      progress: 20,
+      completedSteps: 1,
+      totalSteps: 5,
+      isComplete: false,
+      isFirstTime: true
+    });
+  }
+
   const session = await auth();
   if (!session?.user?.email) {
     return new Response('Unauthorized', { status: 401 });
