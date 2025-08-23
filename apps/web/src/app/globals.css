@@ -3414,14 +3414,63 @@ header:not(.md\\:hidden),
   z-index: 999999 !important;
 }
 
-/* Simple waitlist modal styling - less transparent */
+/* Simple waitlist modal styling - much less transparent */
 .waitlist-modal-content {
-  background: rgba(0, 0, 0, 0.98) !important;
-  backdrop-filter: blur(32px) saturate(1.4) brightness(0.9) !important;
-  -webkit-backdrop-filter: blur(32px) saturate(1.4) brightness(0.9) !important;
-  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: rgba(0, 0, 0, 0.99) !important;
+  backdrop-filter: blur(40px) saturate(1.5) brightness(0.95) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(1.5) brightness(0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
   color: #ffffff !important;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* Mobile specific waitlist modal - force solid background */
+@media (max-width: 768px) {
+  .waitlist-modal-content {
+    background: rgba(0, 0, 0, 1) !important;
+    backdrop-filter: blur(20px) saturate(1.2) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
+  }
+  
+  /* Force dark theme on mobile for dialog overlay */
+  [data-radix-dialog-overlay] {
+    background: rgba(0, 0, 0, 0.95) !important;
+  }
+  
+  /* Ensure modal content is properly styled on mobile */
+  [data-radix-dialog-content] {
+    background: rgba(0, 0, 0, 1) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  }
+  
+  /* Force all waitlist modal elements to dark theme on mobile */
+  [data-waitlist-modal-open="true"] * {
+    background-color: transparent !important;
+    color: #ffffff !important;
+  }
+  
+  /* Force form inputs to be dark on mobile */
+  [data-waitlist-modal-open="true"] input,
+  [data-waitlist-modal-open="true"] textarea,
+  [data-waitlist-modal-open="true"] select {
+    background: rgba(0, 0, 0, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #ffffff !important;
+  }
+  
+  /* Ensure buttons are properly themed */
+  [data-waitlist-modal-open="true"] button {
+    color: #ffffff !important;
+  }
+  
+  /* Force radix select elements to dark */
+  [data-waitlist-modal-open="true"] [data-radix-select-trigger],
+  [data-waitlist-modal-open="true"] [data-radix-select-content] {
+    background: rgba(0, 0, 0, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #ffffff !important;
+  }
 }
 
 /* Force all text to white in waitlist modal */
