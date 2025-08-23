@@ -195,10 +195,10 @@ export default function CreateDealModal({ open, onOpenChange, onDealCreated, sel
       onOpenChange={onOpenChange}
     >
       <DialogContent 
-        className="max-w-4xl max-h-[85vh] overflow-y-auto glass-modal glass-border-active glass-hover-glow"
+        className="max-w-4xl max-h-[85vh] overflow-y-auto glass-modal"
       >
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl glass-text-glow">
+          <DialogTitle className="flex items-center gap-2 text-xl">
             <Plus className="h-5 w-5" style={{ color: 'var(--glass-primary)' }} />
             Create New Deal
           </DialogTitle>
@@ -206,27 +206,27 @@ export default function CreateDealModal({ open, onOpenChange, onDealCreated, sel
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <Tabs defaultValue="client" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 glass-surface glass-border glass-hover-pulse">
-              <TabsTrigger value="client" className="flex items-center gap-2 glass-hover-pulse data-[state=active]:glass-badge data-[state=active]:glass-text-glow">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="client" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
                 Client
               </TabsTrigger>
-              <TabsTrigger value="property" className="flex items-center gap-2 glass-hover-pulse data-[state=active]:glass-badge data-[state=active]:glass-text-glow">
+              <TabsTrigger value="property" className="flex items-center gap-2">
                 <Home className="h-4 w-4" />
                 Property
               </TabsTrigger>
-              <TabsTrigger value="deal" className="flex items-center gap-2 glass-hover-pulse data-[state=active]:glass-badge data-[state=active]:glass-text-glow">
+              <TabsTrigger value="deal" className="flex items-center gap-2">
                 <DollarSign className="h-4 w-4" />
                 Deal
               </TabsTrigger>
-              <TabsTrigger value="details" className="flex items-center gap-2 glass-hover-pulse data-[state=active]:glass-badge data-[state=active]:glass-text-glow">
+              <TabsTrigger value="details" className="flex items-center gap-2">
                 <Target className="h-4 w-4" />
                 Details
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="client" className="space-y-4">
-              <Card className="glass-card glass-hover-tilt">
+              <Card className="glass-card">
                 <CardContent className="p-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -236,7 +236,7 @@ export default function CreateDealModal({ open, onOpenChange, onDealCreated, sel
                         value={formData.clientName}
                         onChange={(e) => updateFormData('clientName', e.target.value)}
                         placeholder="Enter client full name"
-                        className="glass-input glass-hover-pulse"
+                        className="glass-input"
                         required
                       />
                     </div>
@@ -247,7 +247,7 @@ export default function CreateDealModal({ open, onOpenChange, onDealCreated, sel
                         value={formData.clientType} 
                         onValueChange={(value) => updateFormData('clientType', value)}
                       >
-                        <SelectTrigger className="glass-input glass-hover-pulse">
+                        <SelectTrigger className="glass-input">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -293,7 +293,7 @@ export default function CreateDealModal({ open, onOpenChange, onDealCreated, sel
             </TabsContent>
 
             <TabsContent value="property" className="space-y-4">
-              <Card className="glass-card glass-hover-tilt">
+              <Card className="glass-card">
                 <CardContent className="p-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2 space-y-2">
@@ -317,7 +317,7 @@ export default function CreateDealModal({ open, onOpenChange, onDealCreated, sel
                         value={formData.propertyType} 
                         onValueChange={(value) => updateFormData('propertyType', value)}
                       >
-                        <SelectTrigger className="glass-input glass-hover-pulse">
+                        <SelectTrigger className="glass-input">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -384,7 +384,7 @@ export default function CreateDealModal({ open, onOpenChange, onDealCreated, sel
             </TabsContent>
 
             <TabsContent value="deal" className="space-y-4">
-              <Card className="glass-card glass-hover-tilt">
+              <Card className="glass-card">
                 <CardContent className="p-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -393,7 +393,7 @@ export default function CreateDealModal({ open, onOpenChange, onDealCreated, sel
                         value={formData.dealType} 
                         onValueChange={(value) => updateFormData('dealType', value)}
                       >
-                        <SelectTrigger className="glass-input glass-hover-pulse">
+                        <SelectTrigger className="glass-input">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -411,7 +411,7 @@ export default function CreateDealModal({ open, onOpenChange, onDealCreated, sel
                         value={formData.priority} 
                         onValueChange={(value) => updateFormData('priority', value)}
                       >
-                        <SelectTrigger className="glass-input glass-hover-pulse">
+                        <SelectTrigger className="glass-input">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -491,7 +491,7 @@ export default function CreateDealModal({ open, onOpenChange, onDealCreated, sel
             </TabsContent>
 
             <TabsContent value="details" className="space-y-4">
-              <Card className="glass-card glass-hover-tilt">
+              <Card className="glass-card">
                 <CardContent className="p-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -500,7 +500,7 @@ export default function CreateDealModal({ open, onOpenChange, onDealCreated, sel
                         value={formData.leadSource} 
                         onValueChange={(value) => updateFormData('leadSource', value)}
                       >
-                        <SelectTrigger className="glass-input glass-hover-pulse">
+                        <SelectTrigger className="glass-input">
                           <SelectValue placeholder="Select lead source" />
                         </SelectTrigger>
                         <SelectContent>
@@ -522,7 +522,7 @@ export default function CreateDealModal({ open, onOpenChange, onDealCreated, sel
                         value={formData.assignedAgent} 
                         onValueChange={(value) => updateFormData('assignedAgent', value)}
                       >
-                        <SelectTrigger className="glass-input glass-hover-pulse">
+                        <SelectTrigger className="glass-input">
                           <SelectValue placeholder="Select agent" />
                         </SelectTrigger>
                         <SelectContent>
@@ -605,7 +605,7 @@ export default function CreateDealModal({ open, onOpenChange, onDealCreated, sel
                 type="button" 
                 variant="outline" 
                 onClick={() => onOpenChange(false)}
-                className="glass-button glass-hover-pulse"
+                className="glass-button"
               >
                 Cancel
               </Button>
@@ -613,7 +613,7 @@ export default function CreateDealModal({ open, onOpenChange, onDealCreated, sel
                 type="submit" 
                 disabled={isSubmitting || !formData.clientName || !formData.propertyAddress || !formData.dealValue}
                 variant="liquid"
-                className="glass-button-primary glass-hover-glow glass-click-ripple"
+                className="glass-button-primary"
               >
                 {isSubmitting ? (
                   <motion.div

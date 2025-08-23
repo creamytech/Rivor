@@ -106,9 +106,38 @@ interface EnhancedSettingsProps {
 
 export default function EnhancedSettings({ className = '' }: EnhancedSettingsProps) {
   const { theme } = useTheme();
-  const [activeTab, setActiveTab] = useState('lead-rules');
+  const [activeTab, setActiveTab] = useState('appearance'); // Start with appearance tab
   const [showAddRuleModal, setShowAddRuleModal] = useState(false);
   const [editingRule, setEditingRule] = useState<LeadRule | null>(null);
+  
+  // Local state for settings
+  const [localNotifications, setLocalNotifications] = useState<NotificationSetting[]>([]);
+  const [localAppearance, setLocalAppearance] = useState<AppearanceSetting | null>(null);
+  const [localLeadRules, setLocalLeadRules] = useState<LeadRule[]>([]);
+  
+  // Load settings from localStorage on mount
+  useEffect(() => {
+    const savedNotifications = localStorage.getItem('rivor-notifications');
+    if (savedNotifications) {
+      setLocalNotifications(JSON.parse(savedNotifications));
+    } else {
+      setLocalNotifications(defaultNotifications);
+    }
+    
+    const savedAppearance = localStorage.getItem('rivor-appearance');
+    if (savedAppearance) {
+      setLocalAppearance(JSON.parse(savedAppearance));
+    } else {
+      setLocalAppearance(defaultAppearance);
+    }
+    
+    const savedLeadRules = localStorage.getItem('rivor-lead-rules');
+    if (savedLeadRules) {
+      setLocalLeadRules(JSON.parse(savedLeadRules));
+    } else {
+      setLocalLeadRules(defaultLeadRules);
+    }
+  }, []);
 
   // Fetch real data from tRPC with error handling
   const { data: leadRulesData, isLoading: leadRulesLoading, error: leadRulesError, refetch: refetchLeadRules } = trpc.settings.getLeadRules.useQuery(undefined, {
@@ -204,9 +233,9 @@ export default function EnhancedSettings({ className = '' }: EnhancedSettingsPro
     animations: true
   };
 
-  const leadRules = leadRulesError ? defaultLeadRules : (leadRulesData || defaultLeadRules);
-  const notifications = notificationsError ? defaultNotifications : (notificationsData || defaultNotifications);
-  const appearance = appearanceError ? defaultAppearance : (appearanceData || defaultAppearance);
+  const leadRules = localLeadRules.length > 0 ? localLeadRules : (leadRulesError ? defaultLeadRules : (leadRulesData || defaultLeadRules));
+  const notifications = localNotifications.length > 0 ? localNotifications : (notificationsError ? defaultNotifications : (notificationsData || defaultNotifications));
+  const appearance = localAppearance || (appearanceError ? defaultAppearance : (appearanceData || defaultAppearance));
 
   // Mock integrations data (would come from tRPC in real implementation)
   const integrations: Integration[] = [
@@ -291,16 +320,33 @@ export default function EnhancedSettings({ className = '' }: EnhancedSettingsPro
     }
   };
 
-  const handleNotificationToggle = async (notificationId: string, enabled: boolean) => {
+  const handleNotificationToggle = async (notificationId: string, field: keyof NotificationSetting['channels'] | 'enabled', value: boolean) => {
     try {
-      if (notificationsError) {
-        console.warn('API unavailable, using fallback data');
-        return;
+      const updatedNotifications = notifications.map(notification => {
+        if (notification.id !== notificationId) return notification;
+        
+        if (field === 'enabled') {
+          return { ...notification, enabled: value };
+        } else {
+          return { 
+            ...notification, 
+            channels: { ...notification.channels, [field]: value }
+          };
+        }
+      });
+      
+      // Update local state and localStorage immediately
+      setLocalNotifications(updatedNotifications);
+      localStorage.setItem('rivor-notifications', JSON.stringify(updatedNotifications));
+      
+      // Try to sync with API if available
+      if (!notificationsError) {
+        try {
+          await updateNotificationsMutation.mutateAsync({ notifications: updatedNotifications });
+        } catch (error) {
+          console.warn('API sync failed, using local storage');
+        }
       }
-      const updatedNotifications = notifications.map(notification =>
-        notification.id === notificationId ? { ...notification, enabled } : notification
-      );
-      await updateNotificationsMutation.mutateAsync({ notifications: updatedNotifications });
     } catch (error) {
       console.error('Error updating notification:', error);
     }
@@ -308,11 +354,20 @@ export default function EnhancedSettings({ className = '' }: EnhancedSettingsPro
 
   const handleAppearanceUpdate = async (updates: Partial<AppearanceSetting>) => {
     try {
-      if (appearanceError) {
-        console.warn('API unavailable, using fallback data');
-        return;
+      const updatedAppearance = { ...appearance, ...updates };
+      
+      // Update local state and localStorage immediately
+      setLocalAppearance(updatedAppearance);
+      localStorage.setItem('rivor-appearance', JSON.stringify(updatedAppearance));
+      
+      // Try to sync with API if available
+      if (!appearanceError) {
+        try {
+          await updateAppearanceMutation.mutateAsync(updatedAppearance);
+        } catch (error) {
+          console.warn('API sync failed, using local storage');
+        }
       }
-      await updateAppearanceMutation.mutateAsync({ ...appearance, ...updates });
     } catch (error) {
       console.error('Error updating appearance:', error);
     }
@@ -571,7 +626,7 @@ export default function EnhancedSettings({ className = '' }: EnhancedSettingsPro
                           <Switch
                             checked={notification.channels.email}
                             onCheckedChange={(checked) => 
-                              handleNotificationToggle(notification.id, checked)
+                              handleNotificationToggle(notification.id, 'email', checked)
                             }
                           />
                         </div>
@@ -580,7 +635,7 @@ export default function EnhancedSettings({ className = '' }: EnhancedSettingsPro
                           <Switch
                             checked={notification.channels.push}
                             onCheckedChange={(checked) => 
-                              handleNotificationToggle(notification.id, checked)
+                              handleNotificationToggle(notification.id, 'push', checked)
                             }
                           />
                         </div>
@@ -589,7 +644,7 @@ export default function EnhancedSettings({ className = '' }: EnhancedSettingsPro
                           <Switch
                             checked={notification.channels.inApp}
                             onCheckedChange={(checked) => 
-                              handleNotificationToggle(notification.id, checked)
+                              handleNotificationToggle(notification.id, 'inApp', checked)
                             }
                           />
                         </div>
@@ -604,146 +659,25 @@ export default function EnhancedSettings({ className = '' }: EnhancedSettingsPro
           {/* Appearance Tab */}
           <TabsContent value="appearance" className="space-y-6">
             <div>
-              <h2 
-                className="text-xl font-semibold mb-2 glass-theme-text"
-                style={{ color: 'var(--glass-text)' }}
-              >
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
                 Appearance & Themes
               </h2>
-              <p className="glass-theme-text-secondary" style={{ color: 'var(--glass-text-secondary)' }}>
-                Personalize your Rivor workspace with beautiful river-inspired themes
+              <p className="text-slate-600 dark:text-slate-400">
+                Customize your workspace appearance and preferences
               </p>
             </div>
 
             <div className="grid gap-6">
-              {/* River Theme Selection */}
-              <GlassCard 
-                variant="gradient" 
-                intensity="medium"
-                style={{
-                  background: 'var(--glass-bg)',
-                  border: '1px solid var(--glass-border)',
-                  backdropFilter: 'var(--glass-blur)',
-                }}
-              >
+              {/* Theme Selection */}
+              <GlassCard variant="gradient" intensity="medium">
                 <GlassCardHeader>
-                  <GlassCardTitle className="glass-theme-text" style={{ color: 'var(--glass-text)' }}>
-                    <Palette className="h-5 w-5 mr-2 glass-theme-primary" style={{ color: 'var(--glass-primary)' }} />
-                    River Theme Selection
+                  <GlassCardTitle>
+                    <Palette className="h-5 w-5 mr-2" />
+                    Theme Selection
                   </GlassCardTitle>
                 </GlassCardHeader>
                 <GlassCardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div 
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg"
-                        style={{
-                          background: 'var(--glass-primary-muted)',
-                          border: '1px solid var(--glass-primary)',
-                        }}
-                      >
-                        <div 
-                          className="w-4 h-4 rounded-full glass-theme-gradient"
-                          style={{ background: 'var(--glass-gradient)' }}
-                        />
-                        <span 
-                          className="text-sm font-medium glass-theme-primary"
-                          style={{ color: 'var(--glass-primary)' }}
-                        >
-                          Current: {theme === 'black' ? 'Black Glass' : 'White Glass'}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    {/* Full Theme Switcher */}
-                    <ThemeSwitcher />
-                  </div>
-                </GlassCardContent>
-              </GlassCard>
-
-              {/* Theme Information */}
-              <GlassCard 
-                variant="gradient" 
-                intensity="medium"
-                style={{
-                  background: 'var(--glass-bg)',
-                  border: '1px solid var(--glass-border)',
-                  backdropFilter: 'var(--glass-blur)',
-                }}
-              >
-                <GlassCardHeader>
-                  <GlassCardTitle className="glass-theme-text" style={{ color: 'var(--glass-text)' }}>
-                    <Activity className="h-5 w-5 mr-2 glass-theme-secondary" style={{ color: 'var(--glass-secondary)' }} />
-                    Current Theme Details
-                  </GlassCardTitle>
-                </GlassCardHeader>
-                <GlassCardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <h4 
-                        className="font-semibold mb-2 glass-theme-text"
-                        style={{ color: 'var(--glass-text)' }}
-                      >
-                        {theme === 'black' ? 'Black Glass' : 'White Glass'} Theme
-                      </h4>
-                      <p 
-                        className="text-sm mb-3 glass-theme-text-secondary"
-                        style={{ color: 'var(--glass-text-secondary)' }}
-                      >
-                        {theme === 'black' ? 'Modern dark glass theme with translucent effects' : 'Clean light glass theme with subtle transparency'}
-                      </p>
-                      <p 
-                        className="text-xs italic glass-theme-text-muted"
-                        style={{ color: 'var(--glass-text-muted)' }}
-                      >
-                        {theme === 'black' ? 'Professional and sophisticated with liquid glass effects' : 'Clean and modern with light glass aesthetics'}
-                      </p>
-                    </div>
-                    
-                    {/* Color Palette Display */}
-                    <div>
-                      <h5 
-                        className="text-sm font-medium mb-2 glass-theme-text-secondary"
-                        style={{ color: 'var(--glass-text-secondary)' }}
-                      >
-                        Color Palette
-                      </h5>
-                      <div className="flex gap-2">
-                        <div 
-                          className="w-8 h-8 rounded-lg border"
-                          style={{ 
-                            backgroundColor: 'var(--glass-primary)',
-                            borderColor: 'var(--glass-border)' 
-                          }}
-                          title="Primary Color"
-                        />
-                        <div 
-                          className="w-8 h-8 rounded-lg border"
-                          style={{ 
-                            backgroundColor: 'var(--glass-secondary)',
-                            borderColor: 'var(--glass-border)' 
-                          }}
-                          title="Secondary Color"
-                        />
-                        <div 
-                          className="w-8 h-8 rounded-lg border"
-                          style={{ 
-                            backgroundColor: 'var(--glass-accent)',
-                            borderColor: 'var(--glass-border)' 
-                          }}
-                          title="Accent Color"
-                        />
-                        <div 
-                          className="w-8 h-8 rounded-lg border"
-                          style={{ 
-                            background: 'var(--glass-gradient)',
-                            borderColor: 'var(--glass-border)' 
-                          }}
-                          title="Gradient"
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  <ThemeSwitcher />
                 </GlassCardContent>
               </GlassCard>
 
@@ -761,7 +695,16 @@ export default function EnhancedSettings({ className = '' }: EnhancedSettingsPro
                         className="h-12"
                         onClick={() => handleAppearanceUpdate({ accentColor: color })}
                       >
-                        <div className={`w-4 h-4 rounded-full bg-${color}-500`}></div>
+                        <div 
+                          className="w-4 h-4 rounded-full"
+                          style={{ 
+                            backgroundColor: color === 'blue' ? '#3b82f6' :
+                                           color === 'green' ? '#10b981' :
+                                           color === 'purple' ? '#8b5cf6' :
+                                           color === 'orange' ? '#f59e0b' :
+                                           color === 'red' ? '#ef4444' : '#ec4899'
+                          }}
+                        />
                       </Button>
                     ))}
                   </div>
@@ -791,7 +734,7 @@ export default function EnhancedSettings({ className = '' }: EnhancedSettingsPro
               {/* Accessibility */}
               <GlassCard variant="gradient" intensity="medium">
                 <GlassCardHeader>
-                  <GlassCardTitle>Accessibility</GlassCardTitle>
+                  <GlassCardTitle>Accessibility & Animations</GlassCardTitle>
                 </GlassCardHeader>
                 <GlassCardContent>
                   <div className="space-y-4">
