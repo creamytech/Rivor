@@ -1,17 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import OnboardingWalkthrough from './OnboardingWalkthrough';
-import AIOnboardingAgent from './AIOnboardingAgent';
-
-interface ToneAnalysis {
-  overallTone: string;
-  communicationStyle: string;
-  preferredFormality: string;
-  keyPersonalityTraits: string[];
-  businessFocus: string[];
-  confidence: number;
-}
+import SimpleOnboarding from './SimpleOnboarding';
 
 interface OnboardingManagerProps {
   children: React.ReactNode;
@@ -19,28 +9,25 @@ interface OnboardingManagerProps {
 
 export default function OnboardingManager({ children }: OnboardingManagerProps) {
   const [showWalkthrough, setShowWalkthrough] = useState(false);
-  const [showAIAgent, setShowAIAgent] = useState(false);
-  const [onboardingStatus, setOnboardingStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     checkOnboardingStatus();
   }, []);
 
-  const checkOnboardingStatus = async () => {
+  const checkOnboardingStatus = () => {
     try {
-      const response = await fetch('/api/user/onboarding');
-      if (response.ok) {
-        const status = await response.json();
-        setOnboardingStatus(status);
-        
-        // Show walkthrough if user is new and hasn't completed onboarding
-        if (status.isFirstTime && !status.isComplete) {
-          setShowWalkthrough(true);
-        }
+      // Check if user has completed onboarding
+      const hasCompletedOnboarding = localStorage.getItem('rivor-onboarding-completed');
+      
+      // Show walkthrough for new users
+      if (!hasCompletedOnboarding) {
+        setShowWalkthrough(true);
       }
     } catch (error) {
       console.error('Failed to check onboarding status:', error);
+      // Default to showing walkthrough if localStorage is not available
+      setShowWalkthrough(true);
     } finally {
       setLoading(false);
     }
@@ -49,39 +36,25 @@ export default function OnboardingManager({ children }: OnboardingManagerProps) 
   const handleWalkthroughComplete = () => {
     setShowWalkthrough(false);
     
-    // Check if AI chat step is pending
-    const aiChatStep = onboardingStatus?.steps?.find((step: any) => step.id === 'ai_chat');
-    if (aiChatStep && !aiChatStep.completed) {
-      setShowAIAgent(true);
+    // Mark onboarding as completed
+    try {
+      localStorage.setItem('rivor-onboarding-completed', 'true');
+      localStorage.setItem('rivor-onboarding-completed-date', new Date().toISOString());
+    } catch (error) {
+      console.error('Failed to save onboarding completion:', error);
     }
   };
 
   const handleWalkthroughSkip = () => {
     setShowWalkthrough(false);
-  };
-
-  const handleAIAgentComplete = async (analysis: ToneAnalysis) => {
-    console.log('User tone analysis completed:', analysis);
     
-    // Mark AI chat step as complete
+    // Mark as skipped but not completed
     try {
-      await fetch('/api/user/onboarding', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stepId: 'ai_chat', completed: true })
-      });
+      localStorage.setItem('rivor-onboarding-completed', 'skipped');
+      localStorage.setItem('rivor-onboarding-skipped-date', new Date().toISOString());
     } catch (error) {
-      console.error('Failed to mark AI chat as complete:', error);
+      console.error('Failed to save onboarding skip:', error);
     }
-    
-    setShowAIAgent(false);
-    
-    // Refresh onboarding status
-    await checkOnboardingStatus();
-  };
-
-  const handleAIAgentClose = () => {
-    setShowAIAgent(false);
   };
 
   // Don't render anything while loading
@@ -93,16 +66,12 @@ export default function OnboardingManager({ children }: OnboardingManagerProps) 
     <>
       {children}
       
-      <OnboardingWalkthrough
-        onComplete={handleWalkthroughComplete}
-        onSkip={handleWalkthroughSkip}
-      />
-      
-      <AIOnboardingAgent
-        isOpen={showAIAgent}
-        onClose={handleAIAgentClose}
-        onComplete={handleAIAgentComplete}
-      />
+      {showWalkthrough && (
+        <SimpleOnboarding
+          onComplete={handleWalkthroughComplete}
+          onSkip={handleWalkthroughSkip}
+        />
+      )}
     </>
   );
 }

@@ -47,7 +47,8 @@ import {
   Monitor,
   Smartphone,
   Moon,
-  Sun
+  Sun,
+  Sparkles
 } from 'lucide-react';
 
 interface LeadRule {
@@ -104,6 +105,71 @@ interface EnhancedSettingsProps {
   className?: string;
 }
 
+interface AddRuleModalProps {
+  onClose: () => void;
+  onSave: (rule: Partial<LeadRule>) => void;
+}
+
+function AddRuleModal({ onClose, onSave }: AddRuleModalProps) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (name.trim() && description.trim()) {
+      onSave({ name: name.trim(), description: description.trim() });
+      setName('');
+      setDescription('');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="w-full max-w-md mx-4 glass-modal rounded-lg p-6" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-4">Add Lead Rule</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Rule Name
+            </label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter rule name"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Description
+            </label>
+            <Input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter rule description"
+              required
+            />
+          </div>
+          
+          <div className="flex items-center gap-2 pt-4">
+            <Button type="submit" className="flex-1">
+              Create Rule
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function EnhancedSettings({ className = '' }: EnhancedSettingsProps) {
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState('appearance'); // Start with appearance tab
@@ -117,24 +183,35 @@ export default function EnhancedSettings({ className = '' }: EnhancedSettingsPro
   
   // Load settings from localStorage on mount
   useEffect(() => {
-    const savedNotifications = localStorage.getItem('rivor-notifications');
-    if (savedNotifications) {
-      setLocalNotifications(JSON.parse(savedNotifications));
-    } else {
+    try {
+      const savedNotifications = localStorage.getItem('rivor-notifications');
+      if (savedNotifications) {
+        setLocalNotifications(JSON.parse(savedNotifications));
+      } else {
+        setLocalNotifications(defaultNotifications);
+        localStorage.setItem('rivor-notifications', JSON.stringify(defaultNotifications));
+      }
+      
+      const savedAppearance = localStorage.getItem('rivor-appearance');
+      if (savedAppearance) {
+        setLocalAppearance(JSON.parse(savedAppearance));
+      } else {
+        setLocalAppearance(defaultAppearance);
+        localStorage.setItem('rivor-appearance', JSON.stringify(defaultAppearance));
+      }
+      
+      const savedLeadRules = localStorage.getItem('rivor-lead-rules');
+      if (savedLeadRules) {
+        setLocalLeadRules(JSON.parse(savedLeadRules));
+      } else {
+        setLocalLeadRules(defaultLeadRules);
+        localStorage.setItem('rivor-lead-rules', JSON.stringify(defaultLeadRules));
+      }
+    } catch (error) {
+      console.error('Failed to load settings from localStorage:', error);
+      // Fallback to defaults
       setLocalNotifications(defaultNotifications);
-    }
-    
-    const savedAppearance = localStorage.getItem('rivor-appearance');
-    if (savedAppearance) {
-      setLocalAppearance(JSON.parse(savedAppearance));
-    } else {
       setLocalAppearance(defaultAppearance);
-    }
-    
-    const savedLeadRules = localStorage.getItem('rivor-lead-rules');
-    if (savedLeadRules) {
-      setLocalLeadRules(JSON.parse(savedLeadRules));
-    } else {
       setLocalLeadRules(defaultLeadRules);
     }
   }, []);
@@ -233,9 +310,10 @@ export default function EnhancedSettings({ className = '' }: EnhancedSettingsPro
     animations: true
   };
 
-  const leadRules = localLeadRules.length > 0 ? localLeadRules : (leadRulesError ? defaultLeadRules : (leadRulesData || defaultLeadRules));
-  const notifications = localNotifications.length > 0 ? localNotifications : (notificationsError ? defaultNotifications : (notificationsData || defaultNotifications));
-  const appearance = localAppearance || (appearanceError ? defaultAppearance : (appearanceData || defaultAppearance));
+  // Use local state as primary source, fallback to API data only if local is empty
+  const leadRules = localLeadRules.length > 0 ? localLeadRules : defaultLeadRules;
+  const notifications = localNotifications.length > 0 ? localNotifications : defaultNotifications;
+  const appearance = localAppearance || defaultAppearance;
 
   // Mock integrations data (would come from tRPC in real implementation)
   const integrations: Integration[] = [
@@ -271,56 +349,58 @@ export default function EnhancedSettings({ className = '' }: EnhancedSettingsPro
     }
   ];
 
-  const handleAddRule = async (ruleData: Partial<LeadRule>) => {
+  const handleAddRule = (ruleData: Partial<LeadRule>) => {
     try {
-      if (leadRulesError) {
-        // If API is unavailable, just close modal - data is already in fallback state
-        console.warn('API unavailable, using fallback data');
-        setShowAddRuleModal(false);
-        return;
-      }
-      await updateLeadRulesMutation.mutateAsync({
-        rules: [...leadRules, { ...ruleData, id: `rule_${Date.now()}`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as LeadRule]
-      });
+      const newRule: LeadRule = {
+        id: `rule_${Date.now()}`,
+        name: ruleData.name || 'New Rule',
+        description: ruleData.description || 'New rule description',
+        enabled: true,
+        conditions: ruleData.conditions || [],
+        actions: ruleData.actions || [],
+        priority: leadRules.length + 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      const updatedRules = [...leadRules, newRule];
+      setLocalLeadRules(updatedRules);
+      localStorage.setItem('rivor-lead-rules', JSON.stringify(updatedRules));
+      
       setShowAddRuleModal(false);
+      console.log('Added new lead rule:', newRule);
     } catch (error) {
       console.error('Error adding rule:', error);
-      setShowAddRuleModal(false);
     }
   };
 
-  const handleUpdateRule = async (ruleId: string, updates: Partial<LeadRule>) => {
+  const handleUpdateRule = (ruleId: string, updates: Partial<LeadRule>) => {
     try {
-      if (leadRulesError) {
-        console.warn('API unavailable, using fallback data');
-        setEditingRule(null);
-        return;
-      }
       const updatedRules = leadRules.map(rule => 
         rule.id === ruleId ? { ...rule, ...updates, updatedAt: new Date().toISOString() } : rule
       );
-      await updateLeadRulesMutation.mutateAsync({ rules: updatedRules });
+      setLocalLeadRules(updatedRules);
+      localStorage.setItem('rivor-lead-rules', JSON.stringify(updatedRules));
       setEditingRule(null);
+      console.log('Updated lead rule:', ruleId, updates);
     } catch (error) {
       console.error('Error updating rule:', error);
       setEditingRule(null);
     }
   };
 
-  const handleDeleteRule = async (ruleId: string) => {
+  const handleDeleteRule = (ruleId: string) => {
     try {
-      if (leadRulesError) {
-        console.warn('API unavailable, using fallback data');
-        return;
-      }
       const updatedRules = leadRules.filter(rule => rule.id !== ruleId);
-      await updateLeadRulesMutation.mutateAsync({ rules: updatedRules });
+      setLocalLeadRules(updatedRules);
+      localStorage.setItem('rivor-lead-rules', JSON.stringify(updatedRules));
+      console.log('Deleted lead rule:', ruleId);
     } catch (error) {
       console.error('Error deleting rule:', error);
     }
   };
 
-  const handleNotificationToggle = async (notificationId: string, field: keyof NotificationSetting['channels'] | 'enabled', value: boolean) => {
+  const handleNotificationToggle = (notificationId: string, field: keyof NotificationSetting['channels'] | 'enabled', value: boolean) => {
     try {
       const updatedNotifications = notifications.map(notification => {
         if (notification.id !== notificationId) return notification;
@@ -339,20 +419,13 @@ export default function EnhancedSettings({ className = '' }: EnhancedSettingsPro
       setLocalNotifications(updatedNotifications);
       localStorage.setItem('rivor-notifications', JSON.stringify(updatedNotifications));
       
-      // Try to sync with API if available
-      if (!notificationsError) {
-        try {
-          await updateNotificationsMutation.mutateAsync({ notifications: updatedNotifications });
-        } catch (error) {
-          console.warn('API sync failed, using local storage');
-        }
-      }
+      console.log(`Updated notification ${notificationId} ${field} to ${value}`);
     } catch (error) {
       console.error('Error updating notification:', error);
     }
   };
 
-  const handleAppearanceUpdate = async (updates: Partial<AppearanceSetting>) => {
+  const handleAppearanceUpdate = (updates: Partial<AppearanceSetting>) => {
     try {
       const updatedAppearance = { ...appearance, ...updates };
       
@@ -360,14 +433,7 @@ export default function EnhancedSettings({ className = '' }: EnhancedSettingsPro
       setLocalAppearance(updatedAppearance);
       localStorage.setItem('rivor-appearance', JSON.stringify(updatedAppearance));
       
-      // Try to sync with API if available
-      if (!appearanceError) {
-        try {
-          await updateAppearanceMutation.mutateAsync(updatedAppearance);
-        } catch (error) {
-          console.warn('API sync failed, using local storage');
-        }
-      }
+      console.log('Updated appearance settings:', updates);
     } catch (error) {
       console.error('Error updating appearance:', error);
     }
@@ -381,6 +447,21 @@ export default function EnhancedSettings({ className = '' }: EnhancedSettingsPro
   const handleIntegrationFix = async (integrationId: string) => {
     // This would attempt to fix the integration
     console.log('Fixing integration:', integrationId);
+  };
+
+  const handleRestartOnboarding = () => {
+    try {
+      // Clear onboarding completion status
+      localStorage.removeItem('rivor-onboarding-completed');
+      localStorage.removeItem('rivor-onboarding-completed-date');
+      localStorage.removeItem('rivor-onboarding-skipped-date');
+      
+      // Refresh the page to trigger onboarding
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to restart onboarding:', error);
+      alert('Failed to restart tour. Please refresh the page manually.');
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -773,55 +854,41 @@ export default function EnhancedSettings({ className = '' }: EnhancedSettingsPro
                   </div>
                 </GlassCardContent>
               </GlassCard>
+
+              {/* Onboarding */}
+              <GlassCard variant="gradient" intensity="medium">
+                <GlassCardHeader>
+                  <GlassCardTitle>Getting Started</GlassCardTitle>
+                </GlassCardHeader>
+                <GlassCardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium text-slate-900 dark:text-slate-100">
+                          Welcome Walkthrough
+                        </h4>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          Take the tour again to learn about Rivor's features
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={handleRestartOnboarding}
+                        className="flex items-center gap-2"
+                      >
+                        <Sparkles className="h-4 w-4" />
+                        Restart Tour
+                      </Button>
+                    </div>
+                  </div>
+                </GlassCardContent>
+              </GlassCard>
             </div>
           </TabsContent>
         </Tabs>
 
         {/* Add Rule Modal */}
-        {showAddRuleModal && (
-          <div className="fixed inset-0 glass-overlay flex items-center justify-center z-50">
-            <GlassCard className="w-full max-w-md glass-modal">
-              <GlassCardHeader>
-                <GlassCardTitle>Add Lead Rule</GlassCardTitle>
-              </GlassCardHeader>
-              <GlassCardContent>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                      Rule Name
-                    </label>
-                    <Input
-                      placeholder="Enter rule name"
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                      Description
-                    </label>
-                    <Input
-                      placeholder="Enter rule description"
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <div className="flex items-center gap-2 pt-4">
-                    <Button className="flex-1">
-                      Create Rule
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowAddRuleModal(false)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              </GlassCardContent>
-            </GlassCard>
-          </div>
-        )}
+        {showAddRuleModal && <AddRuleModal onClose={() => setShowAddRuleModal(false)} onSave={handleAddRule} />}
       </div>
     </div>
   );
