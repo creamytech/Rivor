@@ -3324,45 +3324,45 @@ header:not(.md\\:hidden),
 /* Glass Modal with improved liquid glass effects - More opaque */
 .glass-modal {
   position: relative;
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(20px) saturate(1.2) brightness(1.1);
-  -webkit-backdrop-filter: blur(20px) saturate(1.2) brightness(1.1);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(24px) saturate(1.3) brightness(1.05);
+  -webkit-backdrop-filter: blur(24px) saturate(1.3) brightness(1.05);
   border: 1px solid var(--glass-border-strong);
   box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.15),
-    0 20px 80px rgba(0, 0, 0, 0.3),
-    0 8px 32px rgba(0, 0, 0, 0.2);
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 20px 80px rgba(0, 0, 0, 0.4),
+    0 8px 32px rgba(0, 0, 0, 0.25);
   transition: var(--glass-transition-fast);
 }
 
 /* Dark theme modal adjustments */
 [data-glass-theme="black"] .glass-modal {
-  background: rgba(0, 0, 0, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.25);
 }
 
 [data-glass-theme="white"] .glass-modal {
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
 /* Glass cards inside modals - more opaque */
 .glass-modal .glass-card,
 .glass-modal [class*="glass-card"] {
-  background: rgba(255, 255, 255, 0.4) !important;
-  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
 }
 
 [data-glass-theme="black"] .glass-modal .glass-card,
 [data-glass-theme="black"] .glass-modal [class*="glass-card"] {
-  background: rgba(0, 0, 0, 0.6) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  background: rgba(0, 0, 0, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
 }
 
 [data-glass-theme="white"] .glass-modal .glass-card,
 [data-glass-theme="white"] .glass-modal [class*="glass-card"] {
-  background: rgba(255, 255, 255, 0.7) !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
 }
 
 /* Subtle modal border effect - removed flashy glow */
