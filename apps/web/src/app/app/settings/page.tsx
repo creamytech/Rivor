@@ -28,6 +28,7 @@ import {
   Clock,
   Moon,
   Sun,
+  AlertCircle,
   Monitor,
   Check,
   X,
@@ -769,71 +770,117 @@ export default function SettingsPage() {
                           <div>
                             <h2 className="text-xl font-semibold glass-text-gradient">Integrations</h2>
                             <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
-                              Connect and manage external services
+                              Connect your Google account to sync email and calendar
                             </p>
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {[
-                            { 
-                              key: 'googleCalendar', 
-                              name: 'Google Calendar', 
-                              description: 'Sync events and appointments',
-                              icon: <Globe className="h-5 w-5" />,
-                              color: 'blue'
-                            },
-                            { 
-                              key: 'docusign', 
-                              name: 'DocuSign', 
-                              description: 'Electronic signature integration',
-                              icon: <Key className="h-5 w-5" />,
-                              color: 'yellow'
-                            },
-                            { 
-                              key: 'zoom', 
-                              name: 'Zoom', 
-                              description: 'Video conferencing integration',
-                              icon: <Phone className="h-5 w-5" />,
-                              color: 'purple'
-                            },
-                            { 
-                              key: 'slack', 
-                              name: 'Slack', 
-                              description: 'Team communication and alerts',
-                              icon: <Users className="h-5 w-5" />,
-                              color: 'green'
-                            }
-                          ].map((integration) => (
-                            <div key={integration.key} className="p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                              <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center gap-3">
-                                  <div className={`glass-icon-container-small text-${integration.color}-500`}>
-                                    {integration.icon}
-                                  </div>
-                                  <div>
-                                    <h3 className="text-sm font-medium" style={{ color: 'var(--glass-text)' }}>
-                                      {integration.name}
-                                    </h3>
-                                    <p className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
-                                      {integration.description}
-                                    </p>
-                                  </div>
+                        <div className="grid grid-cols-1 gap-6">
+                          {/* Google Integration */}
+                          <div className="p-6 rounded-lg border border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center">
+                                  <span className="text-white font-bold text-lg">G</span>
                                 </div>
-                                <Switch
-                                  checked={settings?.integrations[integration.key as keyof typeof settings.integrations] || false}
-                                  onCheckedChange={(checked) => updateSetting('integrations', integration.key, checked)}
-                                />
+                                <div>
+                                  <h3 className="text-lg font-semibold" style={{ color: 'var(--glass-text)' }}>
+                                    Google Workspace
+                                  </h3>
+                                  <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                                    Connect Gmail and Google Calendar for full sync
+                                  </p>
+                                </div>
+                              </div>
+                              <Button
+                                onClick={() => {
+                                  // Redirect to Google OAuth
+                                  window.location.href = '/api/auth/signin/google';
+                                }}
+                                className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white"
+                              >
+                                <Globe className="h-4 w-4 mr-2" />
+                                Connect Google
+                              </Button>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="flex items-center gap-3 p-3 rounded-lg bg-white/50 dark:bg-black/20">
+                                <Mail className="h-5 w-5 text-blue-500" />
+                                <div>
+                                  <p className="font-medium text-sm">Gmail Integration</p>
+                                  <p className="text-xs opacity-80">Read and send emails</p>
+                                </div>
                               </div>
                               
-                              {settings?.integrations[integration.key as keyof typeof settings.integrations] && (
-                                <div className="flex items-center gap-2 text-xs text-green-600">
-                                  <Check className="h-3 w-3" />
-                                  Connected
+                              <div className="flex items-center gap-3 p-3 rounded-lg bg-white/50 dark:bg-black/20">
+                                <Calendar className="h-5 w-5 text-green-500" />
+                                <div>
+                                  <p className="font-medium text-sm">Calendar Sync</p>
+                                  <p className="text-xs opacity-80">Sync events and meetings</p>
                                 </div>
-                              )}
+                              </div>
                             </div>
-                          ))}
+
+                            <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-700">
+                              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
+                                <AlertCircle className="h-4 w-4" />
+                                <span className="text-sm font-medium">Required for Calendar Sync</span>
+                              </div>
+                              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                                You need to connect your Google account first before using calendar sync features.
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Coming Soon Integrations */}
+                          <div className="p-6 rounded-lg border border-gray-200 dark:border-gray-700 opacity-60">
+                            <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--glass-text)' }}>
+                              Coming Soon
+                            </h3>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                                <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
+                                  <span className="text-white font-bold text-sm">M</span>
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm">Microsoft 365</p>
+                                  <p className="text-xs opacity-80">Outlook & Teams integration</p>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                                <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center">
+                                  <Key className="h-4 w-4 text-white" />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm">DocuSign</p>
+                                  <p className="text-xs opacity-80">Electronic signatures</p>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                                <div className="w-8 h-8 bg-purple-500 rounded flex items-center justify-center">
+                                  <Phone className="h-4 w-4 text-white" />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm">Zoom</p>
+                                  <p className="text-xs opacity-80">Video conferencing</p>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                                <div className="w-8 h-8 bg-green-500 rounded flex items-center justify-center">
+                                  <Users className="h-4 w-4 text-white" />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm">Slack</p>
+                                  <p className="text-xs opacity-80">Team communication</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </motion.div>
                     )}
