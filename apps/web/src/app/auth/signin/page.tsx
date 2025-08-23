@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { signIn } from "next-auth/react";
-import { Shield, CheckCircle, Users, ArrowRight, Sparkles, Lock, Eye, EyeOff } from "lucide-react";
+import { Shield, CheckCircle, Users, ArrowRight, Sparkles, Lock, Eye, EyeOff, Waves } from "lucide-react";
 import Logo from "@/components/branding/Logo";
 
 type Providers = Record<string, { id: string; name: string }>;
@@ -49,212 +49,247 @@ export default function SignInPage() {
   };
 
   const getHeaderMessage = () => {
-    if (expired) return "Welcome back! Your session expired—sign in to continue.";
-    if (reauth) return "Welcome back! Let's reconnect your account to keep going.";
-    return "Welcome back! Let's get you into Rivor.";
+    if (expired) return "Session expired—let's get you back in";
+    if (reauth) return "Let's reconnect your account";
+    return "Welcome to Rivor";
   };
 
   const getSubMessage = () => {
-    return "Secure SSO via Google or Microsoft—no password stored.";
+    if (expired || reauth) return "Sign in securely to continue your workflow";
+    return "Your intelligent real estate command center";
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-[var(--rivor-deep)] via-[var(--rivor-indigo)] to-[var(--rivor-deep)]" role="main">
-      {/* Subtle static gradient layers with texture */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[var(--rivor-teal)]/8 to-[var(--rivor-aqua)]/4" aria-hidden="true" />
-      <div className="absolute inset-0 bg-gradient-to-bl from-[var(--rivor-indigo)]/15 via-transparent to-[var(--rivor-teal)]/10" aria-hidden="true" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,var(--rivor-indigo)_0%,transparent_50%)] opacity-25" aria-hidden="true" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,var(--rivor-teal)_0%,transparent_50%)] opacity-15" aria-hidden="true" />
-      
-      {/* Subtle static design elements */}
-      <div className="absolute top-20 left-20 w-48 h-48 bg-gradient-to-br from-[var(--rivor-aqua)]/6 to-[var(--rivor-teal)]/3 rounded-full blur-2xl" aria-hidden="true" />
-      <div className="absolute bottom-32 right-32 w-32 h-32 bg-gradient-to-tl from-[var(--rivor-indigo)]/8 to-transparent rounded-full blur-xl" aria-hidden="true" />
-      <div className="absolute top-1/2 right-1/4 w-16 h-16 bg-[var(--rivor-aqua)]/5 rounded-full blur-lg" aria-hidden="true" />
-      
-      {/* Subtle texture overlay */}
-      <div className="absolute inset-0 opacity-[0.015]" style={{backgroundImage: 'radial-gradient(circle at 1px 1px, var(--rivor-aqua) 1px, transparent 0)', backgroundSize: '24px 24px'}} aria-hidden="true" />
-      
-      <section className="relative z-10 min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8" aria-labelledby="signin-title">
-        <div className="card-strong p-4 sm:p-6 md:p-8 lg:p-10 space-y-4 sm:space-y-6 md:space-y-8 animate-fade-up w-full max-w-xs sm:max-w-sm md:max-w-md mx-auto relative group">
-          {/* Card glow effect */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-[var(--rivor-indigo)]/20 via-[var(--rivor-teal)]/10 to-[var(--rivor-aqua)]/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500" aria-hidden="true" />
-          <div className="relative z-10">
-            <div className="text-center">
-              <div className="mb-6 sm:mb-8">
-                <Logo className="mx-auto h-10 sm:h-12" size="lg" />
-                <div className="flex items-center justify-center mt-3 space-x-1">
-                  <Sparkles className="w-3 h-3 text-[var(--rivor-aqua)] animate-pulse" />
-                  <div className="text-xs text-[var(--rivor-aqua)] font-medium tracking-wide">REAL ESTATE CRM</div>
-                  <Sparkles className="w-3 h-3 text-[var(--rivor-aqua)] animate-pulse" style={{animationDelay: '0.5s'}} />
-                </div>
-              </div>
-            </div>
+    <div className="glass-theme-black min-h-screen relative overflow-hidden" role="main">
+      {/* Flowing River Background */}
+      <div className="absolute inset-0">
+        {/* Main gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/8 via-purple-600/6 to-cyan-500/8" />
+        <div className="absolute inset-0 bg-gradient-to-tl from-indigo-500/6 via-transparent to-teal-400/4" />
+        
+        {/* River animation layers */}
+        <div className="river-container">
+          {/* Layer 1 - Main river streams */}
+          <div className="river-layer-1">
+            <div className="river-stream w-80 top-[20%] left-0" />
+            <div className="river-stream-reverse w-60 top-[25%] right-0" />
+            <div className="river-current top-[22%] left-[20%]" />
+            <div className="river-droplet top-[21%] left-[40%]" />
+            <div className="river-droplet top-[24%] left-[70%]" />
+          </div>
+          
+          {/* Layer 2 - Middle streams */}
+          <div className="river-layer-2">
+            <div className="river-stream w-96 top-[50%] left-0" />
+            <div className="river-stream-reverse w-72 top-[55%] right-0" />
+            <div className="river-current top-[52%] left-[30%]" />
+            <div className="river-wave-line w-full top-[53%] left-0" />
+            <div className="river-droplet top-[51%] left-[60%]" />
+          </div>
+          
+          {/* Layer 3 - Lower streams */}
+          <div className="river-layer-3">
+            <div className="river-stream w-64 top-[75%] left-0" />
+            <div className="river-stream-reverse w-88 top-[80%] right-0" />
+            <div className="river-current top-[77%] left-[10%]" />
+            <div className="river-droplet top-[76%] left-[50%]" />
+            <div className="river-droplet top-[78%] left-[80%]" />
+          </div>
+          
+          {/* Additional flowing elements for depth */}
+          <div className="absolute top-[35%] left-[15%] w-32 h-0.5 bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent river-wave-line" />
+          <div className="absolute top-[65%] right-[20%] w-24 h-0.5 bg-gradient-to-r from-transparent via-blue-400/15 to-transparent river-wave-line" style={{animationDelay: '-3s'}} />
+        </div>
+        
+        {/* Subtle texture overlay */}
+        <div className="absolute inset-0 opacity-[0.015]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.3'%3E%3Ccircle cx='30' cy='30' r='0.3'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundSize: '40px 40px'
+        }} />
+      </div>
 
-            <div className="text-center space-y-3 sm:space-y-4">
-              <h1 id="signin-title" className="text-xl sm:text-2xl md:text-display-md text-foreground leading-tight font-semibold">
+      {/* Main Content */}
+      <section className="relative z-10 min-h-screen flex flex-col items-center justify-center p-4" aria-labelledby="signin-title">
+        {/* Logo and branding */}
+        <div className="mb-8 text-center animate-fade-up">
+          <div className="glass-panel p-6 inline-block mb-4 bg-white/5 border-white/10">
+            <div className="inline-flex items-center group transition-all duration-300">
+              <span className="font-bold tracking-tight text-3xl bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 bg-clip-text text-transparent">
+                Rivor
+              </span>
+              <div className="ml-2 w-3 h-3 rounded-full bg-gradient-to-r from-cyan-400 to-blue-400 opacity-80 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-110 shadow-lg shadow-cyan-400/50" />
+            </div>
+          </div>
+          <div className="flex items-center justify-center space-x-2 text-cyan-300/80">
+            <Waves className="w-4 h-4 animate-pulse" />
+            <span className="text-sm font-medium tracking-wider uppercase">Real Estate Intelligence</span>
+            <Waves className="w-4 h-4 animate-pulse" style={{animationDelay: '0.5s'}} />
+          </div>
+        </div>
+
+        {/* Main Login Card */}
+        <div className="glass-card w-full max-w-md p-8 space-y-8 glass-morph glass-hover-tilt glass-magnetic glass-reflection group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-purple-500/15 to-cyan-500/20 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-700 glass-glow gradient-animate" />
+          
+          <div className="relative z-10">
+            {/* Header */}
+            <div className="text-center space-y-4 mb-8">
+              <h1 id="signin-title" className="text-3xl font-bold text-white drop-shadow-lg">
                 {getHeaderMessage()}
               </h1>
-              <div className="space-y-2">
-                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                  {getSubMessage()}
-                </p>
-                <div className="flex items-center justify-center space-x-2 text-sm text-[var(--rivor-aqua)]/80">
-                  <Lock className="w-4 h-4" />
-                  <span>Enterprise-grade security</span>
-                </div>
+              <p className="text-lg text-white/90 leading-relaxed drop-shadow-md">
+                {getSubMessage()}
+              </p>
+              <div className="flex items-center justify-center space-x-2 text-sm text-cyan-300/90">
+                <Lock className="w-4 h-4 drop-shadow-sm" />
+                <span className="drop-shadow-sm">Enterprise-grade security</span>
               </div>
             </div>
 
+            {/* Error Display */}
             {error && (
-            <div 
-              className="widget-glass border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/20 p-4 animate-fade-up-delay-1"
-              role="alert"
-              aria-live="polite"
-            >
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-sm font-medium text-red-800 dark:text-red-200 mb-1">
-                    Sign-in failed
-                  </h3>
-                  <div id="error-description" className="text-sm text-red-700 dark:text-red-300">
-                    {error === 'OAuthCallback' ? 'We couldn\'t complete sign-in. Try again or use a different provider.' : 
-                     error === 'AccessDenied' ? 'Access was denied. Please check your permissions and try again.' :
-                     error === 'Configuration' ? 'Provider unavailable. Please try again later.' :
-                     error === 'Verification' ? 'Email verification required. Check your inbox.' :
-                     error === 'RateLimited' ? 'Too many sign-in attempts. Please wait a few minutes before trying again.' :
-                     'An error occurred during sign-in. Please try again.'}
+              <div className="glass-card border-red-500/30 bg-red-500/10 p-4 mb-6 glass-click-ripple" role="alert">
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-medium text-red-300 mb-1">Authentication Failed</h3>
+                    <div className="text-sm text-red-400">
+                      {error === 'OAuthCallback' ? 'Authentication was interrupted. Please try again.' : 
+                       error === 'AccessDenied' ? 'Access denied. Please check your permissions.' :
+                       error === 'Configuration' ? 'Service temporarily unavailable. Please try again later.' :
+                       error === 'Verification' ? 'Email verification required. Check your inbox.' :
+                       error === 'RateLimited' ? 'Too many attempts. Please wait before trying again.' :
+                       'An unexpected error occurred. Please try again.'}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-
-            <div className="space-y-4">
-              {loading && (
-                <div className="space-y-4 animate-fade-up-delay-2">
-                  <div className="skeleton h-14 rounded-xl" />
-                  <div className="skeleton h-14 rounded-xl" />
-                </div>
-              )}
-            
-              {!loading && providers && providers.google && (
-                <button
-                  ref={firstButtonRef}
-                  onClick={() => handleSignIn('google')}
-                  disabled={isSigningIn}
-                  className="btn-primary hover-lift focus-flow w-full group relative flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold rounded-xl text-white bg-[#4285F4] hover:bg-[#3367D6] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 animate-fade-up-delay-2 shadow-lg shadow-[#4285F4]/25 hover:shadow-xl hover:shadow-[#4285F4]/40 border border-[#4285F4]/20 backdrop-filter backdrop-blur-sm"
-                  aria-label="Sign in with Google. We never store your password; sign-in happens with your provider."
-                  aria-describedby={error ? "error-description" : undefined}
-                >
-                <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" aria-hidden="true">
-                  <path fill="#FFFFFF" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#FFFFFF" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FFFFFF" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                  <path fill="#FFFFFF" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                </svg>
-                  {isSigningIn && signInProvider === 'google' ? (
-                    <div className="flex items-center">
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-3" />
-                      <span>Connecting to Google...</span>
-                    </div>
-                  ) : (
-                    <>
-                      <span className="flex-1">Continue with Google</span>
-                      <ArrowRight className="w-5 h-5 ml-3 transform group-hover:translate-x-1 transition-transform duration-200" />
-                    </>
-                  )}
-              </button>
             )}
 
-              {!loading && providers && (providers as unknown)['azure-ad'] && (
-                <button
-                  onClick={() => handleSignIn('azure-ad')}
-                  disabled={isSigningIn}
-                  className="btn-primary hover-lift focus-flow w-full group relative flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold rounded-xl text-white bg-[#0078D4] hover:bg-[#106EBE] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 animate-fade-up-delay-3 shadow-lg shadow-[#0078D4]/25 hover:shadow-xl hover:shadow-[#0078D4]/40 border border-[#0078D4]/20 backdrop-filter backdrop-blur-sm"
-                  aria-label="Sign in with Microsoft. We never store your password; sign-in happens with your provider."
-                  aria-describedby={error ? "error-description" : undefined}
-                >
-                <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zM24 11.4H12.6V0H24v11.4z"/>
-                </svg>
-                  {isSigningIn && signInProvider === 'azure-ad' ? (
-                    <div className="flex items-center">
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-3" />
-                      <span>Connecting to Microsoft...</span>
-                    </div>
-                  ) : (
-                    <>
-                      <span className="flex-1">Continue with Microsoft</span>
-                      <ArrowRight className="w-5 h-5 ml-3 transform group-hover:translate-x-1 transition-transform duration-200" />
-                    </>
-                  )}
-              </button>
+            {/* Loading State */}
+            {loading && (
+              <div className="space-y-4">
+                <div className="glass-card h-16 animate-pulse glass-shimmer" />
+                <div className="glass-card h-16 animate-pulse glass-shimmer" />
+              </div>
             )}
 
-              {!loading && providers && Object.keys(providers).length === 0 && (
-                <div className="widget-glass text-center p-8 animate-fade-up-delay-2 border-amber-200/20 bg-amber-50/5">
-                  <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-to-br from-amber-400/20 to-amber-600/10 flex items-center justify-center">
-                    <Shield className="w-8 h-8 text-amber-400" />
+            {/* Provider Buttons */}
+            {!loading && providers && (
+              <div className="space-y-4">
+                {providers.google && (
+                  <button
+                    ref={firstButtonRef}
+                    onClick={() => handleSignIn('google')}
+                    disabled={isSigningIn}
+                    className="glass-button w-full group relative flex items-center justify-center px-8 py-4 text-base font-semibold text-white bg-gradient-to-r from-blue-600/80 to-blue-500/80 hover:from-blue-500 hover:to-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-500 glass-enhanced-ripple glass-hover-lift glass-pulse-sophisticated shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-400/40"
+                    aria-label="Sign in with Google OAuth"
+                  >
+                    <svg className="w-6 h-6 mr-4" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                      <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                      <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                      <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    {isSigningIn && signInProvider === 'google' ? (
+                      <div className="flex items-center">
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-3" />
+                        <span>Connecting to Google...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="flex-1">Continue with Google</span>
+                        <ArrowRight className="w-6 h-6 ml-4 transform group-hover:translate-x-2 transition-transform duration-300" />
+                      </>
+                    )}
+                  </button>
+                )}
+
+                {(providers as any)['azure-ad'] && (
+                  <button
+                    onClick={() => handleSignIn('azure-ad')}
+                    disabled={isSigningIn}
+                    className="glass-button w-full group relative flex items-center justify-center px-8 py-4 text-base font-semibold text-white bg-gradient-to-r from-indigo-600/80 to-purple-600/80 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-500 glass-enhanced-ripple glass-hover-lift glass-pulse-sophisticated shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-purple-400/40"
+                    aria-label="Sign in with Microsoft OAuth"
+                  >
+                    <svg className="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zM24 11.4H12.6V0H24v11.4z"/>
+                    </svg>
+                    {isSigningIn && signInProvider === 'azure-ad' ? (
+                      <div className="flex items-center">
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-3" />
+                        <span>Connecting to Microsoft...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="flex-1">Continue with Microsoft</span>
+                        <ArrowRight className="w-6 h-6 ml-4 transform group-hover:translate-x-2 transition-transform duration-300" />
+                      </>
+                    )}
+                  </button>
+                )}
+
+                {Object.keys(providers).length === 0 && (
+                  <div className="glass-card text-center p-8 border-amber-500/30 bg-amber-500/10">
+                    <div className="w-16 h-16 mx-auto mb-6 glass-bubble bg-gradient-to-br from-amber-400/20 to-amber-600/10 flex items-center justify-center">
+                      <Shield className="w-8 h-8 text-amber-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold glass-text-accent mb-3">
+                      Setup Required
+                    </h3>
+                    <p className="text-base glass-text-secondary leading-relaxed">
+                      No authentication providers configured. Contact your administrator.
+                    </p>
                   </div>
-                  <h3 className="text-xl font-semibold text-foreground mb-3">
-                    Authentication Setup Required
-                  </h3>
-                  <p className="text-base text-muted-foreground leading-relaxed">
-                    No authentication providers are configured. Please contact your administrator to set up OAuth credentials.
-                  </p>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
-            <div className="text-center animate-fade-up-delay-4 pt-4 border-t border-[var(--border)]/50">
-              <p className="text-sm text-muted-foreground leading-relaxed">
+            {/* Legal Links */}
+            <div className="text-center pt-6 border-t border-white/20">
+              <p className="text-sm text-white/70">
                 By continuing, you agree to our{" "}
-                <a href="/terms" className="text-[var(--rivor-teal)] hover:text-[var(--rivor-aqua)] transition-colors duration-200 underline underline-offset-2 hover:no-underline">
+                <a href="/terms" className="text-cyan-300 hover:text-cyan-200 hover:underline transition-all duration-200">
                   Terms of Service
                 </a>{" "}
                 and{" "}
-                <a href="/privacy" className="text-[var(--rivor-teal)] hover:text-[var(--rivor-aqua)] transition-colors duration-200 underline underline-offset-2 hover:no-underline">
+                <a href="/privacy" className="text-cyan-300 hover:text-cyan-200 hover:underline transition-all duration-200">
                   Privacy Policy
                 </a>
-                .
               </p>
             </div>
           </div>
         </div>
 
-        <footer className="mt-6 sm:mt-8 text-center animate-fade-up-delay-5 max-w-xs sm:max-w-sm md:max-w-md w-full" role="contentinfo">
-          <div className="w-full">
-            {/* Trust badges */}
-            <div className="flex items-center justify-center space-x-4 sm:space-x-6 md:space-x-8 mb-4 sm:mb-6">
-              <div className="flex items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm text-muted-foreground/80" role="img" aria-label="SOC 2 compliance ready">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-green-400/20 to-green-600/10 flex items-center justify-center">
-                  <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" aria-hidden="true" />
+        {/* Security Badges Footer */}
+        <footer className="mt-8 text-center max-w-md w-full" role="contentinfo">
+          <div className="glass-panel p-4 glass-hover-pulse bg-white/5 border-white/10">
+            <div className="flex items-center justify-center space-x-6 mb-4">
+              <div className="flex items-center space-x-2 text-sm text-white/80">
+                <div className="w-8 h-8 glass-bubble bg-gradient-to-br from-green-400/20 to-green-600/10 flex items-center justify-center">
+                  <Shield className="w-4 h-4 text-green-400" />
                 </div>
                 <span className="font-medium">SOC 2 Ready</span>
               </div>
-              <div className="flex items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm text-muted-foreground/80" role="img" aria-label="OAuth 2.0 authentication">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-400/20 to-blue-600/10 flex items-center justify-center">
-                  <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                  </svg>
+              <div className="flex items-center space-x-2 text-sm text-white/80">
+                <div className="w-8 h-8 glass-bubble bg-gradient-to-br from-blue-400/20 to-blue-600/10 flex items-center justify-center">
+                  <CheckCircle className="w-4 h-4 text-blue-400" />
                 </div>
                 <span className="font-medium">OAuth 2.0</span>
               </div>
             </div>
             
-            {/* Security link */}
             <a 
               href="/security" 
-              className="inline-flex items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm text-[var(--rivor-teal)] hover:text-[var(--rivor-aqua)] transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[var(--rivor-teal)]/50 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2"
+              className="glass-button inline-flex items-center space-x-2 text-sm text-cyan-300 hover:text-cyan-200 hover:scale-105 transition-all duration-300 px-6 py-2"
             >
-              <Users className="w-3 h-3 sm:w-4 sm:h-4" aria-hidden="true" />
-              <span className="font-medium">View Security Details</span>
-              <ArrowRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              <Users className="w-4 h-4" />
+              <span className="font-medium">Security Details</span>
+              <ArrowRight className="w-3 h-3" />
             </a>
           </div>
         </footer>

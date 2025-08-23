@@ -22,7 +22,22 @@ export async function GET() {
         image: true,
         timezone: true,
         createdAt: true,
-        updatedAt: true
+        updatedAt: true,
+        emailVerified: true,
+        orgMembers: {
+          select: {
+            id: true,
+            role: true,
+            createdAt: true,
+            org: {
+              select: {
+                id: true,
+                name: true,
+                brandName: true
+              }
+            }
+          }
+        }
       }
     });
 
@@ -30,7 +45,20 @@ export async function GET() {
       return new Response('User not found', { status: 404 });
     }
 
-    return Response.json(user);
+    // Format response with organization info
+    const profile = {
+      ...user,
+      organization: user.orgMembers[0] ? {
+        id: user.orgMembers[0].org.id,
+        name: user.orgMembers[0].org.name,
+        brandName: user.orgMembers[0].org.brandName,
+        role: user.orgMembers[0].role,
+        joinedAt: user.orgMembers[0].createdAt
+      } : null,
+      orgMembers: undefined
+    };
+
+    return Response.json(profile);
   } catch (error) {
     console.error('Failed to fetch user profile:', error);
     return new Response('Internal Server Error', { status: 500 });

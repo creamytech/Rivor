@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/lib/db-pool';
-// Removed demo data imports - now using real data only
+import { decryptForOrg } from '@/server/crypto';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,93 +10,24 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(req: NextRequest) {
   try {
-    // Development bypass - return mock data
-    if (process.env.NODE_ENV === 'development') {
-      const mockTasks = [
-        {
-          id: 'task-1',
-          title: 'Follow up with Sarah Johnson',
-          description: 'Send property details for the Austin downtown listing',
-          status: 'pending' as const,
-          priority: 'high' as const,
-          dueAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days from now
-          completedAt: null,
-          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          createdBy: 'john@example.com',
-          assignedTo: 'john@example.com',
-          linkedEmailId: null,
-          linkedLeadId: 'lead-1',
-          linkedContactId: 'mock-1',
-          tags: ['follow-up', 'hot-lead']
-        },
-        {
-          id: 'task-2',
-          title: 'Schedule property showing',
-          description: 'Coordinate viewing for Michael Chen - commercial property on Oak Ave',
-          status: 'in_progress' as const,
-          priority: 'medium' as const,
-          dueAt: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day from now
-          completedAt: null,
-          createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-          updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          createdBy: 'sarah@example.com',
-          assignedTo: 'john@example.com',
-          linkedEmailId: 'email-123',
-          linkedLeadId: 'lead-2',
-          linkedContactId: 'mock-2',
-          tags: ['showing', 'commercial']
-        },
-        {
-          id: 'task-3',
-          title: 'Send market analysis report',
-          description: 'Prepare and send CMA for Emma Rodriguez properties',
-          status: 'completed' as const,
-          priority: 'medium' as const,
-          dueAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-          completedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago
-          createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-          updatedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-          createdBy: 'john@example.com',
-          assignedTo: 'sarah@example.com',
-          linkedEmailId: null,
-          linkedLeadId: 'lead-3',
-          linkedContactId: 'mock-3',
-          tags: ['analysis', 'residential']
-        },
-        {
-          id: 'task-4',
-          title: 'Update listing photos',
-          description: 'Get professional photos for luxury listing on Elm Dr',
-          status: 'pending' as const,
-          priority: 'low' as const,
-          dueAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week from now
-          completedAt: null,
-          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          createdBy: 'sarah@example.com',
-          assignedTo: 'john@example.com',
-          linkedEmailId: null,
-          linkedLeadId: null,
-          linkedContactId: 'mock-4',
-          tags: ['listing', 'photos']
-        }
-      ];
-
-      return NextResponse.json({
-        tasks: mockTasks,
-        total: mockTasks.length
-      });
-    }
-
     const session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as unknown).orgId;
-    if (!orgId) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
+    // Get user's organization
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: {
+        orgMembers: {
+          include: { org: true }
+        }
+      }
+    });
+
+    const org = user?.orgMembers?.[0]?.org;
+    if (!org) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 404 });
     }
 
     const url = new URL(req.url);
@@ -104,7 +35,7 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(url.searchParams.get('limit') || '50');
     const offset = parseInt(url.searchParams.get('offset') || '0');
 
-    const whereClause: unknown = { orgId };
+    const whereClause: any = { orgId: org.id };
 
     if (status) {
       whereClause.status = status;
@@ -118,39 +49,61 @@ export async function GET(req: NextRequest) {
         { createdAt: 'desc' }
       ],
       take: limit,
-      skip: offset
+      skip: offset,
+      include: {
+        lead: {
+          select: { id: true, title: true }
+        }
+      }
     });
 
-    // Transform to UI format
-    const tasksFormatted = tasks.map(task => ({
-      id: task.id,
-      title: task.title,
-      description: task.description,
-      status: task.status as 'pending' | 'in_progress' | 'completed' | 'cancelled',
-      priority: task.priority as 'low' | 'medium' | 'high',
-      dueAt: task.dueAt?.toISOString(),
-      completedAt: task.completedAt?.toISOString(),
-      createdAt: task.createdAt.toISOString(),
-      updatedAt: task.updatedAt.toISOString(),
-      createdBy: task.createdBy || 'Unknown',
-      assignedTo: task.assignedTo,
-      linkedEmailId: task.linkedEmailId,
-      linkedLeadId: task.linkedLeadId,
-      linkedContactId: task.linkedContactId,
-      tags: task.tags || []
-    }));
+    // Transform to UI format with decrypted data
+    const tasksFormatted = await Promise.all(
+      tasks.map(async (task) => {
+        let description = task.description || '';
+        
+        // Decrypt description if it's encrypted
+        if (task.descriptionEnc) {
+          try {
+            const decryptedBytes = await decryptForOrg(org.id, task.descriptionEnc, 'task:description');
+            description = new TextDecoder().decode(decryptedBytes);
+          } catch (error) {
+            console.warn('Failed to decrypt task description:', error);
+          }
+        }
 
-    // Use real tasks data only - no demo data mixing
-    const finalTasks = tasksFormatted;
+        return {
+          id: task.id,
+          title: task.title,
+          description,
+          status: task.status as 'pending' | 'in_progress' | 'completed' | 'cancelled',
+          priority: task.priority as 'low' | 'medium' | 'high',
+          dueAt: task.dueAt?.toISOString(),
+          completedAt: task.completedAt?.toISOString(),
+          createdAt: task.createdAt.toISOString(),
+          updatedAt: task.updatedAt.toISOString(),
+          createdBy: task.createdBy || 'Unknown',
+          assignedTo: task.assignedTo,
+          linkedEmailId: task.linkedEmailId,
+          linkedLeadId: task.linkedLeadId,
+          linkedContactId: task.linkedContactId,
+          tags: (task.tags as string[]) || [],
+          lead: task.lead ? {
+            id: task.lead.id,
+            title: task.lead.title
+          } : null
+        };
+      })
+    );
 
     const response = {
-      tasks: finalTasks,
-      total: finalTasks.length
+      tasks: tasksFormatted,
+      total: tasksFormatted.length
     };
 
     return NextResponse.json(response);
 
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Tasks API error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch tasks' },
@@ -169,9 +122,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as unknown).orgId;
-    if (!orgId) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
+    // Get user's organization
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: {
+        orgMembers: {
+          include: { org: true }
+        }
+      }
+    });
+
+    const org = user?.orgMembers?.[0]?.org;
+    if (!org) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 404 });
     }
 
     const body = await req.json();
@@ -197,7 +160,7 @@ export async function POST(req: NextRequest) {
     // Create task
     const task = await prisma.task.create({
       data: {
-        orgId,
+        orgId: org.id,
         title,
         description: description || null,
         status: 'pending',
@@ -228,12 +191,12 @@ export async function POST(req: NextRequest) {
       linkedEmailId: task.linkedEmailId,
       linkedLeadId: task.linkedLeadId,
       linkedContactId: task.linkedContactId,
-      tags: task.tags || []
+      tags: (task.tags as string[]) || []
     };
 
     return NextResponse.json(taskFormatted);
 
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Task creation API error:', error);
     return NextResponse.json(
       { error: 'Failed to create task' },

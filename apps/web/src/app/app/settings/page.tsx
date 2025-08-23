@@ -164,47 +164,14 @@ export default function SettingsPage() {
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      // Mock data for demonstration
-      const mockSettings: UserSettings = {
-        profile: {
-          name: 'John Smith',
-          email: 'john.smith@realtygroup.com',
-          company: 'Premier Realty Group',
-          phone: '+1 (555) 123-4567',
-          timezone: 'America/New_York',
-          language: 'en-US'
-        },
-        notifications: {
-          emailNotifications: true,
-          pushNotifications: true,
-          leadAlerts: true,
-          taskReminders: true,
-          weeklyReports: false
-        },
-        appearance: {
-          theme: 'system',
-          accentColor: 'blue',
-          compactMode: false,
-          animations: true
-        },
-        integrations: {
-          googleCalendar: true,
-          docusign: false,
-          zoom: true,
-          slack: false
-        },
-        privacy: {
-          dataSharing: false,
-          analytics: true,
-          marketingEmails: false,
-          twoFactorAuth: true
-        }
-      };
-
-      setTimeout(() => {
-        setSettings(mockSettings);
-        setLoading(false);
-      }, 800);
+      const response = await fetch('/api/user/settings');
+      if (!response.ok) {
+        throw new Error('Failed to fetch settings');
+      }
+      
+      const settingsData = await response.json();
+      setSettings(settingsData);
+      setLoading(false);
     } catch (error) {
       console.error('Failed to fetch settings:', error);
       setLoading(false);
@@ -214,9 +181,25 @@ export default function SettingsPage() {
   const saveSettings = async () => {
     setSaving(true);
     try {
-      // Mock save operation
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Settings saved:', settings);
+      const response = await fetch('/api/user/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settings),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save settings');
+      }
+
+      const result = await response.json();
+      console.log('Settings saved successfully:', result);
+      
+      // Update local state with server response if needed
+      if (result.settings) {
+        setSettings(result.settings);
+      }
     } catch (error) {
       console.error('Failed to save settings:', error);
     } finally {

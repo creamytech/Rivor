@@ -1,10 +1,15 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/server/auth";
+import OnboardingManager from "@/components/onboarding/OnboardingManager";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   // Skip auth check in development for localhost
   if (process.env.NODE_ENV === 'development') {
-    return <>{children}</>;
+    return (
+      <OnboardingManager>
+        {children}
+      </OnboardingManager>
+    );
   }
   
   const session = await auth();
@@ -14,7 +19,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     redirect("/auth/signin");
   }
   
-  return <>{children}</>;
+  return (
+    <OnboardingManager>
+      {children}
+    </OnboardingManager>
+  );
 }
 
 
