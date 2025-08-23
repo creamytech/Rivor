@@ -47,72 +47,14 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const [submitError, setSubmitError] = useState('');
 
-  // Force dark theme for modal
+  // Simple dark theme enforcement
   useEffect(() => {
     if (isOpen && typeof window !== 'undefined') {
-      // Inject CSS to force dark theme on all modal elements
-      const styleId = 'waitlist-modal-dark-theme';
-      let styleElement = document.getElementById(styleId) as HTMLStyleElement;
-      
-      if (!styleElement) {
-        styleElement = document.createElement('style');
-        styleElement.id = styleId;
-        document.head.appendChild(styleElement);
-      }
-      
-      styleElement.textContent = `
-        [data-radix-dialog-overlay] {
-          background: rgba(0, 0, 0, 0.8) !important;
-        }
-        [data-radix-dialog-content] {
-          background: rgba(0, 0, 0, 0.95) !important;
-          backdrop-filter: blur(24px) saturate(1.2) !important;
-          border: 1px solid rgba(255, 255, 255, 0.3) !important;
-          color: #ffffff !important;
-        }
-        [data-radix-dialog-content] * {
-          color: #ffffff !important;
-        }
-        [data-radix-dialog-content] input {
-          background: rgba(0, 0, 0, 0.8) !important;
-          border-color: rgba(255, 255, 255, 0.3) !important;
-          color: #ffffff !important;
-        }
-        [data-radix-dialog-content] textarea {
-          background: rgba(0, 0, 0, 0.8) !important;
-          border-color: rgba(255, 255, 255, 0.3) !important;
-          color: #ffffff !important;
-        }
-        [data-radix-dialog-content] [data-radix-select-trigger] {
-          background: rgba(0, 0, 0, 0.8) !important;
-          border-color: rgba(255, 255, 255, 0.3) !important;
-          color: #ffffff !important;
-        }
-        [data-radix-select-content] {
-          background: rgba(0, 0, 0, 0.95) !important;
-          border-color: rgba(255, 255, 255, 0.3) !important;
-          color: #ffffff !important;
-        }
-      `;
-      
-      // Also apply styles directly to modal elements
-      const modal = document.querySelector('[data-radix-dialog-content]');
-      if (modal) {
-        modal.setAttribute('data-glass-theme', 'black');
-        (modal as HTMLElement).style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
-        (modal as HTMLElement).style.color = '#ffffff';
-      }
+      // Simple approach - just set data attributes
+      document.body.setAttribute('data-waitlist-modal-open', 'true');
+    } else {
+      document.body.removeAttribute('data-waitlist-modal-open');
     }
-    
-    return () => {
-      // Clean up style element when modal closes
-      if (!isOpen) {
-        const styleElement = document.getElementById('waitlist-modal-dark-theme');
-        if (styleElement) {
-          styleElement.remove();
-        }
-      }
-    };
   }, [isOpen]);
 
   const validateEmail = (email: string) => {
