@@ -170,29 +170,7 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent 
-          className="waitlist-modal-content"
-          style={{
-            position: 'fixed !important' as any,
-            top: '50% !important' as any,
-            left: '50% !important' as any,
-            transform: 'translate(-50%, -50%) !important' as any,
-            backgroundColor: 'rgba(0, 0, 0, 0.95) !important' as any,
-            backdropFilter: 'blur(24px) saturate(1.2) !important' as any,
-            WebkitBackdropFilter: 'blur(24px) saturate(1.2) !important' as any,
-            border: '1px solid rgba(255, 255, 255, 0.3) !important' as any,
-            color: '#ffffff !important' as any,
-            zIndex: '1000000 !important' as any,
-            maxWidth: '400px !important' as any,
-            width: '90vw !important' as any,
-            maxHeight: '90vh !important' as any,
-            overflowY: 'auto !important' as any,
-            borderRadius: '16px !important' as any,
-            padding: '24px !important' as any,
-            margin: '0 !important' as any,
-            inset: 'unset !important' as any
-          }}
-        >
+        <DialogContent className="waitlist-modal-content max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-center">
             {isSuccess ? "You're in!" : "Join the Rivor waitlist"}

@@ -3414,30 +3414,13 @@ header:not(.md\\:hidden),
   z-index: 999999 !important;
 }
 
-/* Extremely specific modal content styling */
-.waitlist-modal-content,
-[data-waitlist-modal-open="true"] .waitlist-modal-content,
-[data-waitlist-modal-open="true"] [data-radix-dialog-content],
-[data-radix-dialog-content].waitlist-modal-content {
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
+/* Simple waitlist modal styling */
+.waitlist-modal-content {
   background: rgba(0, 0, 0, 0.95) !important;
   backdrop-filter: blur(24px) saturate(1.2) !important;
   -webkit-backdrop-filter: blur(24px) saturate(1.2) !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
   color: #ffffff !important;
-  z-index: 1000000 !important;
-  max-width: 400px !important;
-  width: 90vw !important;
-  max-height: 90vh !important;
-  overflow-y: auto !important;
-  border-radius: 16px !important;
-  padding: 24px !important;
-  margin: 0 !important;
-  inset: unset !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
 }
 
 /* Force all text to white in waitlist modal */
