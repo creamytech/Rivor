@@ -33,15 +33,29 @@ export default function SignInPage() {
       }
     })();
     
-    // Force dark theme on mobile
+    // Force dark theme on mobile - aggressive approach
     if (typeof window !== 'undefined') {
+      // Set meta theme color
       const metaThemeColor = document.querySelector('meta[name="theme-color"]');
       if (metaThemeColor) {
-        metaThemeColor.setAttribute('content', '#0a0f1f');
+        metaThemeColor.setAttribute('content', '#000000');
+      } else {
+        const meta = document.createElement('meta');
+        meta.name = 'theme-color';
+        meta.content = '#000000';
+        document.head.appendChild(meta);
       }
       
-      // Set color scheme to dark only
+      // Force dark styles on document
       document.documentElement.style.colorScheme = 'dark';
+      document.documentElement.style.backgroundColor = '#000000';
+      document.documentElement.style.color = '#ffffff';
+      document.body.style.backgroundColor = '#000000';
+      document.body.style.color = '#ffffff';
+      
+      // Add data attributes for dark theme
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.body.setAttribute('data-glass-theme', 'black');
     }
     
     return () => { cancelled = true; };
@@ -72,7 +86,7 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="glass-theme-black min-h-screen relative overflow-hidden" role="main">
+    <div className="glass-theme-black min-h-screen relative overflow-hidden" role="main" data-glass-theme="black" style={{backgroundColor: '#000000', color: '#ffffff'}}>
       {/* Flowing River Background */}
       <div className="absolute inset-0">
         {/* Main gradient overlay */}
