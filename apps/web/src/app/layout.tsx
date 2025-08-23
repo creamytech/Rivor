@@ -92,11 +92,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  colorScheme: 'dark light',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0a0f1f' }
-  ],
+  colorScheme: 'dark',
+  themeColor: '#0a0f1f',
 };
 
 export default function RootLayout({

@@ -17,7 +17,7 @@ import RiverDivider from '@/components/landing/RiverDivider';
 export default function Home() {
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
 
-  // Analytics event for page view
+  // Analytics event for page view and force dark mode on mobile
   useEffect(() => {
     // Fire waitlist_view event
     if (typeof window !== 'undefined' && window.gtag) {
@@ -25,6 +25,17 @@ export default function Home() {
         page_title: 'Rivor Landing Page',
         page_location: window.location.href,
       });
+    }
+    
+    // Force dark theme on mobile
+    if (typeof window !== 'undefined') {
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+      if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', '#0a0f1f');
+      }
+      
+      // Set color scheme to dark only
+      document.documentElement.style.colorScheme = 'dark';
     }
   }, []);
 
