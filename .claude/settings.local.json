@@ -19,7 +19,9 @@
       "Bash(find:*)",
       "Bash(npm run dev:*)",
       "Bash(echo:*)",
-      "Bash(npx turbo:*)"
+      "Bash(npx turbo:*)",
+      "Bash(npm run:*)",
+      "Bash(npx next build:*)"
     ],
     "deny": [],
     "ask": [],

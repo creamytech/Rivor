@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
 import AppShell from "@/components/app/AppShell";
 import MobileDashboard from "@/components/app/MobileDashboard";
+import SMSFloatingButton from "@/components/sms/SMSFloatingButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1044,6 +1045,9 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+        
+        {/* SMS Floating Button */}
+        <SMSFloatingButton unreadCount={0} />
       </AppShell>
     </div>
   );

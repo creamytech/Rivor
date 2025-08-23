@@ -50,6 +50,7 @@ import {
   Tag
 } from 'lucide-react';
 import CreateContactModal from "@/components/contacts/CreateContactModal";
+import SMSWidget from "@/components/sms/SMSWidget";
 
 interface Contact {
   id: string;
@@ -77,6 +78,8 @@ export default function ContactsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedContactForDetails, setSelectedContactForDetails] = useState<Contact | null>(null);
+  const [showSMSWidget, setShowSMSWidget] = useState(false);
+  const [selectedContactForSMS, setSelectedContactForSMS] = useState<Contact | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -510,9 +513,12 @@ export default function ContactsPage() {
                                   <Mail className="h-4 w-4 mr-2" />
                                   Send Email
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => window.open(`sms:${contact.phone}`)}>
+                                <DropdownMenuItem onClick={() => {
+                                  setSelectedContactForSMS(contact);
+                                  setShowSMSWidget(true);
+                                }}>
                                   <MessageSquare className="h-4 w-4 mr-2" />
-                                  Send Message
+                                  Send SMS
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => router.push('/app/calendar')}>
                                   <Calendar className="h-4 w-4 mr-2" />
@@ -665,9 +671,12 @@ export default function ContactsPage() {
                                   <Mail className="h-4 w-4 mr-2" />
                                   Send Email
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => window.open(`sms:${contact.phone}`)}>
+                                <DropdownMenuItem onClick={() => {
+                                  setSelectedContactForSMS(contact);
+                                  setShowSMSWidget(true);
+                                }}>
                                   <MessageSquare className="h-4 w-4 mr-2" />
-                                  Send Message
+                                  Send SMS
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => router.push('/app/calendar')}>
                                   <Calendar className="h-4 w-4 mr-2" />
@@ -849,6 +858,16 @@ export default function ContactsPage() {
           onContactCreated={(contact) => {
             setContacts(prev => [...prev, contact]);
           }}
+        />
+
+        {/* SMS Widget */}
+        <SMSWidget
+          isOpen={showSMSWidget}
+          onClose={() => {
+            setShowSMSWidget(false);
+            setSelectedContactForSMS(null);
+          }}
+          initialContactId={selectedContactForSMS?.id}
         />
       </AppShell>
     </div>

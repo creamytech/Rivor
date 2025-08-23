@@ -29,6 +29,7 @@ import {
   Clock,
   Phone,
   Mail,
+  MessageSquare,
   Eye,
   User,
   Plus,
@@ -43,6 +44,7 @@ import {
   Star,
   MapPin
 } from "lucide-react";
+import SMSWidget from "@/components/sms/SMSWidget";
 
 export interface Deal {
   id: string;
@@ -413,6 +415,48 @@ function DealCard({ deal, onDealClick, isDragging }: DealCardProps) {
                       {deal.nextAction.dueDate.toLocaleDateString()}
                     </span>
                   </div>
+                  
+                  {/* Quick Actions */}
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 h-8 text-xs glass-button-secondary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(`tel:${deal.clientPhone || ''}`);
+                      }}
+                    >
+                      <Phone className="h-3 w-3 mr-1" />
+                      Call
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 h-8 text-xs glass-button-secondary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Convert deal to contact format for SMS widget
+                        setSelectedDealForSMS(deal);
+                        setShowSMSWidget(true);
+                      }}
+                    >
+                      <MessageSquare className="h-3 w-3 mr-1" />
+                      SMS
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 h-8 text-xs glass-button-secondary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(`mailto:${deal.clientEmail || ''}`);
+                      }}
+                    >
+                      <Mail className="h-3 w-3 mr-1" />
+                      Email
+                    </Button>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -444,6 +488,8 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
+  const [showSMSWidget, setShowSMSWidget] = useState(false);
+  const [selectedDealForSMS, setSelectedDealForSMS] = useState<Deal | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -939,6 +985,16 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
         onOpenChange={setShowCreateModal}
         onDealCreated={handleDealCreated}
         selectedStage={selectedStage}
+      />
+
+      {/* SMS Widget */}
+      <SMSWidget
+        isOpen={showSMSWidget}
+        onClose={() => {
+          setShowSMSWidget(false);
+          setSelectedDealForSMS(null);
+        }}
+        initialContactId={selectedDealForSMS?.clientName ? `deal_${selectedDealForSMS.id}` : undefined}
       />
     </div>
   );
