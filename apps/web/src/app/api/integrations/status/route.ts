@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/lib/db-pool';
+import { cache, cacheKeys } from '@/lib/memory-cache';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -68,28 +69,42 @@ export async function GET() {
     return new Response('Unauthorized', { status: 401 });
   }
 
+  // Get orgId for caching
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: { 
+      orgMembers: { 
+        select: { orgId: true },
+        take: 1 
+      } 
+    }
+  });
+
+  const orgId = user?.orgMembers?.[0]?.orgId;
+  if (!orgId) {
+    return new Response('No organization found', { status: 404 });
+  }
+
+  // Check cache first
+  const cacheKey = cacheKeys.integrationStatus(orgId);
+  const cached = cache.get(cacheKey);
+  if (cached) {
+    return Response.json(cached);
+  }
+
   try {
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+    // Fetch org data now that we have orgId
+    const org = await prisma.organization.findUnique({
+      where: { id: orgId },
       include: {
-        orgMembers: {
-          include: {
-            org: {
-              include: {
-                emailAccounts: true,
-                calendarAccounts: true
-              }
-            }
-          }
-        }
+        emailAccounts: true,
+        calendarAccounts: true
       }
     });
 
-    if (!user || user.orgMembers.length === 0) {
-      return new Response('No organization found', { status: 404 });
+    if (!org) {
+      return new Response('Organization not found', { status: 404 });
     }
-
-    const org = user.orgMembers[0].org;
 
     // Get email accounts
     const emailIntegrations = org.emailAccounts.map(account => ({
@@ -157,13 +172,18 @@ export async function GET() {
 
     const overallStatus = summary.connectedAccounts === summary.totalAccounts ? 'all_connected' : 'action_needed';
 
-    return Response.json({
+    const result = {
       overallStatus,
       summary,
       emailAccounts,
       tokenEncryption,
       lastUpdated: new Date().toISOString()
-    });
+    };
+
+    // Cache the result for 2 minutes
+    cache.setMedium(cacheKey, result);
+
+    return Response.json(result);
   } catch (error) {
     console.error('Failed to fetch integrations status:', error);
     return new Response('Internal Server Error', { status: 500 });

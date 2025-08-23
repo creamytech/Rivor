@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db-pool';
 import { getTokenEncryptionStatus } from '@/server/secure-tokens';
 import { getEnv } from '@/server/env';
+import { cache, cacheKeys } from '@/lib/memory-cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,21 @@ export async function GET(req: NextRequest) {
     // For now, we'll allow access but you should protect this in production
   }
   const startTime = Date.now();
+  
+  // For admin requests, check cache first (shorter cache for more frequent updates)
+  const cacheKey = cacheKeys.systemHealth();
+  if (!isAdminRequest) {
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return NextResponse.json({
+        ...cached,
+        cached: true,
+        response_time_ms: Date.now() - startTime
+      }, {
+        status: cached.status === 'healthy' ? 200 : 503
+      });
+    }
+  }
   
   try {
     const env = getEnv();
@@ -161,6 +177,9 @@ export async function GET(req: NextRequest) {
       // Performance
       response_time_ms: Date.now() - startTime
     };
+    
+    // Cache the health result for 1 minute (short cache for health data)
+    cache.setShort(cacheKey, health);
     
     return NextResponse.json(health, {
       status: health.status === 'healthy' ? 200 : 503

@@ -14,13 +14,25 @@ const globalQueues = globalThis as unknown as {
   crmSyncQueue?: Queue;
 };
 
+// Shared connection configuration with optimizations
 function getConnection() {
   const url = process.env.REDIS_URL || 'redis://localhost:6379';
   return { 
     connection: { 
       url,
-      connectTimeout: 10000, // 10 second timeout
-      lazyConnect: true // Don't connect until needed
+      connectTimeout: 10000,
+      lazyConnect: true,
+      // Connection pooling optimizations
+      maxRetriesPerRequest: 3,
+      retryDelayOnFailover: 100,
+      enableReadyCheck: false,
+      maxLoadingTimeout: 5000,
+      // Reduce keep-alive frequency
+      keepAlive: 30000,
+      // Connection pool settings
+      family: 4,
+      // Command timeout
+      commandTimeout: 5000,
     } 
   } as const;
 }
@@ -35,7 +47,17 @@ export function getEmailSyncQueue(): Queue {
 export async function enqueueEmailSync(orgId: string, emailAccountId: string) {
   try {
     const queue = getEmailSyncQueue();
-    await queue.add("sync", { orgId, emailAccountId }, { attempts: 3, backoff: { type: "exponential", delay: 1000 } });
+    await queue.add("sync", { orgId, emailAccountId }, { 
+      attempts: 3, 
+      backoff: { type: "exponential", delay: 1000 },
+      // Optimize Redis operations
+      removeOnComplete: 5, // Keep fewer completed jobs
+      removeOnFail: 3,     // Keep fewer failed jobs
+      // Use job deduplication to prevent duplicate jobs
+      jobId: `sync-${orgId}-${emailAccountId}`,
+      // Batch delay to reduce Redis load
+      delay: 100
+    });
   } catch (err) {
     console.warn("[queue] enqueueEmailSync failed", err);
   }
@@ -51,7 +73,12 @@ export async function enqueueCalendarSync(orgId: string, calendarAccountId: stri
       daysFutureToSync: daysFuture
     }, {
       attempts: 3,
-      backoff: { type: "exponential", delay: 1000 }
+      backoff: { type: "exponential", delay: 1000 },
+      // Optimize Redis operations
+      removeOnComplete: 5,
+      removeOnFail: 3,
+      jobId: `calendar-sync-${orgId}-${calendarAccountId}`,
+      delay: 100
     });
   } catch (err) {
     console.warn("[queue] enqueueCalendarSync failed", err);

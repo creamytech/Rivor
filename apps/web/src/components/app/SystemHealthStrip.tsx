@@ -59,10 +59,10 @@ export default function SystemHealthStrip({ className = '' }: SystemHealthStripP
   useEffect(() => {
     fetchSystemHealth();
     
-    // Auto-refresh every 30 seconds
+    // Reduce auto-refresh frequency from 30s to 2 minutes to reduce Redis load
     const interval = setInterval(() => {
       fetchSystemHealth();
-    }, 30000);
+    }, 120000); // 2 minutes instead of 30 seconds
 
     return () => clearInterval(interval);
   }, []);
