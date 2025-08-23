@@ -3473,6 +3473,35 @@ header:not(.md\\:hidden),
   }
 }
 
+/* Mobile responsive fixes for landing page buttons */
+@media (max-width: 640px) {
+  /* Ensure buttons don't overflow */
+  button {
+    min-width: fit-content !important;
+    word-wrap: break-word !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  
+  /* Fix container padding on mobile */
+  .container {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  /* Ensure hero sections are responsive */
+  .hero-content {
+    padding: 1rem !important;
+  }
+  
+  /* Fix button text wrapping */
+  button span,
+  button div {
+    white-space: nowrap !important;
+  }
+}
+
 /* Force all text to white in waitlist modal */
 .waitlist-modal-content *,
 .waitlist-modal-content h1,

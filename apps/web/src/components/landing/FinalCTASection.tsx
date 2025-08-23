@@ -97,7 +97,7 @@ export default function FinalCTASection({ onWaitlistClick }: FinalCTASectionProp
               <Button
                 onClick={onWaitlistClick}
                 size="lg"
-                className="rounded-xl px-8 py-4 font-medium text-slate-900 bg-gradient-to-r from-[#1E5EFF] via-[#16C4D9] to-[#3AF6C3] hover:opacity-95 focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-[#0E1420] transition-all text-lg group"
+                className="rounded-xl px-4 sm:px-6 md:px-8 py-3 sm:py-4 font-medium text-slate-900 bg-gradient-to-r from-[#1E5EFF] via-[#16C4D9] to-[#3AF6C3] hover:opacity-95 focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-[#0E1420] transition-all text-sm sm:text-base md:text-lg group whitespace-nowrap"
               >
                 Join the Beta Waitlist
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />

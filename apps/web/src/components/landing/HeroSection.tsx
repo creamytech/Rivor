@@ -51,7 +51,7 @@ export default function HeroSection({ onWaitlistClick }: HeroSectionProps) {
               <Button
                 onClick={onWaitlistClick}
                 size="lg"
-                className="rounded-xl px-8 py-4 font-medium text-slate-900 bg-gradient-to-r from-[#1E5EFF] via-[#16C4D9] to-[#3AF6C3] hover:opacity-95 focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-[#0E1420] transition-all text-lg"
+                className="rounded-xl px-4 sm:px-6 md:px-8 py-3 sm:py-4 font-medium text-slate-900 bg-gradient-to-r from-[#1E5EFF] via-[#16C4D9] to-[#3AF6C3] hover:opacity-95 focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-[#0E1420] transition-all text-sm sm:text-base md:text-lg whitespace-nowrap"
                 aria-label="Join the Rivor waitlist"
               >
                 Join the Waitlist
@@ -61,7 +61,7 @@ export default function HeroSection({ onWaitlistClick }: HeroSectionProps) {
                 onClick={scrollToFeatures}
                 variant="outline"
                 size="lg"
-                className="rounded-xl px-8 py-4 font-medium border-white/20 text-[#EAF2FF] hover:bg-white/5 focus:ring-2 focus:ring-white/20 focus:ring-offset-2 focus:ring-offset-[#0E1420] transition-all text-lg"
+                className="rounded-xl px-4 sm:px-6 md:px-8 py-3 sm:py-4 font-medium border-white/20 text-[#EAF2FF] hover:bg-white/5 focus:ring-2 focus:ring-white/20 focus:ring-offset-2 focus:ring-offset-[#0E1420] transition-all text-sm sm:text-base md:text-lg whitespace-nowrap"
                 aria-label="Learn more about Rivor features"
               >
                 See the product
