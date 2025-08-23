@@ -171,22 +171,26 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent 
-          className="max-w-md mx-4 sm:mx-auto"
+          className="waitlist-modal-content"
           style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            backgroundColor: 'rgba(0, 0, 0, 0.95)',
-            backdropFilter: 'blur(24px) saturate(1.2)',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            color: '#ffffff',
-            zIndex: 1000000,
-            maxWidth: '90vw',
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            borderRadius: '12px',
-            padding: '24px'
+            position: 'fixed !important' as any,
+            top: '50% !important' as any,
+            left: '50% !important' as any,
+            transform: 'translate(-50%, -50%) !important' as any,
+            backgroundColor: 'rgba(0, 0, 0, 0.95) !important' as any,
+            backdropFilter: 'blur(24px) saturate(1.2) !important' as any,
+            WebkitBackdropFilter: 'blur(24px) saturate(1.2) !important' as any,
+            border: '1px solid rgba(255, 255, 255, 0.3) !important' as any,
+            color: '#ffffff !important' as any,
+            zIndex: '1000000 !important' as any,
+            maxWidth: '400px !important' as any,
+            width: '90vw !important' as any,
+            maxHeight: '90vh !important' as any,
+            overflowY: 'auto !important' as any,
+            borderRadius: '16px !important' as any,
+            padding: '24px !important' as any,
+            margin: '0 !important' as any,
+            inset: 'unset !important' as any
           }}
         >
         <DialogHeader>

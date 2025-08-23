@@ -3412,47 +3412,72 @@ header:not(.md\\:hidden),
   position: fixed !important;
   inset: 0 !important;
   z-index: 999999 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
 }
 
-[data-waitlist-modal-open="true"] [data-radix-dialog-content] {
+/* Extremely specific modal content styling */
+.waitlist-modal-content,
+[data-waitlist-modal-open="true"] .waitlist-modal-content,
+[data-waitlist-modal-open="true"] [data-radix-dialog-content],
+[data-radix-dialog-content].waitlist-modal-content {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
   background: rgba(0, 0, 0, 0.95) !important;
   backdrop-filter: blur(24px) saturate(1.2) !important;
   -webkit-backdrop-filter: blur(24px) saturate(1.2) !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
   color: #ffffff !important;
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
   z-index: 1000000 !important;
-  max-width: 90vw !important;
+  max-width: 400px !important;
+  width: 90vw !important;
   max-height: 90vh !important;
   overflow-y: auto !important;
+  border-radius: 16px !important;
+  padding: 24px !important;
+  margin: 0 !important;
+  inset: unset !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
 }
 
-[data-waitlist-modal-open="true"] [data-radix-dialog-content] * {
+/* Force all text to white in waitlist modal */
+.waitlist-modal-content *,
+.waitlist-modal-content h1,
+.waitlist-modal-content h2,
+.waitlist-modal-content p,
+.waitlist-modal-content label,
+.waitlist-modal-content span,
+[data-waitlist-modal-open="true"] [data-radix-dialog-content] *,
+[data-waitlist-modal-open="true"] [data-radix-dialog-content] h1,
+[data-waitlist-modal-open="true"] [data-radix-dialog-content] h2,
+[data-waitlist-modal-open="true"] [data-radix-dialog-content] p,
+[data-waitlist-modal-open="true"] [data-radix-dialog-content] label,
+[data-waitlist-modal-open="true"] [data-radix-dialog-content] span {
   color: #ffffff !important;
 }
 
+/* Force dark backgrounds on form elements */
+.waitlist-modal-content input,
+.waitlist-modal-content textarea,
 [data-waitlist-modal-open="true"] [data-radix-dialog-content] input,
 [data-waitlist-modal-open="true"] [data-radix-dialog-content] textarea {
   background: rgba(0, 0, 0, 0.8) !important;
-  border-color: rgba(255, 255, 255, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
   color: #ffffff !important;
 }
 
+/* Force dark backgrounds on select elements */
+.waitlist-modal-content [data-radix-select-trigger],
 [data-waitlist-modal-open="true"] [data-radix-select-trigger] {
   background: rgba(0, 0, 0, 0.8) !important;
-  border-color: rgba(255, 255, 255, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
   color: #ffffff !important;
 }
 
+.waitlist-modal-content [data-radix-select-content],
 [data-waitlist-modal-open="true"] [data-radix-select-content] {
   background: rgba(0, 0, 0, 0.95) !important;
-  border-color: rgba(255, 255, 255, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
   color: #ffffff !important;
 }
 
