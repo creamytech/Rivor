@@ -77,10 +77,47 @@ export default function EnhancedSidebar({
   const { data: session } = useSession();
   const { theme } = useTheme();
   const [notifications, setNotifications] = useState([
-    { id: 'inbox', count: 3, color: 'destructive' as const },
-    { id: 'pipeline', count: 7, color: 'warning' as const },
-    { id: 'calendar', count: 2, color: 'success' as const }
+    { id: 'inbox', count: 0, color: 'destructive' as const },
+    { id: 'pipeline', count: 0, color: 'warning' as const },
+    { id: 'calendar', count: 0, color: 'success' as const }
   ]);
+
+  // Fetch real notification counts
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        // Fetch unread email count
+        const dashboardResponse = await fetch('/api/dashboard');
+        if (dashboardResponse.ok) {
+          const dashboardData = await dashboardResponse.json();
+          const inboxCount = dashboardData.unreadCount || 0;
+          const calendarCount = dashboardData.calendarStats?.todayCount || 0;
+          
+          // Fetch pipeline stats
+          const pipelineResponse = await fetch('/api/pipeline/stats');
+          let pipelineCount = 0;
+          if (pipelineResponse.ok) {
+            const pipelineData = await pipelineResponse.json();
+            // Count active leads as pipeline notifications
+            pipelineCount = pipelineData.totalLeads || 0;
+          }
+          
+          setNotifications([
+            { id: 'inbox', count: inboxCount, color: 'destructive' as const },
+            { id: 'pipeline', count: pipelineCount, color: 'warning' as const },
+            { id: 'calendar', count: calendarCount, color: 'success' as const }
+          ]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch notification counts:', error);
+      }
+    };
+
+    fetchCounts();
+    // Refresh counts every 60 seconds
+    const interval = setInterval(fetchCounts, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const navItems: NavItem[] = [
     // Core Features  

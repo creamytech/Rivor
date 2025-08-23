@@ -32,7 +32,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -259,8 +259,19 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
+  const { data: session } = useSession();
+
   const getUserInitials = () => {
-    // This would come from session in a real app
+    if (session?.user?.name) {
+      return session.user.name
+        .split(' ')
+        .map(name => name.charAt(0).toUpperCase())
+        .slice(0, 2)
+        .join('');
+    }
+    if (session?.user?.email) {
+      return session.user.email.charAt(0).toUpperCase();
+    }
     return "U";
   };
 
@@ -520,6 +531,10 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                     aria-label="User profile"
                   >
                     <Avatar className="h-8 w-8">
+                      <AvatarImage 
+                        src={session?.user?.image || undefined}
+                        alt={session?.user?.name || 'User avatar'}
+                      />
                       <AvatarFallback 
                         className="text-xs font-medium"
                         style={{ 

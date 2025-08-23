@@ -36,6 +36,8 @@ interface Integration {
 export default function IntegrationsSettings() {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState<{ [key: string]: boolean }>({});
+  const [settingUpDev, setSettingUpDev] = useState(false);
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -48,7 +50,50 @@ export default function IntegrationsSettings() {
       const response = await fetch('/api/integrations/status');
       if (response.ok) {
         const data = await response.json();
-        setIntegrations(data.integrations || []);
+        
+        // Transform the API response to match our Integration interface
+        const emailIntegrations: Integration[] = (data.emailAccounts || []).map((account: any) => ({
+          id: account.id,
+          name: `${account.provider} Email`,
+          type: 'email' as const,
+          provider: account.provider,
+          status: account.status === 'connected' ? 'live' : 'not_connected',
+          email: account.email,
+          syncStatus: account.syncStatus || 'idle',
+          lastSyncAt: account.lastSyncedAt,
+          errorMessage: account.errorReason,
+          accountsCount: 1,
+          itemsCount: Math.floor(Math.random() * 100) // Mock for now
+        }));
+        
+        // For now, add default integrations if none exist
+        if (emailIntegrations.length === 0) {
+          const defaultIntegrations: Integration[] = [
+            {
+              id: 'google-email',
+              name: 'Google Email',
+              type: 'email',
+              provider: 'google',
+              status: 'not_connected',
+              syncStatus: 'idle',
+              accountsCount: 0,
+              itemsCount: 0
+            },
+            {
+              id: 'google-calendar',
+              name: 'Google Calendar',
+              type: 'calendar',
+              provider: 'google',
+              status: 'not_connected',
+              syncStatus: 'idle',
+              accountsCount: 0,
+              itemsCount: 0
+            }
+          ];
+          setIntegrations(defaultIntegrations);
+        } else {
+          setIntegrations(emailIntegrations);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch integrations:', error);
@@ -89,6 +134,74 @@ export default function IntegrationsSettings() {
         title: 'Error',
         description: 'Failed to perform action. Please try again.'
       });
+    }
+  };
+
+  const handleSync = async (integration: Integration) => {
+    setSyncing(prev => ({ ...prev, [integration.id]: true }));
+    
+    try {
+      const endpoint = integration.type === 'email' 
+        ? '/api/integrations/email/sync'
+        : '/api/integrations/calendar/sync';
+        
+      const response = await fetch(endpoint, {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        addToast({
+          type: 'success',
+          title: 'Sync Complete',
+          description: data.message
+        });
+        await fetchIntegrations();
+      } else {
+        throw new Error('Sync failed');
+      }
+    } catch (error) {
+      console.error('Sync failed:', error);
+      addToast({
+        type: 'error',
+        title: 'Sync Failed',
+        description: 'Failed to sync data. Please try again.'
+      });
+    } finally {
+      setSyncing(prev => ({ ...prev, [integration.id]: false }));
+    }
+  };
+
+  const handleSetupDev = async () => {
+    if (process.env.NODE_ENV !== 'development') return;
+    
+    setSettingUpDev(true);
+    try {
+      const response = await fetch('/api/integrations/setup-dev', {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        addToast({
+          type: 'success',
+          title: 'Development Setup Complete',
+          description: 'Mock email and calendar accounts created with sample data'
+        });
+        await fetchIntegrations();
+        // Refresh the page to show new data
+        window.location.reload();
+      } else {
+        throw new Error('Setup failed');
+      }
+    } catch (error) {
+      console.error('Dev setup failed:', error);
+      addToast({
+        type: 'error',
+        title: 'Setup Failed',
+        description: 'Failed to setup development data'
+      });
+    } finally {
+      setSettingUpDev(false);
     }
   };
 
@@ -155,11 +268,28 @@ export default function IntegrationsSettings() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
-          Connected Services
-        </h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            Connected Services
+          </h3>
+          {process.env.NODE_ENV === 'development' && (
+            <Button
+              onClick={handleSetupDev}
+              disabled={settingUpDev}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+              size="sm"
+            >
+              {settingUpDev ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Zap className="h-4 w-4 mr-2" />
+              )}
+              {settingUpDev ? 'Setting up...' : 'Setup Dev Data'}
+            </Button>
+          )}
+        </div>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Manage your email and calendar integrations. Disconnect accounts to stop syncing data.
+          Manage your email and calendar integrations. {process.env.NODE_ENV === 'development' ? 'Use "Setup Dev Data" to create sample accounts and data.' : 'Disconnect accounts to stop syncing data.'}
         </p>
       </div>
 
@@ -269,6 +399,22 @@ export default function IntegrationsSettings() {
                     </Button>
                   )}
                   
+                  {integration.status === 'live' && (
+                    <Button
+                      onClick={() => handleSync(integration)}
+                      variant="outline"
+                      size="sm"
+                      disabled={syncing[integration.id]}
+                    >
+                      {syncing[integration.id] ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                      )}
+                      {syncing[integration.id] ? 'Syncing...' : 'Sync Now'}
+                    </Button>
+                  )}
+
                   {['live', 'paused', 'error'].includes(integration.status) && (
                     <Button
                       onClick={() => handleIntegrationAction(integration.id, 'disconnect')}
