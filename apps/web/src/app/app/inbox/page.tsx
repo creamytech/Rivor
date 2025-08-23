@@ -223,9 +223,9 @@ export default function InboxPage() {
         emailIds.includes(email.id) ? { ...email, isRead: true } : email
       ));
       
-      // Call API for each email
+      // Call new consolidated thread action API
       await Promise.all(emailIds.map(id => 
-        fetch(`/api/inbox/threads/${id}/read`, { method: 'POST' })
+        fetch(`/api/inbox/threads/${id}/read`, { method: 'PATCH' })
       ));
     } catch (error) {
       console.error('Error marking as read:', error);
@@ -241,9 +241,9 @@ export default function InboxPage() {
         emailIds.includes(email.id) ? { ...email, isRead: false } : email
       ));
       
-      // Call API for each email (DELETE to mark as unread)
+      // Call new consolidated thread action API
       await Promise.all(emailIds.map(id => 
-        fetch(`/api/inbox/threads/${id}/read`, { method: 'DELETE' })
+        fetch(`/api/inbox/threads/${id}/unread`, { method: 'PATCH' })
       ));
     } catch (error) {
       console.error('Error marking as unread:', error);
@@ -262,9 +262,10 @@ export default function InboxPage() {
         email.id === emailId ? { ...email, isStarred: newStarred } : email
       ));
       
-      // Call API
-      await fetch(`/api/inbox/threads/${emailId}/star`, { 
-        method: newStarred ? 'POST' : 'DELETE' 
+      // Call new consolidated thread action API
+      const action = newStarred ? 'star' : 'unstar';
+      await fetch(`/api/inbox/threads/${emailId}/${action}`, { 
+        method: 'PATCH' 
       });
     } catch (error) {
       console.error('Error toggling star:', error);
@@ -284,9 +285,9 @@ export default function InboxPage() {
         setActiveEmail(null);
       }
       
-      // Call API for each email
+      // Call new consolidated thread action API
       await Promise.all(emailIds.map(id => 
-        fetch(`/api/inbox/threads/${id}/archive`, { method: 'POST' })
+        fetch(`/api/inbox/threads/${id}/archive`, { method: 'PATCH' })
       ));
     } catch (error) {
       console.error('Error archiving emails:', error);
@@ -306,9 +307,9 @@ export default function InboxPage() {
         setActiveEmail(null);
       }
       
-      // Call API for each email
+      // Call new consolidated thread action API
       await Promise.all(emailIds.map(id => 
-        fetch(`/api/inbox/threads/${id}/delete`, { method: 'DELETE' })
+        fetch(`/api/inbox/threads/${id}/delete`, { method: 'PATCH' })
       ));
     } catch (error) {
       console.error('Error deleting emails:', error);

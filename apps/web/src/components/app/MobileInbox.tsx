@@ -135,16 +135,38 @@ export default function MobileInbox({ className }: MobileInboxProps) {
     return true;
   });
 
-  const toggleStar = (emailId: string) => {
-    setEmails(emails.map(email => 
-      email.id === emailId ? { ...email, isStarred: !email.isStarred } : email
-    ));
+  const toggleStar = async (emailId: string) => {
+    try {
+      const email = emails.find(e => e.id === emailId);
+      const newStarred = !email?.isStarred;
+      
+      // Update UI optimistically
+      setEmails(emails.map(email => 
+        email.id === emailId ? { ...email, isStarred: newStarred } : email
+      ));
+      
+      // Call new consolidated thread action API for Gmail sync
+      const action = newStarred ? 'star' : 'unstar';
+      await fetch(`/api/inbox/threads/${emailId}/${action}`, { method: 'PATCH' });
+    } catch (error) {
+      console.error('Error toggling star:', error);
+      // Could add toast notification or error handling here
+    }
   };
 
-  const markAsRead = (emailId: string) => {
-    setEmails(emails.map(email => 
-      email.id === emailId ? { ...email, isRead: true } : email
-    ));
+  const markAsRead = async (emailId: string) => {
+    try {
+      // Update UI optimistically
+      setEmails(emails.map(email => 
+        email.id === emailId ? { ...email, isRead: true } : email
+      ));
+      
+      // Call new consolidated thread action API for Gmail sync
+      await fetch(`/api/inbox/threads/${emailId}/read`, { method: 'PATCH' });
+    } catch (error) {
+      console.error('Error marking as read:', error);
+      // Could add toast notification or error handling here
+    }
   };
 
   if (loading) {
