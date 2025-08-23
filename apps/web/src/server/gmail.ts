@@ -648,4 +648,184 @@ export class GmailService {
     
     return message;
   }
+
+  /**
+   * Mark messages as read in Gmail
+   */
+  async markAsRead(messageIds: string[]): Promise<void> {
+    if (messageIds.length === 0) return;
+
+    const gmail = await this.getGmail();
+    
+    try {
+      // Gmail API allows batch modifications
+      for (const messageId of messageIds) {
+        await gmail.users.messages.modify({
+          userId: 'me',
+          id: messageId,
+          requestBody: {
+            removeLabelIds: ['UNREAD']
+          }
+        });
+      }
+      
+      logger.info('Messages marked as read in Gmail', { 
+        count: messageIds.length,
+        messageIds: messageIds.slice(0, 5) // Log first 5 for debugging
+      });
+    } catch (error) {
+      logger.error('Failed to mark messages as read in Gmail', {
+        error: error instanceof Error ? error.message : String(error),
+        messageIds: messageIds.slice(0, 3)
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Mark messages as unread in Gmail
+   */
+  async markAsUnread(messageIds: string[]): Promise<void> {
+    if (messageIds.length === 0) return;
+
+    const gmail = await this.getGmail();
+    
+    try {
+      for (const messageId of messageIds) {
+        await gmail.users.messages.modify({
+          userId: 'me',
+          id: messageId,
+          requestBody: {
+            addLabelIds: ['UNREAD']
+          }
+        });
+      }
+      
+      logger.info('Messages marked as unread in Gmail', { 
+        count: messageIds.length 
+      });
+    } catch (error) {
+      logger.error('Failed to mark messages as unread in Gmail', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Archive messages in Gmail
+   */
+  async archiveMessages(messageIds: string[]): Promise<void> {
+    if (messageIds.length === 0) return;
+
+    const gmail = await this.getGmail();
+    
+    try {
+      for (const messageId of messageIds) {
+        await gmail.users.messages.modify({
+          userId: 'me',
+          id: messageId,
+          requestBody: {
+            removeLabelIds: ['INBOX']
+          }
+        });
+      }
+      
+      logger.info('Messages archived in Gmail', { 
+        count: messageIds.length 
+      });
+    } catch (error) {
+      logger.error('Failed to archive messages in Gmail', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Star messages in Gmail
+   */
+  async starMessages(messageIds: string[]): Promise<void> {
+    if (messageIds.length === 0) return;
+
+    const gmail = await this.getGmail();
+    
+    try {
+      for (const messageId of messageIds) {
+        await gmail.users.messages.modify({
+          userId: 'me',
+          id: messageId,
+          requestBody: {
+            addLabelIds: ['STARRED']
+          }
+        });
+      }
+      
+      logger.info('Messages starred in Gmail', { 
+        count: messageIds.length 
+      });
+    } catch (error) {
+      logger.error('Failed to star messages in Gmail', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Unstar messages in Gmail
+   */
+  async unstarMessages(messageIds: string[]): Promise<void> {
+    if (messageIds.length === 0) return;
+
+    const gmail = await this.getGmail();
+    
+    try {
+      for (const messageId of messageIds) {
+        await gmail.users.messages.modify({
+          userId: 'me',
+          id: messageId,
+          requestBody: {
+            removeLabelIds: ['STARRED']
+          }
+        });
+      }
+      
+      logger.info('Messages unstarred in Gmail', { 
+        count: messageIds.length 
+      });
+    } catch (error) {
+      logger.error('Failed to unstar messages in Gmail', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Move messages to trash in Gmail
+   */
+  async trashMessages(messageIds: string[]): Promise<void> {
+    if (messageIds.length === 0) return;
+
+    const gmail = await this.getGmail();
+    
+    try {
+      for (const messageId of messageIds) {
+        await gmail.users.messages.trash({
+          userId: 'me',
+          id: messageId
+        });
+      }
+      
+      logger.info('Messages moved to trash in Gmail', { 
+        count: messageIds.length 
+      });
+    } catch (error) {
+      logger.error('Failed to trash messages in Gmail', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
+  }
 }

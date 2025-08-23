@@ -540,4 +540,178 @@ export class GoogleCalendarService {
       throw error;
     }
   }
+
+  /**
+   * Create a calendar event in Google Calendar
+   */
+  async createEvent(eventData: {
+    title: string;
+    description?: string;
+    start: string;
+    end: string;
+    location?: string;
+    attendees?: string[];
+    isAllDay?: boolean;
+  }): Promise<any> {
+    const calendar = await this.getCalendar();
+
+    const googleEventData: any = {
+      summary: eventData.title,
+      description: eventData.description || '',
+      start: {
+        dateTime: eventData.isAllDay ? undefined : eventData.start,
+        date: eventData.isAllDay ? eventData.start.split('T')[0] : undefined,
+        timeZone: 'UTC'
+      },
+      end: {
+        dateTime: eventData.isAllDay ? undefined : eventData.end,
+        date: eventData.isAllDay ? eventData.end.split('T')[0] : undefined,
+        timeZone: 'UTC'
+      }
+    };
+
+    if (eventData.location) {
+      googleEventData.location = eventData.location;
+    }
+
+    if (eventData.attendees && eventData.attendees.length > 0) {
+      googleEventData.attendees = eventData.attendees.map(email => ({ email }));
+    }
+
+    try {
+      const event = await calendar.events.insert({
+        calendarId: 'primary',
+        requestBody: googleEventData,
+        sendUpdates: 'all'
+      });
+
+      logger.info('Calendar event created in Google Calendar', {
+        eventId: event.data.id,
+        title: eventData.title
+      });
+
+      return event.data;
+    } catch (error) {
+      logger.error('Failed to create event in Google Calendar', {
+        error: error instanceof Error ? error.message : String(error),
+        title: eventData.title
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Update a calendar event in Google Calendar
+   */
+  async updateEvent(eventId: string, eventData: {
+    title?: string;
+    description?: string;
+    start?: string;
+    end?: string;
+    location?: string;
+    attendees?: string[];
+    isAllDay?: boolean;
+  }): Promise<any> {
+    const calendar = await this.getCalendar();
+
+    const googleEventData: any = {};
+
+    if (eventData.title !== undefined) {
+      googleEventData.summary = eventData.title;
+    }
+
+    if (eventData.description !== undefined) {
+      googleEventData.description = eventData.description;
+    }
+
+    if (eventData.start && eventData.end) {
+      googleEventData.start = {
+        dateTime: eventData.isAllDay ? undefined : eventData.start,
+        date: eventData.isAllDay ? eventData.start.split('T')[0] : undefined,
+        timeZone: 'UTC'
+      };
+      googleEventData.end = {
+        dateTime: eventData.isAllDay ? undefined : eventData.end,
+        date: eventData.isAllDay ? eventData.end.split('T')[0] : undefined,
+        timeZone: 'UTC'
+      };
+    }
+
+    if (eventData.location !== undefined) {
+      googleEventData.location = eventData.location;
+    }
+
+    if (eventData.attendees !== undefined) {
+      googleEventData.attendees = eventData.attendees.map(email => ({ email }));
+    }
+
+    try {
+      const event = await calendar.events.update({
+        calendarId: 'primary',
+        eventId: eventId,
+        requestBody: googleEventData,
+        sendUpdates: 'all'
+      });
+
+      logger.info('Calendar event updated in Google Calendar', {
+        eventId,
+        title: eventData.title
+      });
+
+      return event.data;
+    } catch (error) {
+      logger.error('Failed to update event in Google Calendar', {
+        error: error instanceof Error ? error.message : String(error),
+        eventId
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a calendar event from Google Calendar
+   */
+  async deleteEvent(eventId: string): Promise<void> {
+    const calendar = await this.getCalendar();
+
+    try {
+      await calendar.events.delete({
+        calendarId: 'primary',
+        eventId: eventId,
+        sendUpdates: 'all'
+      });
+
+      logger.info('Calendar event deleted from Google Calendar', {
+        eventId
+      });
+    } catch (error) {
+      logger.error('Failed to delete event from Google Calendar', {
+        error: error instanceof Error ? error.message : String(error),
+        eventId
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get a specific calendar event from Google Calendar
+   */
+  async getEvent(eventId: string): Promise<any> {
+    const calendar = await this.getCalendar();
+
+    try {
+      const event = await calendar.events.get({
+        calendarId: 'primary',
+        eventId: eventId
+      });
+
+      return event.data;
+    } catch (error) {
+      logger.error('Failed to get event from Google Calendar', {
+        error: error instanceof Error ? error.message : String(error),
+        eventId
+      });
+      throw error;
+    }
+  }
 }
