@@ -121,6 +121,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
+  const [integrationStatus, setIntegrationStatus] = useState<any>(null);
+  const [integrationsLoading, setIntegrationsLoading] = useState(true);
 
   const sections: SettingsSection[] = [
     {
@@ -162,7 +164,40 @@ export default function SettingsPage() {
 
   useEffect(() => {
     loadSettings();
+    loadIntegrationStatus();
   }, []);
+
+  // Auto-refresh when user returns from OAuth (e.g., comes back from Google)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Small delay to ensure OAuth completion
+        setTimeout(() => {
+          loadIntegrationStatus();
+        }, 1000);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  const loadIntegrationStatus = async () => {
+    setIntegrationsLoading(true);
+    try {
+      const response = await fetch('/api/integrations/status');
+      if (response.ok) {
+        const data = await response.json();
+        setIntegrationStatus(data);
+      } else {
+        console.error('Failed to load integration status');
+      }
+    } catch (error) {
+      console.error('Error loading integration status:', error);
+    } finally {
+      setIntegrationsLoading(false);
+    }
+  };
 
   const loadSettings = () => {
     setLoading(true);
@@ -791,35 +826,67 @@ export default function SettingsPage() {
                                   <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
                                     Connect Gmail and Google Calendar for full sync
                                   </p>
+                                  {integrationsLoading && (
+                                    <p className="text-xs text-blue-500">Loading status...</p>
+                                  )}
+                                  {!integrationsLoading && integrationStatus && (
+                                    <p className="text-xs text-green-600">
+                                      {integrationStatus.emailAccounts?.some((acc: any) => acc.provider === 'google') ? 'Connected' : 'Not connected'}
+                                    </p>
+                                  )}
                                 </div>
                               </div>
-                              <Button
-                                onClick={() => {
-                                  // Redirect to Google OAuth
-                                  window.location.href = '/api/auth/signin/google';
-                                }}
-                                className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white"
-                              >
-                                <Globe className="h-4 w-4 mr-2" />
-                                Connect Google
-                              </Button>
+                              {!integrationsLoading && integrationStatus && integrationStatus.emailAccounts?.some((acc: any) => acc.provider === 'google') ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2 text-green-600 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg">
+                                    <Check className="h-4 w-4" />
+                                    <span className="text-sm font-medium">Connected</span>
+                                  </div>
+                                  <Button
+                                    onClick={() => loadIntegrationStatus()}
+                                    variant="outline"
+                                    size="sm"
+                                  >
+                                    <RefreshCw className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Button
+                                  onClick={() => {
+                                    // Redirect to Google OAuth
+                                    window.location.href = '/api/auth/signin/google';
+                                  }}
+                                  className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white"
+                                  disabled={integrationsLoading}
+                                >
+                                  <Globe className="h-4 w-4 mr-2" />
+                                  {integrationsLoading ? 'Loading...' : 'Connect Google'}
+                                </Button>
+                              )}
                             </div>
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="flex items-center gap-3 p-3 rounded-lg bg-white/50 dark:bg-black/20">
                                 <Mail className="h-5 w-5 text-blue-500" />
-                                <div>
+                                <div className="flex-1">
                                   <p className="font-medium text-sm">Gmail Integration</p>
                                   <p className="text-xs opacity-80">Read and send emails</p>
                                 </div>
+                                {integrationStatus?.emailAccounts?.some((acc: any) => acc.provider === 'google') && (
+                                  <Check className="h-4 w-4 text-green-500" />
+                                )}
                               </div>
                               
                               <div className="flex items-center gap-3 p-3 rounded-lg bg-white/50 dark:bg-black/20">
                                 <Calendar className="h-5 w-5 text-green-500" />
-                                <div>
+                                <div className="flex-1">
                                   <p className="font-medium text-sm">Calendar Sync</p>
                                   <p className="text-xs opacity-80">Sync events and meetings</p>
                                 </div>
+                                {/* Check if there's a Google calendar connection - this would be in calendarAccounts or if email includes calendar scope */}
+                                {integrationStatus?.emailAccounts?.some((acc: any) => acc.provider === 'google') && (
+                                  <Check className="h-4 w-4 text-green-500" />
+                                )}
                               </div>
                             </div>
 
