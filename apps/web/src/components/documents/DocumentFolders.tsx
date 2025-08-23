@@ -595,7 +595,7 @@ function FolderModal({
   const flatFolders = flattenFolders(folders);
 
   return (
-    <DialogContent className="max-w-md">
+    <DialogContent className="max-w-md glass-modal">
       <DialogHeader>
         <DialogTitle>
           {isEdit ? 'Edit Folder' : 'Create New Folder'}

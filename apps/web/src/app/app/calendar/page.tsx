@@ -224,13 +224,13 @@ export default function CalendarPage() {
             <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex items-center gap-4'} mb-4`}>
               {/* Enhanced Search */}
               <div className={`relative ${isMobile ? 'w-full' : 'flex-1 max-w-md'}`}>
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" 
+                <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 h-4 w-4" 
                        style={{ color: 'var(--glass-text-muted)' }} />
                 <Input
                   placeholder={isMobile ? "Search events..." : "Search events, attendees, or locations..."}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 glass-input"
+                  className="pl-16 glass-input"
                 />
               </div>
 

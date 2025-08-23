@@ -323,7 +323,7 @@ export default function ReportingPage() {
                   <DropdownMenuContent className="glass-dropdown w-56">
                     <DropdownMenuLabel>Show Metrics</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    {reportData?.metrics.map((metric) => (
+                    {reportData?.metrics?.map((metric) => (
                       <DropdownMenuItem
                         key={metric.id}
                         onClick={() => {
@@ -474,7 +474,7 @@ export default function ReportingPage() {
                       </div>
                       
                       <div className="space-y-3">
-                        {reportData?.insights.map((insight, index) => (
+                        {reportData?.insights?.map((insight, index) => (
                           <div key={index} className="glass-suggestion-pill">
                             <Star className="h-4 w-4 text-yellow-500" />
                             <span className="text-xs">{insight}</span>
@@ -498,7 +498,7 @@ export default function ReportingPage() {
                       </div>
                       
                       <div className="space-y-3">
-                        {reportData?.recommendations.map((rec, index) => (
+                        {reportData?.recommendations?.map((rec, index) => (
                           <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-white/50 dark:bg-black/20">
                             <Zap className="h-4 w-4 text-blue-500 mt-0.5" />
                             <span className="text-xs" style={{ color: 'var(--glass-text)' }}>

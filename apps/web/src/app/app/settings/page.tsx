@@ -1062,7 +1062,7 @@ export default function SettingsPage() {
 
       {/* Reset Settings Modal */}
       <Dialog open={showResetModal} onOpenChange={setShowResetModal}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-[400px] glass-modal">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <RefreshCw className="h-5 w-5 text-orange-500" />

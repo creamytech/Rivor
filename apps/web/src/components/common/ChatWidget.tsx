@@ -30,7 +30,7 @@ export default function ChatWidget() {
       <ChatAgent isOpen={isOpen} onClose={() => setIsOpen(false)} />
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 rounded-full h-12 w-12 shadow-lg brand-gradient text-white"
+        className="fixed bottom-6 right-6 rounded-full h-12 w-12 shadow-lg bg-gradient-to-br from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 dark:from-blue-600 dark:to-cyan-700 dark:hover:from-blue-700 dark:hover:to-cyan-800 text-white transition-all duration-300"
         aria-label="Open chat assistant"
       >
         <MessageCircle className="h-6 w-6" />

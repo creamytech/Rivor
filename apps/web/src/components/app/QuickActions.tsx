@@ -197,7 +197,7 @@ export default function QuickActions({ className = '' }: QuickActionsProps) {
       {/* Primary Action Button */}
       <Button
         onClick={primaryAction.onClick}
-        className="h-14 w-14 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
+        className="h-14 w-14 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 dark:from-indigo-600 dark:to-purple-700 dark:hover:from-indigo-500 dark:hover:to-purple-600 shadow-lg hover:shadow-xl transition-all duration-200"
       >
         {primaryAction.icon}
       </Button>

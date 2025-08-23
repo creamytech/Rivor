@@ -820,7 +820,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       />
 
       <Dialog open={showCreateContactModal} onOpenChange={setShowCreateContactModal}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md glass-modal">
           <DialogHeader>
             <DialogTitle>Add New Contact</DialogTitle>
           </DialogHeader>
@@ -898,7 +898,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       </Dialog>
 
       <Dialog open={showCreateListingModal} onOpenChange={setShowCreateListingModal}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl glass-modal">
           <DialogHeader>
             <DialogTitle>Create New Listing</DialogTitle>
           </DialogHeader>
@@ -1000,7 +1000,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       </Dialog>
 
       <Dialog open={showScheduleMeetingModal} onOpenChange={setShowScheduleMeetingModal}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md glass-modal">
           <DialogHeader>
             <DialogTitle>Schedule Meeting</DialogTitle>
           </DialogHeader>

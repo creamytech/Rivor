@@ -501,7 +501,7 @@ export default function DocumentEditor({
 
       {/* Merge Fields Modal */}
       <Dialog open={showMergeFields} onOpenChange={setShowMergeFields}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl glass-modal">
           <DialogHeader>
             <DialogTitle>Insert Merge Fields</DialogTitle>
           </DialogHeader>

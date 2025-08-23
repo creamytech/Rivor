@@ -300,14 +300,14 @@ export default function PipelinePage() {
                 <div className="flex items-center gap-4 mb-6">
                   {/* Enhanced Search */}
                   <div className="flex-1 max-w-2xl relative group">
-                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 transition-colors duration-200" 
+                    <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 h-5 w-5 transition-colors duration-200" 
                       style={{ color: searchQuery ? 'var(--glass-primary)' : 'var(--glass-text-muted)' }} />
                     <Input
                       variant="pill"
                       placeholder="Search deals, clients, properties..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-12 pr-12 py-4 text-base glass-hover-glow transition-all duration-300"
+                      className="w-full pl-16 pr-12 py-4 text-base glass-hover-glow transition-all duration-300"
                     />
                     <AnimatePresence>
                       {searchQuery && (

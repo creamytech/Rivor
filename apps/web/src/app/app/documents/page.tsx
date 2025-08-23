@@ -340,13 +340,13 @@ export default function DocumentsPage() {
               <div className="flex items-center gap-4 mb-4">
                 {/* Enhanced Search */}
                 <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" 
+                  <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 h-4 w-4" 
                          style={{ color: 'var(--glass-text-muted)' }} />
                   <Input
                     placeholder="Search documents..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 glass-input"
+                    className="pl-16 glass-input"
                   />
                 </div>
 
@@ -698,7 +698,7 @@ export default function DocumentsPage() {
 
       {/* Create Document Modal */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] glass-modal">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5 text-teal-500" />
@@ -734,7 +734,7 @@ export default function DocumentsPage() {
 
       {/* Document Preview Modal */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] glass-modal overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Eye className="h-5 w-5 text-teal-500" />

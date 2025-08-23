@@ -258,14 +258,14 @@ export default function ContactsPage() {
           {/* Search and Filters */}
           <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex items-center gap-4'} mb-6`}>
             <div className={`${isMobile ? 'w-full' : 'flex-1 max-w-2xl'} relative`}>
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" 
+              <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 h-5 w-5" 
                 style={{ color: 'var(--glass-text-muted)' }} />
               <Input
                 variant="pill"
                 placeholder={isMobile ? "Search contacts..." : "Search contacts, companies, or emails..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 text-sm"
+                className="w-full pl-16 pr-4 py-3 text-sm"
               />
             </div>
             
@@ -693,7 +693,7 @@ export default function ContactsPage() {
 
         {/* Contact Details Modal */}
         <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
-          <DialogContent className="max-w-2xl glass-panel">
+          <DialogContent className="max-w-2xl glass-modal">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-3" style={{ color: 'var(--glass-text)' }}>
                 <div className="w-12 h-12 rounded-full glass-card flex items-center justify-center font-medium text-lg">
