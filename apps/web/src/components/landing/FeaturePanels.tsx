@@ -18,21 +18,21 @@ export default function FeaturePanels({ onWaitlistClick }: FeaturePanelsProps) {
       cta: 'Draft with AI',
       visual: (
         <div className="relative">
-          <div className="rounded-xl border border-white/10 bg-[#121A28]/80 backdrop-blur-sm p-6 space-y-4">
+          <div className="glass-card p-6 space-y-4">
             {/* Email list */}
             {[
               { name: 'Sarah Chen', subject: 'Ready to buy - Oak Street', score: 95, intent: 'Hot Lead' },
               { name: 'Mike Johnson', subject: 'Property inquiry downtown', score: 87, intent: 'Buyer' },
               { name: 'Lisa Garcia', subject: 'Selling timeline question', score: 72, intent: 'Seller' }
             ].map((email, i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-white/5 bg-white/5">
+              <div key={i} className="flex items-center justify-between p-3 glass-card bg-white/5">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-[#1E5EFF] to-[#16C4D9] rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
                     <User className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-[#EAF2FF]">{email.name}</div>
-                    <div className="text-xs text-[#9CB3D9]">{email.subject}</div>
+                    <div className="text-sm font-medium text-white">{email.name}</div>
+                    <div className="text-xs text-white/70">{email.subject}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -43,7 +43,7 @@ export default function FeaturePanels({ onWaitlistClick }: FeaturePanelsProps) {
                   }`}>
                     {email.score}%
                   </div>
-                  <div className="px-2 py-1 rounded text-xs bg-white/10 text-[#9CB3D9]">
+                  <div className="px-2 py-1 rounded text-xs bg-white/10 text-white/80">
                     {email.intent}
                   </div>
                 </div>
@@ -51,12 +51,12 @@ export default function FeaturePanels({ onWaitlistClick }: FeaturePanelsProps) {
             ))}
             
             {/* AI insight badge */}
-            <div className="p-3 rounded-lg border border-[#3AF6C3]/30 bg-[#3AF6C3]/10">
+            <div className="p-3 glass-card border border-cyan-500/30 bg-cyan-500/10">
               <div className="flex items-center gap-2 mb-2">
-                <Star className="h-4 w-4 text-[#3AF6C3]" />
-                <span className="text-xs font-medium text-[#3AF6C3]">AI Insight</span>
+                <Star className="h-4 w-4 text-cyan-400" />
+                <span className="text-xs font-medium text-cyan-400">AI Insight</span>
               </div>
-              <p className="text-xs text-[#9CB3D9]">
+              <p className="text-xs text-white/90">
                 Sarah is highly motivated. Suggest Oak Street showing this week.
               </p>
             </div>
@@ -72,35 +72,35 @@ export default function FeaturePanels({ onWaitlistClick }: FeaturePanelsProps) {
       cta: 'Move stage',
       visual: (
         <div className="relative">
-          <div className="rounded-xl border border-white/10 bg-[#121A28]/80 backdrop-blur-sm p-6">
+          <div className="glass-card p-6">
             <div className="grid grid-cols-3 gap-4">
               {['Qualified', 'Showing', 'Offer'].map((stage, i) => (
                 <div key={stage} className="space-y-3">
-                  <div className="text-xs font-medium text-[#9CB3D9] mb-3">{stage}</div>
+                  <div className="text-xs font-medium text-white/80 mb-3">{stage}</div>
                   {i === 0 && (
-                    <div className="p-3 rounded-lg border border-blue-500/30 bg-blue-500/10">
-                      <div className="text-xs font-medium text-[#EAF2FF] mb-1">Johnson Family</div>
-                      <div className="text-xs text-[#9CB3D9] mb-2">$450K Budget</div>
+                    <div className="p-3 glass-card border border-blue-500/30 bg-blue-500/10">
+                      <div className="text-xs font-medium text-white mb-1">Johnson Family</div>
+                      <div className="text-xs text-white/80 mb-2">$450K Budget</div>
                       <div className="text-xs text-blue-400">Ready to see homes</div>
                     </div>
                   )}
                   {i === 1 && (
-                    <div className="p-3 rounded-lg border border-green-500/30 bg-green-500/10">
-                      <div className="text-xs font-medium text-[#EAF2FF] mb-1">Davis Purchase</div>
-                      <div className="text-xs text-[#9CB3D9] mb-2">Oak Street</div>
+                    <div className="p-3 glass-card border border-green-500/30 bg-green-500/10">
+                      <div className="text-xs font-medium text-white mb-1">Davis Purchase</div>
+                      <div className="text-xs text-white/80 mb-2">Oak Street</div>
                       <div className="text-xs text-green-400">Showing Thu 2pm</div>
                     </div>
                   )}
                   {i === 2 && (
-                    <div className="p-3 rounded-lg border border-purple-500/30 bg-purple-500/10">
-                      <div className="text-xs font-medium text-[#EAF2FF] mb-1">Wilson Sale</div>
-                      <div className="text-xs text-[#9CB3D9] mb-2">$520K List</div>
+                    <div className="p-3 glass-card border border-purple-500/30 bg-purple-500/10">
+                      <div className="text-xs font-medium text-white mb-1">Wilson Sale</div>
+                      <div className="text-xs text-white/80 mb-2">$520K List</div>
                       <div className="text-xs text-purple-400">Offer pending</div>
                     </div>
                   )}
                   {i === 0 && (
-                    <div className="p-3 rounded-lg border border-dashed border-white/20 bg-white/5 flex items-center justify-center">
-                      <Plus className="h-4 w-4 text-[#6E85AC]" />
+                    <div className="p-3 glass-card border border-dashed border-white/20 bg-white/5 flex items-center justify-center">
+                      <Plus className="h-4 w-4 text-white/60" />
                     </div>
                   )}
                 </div>
@@ -118,20 +118,20 @@ export default function FeaturePanels({ onWaitlistClick }: FeaturePanelsProps) {
       cta: 'Do it for me',
       visual: (
         <div className="relative">
-          <div className="rounded-xl border border-white/10 bg-[#121A28]/80 backdrop-blur-sm p-6">
+          <div className="glass-card p-6">
             <div className="space-y-4">
               {/* Chat messages */}
               <div className="space-y-3">
                 <div className="flex justify-end">
-                  <div className="bg-gradient-to-r from-[#1E5EFF] to-[#16C4D9] text-white p-3 rounded-lg max-w-[80%]">
+                  <div className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white p-3 rounded-lg max-w-[80%]">
                     <div className="text-xs">Draft follow-up for Sarah about Oak Street showing</div>
                   </div>
                 </div>
                 
                 <div className="flex justify-start">
-                  <div className="bg-white/10 text-[#EAF2FF] p-3 rounded-lg max-w-[80%]">
+                  <div className="glass-card text-white p-3 rounded-lg max-w-[80%]">
                     <div className="text-xs mb-2">I'll draft a personalized follow-up for Sarah:</div>
-                    <div className="text-xs text-[#9CB3D9] italic bg-white/5 p-2 rounded">
+                    <div className="text-xs text-white/80 italic bg-white/5 p-2 rounded">
                       "Hi Sarah, Thanks for your interest in the Oak Street property. 
                       I have availability this Thursday or Friday for a showing. 
                       The home has the updated kitchen you mentioned..."
@@ -142,13 +142,13 @@ export default function FeaturePanels({ onWaitlistClick }: FeaturePanelsProps) {
               
               {/* Quick actions */}
               <div className="flex gap-2">
-                <button className="px-3 py-1.5 bg-gradient-to-r from-[#1E5EFF] to-[#16C4D9] text-white text-xs rounded hover:opacity-90">
+                <button className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-xs rounded hover:opacity-90">
                   Send Email
                 </button>
-                <button className="px-3 py-1.5 bg-white/10 text-[#9CB3D9] text-xs rounded hover:bg-white/20">
+                <button className="px-3 py-1.5 bg-white/10 text-white/80 text-xs rounded hover:bg-white/20">
                   Schedule Showing
                 </button>
-                <button className="px-3 py-1.5 bg-white/10 text-[#9CB3D9] text-xs rounded hover:bg-white/20">
+                <button className="px-3 py-1.5 bg-white/10 text-white/80 text-xs rounded hover:bg-white/20">
                   Create Task
                 </button>
               </div>
@@ -200,8 +200,8 @@ export default function FeaturePanels({ onWaitlistClick }: FeaturePanelsProps) {
 
             {/* Visual */}
             <div className={`${index % 2 === 1 ? 'lg:order-1' : ''} relative`}>
-              {/* Glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-[#1E5EFF]/10 via-[#16C4D9]/10 to-[#3AF6C3]/10 rounded-3xl blur-xl" />
+              {/* Glow effect using actual glass theme colors */}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-cyan-500/10 to-purple-500/10 rounded-3xl blur-xl" />
               
               {/* Content */}
               <div className="relative">

@@ -33,7 +33,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0E1420] text-[#EAF2FF] overflow-x-hidden">
+    <div className="min-h-screen glass-theme-black text-white overflow-x-hidden" data-glass-theme="black">
       {/* Navigation */}
       <Navigation onWaitlistClick={openWaitlist} />
       
