@@ -101,7 +101,7 @@ export default function AuthErrorPage() {
   const errorDetails = getErrorDetails(error);
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="glass-theme-black min-h-screen relative overflow-hidden" data-glass-theme="black">
       <div className="absolute inset-0 wave-gradient" />
       <div className="absolute top-20 left-20 w-64 h-64 bg-white/5 rounded-full animate-float" />
       <div className="absolute bottom-32 right-32 w-32 h-32 bg-white/5 rounded-full animate-float-delay" />
