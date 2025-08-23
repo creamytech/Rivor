@@ -3409,6 +3409,12 @@ header:not(.md\\:hidden),
 /* Waitlist modal dark theme enforcement */
 [data-waitlist-modal-open="true"] [data-radix-dialog-overlay] {
   background: rgba(0, 0, 0, 0.8) !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 999999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 [data-waitlist-modal-open="true"] [data-radix-dialog-content] {
@@ -3417,6 +3423,14 @@ header:not(.md\\:hidden),
   -webkit-backdrop-filter: blur(24px) saturate(1.2) !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
   color: #ffffff !important;
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 1000000 !important;
+  max-width: 90vw !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
 }
 
 [data-waitlist-modal-open="true"] [data-radix-dialog-content] * {

@@ -47,13 +47,16 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const [submitError, setSubmitError] = useState('');
 
-  // Simple dark theme enforcement
+  // Simple dark theme enforcement and debugging
   useEffect(() => {
     if (isOpen && typeof window !== 'undefined') {
       // Simple approach - just set data attributes
       document.body.setAttribute('data-waitlist-modal-open', 'true');
+      // Add debugging
+      console.log('Waitlist modal should be open');
     } else {
       document.body.removeAttribute('data-waitlist-modal-open');
+      console.log('Waitlist modal should be closed');
     }
   }, [isOpen]);
 
@@ -168,12 +171,22 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent 
-          className="max-w-md mx-4 sm:mx-auto glass-modal glass-border-active glass-hover-glow"
+          className="max-w-md mx-4 sm:mx-auto"
           style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
             backgroundColor: 'rgba(0, 0, 0, 0.95)',
             backdropFilter: 'blur(24px) saturate(1.2)',
             border: '1px solid rgba(255, 255, 255, 0.3)',
-            color: '#ffffff'
+            color: '#ffffff',
+            zIndex: 1000000,
+            maxWidth: '90vw',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            borderRadius: '12px',
+            padding: '24px'
           }}
         >
         <DialogHeader>
