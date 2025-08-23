@@ -35,7 +35,16 @@ import {
   Filter,
   RefreshCw,
   MoreHorizontal,
-  X
+  X,
+  Settings,
+  Palette,
+  Layout,
+  Grid3X3,
+  List,
+  RotateCcw,
+  Save,
+  Move3D,
+  Sparkles
 } from "lucide-react";
 
 interface DashboardMetric {
@@ -82,12 +91,15 @@ export default function DashboardPage() {
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
+  const [customizeTab, setCustomizeTab] = useState('widgets');
   const [visibleWidgets, setVisibleWidgets] = useState({
     metrics: true,
     recentActivity: true,
     upcomingTasks: true,
     quickActions: true
   });
+  const [dashboardLayout, setDashboardLayout] = useState('default');
+  const [metricColumns, setMetricColumns] = useState('auto');
 
   // Detect mobile
   useEffect(() => {
@@ -104,6 +116,8 @@ export default function DashboardPage() {
       if (savedPrefs) {
         const prefs = JSON.parse(savedPrefs);
         setVisibleWidgets(prefs.visibleWidgets || visibleWidgets);
+        setDashboardLayout(prefs.dashboardLayout || 'default');
+        setMetricColumns(prefs.metricColumns || 'auto');
       }
     } catch (error) {
       console.error('Failed to load dashboard preferences:', error);
@@ -358,14 +372,18 @@ export default function DashboardPage() {
     ));
   };
 
-  const savePreferences = (newPrefs: typeof visibleWidgets) => {
+  const savePreferences = (newPrefs?: typeof visibleWidgets, layout?: string, columns?: string) => {
     try {
       const preferences = {
-        visibleWidgets: newPrefs,
+        visibleWidgets: newPrefs || visibleWidgets,
+        dashboardLayout: layout || dashboardLayout,
+        metricColumns: columns || metricColumns,
         lastUpdated: new Date().toISOString()
       };
       localStorage.setItem('rivor-dashboard-preferences', JSON.stringify(preferences));
-      setVisibleWidgets(newPrefs);
+      if (newPrefs) setVisibleWidgets(newPrefs);
+      if (layout) setDashboardLayout(layout);
+      if (columns) setMetricColumns(columns);
     } catch (error) {
       console.error('Failed to save dashboard preferences:', error);
     }
@@ -521,7 +539,13 @@ export default function DashboardPage() {
         <div className="flex-1 px-4 pb-4 space-y-4 main-content-area">
           {/* KPI Metrics Grid */}
           {visibleWidgets.metrics && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4">
+          <div className={`grid gap-4 ${
+            metricColumns === '2' ? 'grid-cols-1 md:grid-cols-2' :
+            metricColumns === '3' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' :
+            metricColumns === '4' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' :
+            metricColumns === '6' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6' :
+            'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6'
+          }`}
             {loading ? (
               Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="glass-card p-6">
@@ -777,74 +801,242 @@ export default function DashboardPage() {
           </div>
           )}
 
-          {/* Customize Dashboard Modal */}
+          {/* Enhanced Customize Dashboard Modal */}
           {showCustomizeModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center">
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowCustomizeModal(false)} />
-              <div className="relative w-full max-w-md mx-4 glass-modal rounded-xl p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold" style={{ color: 'var(--glass-text)' }}>
-                    Customize Dashboard
-                  </h3>
+              <div className="relative w-full max-w-4xl mx-4 max-h-[90vh] glass-modal rounded-xl overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--glass-border)' }}>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                      <Settings className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold" style={{ color: 'var(--glass-text)' }}>
+                        Customize Dashboard
+                      </h3>
+                      <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                        Personalize your dashboard layout and widgets
+                      </p>
+                    </div>
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowCustomizeModal(false)}
+                    className="glass-button-small"
                   >
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium mb-3" style={{ color: 'var(--glass-text)' }}>
-                      Show/Hide Widgets
-                    </h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span style={{ color: 'var(--glass-text-secondary)' }}>Metrics Cards</span>
-                        <Switch
-                          checked={visibleWidgets.metrics}
-                          onCheckedChange={() => handleWidgetToggle('metrics')}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span style={{ color: 'var(--glass-text-secondary)' }}>Recent Activity</span>
-                        <Switch
-                          checked={visibleWidgets.recentActivity}
-                          onCheckedChange={() => handleWidgetToggle('recentActivity')}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span style={{ color: 'var(--glass-text-secondary)' }}>Today's Tasks</span>
-                        <Switch
-                          checked={visibleWidgets.upcomingTasks}
-                          onCheckedChange={() => handleWidgetToggle('upcomingTasks')}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span style={{ color: 'var(--glass-text-secondary)' }}>Quick Actions</span>
-                        <Switch
-                          checked={visibleWidgets.quickActions}
-                          onCheckedChange={() => handleWidgetToggle('quickActions')}
-                        />
+                {/* Tab Navigation */}
+                <div className="flex border-b" style={{ borderColor: 'var(--glass-border)' }}>
+                  {[
+                    { id: 'widgets', label: 'Widgets', icon: <Grid3X3 className="h-4 w-4" /> },
+                    { id: 'layout', label: 'Layout', icon: <Layout className="h-4 w-4" /> },
+                    { id: 'appearance', label: 'Appearance', icon: <Palette className="h-4 w-4" /> }
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setCustomizeTab(tab.id)}
+                      className={`flex items-center gap-2 px-6 py-3 font-medium transition-all duration-200 ${
+                        customizeTab === tab.id
+                          ? 'border-b-2 border-blue-500 bg-blue-50/10'
+                          : 'hover:bg-white/5'
+                      }`}
+                      style={{ 
+                        color: customizeTab === tab.id ? 'var(--glass-primary)' : 'var(--glass-text-muted)' 
+                      }}
+                    >
+                      {tab.icon}
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Tab Content */}
+                <div className="p-6 max-h-[60vh] overflow-y-auto">
+                  {customizeTab === 'widgets' && (
+                    <div className="space-y-6">
+                      <div>
+                        <h4 className="font-semibold text-lg mb-4 flex items-center gap-2" style={{ color: 'var(--glass-text)' }}>
+                          <Sparkles className="h-5 w-5 text-purple-500" />
+                          Widget Visibility
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {[
+                            { id: 'metrics', label: 'Metrics Cards', description: 'Key performance indicators and stats', icon: <BarChart3 className="h-5 w-5" />, color: 'from-blue-500 to-cyan-500' },
+                            { id: 'recentActivity', label: 'Recent Activity', description: 'Latest actions and updates', icon: <Activity className="h-5 w-5" />, color: 'from-green-500 to-emerald-500' },
+                            { id: 'upcomingTasks', label: 'Today\'s Tasks', description: 'Upcoming tasks and reminders', icon: <CheckCircle className="h-5 w-5" />, color: 'from-orange-500 to-red-500' },
+                            { id: 'quickActions', label: 'Quick Actions', description: 'Shortcuts to common actions', icon: <Zap className="h-5 w-5" />, color: 'from-purple-500 to-pink-500' }
+                          ].map((widget) => (
+                            <div
+                              key={widget.id}
+                              className={`glass-card p-4 rounded-lg transition-all duration-200 ${
+                                visibleWidgets[widget.id as keyof typeof visibleWidgets] 
+                                  ? 'ring-2 ring-blue-500 bg-blue-50/5' 
+                                  : 'hover:bg-white/5'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-start gap-3">
+                                  <div className={`p-2 rounded-lg bg-gradient-to-r ${widget.color} text-white`}>
+                                    {widget.icon}
+                                  </div>
+                                  <div className="flex-1">
+                                    <h5 className="font-medium" style={{ color: 'var(--glass-text)' }}>
+                                      {widget.label}
+                                    </h5>
+                                    <p className="text-sm mt-1" style={{ color: 'var(--glass-text-muted)' }}>
+                                      {widget.description}
+                                    </p>
+                                  </div>
+                                </div>
+                                <Switch
+                                  checked={visibleWidgets[widget.id as keyof typeof visibleWidgets]}
+                                  onCheckedChange={() => handleWidgetToggle(widget.id as keyof typeof visibleWidgets)}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
-                  <div className="flex items-center gap-3 pt-4 border-t" style={{ borderColor: 'var(--glass-border)' }}>
+                  {customizeTab === 'layout' && (
+                    <div className="space-y-6">
+                      <div>
+                        <h4 className="font-semibold text-lg mb-4 flex items-center gap-2" style={{ color: 'var(--glass-text)' }}>
+                          <Layout className="h-5 w-5 text-green-500" />
+                          Metrics Layout
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                          {[
+                            { value: 'auto', label: 'Auto', description: 'Responsive columns', icon: <Grid3X3 className="h-5 w-5" /> },
+                            { value: '2', label: '2 Columns', description: 'Fixed 2 columns', icon: <div className="flex gap-1"><div className="w-2 h-4 bg-current rounded-sm"></div><div className="w-2 h-4 bg-current rounded-sm"></div></div> },
+                            { value: '3', label: '3 Columns', description: 'Fixed 3 columns', icon: <div className="flex gap-1"><div className="w-1.5 h-4 bg-current rounded-sm"></div><div className="w-1.5 h-4 bg-current rounded-sm"></div><div className="w-1.5 h-4 bg-current rounded-sm"></div></div> },
+                            { value: '6', label: '6 Columns', description: 'Compact layout', icon: <div className="flex gap-0.5"><div className="w-1 h-4 bg-current rounded-sm"></div><div className="w-1 h-4 bg-current rounded-sm"></div><div className="w-1 h-4 bg-current rounded-sm"></div><div className="w-1 h-4 bg-current rounded-sm"></div><div className="w-1 h-4 bg-current rounded-sm"></div><div className="w-1 h-4 bg-current rounded-sm"></div></div> }
+                          ].map((layout) => (
+                            <button
+                              key={layout.value}
+                              onClick={() => {
+                                setMetricColumns(layout.value);
+                                savePreferences(undefined, undefined, layout.value);
+                              }}
+                              className={`glass-card p-4 rounded-lg text-center transition-all duration-200 ${
+                                metricColumns === layout.value 
+                                  ? 'ring-2 ring-green-500 bg-green-50/5' 
+                                  : 'hover:bg-white/5'
+                              }`}
+                            >
+                              <div className="flex justify-center mb-2 text-green-500">
+                                {layout.icon}
+                              </div>
+                              <h5 className="font-medium" style={{ color: 'var(--glass-text)' }}>
+                                {layout.label}
+                              </h5>
+                              <p className="text-xs mt-1" style={{ color: 'var(--glass-text-muted)' }}>
+                                {layout.description}
+                              </p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold text-lg mb-4 flex items-center gap-2" style={{ color: 'var(--glass-text)' }}>
+                          <Move3D className="h-5 w-5 text-purple-500" />
+                          Dashboard Layout
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {[
+                            { value: 'default', label: 'Standard', description: 'Traditional dashboard layout', preview: '📊' },
+                            { value: 'compact', label: 'Compact', description: 'Condensed information view', preview: '📱' },
+                            { value: 'detailed', label: 'Detailed', description: 'Expanded information cards', preview: '📋' }
+                          ].map((layout) => (
+                            <button
+                              key={layout.value}
+                              onClick={() => {
+                                setDashboardLayout(layout.value);
+                                savePreferences(undefined, layout.value);
+                              }}
+                              className={`glass-card p-4 rounded-lg text-center transition-all duration-200 ${
+                                dashboardLayout === layout.value 
+                                  ? 'ring-2 ring-purple-500 bg-purple-50/5' 
+                                  : 'hover:bg-white/5'
+                              }`}
+                            >
+                              <div className="text-2xl mb-2">{layout.preview}</div>
+                              <h5 className="font-medium" style={{ color: 'var(--glass-text)' }}>
+                                {layout.label}
+                              </h5>
+                              <p className="text-xs mt-1" style={{ color: 'var(--glass-text-muted)' }}>
+                                {layout.description}
+                              </p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {customizeTab === 'appearance' && (
+                    <div className="space-y-6">
+                      <div className="text-center py-8">
+                        <Palette className="h-12 w-12 mx-auto mb-4 text-blue-500" />
+                        <h4 className="font-semibold text-lg mb-2" style={{ color: 'var(--glass-text)' }}>
+                          Appearance Settings
+                        </h4>
+                        <p style={{ color: 'var(--glass-text-muted)' }}>
+                          Theme and visual customization options are managed in the main settings page.
+                        </p>
+                        <Button
+                          variant="liquid"
+                          className="mt-4"
+                          onClick={() => {
+                            setShowCustomizeModal(false);
+                            router.push('/app/settings');
+                          }}
+                        >
+                          <Settings className="h-4 w-4 mr-2" />
+                          Open Settings
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer Actions */}
+                <div className="flex items-center justify-between p-6 border-t bg-white/5 dark:bg-black/10" style={{ borderColor: 'var(--glass-border)' }}>
+                  <Button
+                    variant="outline"
+                    onClick={resetDashboard}
+                    className="glass-button-secondary"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Reset to Default
+                  </Button>
+                  <div className="flex items-center gap-3">
                     <Button
                       variant="outline"
-                      onClick={resetDashboard}
-                      className="flex-1"
+                      onClick={() => setShowCustomizeModal(false)}
+                      className="glass-button-secondary"
                     >
-                      Reset to Default
+                      Cancel
                     </Button>
                     <Button
-                      onClick={() => setShowCustomizeModal(false)}
-                      className="flex-1"
+                      variant="liquid"
+                      onClick={() => {
+                        savePreferences();
+                        setShowCustomizeModal(false);
+                      }}
+                      className="glass-hover-glow"
                     >
-                      Done
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Changes
                     </Button>
                   </div>
                 </div>
