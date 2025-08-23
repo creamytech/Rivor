@@ -459,7 +459,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                 <div className="relative w-full">
                   <div className="glass-search-pill-enhanced">
                     <Search 
-                      className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 z-10"
+                      className="absolute left-7 top-1/2 -translate-y-1/2 h-5 w-5 z-10"
                       style={{ color: 'var(--glass-text-muted)' }}
                     />
                     <input
@@ -473,7 +473,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                       }}
                       onFocus={() => setShowSearchResults(searchQuery.length > 0 || true)} // Always show on focus for demo
                       onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
-                      className="w-full pl-16 pr-24 text-base bg-transparent border-none outline-none font-medium py-5"
+                      className="w-full pl-20 pr-24 text-base bg-transparent border-none outline-none font-medium py-5"
                       style={{ 
                         color: 'var(--glass-text)',
                       }}
