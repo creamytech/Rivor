@@ -43,7 +43,13 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
   const { theme } = useTheme();
   const [showDrawer, setShowDrawer] = useState(Boolean(rightDrawer));
   const [showCommandPalette, setShowCommandPalette] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sidebar-collapsed');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
   const [showChatAgent, setShowChatAgent] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
@@ -256,7 +262,9 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
   }, [showQuickActions, showSearchResults, showNotifications, showUserProfile]);
 
   const toggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
+    const newCollapsedState = !isSidebarCollapsed;
+    setIsSidebarCollapsed(newCollapsedState);
+    localStorage.setItem('sidebar-collapsed', JSON.stringify(newCollapsedState));
   };
 
   const { data: session } = useSession();
