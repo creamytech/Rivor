@@ -227,9 +227,26 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async jwt({ token, user, account, profile }) {
-      // On sign in (including re-auth), use robust onboarding flow
+      // On sign in (including re-auth), ensure user exists first
       if (user && account) {
         try {
+          // First, ensure basic user record exists (fallback safety)
+          if (user.email) {
+            await prisma.user.upsert({
+              where: { email: user.email },
+              update: {
+                name: user.name || undefined,
+                image: user.image || undefined,
+              },
+              create: {
+                email: user.email,
+                name: user.name || null,
+                image: user.image || null,
+                emailVerified: new Date(),
+              },
+            });
+          }
+
           // Check for duplicate callback (idempotency)
           const externalAccountId = account.providerAccountId || (profile as unknown)?.sub || (profile as unknown)?.id || 'unknown';
           const isDuplicate = await isDuplicateCallback(
@@ -284,10 +301,65 @@ export const authOptions: NextAuthOptions = {
           }
 
           // Always find and set orgId if not set
-          if (!(token as unknown).orgId) {
-            const org = await prisma.org.findFirst({ 
-              where: { name: user.email || 'default' } 
+          if (!(token as unknown).orgId && user.email) {
+            // Try to find existing org for user
+            let org = await prisma.org.findFirst({ 
+              where: { 
+                OR: [
+                  { name: user.email },
+                  { ownerUserId: user.email }, // Look by email as userId fallback
+                  { id: 'default' }
+                ]
+              } 
             });
+
+            // If no org exists, create default org
+            if (!org) {
+              try {
+                org = await prisma.org.create({
+                  data: {
+                    id: 'default',
+                    name: 'Default Organization',
+                    slug: 'default',
+                    ownerUserId: user.email, // Use email as fallback
+                    encryptedDekBlob: Buffer.from('dummy-encryption-key-for-demo'),
+                    dekVersion: 1,
+                    ephemeralMode: true,
+                    retentionDays: 90
+                  }
+                });
+              } catch (orgError) {
+                // If org creation fails, just use default
+                console.error('Failed to create default org:', orgError);
+                org = { id: 'default' } as any;
+              }
+            }
+
+            // Ensure user is member of org
+            if (org && user.email) {
+              try {
+                const dbUser = await prisma.user.findUnique({ where: { email: user.email } });
+                if (dbUser) {
+                  await prisma.orgMember.upsert({
+                    where: {
+                      orgId_userId: {
+                        orgId: org.id,
+                        userId: dbUser.id
+                      }
+                    },
+                    update: {},
+                    create: {
+                      orgId: org.id,
+                      userId: dbUser.id,
+                      role: 'owner'
+                    }
+                  });
+                }
+              } catch (memberError) {
+                console.error('Failed to create org membership:', memberError);
+              }
+            }
+
             (token as unknown).orgId = org?.id || 'default';
           }
 
