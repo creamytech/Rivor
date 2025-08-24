@@ -53,53 +53,55 @@ export class GmailService {
   }
 
   static async createFromAccount(orgId: string, emailAccountId: string): Promise<GmailService> {
-    // Get OAuth tokens for this account
+    // Get OAuth tokens for this account from the Account model
     const emailAccount = await prisma.emailAccount.findUnique({
       where: { id: emailAccountId },
-      include: { org: true },
+      include: { 
+        org: true,
+        user: {
+          include: {
+            accounts: {
+              where: {
+                provider: 'google'
+              }
+            }
+          }
+        }
+      },
     });
 
     if (!emailAccount) {
       throw new Error(`Email account ${emailAccountId} not found`);
     }
 
-    if (!emailAccount.tokenRef) {
-      throw new Error(`No token reference found for email account ${emailAccountId}`);
+    // Find the Google OAuth account for this user
+    const googleAccount = emailAccount.user.accounts.find(acc => 
+      acc.provider === 'google' && 
+      acc.providerAccountId === emailAccount.externalAccountId
+    );
+
+    if (!googleAccount) {
+      throw new Error(`No Google OAuth account found for email account ${emailAccountId}`);
     }
 
-    // Get all secure tokens for this account
-    const secureTokens = await prisma.secureToken.findMany({
-      where: {
-        orgId,
-        provider: 'google',
-        encryptionStatus: 'ok'
-      }
-    });
-
-    if (secureTokens.length === 0) {
-      throw new Error(`No encrypted tokens found for Google account ${emailAccountId}`);
-    }
-
-    // Decrypt access token
-    const accessTokenRecord = secureTokens.find(t => t.tokenType === 'oauth_access');
-    if (!accessTokenRecord?.encryptedTokenBlob) {
-      throw new Error(`Access token not found for Google account ${emailAccountId}`);
+    // Decrypt access token from Account model
+    if (!googleAccount.access_token_enc) {
+      throw new Error(`No encrypted access token found for Google account ${emailAccountId}`);
     }
 
     const accessTokenBytes = await decryptForOrg(
       orgId, 
-      accessTokenRecord.encryptedTokenBlob, 
+      googleAccount.access_token_enc, 
       `oauth:access:${emailAccount.externalAccountId}`
     );
     const accessToken = new TextDecoder().decode(accessTokenBytes);
-    
-    // Decrypt refresh token if available
+
+    // Decrypt refresh token (optional)
     let refreshToken: string | undefined;
-    const refreshTokenRecord = secureTokens.find(t => t.tokenType === 'oauth_refresh');
-    if (refreshTokenRecord?.encryptedTokenBlob) {
+    if (googleAccount.refresh_token_enc) {
       const refreshTokenBytes = await decryptForOrg(
         orgId, 
-        refreshTokenRecord.encryptedTokenBlob, 
+        googleAccount.refresh_token_enc, 
         `oauth:refresh:${emailAccount.externalAccountId}`
       );
       refreshToken = new TextDecoder().decode(refreshTokenBytes);

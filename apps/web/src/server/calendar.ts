@@ -123,7 +123,7 @@ export class GoogleCalendarService {
   }
 
   static async createFromAccount(orgId: string, calendarAccountId: string): Promise<GoogleCalendarService> {
-    // Get OAuth tokens for this account
+    // Get OAuth tokens for this account from the Account model
     const calendarAccount = await prisma.calendarAccount.findUnique({
       where: { id: calendarAccountId },
       include: { org: true },
@@ -133,11 +133,22 @@ export class GoogleCalendarService {
       throw new Error(`Calendar account ${calendarAccountId} not found`);
     }
 
-    // Get the email account to find the externalAccountId
+    // Get the email account to find the externalAccountId and user
     const emailAccount = await prisma.emailAccount.findFirst({
       where: {
         orgId,
         provider: 'google'
+      },
+      include: {
+        user: {
+          include: {
+            accounts: {
+              where: {
+                provider: 'google'
+              }
+            }
+          }
+        }
       }
     });
 
@@ -145,39 +156,34 @@ export class GoogleCalendarService {
       throw new Error(`No Google email account with externalAccountId found for org ${orgId}`);
     }
 
-    // Get all secure tokens for this account
-    const secureTokens = await prisma.secureToken.findMany({
-      where: {
-        orgId,
-        provider: 'google',
-        encryptionStatus: 'ok'
-      }
-    });
+    // Find the Google OAuth account for this user
+    const googleAccount = emailAccount.user.accounts.find(acc => 
+      acc.provider === 'google' && 
+      acc.providerAccountId === emailAccount.externalAccountId
+    );
 
-    if (secureTokens.length === 0) {
-      throw new Error(`No encrypted tokens found for Google calendar account ${calendarAccountId}`);
+    if (!googleAccount) {
+      throw new Error(`No Google OAuth account found for calendar account ${calendarAccountId}`);
     }
 
-    // Decrypt access token
-    const accessTokenRecord = secureTokens.find(t => t.tokenType === 'oauth_access');
-    if (!accessTokenRecord?.encryptedTokenBlob) {
-      throw new Error(`Access token not found for Google calendar account ${calendarAccountId}`);
+    // Decrypt access token from Account model
+    if (!googleAccount.access_token_enc) {
+      throw new Error(`No encrypted access token found for Google calendar account ${calendarAccountId}`);
     }
 
     const accessTokenBytes = await decryptForOrg(
       orgId, 
-      accessTokenRecord.encryptedTokenBlob, 
+      googleAccount.access_token_enc, 
       `oauth:access:${emailAccount.externalAccountId}`
     );
     const accessToken = new TextDecoder().decode(accessTokenBytes);
-    
-    // Decrypt refresh token if available
+
+    // Decrypt refresh token (optional)
     let refreshToken: string | undefined;
-    const refreshTokenRecord = secureTokens.find(t => t.tokenType === 'oauth_refresh');
-    if (refreshTokenRecord?.encryptedTokenBlob) {
+    if (googleAccount.refresh_token_enc) {
       const refreshTokenBytes = await decryptForOrg(
         orgId, 
-        refreshTokenRecord.encryptedTokenBlob, 
+        googleAccount.refresh_token_enc, 
         `oauth:refresh:${emailAccount.externalAccountId}`
       );
       refreshToken = new TextDecoder().decode(refreshTokenBytes);

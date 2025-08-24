@@ -35,44 +35,28 @@ export async function POST(req: NextRequest) {
 
     const results = [];
 
-    // Create SecureToken record first
-    let secureToken = await prisma.secureToken.findFirst({
-      where: {
-        orgId,
-        provider: 'google',
-        encryptionStatus: 'ok'
-      }
-    });
-
-    if (!secureToken) {
-      try {
-        // Check if we have encrypted tokens in the Account record
-        const hasTokens = googleAccount.access_token_enc || googleAccount.refresh_token_enc;
-        
-        if (hasTokens) {
-          secureToken = await prisma.secureToken.create({
-            data: {
-              orgId,
-              provider: 'google',
-              accessToken: googleAccount.access_token_enc,
-              refreshToken: googleAccount.refresh_token_enc,
-              expiresAt: googleAccount.expires_at ? new Date(googleAccount.expires_at * 1000) : null,
-              scope: googleAccount.scope || 'openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar',
-              encryptionStatus: 'ok',
-              tokenType: 'Bearer'
-            }
-          });
-          results.push({ type: 'SecureToken', id: secureToken.id, created: true });
-        } else {
-          results.push({ type: 'SecureToken', created: false, message: 'No encrypted tokens found in Account record' });
+    // Check if we have encrypted tokens in the Account record
+    const hasTokens = googleAccount.access_token_enc || googleAccount.refresh_token_enc;
+    
+    if (!hasTokens) {
+      return NextResponse.json({ 
+        error: 'No encrypted tokens found in Google Account record. Please re-authenticate with Google.',
+        debug: {
+          accountId: googleAccount.id,
+          provider: googleAccount.provider,
+          hasAccessToken: !!googleAccount.access_token_enc,
+          hasRefreshToken: !!googleAccount.refresh_token_enc
         }
-      } catch (tokenError) {
-        console.error('SecureToken creation error:', tokenError);
-        results.push({ type: 'SecureToken', created: false, error: tokenError.message });
-      }
-    } else {
-      results.push({ type: 'SecureToken', id: secureToken.id, created: false, message: 'Already exists' });
+      }, { status: 400 });
     }
+
+    results.push({ 
+      type: 'Account', 
+      id: googleAccount.id, 
+      message: 'OAuth tokens found in Account record',
+      hasAccessToken: !!googleAccount.access_token_enc,
+      hasRefreshToken: !!googleAccount.refresh_token_enc
+    });
 
     // Create EmailAccount if it doesn't exist
     const existingEmailAccount = await prisma.emailAccount.findFirst({
@@ -94,9 +78,9 @@ export async function POST(req: NextRequest) {
             displayName: dbUser.name || userEmail,
             status: 'connected',
             syncStatus: 'idle',
-            encryptionStatus: secureToken ? 'ok' : 'pending',
-            tokenRef: secureToken ? `token-${secureToken.id}` : `token-${googleAccount.id}`,
-            tokenStatus: secureToken ? 'encrypted' : 'missing',
+            encryptionStatus: 'ok',
+            tokenRef: `account-${googleAccount.id}`,
+            tokenStatus: 'encrypted',
           }
         });
         results.push({ type: 'EmailAccount', id: emailAccount.id, created: true });
