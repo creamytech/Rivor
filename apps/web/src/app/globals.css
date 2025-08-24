@@ -3656,18 +3656,27 @@ header:not(.md\\:hidden),
   box-shadow: 0 4px 16px var(--glass-shadow);
 }
 
-/* Page blur effect when modal is open */
+/* Page blur effect when dashboard modal is open - comprehensive targeting */
+.page-blur > * :not([data-radix-portal]):not([data-radix-dialog-overlay]):not([data-radix-dialog-content]) {
+  filter: blur(8px) brightness(0.7) saturate(0.8) !important;
+  transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Direct child elements of page-blur container */
 .page-blur > div:not([data-radix-portal]) {
   filter: blur(8px) brightness(0.7) saturate(0.8) !important;
   transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* Target specific content areas for blur */
-.page-blur .enhanced-sidebar,
+/* Target all content areas for blur */
+.page-blur aside,
 .page-blur header,
 .page-blur main,
 .page-blur nav,
-.page-blur footer {
+.page-blur footer,
+.page-blur section,
+.page-blur .sidebar,
+.page-blur .enhanced-sidebar {
   filter: blur(8px) brightness(0.7) saturate(0.8) !important;
   transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
@@ -3680,10 +3689,15 @@ header:not(.md\\:hidden),
   filter: none !important;
 }
 
-/* Alternative approach using body class for global blur */
-body.modal-open > div:not([data-radix-portal]) {
+/* Waitlist modal blur - only for waitlist modal */
+body.modal-open[data-waitlist-modal-open="true"] > div:not([data-radix-portal]) {
   filter: blur(6px) brightness(0.8) saturate(0.9) !important;
   transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Exclude waitlist modal content from blur */
+body.modal-open[data-waitlist-modal-open="true"] [data-radix-portal] {
+  filter: none !important;
 }
 
 /* Ensure all modals stay above blur with proper z-index */
