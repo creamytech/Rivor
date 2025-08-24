@@ -17,7 +17,9 @@ import {
   Key,
   Webhook,
   Play,
-  RotateCcw
+  RotateCcw,
+  Trash2,
+  Plus
 } from 'lucide-react';
 import { useToast } from '@/components/river/RiverToast';
 
@@ -133,6 +135,40 @@ export default function SyncDebugPage() {
       toast({
         title: "Error",
         description: `Failed to perform ${action}`,
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const performAccountAction = async (action: 'cleanup' | 'setup') => {
+    setActionLoading(action);
+    try {
+      const endpoint = action === 'cleanup' ? '/api/debug/cleanup-accounts' : '/api/debug/setup-accounts';
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: `${action === 'cleanup' ? 'Cleanup' : 'Setup'} completed successfully`,
+        });
+        fetchDebugInfo();
+      } else {
+        toast({
+          title: `${action === 'cleanup' ? 'Cleanup' : 'Setup'} Failed`,
+          description: result.error || `Failed to ${action} accounts`,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to ${action} accounts`,
         variant: "destructive",
       });
     } finally {
@@ -411,6 +447,36 @@ export default function SyncDebugPage() {
                     </div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Account Management */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Account Management</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <Button 
+                    onClick={() => performAccountAction('cleanup')} 
+                    disabled={!!actionLoading}
+                    variant="destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {actionLoading === 'cleanup' ? 'Cleaning up...' : 'Cleanup Accounts'}
+                  </Button>
+                  <Button 
+                    onClick={() => performAccountAction('setup')} 
+                    disabled={!!actionLoading}
+                    variant="default"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {actionLoading === 'setup' ? 'Setting up...' : 'Setup Accounts'}
+                  </Button>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Use cleanup first to remove broken accounts, then setup to create fresh accounts with proper token links.
+                </p>
               </CardContent>
             </Card>
 
