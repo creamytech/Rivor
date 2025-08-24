@@ -6,30 +6,14 @@ import { logger } from '@/lib/logger';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Apply rate limiting to auth endpoints
+  // Apply rate limiting to auth endpoints (but skip OAuth signin/callback for better UX)
   if (pathname.startsWith('/api/auth/')) {
     const ip = getClientIP(request);
     
-    // Rate limit OAuth provider requests more strictly
+    // Skip rate limiting for OAuth signin and callback endpoints to prevent glitchy auth flows
     if (pathname.includes('/signin/') || pathname.includes('/callback/')) {
-      const rateLimitKey = createRateLimitKey(ip);
-      const result = rateLimit(rateLimitKey, RATE_LIMITS.IP_AUTH);
-      
-      if (!result.success) {
-        // Log rate limit exceeded event
-        logger.rateLimitEvent(rateLimitKey, RATE_LIMITS.IP_AUTH.maxAttempts, RATE_LIMITS.IP_AUTH.windowMs, ip);
-        
-        // Return error response for rate limit exceeded
-        return NextResponse.redirect(new URL('/auth/error?error=RateLimited', request.url));
-      }
-      
-      // Add rate limit headers for monitoring
-      const response = NextResponse.next();
-      response.headers.set('X-RateLimit-Limit', RATE_LIMITS.IP_AUTH.maxAttempts.toString());
-      response.headers.set('X-RateLimit-Remaining', result.remaining.toString());
-      response.headers.set('X-RateLimit-Reset', result.resetTime.toString());
-      
-      return response;
+      // Just continue without rate limiting for OAuth flows
+      return NextResponse.next();
     }
     
     // General rate limiting for other auth endpoints
