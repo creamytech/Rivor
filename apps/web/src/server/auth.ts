@@ -9,6 +9,7 @@ import { encryptForOrg } from "./crypto";
 import { logger } from "@/lib/logger";
 import { handleOAuthCallback, isDuplicateCallback, type OAuthCallbackData } from "./onboarding";
 import { validateAndLogStartupConfig } from "./env";
+import { createCustomPrismaAdapter } from "./auth-adapter";
 
 const providers: unknown[] = [];
 
@@ -89,6 +90,7 @@ const finalProviders = providers.length > 0 ? providers : [
 console.log('🚀 Final providers array length:', finalProviders.length);
 
 export const authOptions: NextAuthOptions = {
+  adapter: createCustomPrismaAdapter(),
   pages: {
     signIn: "/auth/signin",
     error: "/auth/error",
@@ -97,7 +99,7 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   providers: finalProviders,
   session: { 
-    strategy: "jwt",
+    strategy: "database",
     maxAge: 24 * 60 * 60, // 24 hours
     updateAge: 60 * 60,   // 1 hour - refresh session
   },
