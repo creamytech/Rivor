@@ -35,6 +35,31 @@ export async function POST(req: NextRequest) {
 
     const results = [];
 
+    // Create SecureToken record first
+    let secureToken = await prisma.secureToken.findFirst({
+      where: {
+        orgId,
+        provider: 'google',
+        encryptionStatus: 'ok'
+      }
+    });
+
+    if (!secureToken && googleAccount.access_token_enc) {
+      secureToken = await prisma.secureToken.create({
+        data: {
+          orgId,
+          provider: 'google',
+          accessToken: googleAccount.access_token_enc,
+          refreshToken: googleAccount.refresh_token_enc,
+          expiresAt: googleAccount.expires_at ? new Date(googleAccount.expires_at * 1000) : null,
+          scope: googleAccount.scope,
+          encryptionStatus: 'ok',
+          tokenType: 'Bearer'
+        }
+      });
+      results.push({ type: 'SecureToken', id: secureToken.id, created: true });
+    }
+
     // Create EmailAccount if it doesn't exist
     const existingEmailAccount = await prisma.emailAccount.findFirst({
       where: {
@@ -54,8 +79,8 @@ export async function POST(req: NextRequest) {
           displayName: dbUser.name || userEmail,
           status: 'connected',
           syncStatus: 'idle',
-          encryptionStatus: 'pending',
-          tokenRef: `token-${googleAccount.id}`,
+          encryptionStatus: 'ok',
+          tokenRef: secureToken ? `token-${secureToken.id}` : `token-${googleAccount.id}`,
           tokenStatus: 'encrypted',
         }
       });
