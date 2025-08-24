@@ -11,26 +11,30 @@ export async function POST(req: NextRequest) {
   try {
     logOAuth('info', '🔧 Fixing organization DEK for KMS encryption');
     
-    // Find the problematic org
-    const existingOrg = await prisma.org.findFirst({
+    // Find all existing orgs that might be problematic
+    const existingOrgs = await prisma.org.findMany({
       where: { 
         OR: [
           { id: 'dev-org-1' },
-          { name: 'dev@test.com' }
+          { id: 'default' },
+          { name: 'dev@test.com' },
+          { name: 'Default Organization' }
         ]
       }
     });
 
-    if (existingOrg) {
-      logOAuth('info', '🗑️ Deleting corrupted organization', {
-        orgId: existingOrg.id,
-        orgName: existingOrg.name
+    if (existingOrgs.length > 0) {
+      logOAuth('info', '🗑️ Deleting existing organizations', {
+        count: existingOrgs.length,
+        orgs: existingOrgs.map(org => ({ id: org.id, name: org.name }))
       });
       
-      // Delete the corrupted org
-      await prisma.org.delete({
-        where: { id: existingOrg.id }
-      });
+      // Delete all existing orgs
+      for (const org of existingOrgs) {
+        await prisma.org.delete({
+          where: { id: org.id }
+        });
+      }
     }
 
     // Create KMS client and generate fresh DEK
