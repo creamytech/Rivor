@@ -63,6 +63,30 @@ export default function DebugSignInPage() {
     setLoading(false);
   };
 
+  const checkLogs = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/debug/oauth-logs');
+      const data = await response.json();
+      setResult(data);
+    } catch (error) {
+      setResult({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+    setLoading(false);
+  };
+
+  const clearLogs = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/debug/oauth-logs', { method: 'DELETE' });
+      const data = await response.json();
+      setResult(data);
+    } catch (error) {
+      setResult({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-8 bg-gray-50">
       <Card className="max-w-2xl w-full">
@@ -90,6 +114,25 @@ export default function DebugSignInPage() {
             >
               {loading ? 'Checking...' : 'Check OAuth Config'}
             </Button>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <Button 
+                onClick={checkLogs} 
+                disabled={loading}
+                variant="outline"
+                size="sm"
+              >
+                {loading ? 'Loading...' : 'View OAuth Logs'}
+              </Button>
+              <Button 
+                onClick={clearLogs} 
+                disabled={loading}
+                variant="outline"
+                size="sm"
+              >
+                {loading ? 'Clearing...' : 'Clear Logs'}
+              </Button>
+            </div>
             
             <Button 
               onClick={testSignIn} 
