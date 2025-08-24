@@ -35,12 +35,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token_enc Bytes?
-  access_token_enc  Bytes?
+  refresh_token_enc Bytes?   // Encrypted OAuth tokens (SOC2 compliant)
+  access_token_enc  Bytes?   // Encrypted OAuth tokens (SOC2 compliant) 
+  id_token_enc      Bytes?   // Encrypted OAuth tokens (SOC2 compliant)
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token_enc      Bytes?
   session_state     String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt

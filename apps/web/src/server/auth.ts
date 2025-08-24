@@ -91,8 +91,7 @@ const finalProviders = providers.length > 0 ? providers : [
 console.log('🚀 Final providers array length:', finalProviders.length);
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma), // Use standard adapter temporarily
-  // adapter: createCustomPrismaAdapter(), // TODO: Enable after fixing encryption issues
+  adapter: createCustomPrismaAdapter(), // Proper KMS encryption
   pages: {
     signIn: "/auth/signin",
     error: "/auth/error",
