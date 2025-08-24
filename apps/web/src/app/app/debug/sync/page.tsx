@@ -19,7 +19,8 @@ import {
   Play,
   RotateCcw,
   Trash2,
-  Plus
+  Plus,
+  Settings
 } from 'lucide-react';
 import { useToast } from '@/components/river/RiverToast';
 
@@ -142,10 +143,27 @@ export default function SyncDebugPage() {
     }
   };
 
-  const performAccountAction = async (action: 'cleanup' | 'setup') => {
+  const performAccountAction = async (action: 'cleanup' | 'setup' | 'setup_database') => {
     setActionLoading(action);
     try {
-      const endpoint = action === 'cleanup' ? '/api/debug/cleanup-accounts' : '/api/debug/setup-accounts';
+      let endpoint: string;
+      let actionName: string;
+      
+      switch (action) {
+        case 'cleanup':
+          endpoint = '/api/debug/cleanup-accounts';
+          actionName = 'Cleanup';
+          break;
+        case 'setup':
+          endpoint = '/api/debug/setup-accounts';
+          actionName = 'Setup';
+          break;
+        case 'setup_database':
+          endpoint = '/api/debug/setup-database';
+          actionName = 'Database Setup';
+          break;
+      }
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
@@ -155,20 +173,20 @@ export default function SyncDebugPage() {
       if (result.success) {
         toast({
           title: "Success",
-          description: `${action === 'cleanup' ? 'Cleanup' : 'Setup'} completed successfully`,
+          description: `${actionName} completed successfully`,
         });
         fetchDebugInfo();
       } else {
         toast({
-          title: `${action === 'cleanup' ? 'Cleanup' : 'Setup'} Failed`,
-          description: result.error || `Failed to ${action} accounts`,
+          title: `${actionName} Failed`,
+          description: result.error || `Failed to ${action}`,
           variant: "destructive",
         });
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: `Failed to ${action} accounts`,
+        description: `Failed to ${action}`,
         variant: "destructive",
       });
     } finally {
@@ -447,6 +465,28 @@ export default function SyncDebugPage() {
                     </div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Database Setup */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Database Setup</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <Button 
+                    onClick={() => performAccountAction('setup_database')}
+                    disabled={!!actionLoading}
+                    variant="default"
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    {actionLoading === 'setup_database' ? 'Setting up...' : 'Setup Database'}
+                  </Button>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Creates default organization for KMS encryption and verifies database schema.
+                </p>
               </CardContent>
             </Card>
 

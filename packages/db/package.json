@@ -11,8 +11,13 @@
         "prisma:generate:prod": "prisma generate --no-engine",
         "prisma:push": "prisma db push",
         "prisma:migrate": "prisma migrate dev",
-        "prisma:seed": "node seed.js",
-        "db:seed": "node seed.js"
+        "prisma:seed": "tsx prisma/seed.ts",
+        "db:seed": "tsx prisma/seed.ts",
+        "db:setup": "prisma migrate deploy && npm run db:seed",
+        "db:check": "tsx prisma/seed.ts"
+    },
+    "prisma": {
+        "seed": "tsx prisma/seed.ts"
     },
     "dependencies": {
         "@prisma/client": "^6.14.0",
@@ -21,6 +26,7 @@
     },
     "devDependencies": {
         "prisma": "^6.14.0",
-        "typescript": "^5.5.4"
+        "typescript": "^5.5.4",
+        "tsx": "^4.7.1"
     }
 }
