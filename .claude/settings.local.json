@@ -21,7 +21,8 @@
       "Bash(echo:*)",
       "Bash(npx turbo:*)",
       "Bash(npm run:*)",
-      "Bash(npx next build:*)"
+      "Bash(npx next build:*)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": [],
