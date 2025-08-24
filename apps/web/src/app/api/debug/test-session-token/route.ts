@@ -12,8 +12,8 @@ export async function GET(req: NextRequest) {
     const sessionToken = cookieStore.get('__Secure-next-auth.session-token')?.value || 
                         cookieStore.get('next-auth.session-token')?.value;
     
-    const allCookies = Array.from(cookieStore.entries()).map(([name, cookie]) => ({
-      name,
+    const allCookies = Array.from(cookieStore.getAll()).map((cookie) => ({
+      name: cookie.name,
       value: cookie.value.substring(0, 20) + '...',
       secure: cookie.secure,
       httpOnly: cookie.httpOnly,
