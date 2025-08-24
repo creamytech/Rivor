@@ -44,20 +44,34 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    if (!secureToken && googleAccount.access_token_enc) {
-      secureToken = await prisma.secureToken.create({
-        data: {
-          orgId,
-          provider: 'google',
-          accessToken: googleAccount.access_token_enc,
-          refreshToken: googleAccount.refresh_token_enc,
-          expiresAt: googleAccount.expires_at ? new Date(googleAccount.expires_at * 1000) : null,
-          scope: googleAccount.scope,
-          encryptionStatus: 'ok',
-          tokenType: 'Bearer'
+    if (!secureToken) {
+      try {
+        // Check if we have encrypted tokens in the Account record
+        const hasTokens = googleAccount.access_token_enc || googleAccount.refresh_token_enc;
+        
+        if (hasTokens) {
+          secureToken = await prisma.secureToken.create({
+            data: {
+              orgId,
+              provider: 'google',
+              accessToken: googleAccount.access_token_enc,
+              refreshToken: googleAccount.refresh_token_enc,
+              expiresAt: googleAccount.expires_at ? new Date(googleAccount.expires_at * 1000) : null,
+              scope: googleAccount.scope || 'openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar',
+              encryptionStatus: 'ok',
+              tokenType: 'Bearer'
+            }
+          });
+          results.push({ type: 'SecureToken', id: secureToken.id, created: true });
+        } else {
+          results.push({ type: 'SecureToken', created: false, message: 'No encrypted tokens found in Account record' });
         }
-      });
-      results.push({ type: 'SecureToken', id: secureToken.id, created: true });
+      } catch (tokenError) {
+        console.error('SecureToken creation error:', tokenError);
+        results.push({ type: 'SecureToken', created: false, error: tokenError.message });
+      }
+    } else {
+      results.push({ type: 'SecureToken', id: secureToken.id, created: false, message: 'Already exists' });
     }
 
     // Create EmailAccount if it doesn't exist
@@ -69,22 +83,27 @@ export async function POST(req: NextRequest) {
     });
 
     if (!existingEmailAccount) {
-      const emailAccount = await prisma.emailAccount.create({
-        data: {
-          orgId,
-          userId: dbUser.id,
-          provider: 'google',
-          externalAccountId: googleAccount.providerAccountId,
-          email: userEmail,
-          displayName: dbUser.name || userEmail,
-          status: 'connected',
-          syncStatus: 'idle',
-          encryptionStatus: 'ok',
-          tokenRef: secureToken ? `token-${secureToken.id}` : `token-${googleAccount.id}`,
-          tokenStatus: 'encrypted',
-        }
-      });
-      results.push({ type: 'EmailAccount', id: emailAccount.id, created: true });
+      try {
+        const emailAccount = await prisma.emailAccount.create({
+          data: {
+            orgId,
+            userId: dbUser.id,
+            provider: 'google',
+            externalAccountId: googleAccount.providerAccountId,
+            email: userEmail,
+            displayName: dbUser.name || userEmail,
+            status: 'connected',
+            syncStatus: 'idle',
+            encryptionStatus: secureToken ? 'ok' : 'pending',
+            tokenRef: secureToken ? `token-${secureToken.id}` : `token-${googleAccount.id}`,
+            tokenStatus: secureToken ? 'encrypted' : 'missing',
+          }
+        });
+        results.push({ type: 'EmailAccount', id: emailAccount.id, created: true });
+      } catch (emailError) {
+        console.error('EmailAccount creation error:', emailError);
+        results.push({ type: 'EmailAccount', created: false, error: emailError.message });
+      }
     } else {
       results.push({ type: 'EmailAccount', id: existingEmailAccount.id, created: false, message: 'Already exists' });
     }
@@ -98,14 +117,19 @@ export async function POST(req: NextRequest) {
     });
 
     if (!existingCalendarAccount) {
-      const calendarAccount = await prisma.calendarAccount.create({
-        data: {
-          orgId,
-          provider: 'google',
-          status: 'connected'
-        }
-      });
-      results.push({ type: 'CalendarAccount', id: calendarAccount.id, created: true });
+      try {
+        const calendarAccount = await prisma.calendarAccount.create({
+          data: {
+            orgId,
+            provider: 'google',
+            status: 'connected'
+          }
+        });
+        results.push({ type: 'CalendarAccount', id: calendarAccount.id, created: true });
+      } catch (calendarError) {
+        console.error('CalendarAccount creation error:', calendarError);
+        results.push({ type: 'CalendarAccount', created: false, error: calendarError.message });
+      }
     } else {
       results.push({ type: 'CalendarAccount', id: existingCalendarAccount.id, created: false, message: 'Already exists' });
     }
