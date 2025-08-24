@@ -483,9 +483,35 @@ export default function SyncDebugPage() {
                     <Settings className="h-4 w-4 mr-2" />
                     {actionLoading === 'setup_database' ? 'Setting up...' : 'Setup Database'}
                   </Button>
+                  <Button 
+                    onClick={async () => {
+                      setActionLoading('fix_oauth');
+                      try {
+                        const email = prompt('Enter your email to fix OAuth linking:');
+                        if (email) {
+                          const response = await fetch('/api/debug/fix-oauth', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email })
+                          });
+                          const result = await response.json();
+                          alert(JSON.stringify(result, null, 2));
+                        }
+                      } catch (error) {
+                        alert('Fix OAuth failed: ' + error.message);
+                      } finally {
+                        setActionLoading(null);
+                      }
+                    }}
+                    disabled={!!actionLoading}
+                    variant="outline"
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    {actionLoading === 'fix_oauth' ? 'Fixing...' : 'Fix OAuth Linking'}
+                  </Button>
                 </div>
                 <p className="text-sm text-gray-600">
-                  Creates default organization for KMS encryption and verifies database schema.
+                  Creates default organization for KMS encryption and fixes OAuth account linking issues.
                 </p>
               </CardContent>
             </Card>
