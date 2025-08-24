@@ -3657,26 +3657,26 @@ header:not(.md\\:hidden),
 }
 
 /* Page blur effect when modal is open */
-.page-blur {
-  transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-.page-blur > * {
+.page-blur > div:not([data-radix-portal]) {
   filter: blur(8px) brightness(0.7) saturate(0.8) !important;
   transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* More specific targeting for the blur effect */
-.page-blur nav,
+/* Target specific content areas for blur */
+.page-blur .enhanced-sidebar,
+.page-blur header,
 .page-blur main,
+.page-blur nav,
 .page-blur footer {
   filter: blur(8px) brightness(0.7) saturate(0.8) !important;
   transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* Exclude the modal itself from the blur effect */
+/* Exclude all modal-related elements from blur */
 .page-blur [data-radix-dialog-overlay],
-.page-blur [data-radix-dialog-content] {
+.page-blur [data-radix-dialog-content],
+.page-blur [data-radix-portal],
+.page-blur [data-radix-portal] * {
   filter: none !important;
 }
 
@@ -3686,24 +3686,34 @@ body.modal-open > div:not([data-radix-portal]) {
   transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* Ensure waitlist modal stays above blur with high z-index */
+/* Ensure all modals stay above blur with proper z-index */
+[data-radix-dialog-overlay] {
+  z-index: 9999 !important;
+}
+
+[data-radix-dialog-content] {
+  z-index: 10000 !important;
+  position: relative;
+}
+
+/* Special handling for waitlist modal - highest priority */
 [data-waitlist-modal-open="true"] [data-radix-dialog-overlay] {
-  z-index: 999999 !important;
+  z-index: 99999 !important;
 }
 
 [data-waitlist-modal-open="true"] [data-radix-dialog-content],
 .waitlist-modal-content {
-  z-index: 9999999 !important;
+  z-index: 100000 !important;
   position: relative;
 }
 
 /* Ensure modal portals are not affected by page blur */
 [data-radix-portal] {
   filter: none !important;
-  z-index: 999999;
+  z-index: 10001 !important;
 }
 
-/* Force modal content to stay on top */
+/* Force all portal content to stay on top */
 [data-radix-portal] * {
   filter: none !important;
 }
