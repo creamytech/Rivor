@@ -232,19 +232,25 @@ export const authOptions: NextAuthOptions = {
         try {
           // First, ensure basic user record exists (fallback safety)
           if (user.email) {
-            await prisma.user.upsert({
-              where: { email: user.email },
-              update: {
-                name: user.name || undefined,
-                image: user.image || undefined,
-              },
-              create: {
-                email: user.email,
-                name: user.name || null,
-                image: user.image || null,
-                emailVerified: new Date(),
-              },
-            });
+            try {
+              await prisma.user.upsert({
+                where: { email: user.email },
+                update: {
+                  name: user.name || undefined,
+                  image: user.image || undefined,
+                },
+                create: {
+                  email: user.email,
+                  name: user.name || null,
+                  image: user.image || null,
+                  emailVerified: new Date(),
+                },
+              });
+              console.log('✅ User record created/updated for:', user.email);
+            } catch (userError) {
+              console.error('❌ Failed to create user record:', userError);
+              // Don't throw - continue with auth flow
+            }
           }
 
           // Check for duplicate callback (idempotency)
@@ -328,14 +334,15 @@ export const authOptions: NextAuthOptions = {
                     retentionDays: 90
                   }
                 });
+                console.log('✅ Created default org for user');
               } catch (orgError) {
                 // If org creation fails, just use default
-                console.error('Failed to create default org:', orgError);
-                org = { id: 'default' } as any;
+                console.error('❌ Failed to create default org:', orgError);
+                // Don't break auth - just set default
               }
             }
 
-            // Ensure user is member of org
+            // Ensure user is member of org  
             if (org && user.email) {
               try {
                 const dbUser = await prisma.user.findUnique({ where: { email: user.email } });
@@ -354,13 +361,16 @@ export const authOptions: NextAuthOptions = {
                       role: 'owner'
                     }
                   });
+                  console.log('✅ User added to org as member');
                 }
               } catch (memberError) {
-                console.error('Failed to create org membership:', memberError);
+                console.error('❌ Failed to create org membership:', memberError);
+                // Don't break auth flow
               }
             }
 
             (token as unknown).orgId = org?.id || 'default';
+            console.log('🎯 Final orgId set to:', (token as unknown).orgId);
           }
 
         } catch (error: unknown) {
