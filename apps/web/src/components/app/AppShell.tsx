@@ -823,7 +823,15 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       />
 
       <Dialog open={showCreateContactModal} onOpenChange={setShowCreateContactModal}>
-        <DialogContent className="max-w-md glass-modal rounded-xl overflow-hidden">
+        <DialogContent 
+          className="max-w-md glass-modal rounded-xl overflow-hidden"
+          data-glass-theme="black"
+          style={{ 
+            background: 'rgba(0, 0, 0, 0.98)',
+            border: '1px solid rgba(255, 255, 255, 0.4)',
+            backdropFilter: 'blur(32px) saturate(1.4) brightness(0.85)'
+          }}
+        >
           <DialogHeader className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--glass-border)' }}>
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
@@ -913,7 +921,15 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       </Dialog>
 
       <Dialog open={showCreateListingModal} onOpenChange={setShowCreateListingModal}>
-        <DialogContent className="max-w-2xl glass-modal rounded-xl overflow-hidden">
+        <DialogContent 
+          className="max-w-2xl glass-modal rounded-xl overflow-hidden"
+          data-glass-theme="black"
+          style={{ 
+            background: 'rgba(0, 0, 0, 0.98)',
+            border: '1px solid rgba(255, 255, 255, 0.4)',
+            backdropFilter: 'blur(32px) saturate(1.4) brightness(0.85)'
+          }}
+        >
           <DialogHeader className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--glass-border)' }}>
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 text-white">
@@ -1027,7 +1043,15 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       </Dialog>
 
       <Dialog open={showScheduleMeetingModal} onOpenChange={setShowScheduleMeetingModal}>
-        <DialogContent className="max-w-md glass-modal rounded-xl overflow-hidden">
+        <DialogContent 
+          className="max-w-md glass-modal rounded-xl overflow-hidden"
+          data-glass-theme="black"
+          style={{ 
+            background: 'rgba(0, 0, 0, 0.98)',
+            border: '1px solid rgba(255, 255, 255, 0.4)',
+            backdropFilter: 'blur(32px) saturate(1.4) brightness(0.85)'
+          }}
+        >
           <DialogHeader className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--glass-border)' }}>
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-white">

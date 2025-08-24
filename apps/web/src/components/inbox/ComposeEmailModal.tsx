@@ -204,7 +204,15 @@ export default function ComposeEmailModal({
           {trigger}
         </DialogTrigger>
       )}
-      <DialogContent className="max-w-2xl max-h-[85vh] glass-modal rounded-xl overflow-hidden">
+      <DialogContent 
+        className="max-w-2xl max-h-[85vh] glass-modal rounded-xl overflow-hidden"
+        data-glass-theme="black"
+        style={{ 
+          background: 'rgba(0, 0, 0, 0.98)',
+          border: '1px solid rgba(255, 255, 255, 0.4)',
+          backdropFilter: 'blur(32px) saturate(1.4) brightness(0.85)'
+        }}
+      >
         <DialogHeader className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--glass-border)' }}>
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white">

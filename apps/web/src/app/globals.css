@@ -4118,6 +4118,21 @@ body.modal-open[data-waitlist-modal-open="true"] [data-radix-portal] {
   opacity: 0.7;
 }
 
+/* Dark theme modal buttons */
+[data-glass-theme="black"] .glass-modal button,
+.glass-modal[data-glass-theme="black"] button {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: var(--glass-text) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+[data-glass-theme="black"] .glass-modal button:hover,
+.glass-modal[data-glass-theme="black"] button:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
 /* Button styling in modals */
 .glass-modal button {
   color: inherit !important;
