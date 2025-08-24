@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
           include: {
             _count: {
               select: {
-                calendarEvents: true
+                events: true
               }
             }
           }
@@ -102,7 +102,7 @@ export async function GET(req: NextRequest) {
             provider: acc.provider,
             status: acc.status,
             lastSyncedAt: acc.lastSyncedAt,
-            eventCount: acc._count.calendarEvents
+            eventCount: acc._count.events
           }))
         };
       } catch (error) {
