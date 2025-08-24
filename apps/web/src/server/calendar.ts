@@ -174,7 +174,7 @@ export class GoogleCalendarService {
     const accessTokenBytes = await decryptForOrg(
       orgId, 
       googleAccount.access_token_enc, 
-      `oauth:access:${emailAccount.externalAccountId}`
+      `oauth:${googleAccount.provider}:access`
     );
     const accessToken = new TextDecoder().decode(accessTokenBytes);
 
@@ -184,7 +184,7 @@ export class GoogleCalendarService {
       const refreshTokenBytes = await decryptForOrg(
         orgId, 
         googleAccount.refresh_token_enc, 
-        `oauth:refresh:${emailAccount.externalAccountId}`
+        `oauth:${googleAccount.provider}:refresh`
       );
       refreshToken = new TextDecoder().decode(refreshTokenBytes);
     }

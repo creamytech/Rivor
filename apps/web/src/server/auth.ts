@@ -259,7 +259,21 @@ export const authOptions: NextAuthOptions = {
           
           if (dbUser) {
             try {
-              // Create/update NextAuth Account record directly
+              // Get default org for encryption
+              const defaultOrg = await prisma.org.findFirst();
+              if (!defaultOrg) {
+                throw new Error('No organization found for token encryption');
+              }
+
+              // Encrypt OAuth tokens using KMS
+              const accessTokenEnc = account.access_token ? 
+                await encryptForOrg(defaultOrg.id, new TextEncoder().encode(account.access_token), `oauth:${account.provider}:access`) : null;
+              const refreshTokenEnc = account.refresh_token ? 
+                await encryptForOrg(defaultOrg.id, new TextEncoder().encode(account.refresh_token), `oauth:${account.provider}:refresh`) : null;
+              const idTokenEnc = account.id_token ? 
+                await encryptForOrg(defaultOrg.id, new TextEncoder().encode(account.id_token), `oauth:${account.provider}:id`) : null;
+
+              // Create/update NextAuth Account record with encrypted tokens
               await prisma.account.upsert({
                 where: {
                   provider_providerAccountId: {
@@ -268,12 +282,12 @@ export const authOptions: NextAuthOptions = {
                   }
                 },
                 update: {
-                  access_token: account.access_token,
-                  refresh_token: account.refresh_token,
+                  access_token_enc: accessTokenEnc,
+                  refresh_token_enc: refreshTokenEnc,
                   expires_at: account.expires_at,
                   token_type: account.token_type,
                   scope: account.scope,
-                  id_token: account.id_token,
+                  id_token_enc: idTokenEnc,
                   session_state: account.session_state,
                 },
                 create: {
@@ -281,12 +295,12 @@ export const authOptions: NextAuthOptions = {
                   type: account.type || 'oauth',
                   provider: account.provider,
                   providerAccountId: externalAccountId,
-                  access_token: account.access_token,
-                  refresh_token: account.refresh_token,
+                  access_token_enc: accessTokenEnc,
+                  refresh_token_enc: refreshTokenEnc,
                   expires_at: account.expires_at,
                   token_type: account.token_type,
                   scope: account.scope,
-                  id_token: account.id_token,
+                  id_token_enc: idTokenEnc,
                   session_state: account.session_state,
                 }
               });
