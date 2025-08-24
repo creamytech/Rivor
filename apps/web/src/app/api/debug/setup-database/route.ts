@@ -4,6 +4,38 @@ import { generateDek, createKmsClient } from '@rivor/crypto';
 
 export const dynamic = 'force-dynamic';
 
+export async function GET(req: NextRequest) {
+  // Allow GET requests to show current database status
+  try {
+    const stats = {
+      users: await prisma.user.count(),
+      accounts: await prisma.account.count(),
+      orgs: await prisma.org.count(),
+      emailAccounts: await prisma.emailAccount.count(),
+      calendarAccounts: await prisma.calendarAccount.count(),
+    };
+
+    const defaultOrg = await prisma.org.findFirst();
+
+    return NextResponse.json({
+      success: true,
+      message: 'Database status',
+      currentStatus: {
+        hasDefaultOrg: !!defaultOrg,
+        orgId: defaultOrg?.id,
+        orgName: defaultOrg?.name,
+        stats
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    return NextResponse.json({ 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     console.log('🌱 Starting database setup...');
