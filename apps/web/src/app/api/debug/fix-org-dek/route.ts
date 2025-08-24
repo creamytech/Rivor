@@ -3,6 +3,10 @@ import { prisma } from '@/server/db';
 import { createKmsClient, generateDek } from '@rivor/crypto';
 import { logOAuth } from '@/lib/oauth-logger';
 
+export async function GET(req: NextRequest) {
+  return POST(req); // Allow GET for convenience
+}
+
 export async function POST(req: NextRequest) {
   try {
     logOAuth('info', '🔧 Fixing organization DEK for KMS encryption');
