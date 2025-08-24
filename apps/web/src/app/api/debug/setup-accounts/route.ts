@@ -30,7 +30,19 @@ export async function POST(req: NextRequest) {
     // Find Google account
     const googleAccount = dbUser.accounts.find(acc => acc.provider === 'google');
     if (!googleAccount) {
-      return NextResponse.json({ error: 'No Google account found' }, { status: 400 });
+      return NextResponse.json({ 
+        error: 'No Google OAuth account found. Please re-authenticate first.',
+        instructions: [
+          '1. Sign out of your app completely',
+          '2. Sign back in with Google',
+          '3. Then try Setup Accounts again'
+        ],
+        debug: {
+          userEmail,
+          accountCount: dbUser.accounts.length,
+          availableProviders: dbUser.accounts.map(acc => acc.provider)
+        }
+      }, { status: 400 });
     }
 
     const results = [];
