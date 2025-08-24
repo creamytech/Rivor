@@ -557,6 +557,28 @@ export default function SyncDebugPage() {
                     <Database className="h-4 w-4 mr-2" />
                     {actionLoading === 'debug_orgs' ? 'Checking...' : 'Check Orgs'}
                   </Button>
+                  <Button 
+                    onClick={() => {
+                      setActionLoading('debug_auth');
+                      fetch('/api/debug/auth-logs')
+                        .then(response => response.json())
+                        .then(data => {
+                          console.log('Auth Debug:', data);
+                          alert(JSON.stringify(data, null, 2));
+                          setActionLoading(null);
+                        })
+                        .catch(error => {
+                          console.error('Auth debug error:', error);
+                          alert('Auth debug failed: ' + error.message);
+                          setActionLoading(null);
+                        });
+                    }}
+                    disabled={!!actionLoading}
+                    variant="outline"
+                  >
+                    <Key className="h-4 w-4 mr-2" />
+                    {actionLoading === 'debug_auth' ? 'Checking...' : 'Debug Auth'}
+                  </Button>
                 </div>
                 <p className="text-sm text-gray-600">
                   Use cleanup first to remove broken accounts, then setup to create fresh accounts with proper token links.

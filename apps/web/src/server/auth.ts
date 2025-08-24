@@ -229,6 +229,13 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account, profile }) {
       // On sign in (including re-auth), ensure user exists first
       if (user && account) {
+        console.log('🔐 JWT callback triggered:', {
+          userEmail: user.email,
+          accountProvider: account.provider,
+          hasAccessToken: !!account.access_token,
+          hasRefreshToken: !!account.refresh_token
+        });
+        
         try {
           // First, ensure basic user record exists (fallback safety)
           if (user.email) {
@@ -261,7 +268,14 @@ export const authOptions: NextAuthOptions = {
             try {
               // Get default org for encryption
               const defaultOrg = await prisma.org.findFirst();
+              console.log('🏢 Org lookup result:', {
+                orgFound: !!defaultOrg,
+                orgId: defaultOrg?.id,
+                orgName: defaultOrg?.name
+              });
+              
               if (!defaultOrg) {
+                console.error('❌ No organization found for token encryption');
                 throw new Error('No organization found for token encryption');
               }
 
