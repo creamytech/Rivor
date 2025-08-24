@@ -527,19 +527,7 @@ export const auth = async () => {
       return null;
     }
 
-    // Get the user's orgId
-    const user = await prisma.user.findUnique({ 
-      where: { email: result.user.email },
-      include: {
-        orgMemberships: {
-          include: { org: true }
-        }
-      }
-    });
-    
-    const orgId = user?.orgMemberships?.[0]?.org?.id || 'default';
-
-    // Return session in NextAuth format
+    // Return session in NextAuth format (keep it simple to avoid breaking auth)
     return {
       user: {
         email: result.user.email,
@@ -547,7 +535,7 @@ export const auth = async () => {
         image: result.user.image,
       },
       expires: result.session.expires.toISOString(),
-      orgId
+      orgId: 'default' // Use default org for now
     };
   } catch (error) {
     console.error('Auth helper failed:', error);
