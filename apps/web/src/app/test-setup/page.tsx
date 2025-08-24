@@ -7,6 +7,23 @@ export default function TestSetupPage() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const cleanupAccounts = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/debug/cleanup-accounts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      setResult(data);
+    } catch (error) {
+      setResult({ error: error.message });
+    }
+    setLoading(false);
+  };
+
   const setupAccounts = async () => {
     setLoading(true);
     try {
@@ -29,6 +46,15 @@ export default function TestSetupPage() {
       <div className="max-w-md w-full space-y-4">
         <h1 className="text-2xl font-bold text-center">Setup Email & Calendar Accounts</h1>
         
+        <Button 
+          onClick={cleanupAccounts} 
+          disabled={loading}
+          variant="destructive"
+          className="w-full"
+        >
+          {loading ? 'Cleaning up...' : 'Cleanup Existing Accounts'}
+        </Button>
+
         <Button 
           onClick={setupAccounts} 
           disabled={loading}
