@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
         update: {
           provider: 'google',
           status: 'connected',
-          encryptionStatus: 'encrypted',
+          encryptionStatus: 'ok',
           externalAccountId: googleAccount.providerAccountId,
           tokenRef: googleAccount.id,
           lastSyncedAt: null,
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
           email: userEmail,
           provider: 'google',
           status: 'connected',
-          encryptionStatus: 'encrypted',
+          encryptionStatus: 'ok',
           externalAccountId: googleAccount.providerAccountId,
           tokenRef: googleAccount.id,
           lastSyncedAt: null,
