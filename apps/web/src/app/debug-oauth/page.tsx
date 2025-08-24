@@ -57,6 +57,18 @@ export default function PublicOAuthDebugPage() {
     setLoading(false);
   };
 
+  const testDatabase = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/debug/test-db');
+      const data = await response.json();
+      setResult(data);
+    } catch (error) {
+      setResult({ error: error.message });
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-8 bg-gray-50">
       <Card className="max-w-lg w-full">
@@ -89,14 +101,22 @@ export default function PublicOAuthDebugPage() {
             >
               {loading ? 'Fixing...' : 'Fix OAuth Error'}
             </Button>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <Button 
                 onClick={checkAuthStatus} 
                 disabled={loading}
                 variant="outline"
                 size="sm"
               >
-                {loading ? 'Checking...' : 'Check Config'}
+                {loading ? 'Checking...' : 'Config'}
+              </Button>
+              <Button 
+                onClick={testDatabase} 
+                disabled={loading}
+                variant="outline"
+                size="sm"
+              >
+                {loading ? 'Testing...' : 'Test DB'}
               </Button>
               <Button 
                 onClick={checkAuthLogs} 
@@ -104,7 +124,7 @@ export default function PublicOAuthDebugPage() {
                 variant="outline"
                 size="sm"
               >
-                {loading ? 'Loading...' : 'Auth Logs'}
+                {loading ? 'Loading...' : 'Logs'}
               </Button>
             </div>
           </div>
