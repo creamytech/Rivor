@@ -823,13 +823,25 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       />
 
       <Dialog open={showCreateContactModal} onOpenChange={setShowCreateContactModal}>
-        <DialogContent className="max-w-md glass-modal">
-          <DialogHeader>
-            <DialogTitle>Add New Contact</DialogTitle>
+        <DialogContent className="max-w-md glass-modal rounded-xl overflow-hidden">
+          <DialogHeader className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--glass-border)' }}>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
+                <User className="h-5 w-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold" style={{ color: 'var(--glass-text)' }}>
+                  Add New Contact
+                </DialogTitle>
+                <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                  Create a new contact in your CRM
+                </p>
+              </div>
+            </div>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="p-6 space-y-4">
             <div>
-              <Label htmlFor="contact-name">Full Name</Label>
+              <Label htmlFor="contact-name" style={{ color: 'var(--glass-text)' }}>Full Name</Label>
               <Input 
                 id="contact-name" 
                 placeholder="Enter contact name" 
@@ -838,7 +850,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               />
             </div>
             <div>
-              <Label htmlFor="contact-email">Email</Label>
+              <Label htmlFor="contact-email" style={{ color: 'var(--glass-text)' }}>Email</Label>
               <Input 
                 id="contact-email" 
                 type="email" 
@@ -848,7 +860,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               />
             </div>
             <div>
-              <Label htmlFor="contact-phone">Phone</Label>
+              <Label htmlFor="contact-phone" style={{ color: 'var(--glass-text)' }}>Phone</Label>
               <Input 
                 id="contact-phone" 
                 placeholder="Enter phone number" 
@@ -857,7 +869,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               />
             </div>
             <div>
-              <Label htmlFor="contact-notes">Notes</Label>
+              <Label htmlFor="contact-notes" style={{ color: 'var(--glass-text)' }}>Notes</Label>
               <Textarea 
                 id="contact-notes" 
                 placeholder="Additional notes..." 
@@ -901,14 +913,26 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       </Dialog>
 
       <Dialog open={showCreateListingModal} onOpenChange={setShowCreateListingModal}>
-        <DialogContent className="max-w-2xl glass-modal">
-          <DialogHeader>
-            <DialogTitle>Create New Listing</DialogTitle>
+        <DialogContent className="max-w-2xl glass-modal rounded-xl overflow-hidden">
+          <DialogHeader className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--glass-border)' }}>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 text-white">
+                <Building2 className="h-5 w-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold" style={{ color: 'var(--glass-text)' }}>
+                  Create New Listing
+                </DialogTitle>
+                <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                  Add a new property to your listings
+                </p>
+              </div>
+            </div>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="p-6 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="listing-address">Property Address</Label>
+                <Label htmlFor="listing-address" style={{ color: 'var(--glass-text)' }}>Property Address</Label>
                 <Input 
                   id="listing-address" 
                   placeholder="Enter property address" 
@@ -917,7 +941,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                 />
               </div>
               <div>
-                <Label htmlFor="listing-price">Price</Label>
+                <Label htmlFor="listing-price" style={{ color: 'var(--glass-text)' }}>Price</Label>
                 <Input 
                   id="listing-price" 
                   placeholder="$0" 
@@ -928,7 +952,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="listing-beds">Bedrooms</Label>
+                <Label htmlFor="listing-beds" style={{ color: 'var(--glass-text)' }}>Bedrooms</Label>
                 <Input 
                   id="listing-beds" 
                   type="number" 
@@ -938,7 +962,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                 />
               </div>
               <div>
-                <Label htmlFor="listing-baths">Bathrooms</Label>
+                <Label htmlFor="listing-baths" style={{ color: 'var(--glass-text)' }}>Bathrooms</Label>
                 <Input 
                   id="listing-baths" 
                   type="number" 
@@ -948,7 +972,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                 />
               </div>
               <div>
-                <Label htmlFor="listing-sqft">Square Feet</Label>
+                <Label htmlFor="listing-sqft" style={{ color: 'var(--glass-text)' }}>Square Feet</Label>
                 <Input 
                   id="listing-sqft" 
                   type="number" 
@@ -959,7 +983,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               </div>
             </div>
             <div>
-              <Label htmlFor="listing-description">Description</Label>
+              <Label htmlFor="listing-description" style={{ color: 'var(--glass-text)' }}>Description</Label>
               <Textarea 
                 id="listing-description" 
                 placeholder="Property description..." 
@@ -1003,13 +1027,25 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       </Dialog>
 
       <Dialog open={showScheduleMeetingModal} onOpenChange={setShowScheduleMeetingModal}>
-        <DialogContent className="max-w-md glass-modal">
-          <DialogHeader>
-            <DialogTitle>Schedule Meeting</DialogTitle>
+        <DialogContent className="max-w-md glass-modal rounded-xl overflow-hidden">
+          <DialogHeader className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--glass-border)' }}>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-white">
+                <Calendar className="h-5 w-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold" style={{ color: 'var(--glass-text)' }}>
+                  Schedule Meeting
+                </DialogTitle>
+                <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                  Book a new appointment or meeting
+                </p>
+              </div>
+            </div>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="p-6 space-y-4">
             <div>
-              <Label htmlFor="meeting-title">Meeting Title</Label>
+              <Label htmlFor="meeting-title" style={{ color: 'var(--glass-text)' }}>Meeting Title</Label>
               <Input 
                 id="meeting-title" 
                 placeholder="Enter meeting title" 
@@ -1019,7 +1055,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="meeting-date">Date</Label>
+                <Label htmlFor="meeting-date" style={{ color: 'var(--glass-text)' }}>Date</Label>
                 <Input 
                   id="meeting-date" 
                   type="date" 
@@ -1028,7 +1064,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                 />
               </div>
               <div>
-                <Label htmlFor="meeting-time">Time</Label>
+                <Label htmlFor="meeting-time" style={{ color: 'var(--glass-text)' }}>Time</Label>
                 <Input 
                   id="meeting-time" 
                   type="time" 
@@ -1038,7 +1074,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               </div>
             </div>
             <div>
-              <Label htmlFor="meeting-attendees">Attendees</Label>
+              <Label htmlFor="meeting-attendees" style={{ color: 'var(--glass-text)' }}>Attendees</Label>
               <Input 
                 id="meeting-attendees" 
                 placeholder="Enter email addresses" 
@@ -1047,7 +1083,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               />
             </div>
             <div>
-              <Label htmlFor="meeting-notes">Notes</Label>
+              <Label htmlFor="meeting-notes" style={{ color: 'var(--glass-text)' }}>Notes</Label>
               <Textarea 
                 id="meeting-notes" 
                 placeholder="Meeting agenda or notes..." 

@@ -204,14 +204,24 @@ export default function ComposeEmailModal({
           {trigger}
         </DialogTrigger>
       )}
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto glass-modal glass-border-active glass-hover-glow">
-        <DialogHeader>
-          <DialogTitle>
-            {threadId ? 'Reply to Email' : 'Compose New Email'}
-          </DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[85vh] glass-modal rounded-xl overflow-hidden">
+        <DialogHeader className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--glass-border)' }}>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+              <Send className="h-5 w-5" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl font-bold" style={{ color: 'var(--glass-text)' }}>
+                {threadId ? 'Reply to Email' : 'Compose New Email'}
+              </DialogTitle>
+              <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                {threadId ? 'Send a reply to this conversation' : 'Create and send a new email'}
+              </p>
+            </div>
+          </div>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto max-h-[calc(85vh-120px)]">
           {/* Real Estate Email Type Selector */}
           <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
             <div className="flex items-center gap-2 flex-1">
