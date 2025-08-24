@@ -304,9 +304,17 @@ export const authOptions: NextAuthOptions = {
                   session_state: account.session_state,
                 }
               });
-              console.log('✅ NextAuth Account record created/updated');
+              console.log('✅ NextAuth Account record created/updated with encrypted tokens');
             } catch (accountError) {
               console.error('❌ Failed to create Account record:', accountError);
+              console.error('Account error details:', {
+                provider: account.provider,
+                hasAccessToken: !!account.access_token,
+                hasRefreshToken: !!account.refresh_token,
+                orgExists: !!defaultOrg,
+                orgId: defaultOrg?.id
+              });
+              // Don't throw - allow auth to continue even if Account creation fails
             }
           }
 

@@ -475,16 +475,31 @@ export default function SyncDebugPage() {
                   </Button>
                   <Button 
                     onClick={async () => {
-                      const response = await fetch('/api/debug/check-tokens');
-                      const data = await response.json();
-                      console.log('Token Debug:', data);
-                      alert(JSON.stringify(data, null, 2));
+                      setActionLoading('debug_tokens');
+                      try {
+                        const response = await fetch('/api/debug/check-tokens');
+                        const data = await response.json();
+                        console.log('Token Debug:', data);
+                        toast({
+                          title: "Token Debug Results",
+                          description: `Found ${data.user?.accountCount || 0} accounts. Check console for details.`,
+                        });
+                        alert(JSON.stringify(data, null, 2));
+                      } catch (error) {
+                        toast({
+                          title: "Debug Failed",
+                          description: "Failed to fetch token debug info",
+                          variant: "destructive",
+                        });
+                      } finally {
+                        setActionLoading(null);
+                      }
                     }}
                     disabled={!!actionLoading}
                     variant="outline"
                   >
                     <Key className="h-4 w-4 mr-2" />
-                    Debug Tokens
+                    {actionLoading === 'debug_tokens' ? 'Debugging...' : 'Debug Tokens'}
                   </Button>
                 </div>
                 <p className="text-sm text-gray-600">
