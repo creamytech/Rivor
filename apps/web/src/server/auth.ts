@@ -505,6 +505,41 @@ export const authOptions: NextAuthOptions = {
 };
 
 // v4 compatibility: provide an auth() helper for server components/routes
-export const auth = () => getServerSession(authOptions);
+export const auth = async () => {
+  try {
+    // Use our working custom adapter instead of broken getServerSession
+    const { cookies } = await import('next/headers');
+    const cookieStore = cookies();
+    const sessionToken = cookieStore.get('__Secure-next-auth.session-token')?.value || 
+                        cookieStore.get('next-auth.session-token')?.value;
+
+    if (!sessionToken) {
+      return null;
+    }
+
+    const adapter = createCustomPrismaAdapter();
+    if (!adapter.getSessionAndUser) {
+      return null;
+    }
+
+    const result = await adapter.getSessionAndUser(sessionToken);
+    if (!result || !result.session || !result.user) {
+      return null;
+    }
+
+    // Return session in NextAuth format
+    return {
+      user: {
+        email: result.user.email,
+        name: result.user.name,
+        image: result.user.image,
+      },
+      expires: result.session.expires.toISOString()
+    };
+  } catch (error) {
+    console.error('Auth helper failed:', error);
+    return null;
+  }
+};
 
 
