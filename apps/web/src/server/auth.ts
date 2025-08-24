@@ -253,8 +253,50 @@ export const authOptions: NextAuthOptions = {
             }
           }
 
-          // Check for duplicate callback (idempotency)
+          // Ensure NextAuth Account record exists (critical for token storage)
           const externalAccountId = account.providerAccountId || (profile as unknown)?.sub || (profile as unknown)?.id || 'unknown';
+          const dbUser = await prisma.user.findUnique({ where: { email: user.email } });
+          
+          if (dbUser) {
+            try {
+              // Create/update NextAuth Account record directly
+              await prisma.account.upsert({
+                where: {
+                  provider_providerAccountId: {
+                    provider: account.provider,
+                    providerAccountId: externalAccountId
+                  }
+                },
+                update: {
+                  access_token: account.access_token,
+                  refresh_token: account.refresh_token,
+                  expires_at: account.expires_at,
+                  token_type: account.token_type,
+                  scope: account.scope,
+                  id_token: account.id_token,
+                  session_state: account.session_state,
+                },
+                create: {
+                  userId: dbUser.id,
+                  type: account.type || 'oauth',
+                  provider: account.provider,
+                  providerAccountId: externalAccountId,
+                  access_token: account.access_token,
+                  refresh_token: account.refresh_token,
+                  expires_at: account.expires_at,
+                  token_type: account.token_type,
+                  scope: account.scope,
+                  id_token: account.id_token,
+                  session_state: account.session_state,
+                }
+              });
+              console.log('✅ NextAuth Account record created/updated');
+            } catch (accountError) {
+              console.error('❌ Failed to create Account record:', accountError);
+            }
+          }
+
+          // Check for duplicate callback (idempotency) for complex onboarding
           const isDuplicate = await isDuplicateCallback(
             user.email || user.id,
             account.provider,
@@ -262,7 +304,7 @@ export const authOptions: NextAuthOptions = {
           );
 
           if (isDuplicate) {
-            logger.info('Duplicate OAuth callback detected, skipping onboarding', {
+            logger.info('Duplicate OAuth callback detected, skipping complex onboarding', {
               userId: user.email || '',
               provider: account.provider,
               externalAccountId,
