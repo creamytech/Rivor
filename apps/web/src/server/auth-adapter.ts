@@ -21,8 +21,8 @@ export function createCustomPrismaAdapter() {
       const defaultOrg = await prisma.org.findFirst();
       
       if (!defaultOrg) {
-        console.error('❌ No organization found for token encryption');
-        throw new Error('No organization found for token encryption');
+        console.error('❌ No organization found for token encryption, using original adapter');
+        return await originalLinkAccount(account);
       }
 
       console.log('🏢 Using org for encryption:', {
@@ -33,11 +33,7 @@ export function createCustomPrismaAdapter() {
       // Encrypt OAuth tokens
       const encryptedAccount = {
         ...account,
-        // Remove plain text tokens
-        access_token: undefined,
-        refresh_token: undefined,
-        id_token: undefined,
-        // Add encrypted tokens
+        // Keep original fields for compatibility, add encrypted ones
         access_token_enc: account.access_token ? 
           await encryptForOrg(defaultOrg.id, new TextEncoder().encode(account.access_token), `oauth:${account.provider}:access`) : undefined,
         refresh_token_enc: account.refresh_token ? 
@@ -47,11 +43,19 @@ export function createCustomPrismaAdapter() {
       };
 
       console.log('✅ Account encrypted successfully, calling original linkAccount');
-      return await originalLinkAccount(encryptedAccount);
+      
+      // Try the encrypted account first, fall back to original if it fails
+      try {
+        return await originalLinkAccount(encryptedAccount);
+      } catch (encryptedError) {
+        console.warn('⚠️ Encrypted account failed, trying original:', encryptedError.message);
+        return await originalLinkAccount(account);
+      }
 
     } catch (error) {
       console.error('❌ Failed to encrypt account tokens:', error);
       // Fall back to original method without encryption
+      console.log('🔄 Falling back to original linkAccount method');
       return await originalLinkAccount(account);
     }
   };

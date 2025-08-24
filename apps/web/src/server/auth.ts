@@ -10,6 +10,7 @@ import { logger } from "@/lib/logger";
 import { handleOAuthCallback, isDuplicateCallback, type OAuthCallbackData } from "./onboarding";
 import { validateAndLogStartupConfig } from "./env";
 import { createCustomPrismaAdapter } from "./auth-adapter";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
 
 const providers: unknown[] = [];
 
@@ -90,7 +91,8 @@ const finalProviders = providers.length > 0 ? providers : [
 console.log('🚀 Final providers array length:', finalProviders.length);
 
 export const authOptions: NextAuthOptions = {
-  adapter: createCustomPrismaAdapter(),
+  adapter: PrismaAdapter(prisma), // Use standard adapter temporarily
+  // adapter: createCustomPrismaAdapter(), // TODO: Enable after fixing encryption issues
   pages: {
     signIn: "/auth/signin",
     error: "/auth/error",
