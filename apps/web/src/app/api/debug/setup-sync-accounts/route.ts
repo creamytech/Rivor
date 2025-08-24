@@ -42,9 +42,10 @@ export async function POST(req: NextRequest) {
     try {
       const emailAccount = await prisma.emailAccount.upsert({
         where: {
-          orgId_email: {
+          orgId_provider_externalAccountId: {
             orgId,
-            email: userEmail
+            provider: 'google',
+            externalAccountId: googleAccount.providerAccountId
           }
         },
         update: {
@@ -84,25 +85,19 @@ export async function POST(req: NextRequest) {
     try {
       const calendarAccount = await prisma.calendarAccount.upsert({
         where: {
-          orgId_externalAccountId: {
+          orgId_provider: {
             orgId,
-            externalAccountId: googleAccount.providerAccountId
+            provider: 'google'
           }
         },
         update: {
           provider: 'google',
-          status: 'connected',
-          tokenRef: googleAccount.id,
-          lastSyncedAt: null
+          status: 'connected'
         },
         create: {
           orgId,
-          userId: user.id,
           provider: 'google',
-          status: 'connected',
-          externalAccountId: googleAccount.providerAccountId,
-          tokenRef: googleAccount.id,
-          lastSyncedAt: null
+          status: 'connected'
         }
       });
 
