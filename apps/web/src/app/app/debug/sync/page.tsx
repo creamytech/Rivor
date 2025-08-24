@@ -473,6 +473,19 @@ export default function SyncDebugPage() {
                     <Plus className="h-4 w-4 mr-2" />
                     {actionLoading === 'setup' ? 'Setting up...' : 'Setup Accounts'}
                   </Button>
+                  <Button 
+                    onClick={async () => {
+                      const response = await fetch('/api/debug/check-tokens');
+                      const data = await response.json();
+                      console.log('Token Debug:', data);
+                      alert(JSON.stringify(data, null, 2));
+                    }}
+                    disabled={!!actionLoading}
+                    variant="outline"
+                  >
+                    <Key className="h-4 w-4 mr-2" />
+                    Debug Tokens
+                  </Button>
                 </div>
                 <p className="text-sm text-gray-600">
                   Use cleanup first to remove broken accounts, then setup to create fresh accounts with proper token links.
