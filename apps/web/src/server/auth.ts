@@ -11,6 +11,7 @@ import { handleOAuthCallback, isDuplicateCallback, type OAuthCallbackData } from
 import { validateAndLogStartupConfig } from "./env";
 import { createCustomPrismaAdapter } from "./auth-adapter";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { logOAuth } from "@/lib/oauth-logger";
 
 const providers: unknown[] = [];
 
@@ -169,11 +170,16 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      console.log('🚀 OAuth signIn callback start', {
+      const signInData = {
         provider: account?.provider,
         userEmail: user.email,
+        hasAccount: !!account,
+        hasProfile: !!profile,
         timestamp: new Date().toISOString()
-      });
+      };
+      
+      logOAuth('info', '🚀 OAuth signIn callback triggered', signInData);
+      console.log('🚀 OAuth signIn callback start', signInData);
       
       // NextAuth should create User and Account records automatically with database strategy
       // This callback just validates the sign-in is allowed
@@ -181,7 +187,9 @@ export const authOptions: NextAuthOptions = {
     },
     async redirect({ url, baseUrl }) {
       // Enhanced redirect logic for deep links and user flow
-      console.log('Redirect callback:', { url, baseUrl });
+      const redirectData = { url, baseUrl };
+      logOAuth('info', '🔄 OAuth redirect callback', redirectData);
+      console.log('Redirect callback:', redirectData);
       
       // If the URL is relative or matches our domain, use it
       if (url.startsWith("/") || url.startsWith(baseUrl)) {
