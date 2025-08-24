@@ -18,7 +18,9 @@ import {
   Edit3,
   MessageSquare,
   LogOut,
-  Settings
+  Settings,
+  Home,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
@@ -847,43 +849,78 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               </div>
             </div>
           </DialogHeader>
-          <div className="p-6 space-y-4">
-            <div>
-              <Label htmlFor="contact-name" style={{ color: 'var(--glass-text)' }}>Full Name</Label>
-              <Input 
-                id="contact-name" 
-                placeholder="Enter contact name" 
-                value={contactFormData.name}
-                onChange={(e) => setContactFormData({...contactFormData, name: e.target.value})}
-              />
+          <div className="p-6 space-y-6">
+            {/* Contact Information Card */}
+            <div className="glass-card p-4 rounded-lg transition-all duration-200 hover:bg-white/5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
+                  <User className="h-4 w-4" />
+                </div>
+                <div>
+                  <h5 className="font-medium" style={{ color: 'var(--glass-text)' }}>
+                    Contact Information
+                  </h5>
+                  <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                    Basic contact details
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="contact-name" style={{ color: 'var(--glass-text)' }}>Full Name</Label>
+                  <Input 
+                    id="contact-name" 
+                    placeholder="Enter contact name" 
+                    value={contactFormData.name}
+                    onChange={(e) => setContactFormData({...contactFormData, name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="contact-email" style={{ color: 'var(--glass-text)' }}>Email</Label>
+                  <Input 
+                    id="contact-email" 
+                    type="email" 
+                    placeholder="Enter email address" 
+                    value={contactFormData.email}
+                    onChange={(e) => setContactFormData({...contactFormData, email: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="contact-phone" style={{ color: 'var(--glass-text)' }}>Phone</Label>
+                  <Input 
+                    id="contact-phone" 
+                    placeholder="Enter phone number" 
+                    value={contactFormData.phone}
+                    onChange={(e) => setContactFormData({...contactFormData, phone: e.target.value})}
+                  />
+                </div>
+              </div>
             </div>
-            <div>
-              <Label htmlFor="contact-email" style={{ color: 'var(--glass-text)' }}>Email</Label>
-              <Input 
-                id="contact-email" 
-                type="email" 
-                placeholder="Enter email address" 
-                value={contactFormData.email}
-                onChange={(e) => setContactFormData({...contactFormData, email: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="contact-phone" style={{ color: 'var(--glass-text)' }}>Phone</Label>
-              <Input 
-                id="contact-phone" 
-                placeholder="Enter phone number" 
-                value={contactFormData.phone}
-                onChange={(e) => setContactFormData({...contactFormData, phone: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="contact-notes" style={{ color: 'var(--glass-text)' }}>Notes</Label>
-              <Textarea 
-                id="contact-notes" 
-                placeholder="Additional notes..." 
-                value={contactFormData.notes}
-                onChange={(e) => setContactFormData({...contactFormData, notes: e.target.value})}
-              />
+            
+            {/* Additional Details Card */}
+            <div className="glass-card p-4 rounded-lg transition-all duration-200 hover:bg-white/5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <div>
+                  <h5 className="font-medium" style={{ color: 'var(--glass-text)' }}>
+                    Additional Details
+                  </h5>
+                  <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                    Notes and extra information
+                  </p>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="contact-notes" style={{ color: 'var(--glass-text)' }}>Notes</Label>
+                <Textarea 
+                  id="contact-notes" 
+                  placeholder="Additional notes..." 
+                  value={contactFormData.notes}
+                  onChange={(e) => setContactFormData({...contactFormData, notes: e.target.value})}
+                />
+              </div>
             </div>
             <div className="flex gap-2 pt-4">
               <Button variant="outline" onClick={() => setShowCreateContactModal(false)} className="flex-1">
@@ -945,67 +982,119 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               </div>
             </div>
           </DialogHeader>
-          <div className="p-6 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="listing-address" style={{ color: 'var(--glass-text)' }}>Property Address</Label>
-                <Input 
-                  id="listing-address" 
-                  placeholder="Enter property address" 
-                  value={listingFormData.address}
-                  onChange={(e) => setListingFormData({...listingFormData, address: e.target.value})}
-                />
+          <div className="p-6 space-y-6">
+            {/* Basic Property Info Card */}
+            <div className="glass-card p-4 rounded-lg transition-all duration-200 hover:bg-white/5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 text-white">
+                  <Building2 className="h-4 w-4" />
+                </div>
+                <div>
+                  <h5 className="font-medium" style={{ color: 'var(--glass-text)' }}>
+                    Property Information
+                  </h5>
+                  <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                    Basic property details and pricing
+                  </p>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="listing-price" style={{ color: 'var(--glass-text)' }}>Price</Label>
-                <Input 
-                  id="listing-price" 
-                  placeholder="$0" 
-                  value={listingFormData.price}
-                  onChange={(e) => setListingFormData({...listingFormData, price: e.target.value})}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="listing-beds" style={{ color: 'var(--glass-text)' }}>Bedrooms</Label>
-                <Input 
-                  id="listing-beds" 
-                  type="number" 
-                  placeholder="0" 
-                  value={listingFormData.beds}
-                  onChange={(e) => setListingFormData({...listingFormData, beds: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label htmlFor="listing-baths" style={{ color: 'var(--glass-text)' }}>Bathrooms</Label>
-                <Input 
-                  id="listing-baths" 
-                  type="number" 
-                  placeholder="0" 
-                  value={listingFormData.baths}
-                  onChange={(e) => setListingFormData({...listingFormData, baths: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label htmlFor="listing-sqft" style={{ color: 'var(--glass-text)' }}>Square Feet</Label>
-                <Input 
-                  id="listing-sqft" 
-                  type="number" 
-                  placeholder="0" 
-                  value={listingFormData.sqft}
-                  onChange={(e) => setListingFormData({...listingFormData, sqft: e.target.value})}
-                />
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="listing-address" style={{ color: 'var(--glass-text)' }}>Property Address</Label>
+                    <Input 
+                      id="listing-address" 
+                      placeholder="Enter property address" 
+                      value={listingFormData.address}
+                      onChange={(e) => setListingFormData({...listingFormData, address: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="listing-price" style={{ color: 'var(--glass-text)' }}>Price</Label>
+                    <Input 
+                      id="listing-price" 
+                      placeholder="$0" 
+                      value={listingFormData.price}
+                      onChange={(e) => setListingFormData({...listingFormData, price: e.target.value})}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-            <div>
-              <Label htmlFor="listing-description" style={{ color: 'var(--glass-text)' }}>Description</Label>
-              <Textarea 
-                id="listing-description" 
-                placeholder="Property description..." 
-                value={listingFormData.description}
-                onChange={(e) => setListingFormData({...listingFormData, description: e.target.value})}
-              />
+
+            {/* Property Specs Card */}
+            <div className="glass-card p-4 rounded-lg transition-all duration-200 hover:bg-white/5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
+                  <Home className="h-4 w-4" />
+                </div>
+                <div>
+                  <h5 className="font-medium" style={{ color: 'var(--glass-text)' }}>
+                    Property Specifications
+                  </h5>
+                  <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                    Bedrooms, bathrooms, and size details
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="listing-beds" style={{ color: 'var(--glass-text)' }}>Bedrooms</Label>
+                  <Input 
+                    id="listing-beds" 
+                    type="number" 
+                    placeholder="0" 
+                    value={listingFormData.beds}
+                    onChange={(e) => setListingFormData({...listingFormData, beds: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="listing-baths" style={{ color: 'var(--glass-text)' }}>Bathrooms</Label>
+                  <Input 
+                    id="listing-baths" 
+                    type="number" 
+                    placeholder="0" 
+                    value={listingFormData.baths}
+                    onChange={(e) => setListingFormData({...listingFormData, baths: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="listing-sqft" style={{ color: 'var(--glass-text)' }}>Square Feet</Label>
+                  <Input 
+                    id="listing-sqft" 
+                    type="number" 
+                    placeholder="0" 
+                    value={listingFormData.sqft}
+                    onChange={(e) => setListingFormData({...listingFormData, sqft: e.target.value})}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Description Card */}
+            <div className="glass-card p-4 rounded-lg transition-all duration-200 hover:bg-white/5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <div>
+                  <h5 className="font-medium" style={{ color: 'var(--glass-text)' }}>
+                    Property Description
+                  </h5>
+                  <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                    Detailed description and features
+                  </p>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="listing-description" style={{ color: 'var(--glass-text)' }}>Description</Label>
+                <Textarea 
+                  id="listing-description" 
+                  placeholder="Property description..." 
+                  value={listingFormData.description}
+                  onChange={(e) => setListingFormData({...listingFormData, description: e.target.value})}
+                />
+              </div>
             </div>
             <div className="flex gap-2 pt-4">
               <Button variant="outline" onClick={() => setShowCreateListingModal(false)} className="flex-1">
@@ -1067,53 +1156,105 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               </div>
             </div>
           </DialogHeader>
-          <div className="p-6 space-y-4">
-            <div>
-              <Label htmlFor="meeting-title" style={{ color: 'var(--glass-text)' }}>Meeting Title</Label>
-              <Input 
-                id="meeting-title" 
-                placeholder="Enter meeting title" 
-                value={meetingFormData.title}
-                onChange={(e) => setMeetingFormData({...meetingFormData, title: e.target.value})}
-              />
+          <div className="p-6 space-y-6">
+            {/* Meeting Details Card */}
+            <div className="glass-card p-4 rounded-lg transition-all duration-200 hover:bg-white/5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-white">
+                  <Calendar className="h-4 w-4" />
+                </div>
+                <div>
+                  <h5 className="font-medium" style={{ color: 'var(--glass-text)' }}>
+                    Meeting Information
+                  </h5>
+                  <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                    Basic meeting details and timing
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="meeting-title" style={{ color: 'var(--glass-text)' }}>Meeting Title</Label>
+                  <Input 
+                    id="meeting-title" 
+                    placeholder="Enter meeting title" 
+                    value={meetingFormData.title}
+                    onChange={(e) => setMeetingFormData({...meetingFormData, title: e.target.value})}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="meeting-date" style={{ color: 'var(--glass-text)' }}>Date</Label>
+                    <Input 
+                      id="meeting-date" 
+                      type="date" 
+                      value={meetingFormData.date}
+                      onChange={(e) => setMeetingFormData({...meetingFormData, date: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="meeting-time" style={{ color: 'var(--glass-text)' }}>Time</Label>
+                    <Input 
+                      id="meeting-time" 
+                      type="time" 
+                      value={meetingFormData.time}
+                      onChange={(e) => setMeetingFormData({...meetingFormData, time: e.target.value})}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="meeting-date" style={{ color: 'var(--glass-text)' }}>Date</Label>
-                <Input 
-                  id="meeting-date" 
-                  type="date" 
-                  value={meetingFormData.date}
-                  onChange={(e) => setMeetingFormData({...meetingFormData, date: e.target.value})}
-                />
+
+            {/* Attendees Card */}
+            <div className="glass-card p-4 rounded-lg transition-all duration-200 hover:bg-white/5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
+                  <User className="h-4 w-4" />
+                </div>
+                <div>
+                  <h5 className="font-medium" style={{ color: 'var(--glass-text)' }}>
+                    Attendees
+                  </h5>
+                  <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                    Who will be attending this meeting
+                  </p>
+                </div>
               </div>
               <div>
-                <Label htmlFor="meeting-time" style={{ color: 'var(--glass-text)' }}>Time</Label>
+                <Label htmlFor="meeting-attendees" style={{ color: 'var(--glass-text)' }}>Attendees</Label>
                 <Input 
-                  id="meeting-time" 
-                  type="time" 
-                  value={meetingFormData.time}
-                  onChange={(e) => setMeetingFormData({...meetingFormData, time: e.target.value})}
+                  id="meeting-attendees" 
+                  placeholder="Enter email addresses" 
+                  value={meetingFormData.attendees}
+                  onChange={(e) => setMeetingFormData({...meetingFormData, attendees: e.target.value})}
                 />
               </div>
             </div>
-            <div>
-              <Label htmlFor="meeting-attendees" style={{ color: 'var(--glass-text)' }}>Attendees</Label>
-              <Input 
-                id="meeting-attendees" 
-                placeholder="Enter email addresses" 
-                value={meetingFormData.attendees}
-                onChange={(e) => setMeetingFormData({...meetingFormData, attendees: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="meeting-notes" style={{ color: 'var(--glass-text)' }}>Notes</Label>
-              <Textarea 
-                id="meeting-notes" 
-                placeholder="Meeting agenda or notes..." 
-                value={meetingFormData.notes}
-                onChange={(e) => setMeetingFormData({...meetingFormData, notes: e.target.value})}
-              />
+
+            {/* Meeting Notes Card */}
+            <div className="glass-card p-4 rounded-lg transition-all duration-200 hover:bg-white/5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <div>
+                  <h5 className="font-medium" style={{ color: 'var(--glass-text)' }}>
+                    Meeting Notes
+                  </h5>
+                  <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                    Agenda and additional notes
+                  </p>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="meeting-notes" style={{ color: 'var(--glass-text)' }}>Notes</Label>
+                <Textarea 
+                  id="meeting-notes" 
+                  placeholder="Meeting agenda or notes..." 
+                  value={meetingFormData.notes}
+                  onChange={(e) => setMeetingFormData({...meetingFormData, notes: e.target.value})}
+                />
+              </div>
             </div>
             <div className="flex gap-2 pt-4">
               <Button variant="outline" onClick={() => setShowScheduleMeetingModal(false)} className="flex-1">
