@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
           encryptionStatus: 'ok',
           externalAccountId: googleAccount.providerAccountId,
           tokenRef: googleAccount.id,
+          tokenStatus: 'encrypted',
           lastSyncedAt: null,
           syncStatus: 'idle'
         },
@@ -66,6 +67,7 @@ export async function POST(req: NextRequest) {
           encryptionStatus: 'ok',
           externalAccountId: googleAccount.providerAccountId,
           tokenRef: googleAccount.id,
+          tokenStatus: 'encrypted',
           lastSyncedAt: null,
           syncStatus: 'idle'
         }
