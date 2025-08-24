@@ -36,6 +36,18 @@ export default function PublicOAuthDebugPage() {
   const checkAuthStatus = async () => {
     setLoading(true);
     try {
+      const response = await fetch('/api/debug/oauth-config');
+      const data = await response.json();
+      setResult(data);
+    } catch (error) {
+      setResult({ error: error.message });
+    }
+    setLoading(false);
+  };
+
+  const checkAuthLogs = async () => {
+    setLoading(true);
+    try {
       const response = await fetch('/api/debug/auth-logs');
       const data = await response.json();
       setResult(data);
@@ -69,23 +81,32 @@ export default function PublicOAuthDebugPage() {
             />
           </div>
 
-          <div className="flex gap-2">
+          <div className="grid grid-cols-1 gap-2">
             <Button 
               onClick={fixOAuth} 
               disabled={loading}
-              className="flex-1"
               variant="destructive"
             >
               {loading ? 'Fixing...' : 'Fix OAuth Error'}
             </Button>
-            <Button 
-              onClick={checkAuthStatus} 
-              disabled={loading}
-              variant="outline"
-              className="flex-1"
-            >
-              {loading ? 'Checking...' : 'Check Status'}
-            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button 
+                onClick={checkAuthStatus} 
+                disabled={loading}
+                variant="outline"
+                size="sm"
+              >
+                {loading ? 'Checking...' : 'Check Config'}
+              </Button>
+              <Button 
+                onClick={checkAuthLogs} 
+                disabled={loading}
+                variant="outline"
+                size="sm"
+              >
+                {loading ? 'Loading...' : 'Auth Logs'}
+              </Button>
+            </div>
           </div>
 
           <div className="text-xs text-gray-500 space-y-1">

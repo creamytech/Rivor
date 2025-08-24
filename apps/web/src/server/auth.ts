@@ -97,7 +97,7 @@ export const authOptions: NextAuthOptions = {
     signIn: "/auth/signin",
     error: "/auth/error",
   },
-  debug: process.env.NEXTAUTH_DEBUG === "true",
+  debug: true, // Enable debug mode temporarily
   secret: process.env.NEXTAUTH_SECRET,
   providers: finalProviders,
   session: { 
