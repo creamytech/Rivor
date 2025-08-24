@@ -3408,7 +3408,7 @@ header:not(.md\\:hidden),
 
 /* Waitlist modal dark theme enforcement */
 [data-waitlist-modal-open="true"] [data-radix-dialog-overlay] {
-  background: rgba(0, 0, 0, 0.8) !important;
+  background: rgba(0, 0, 0, 0.95) !important;
   position: fixed !important;
   inset: 0 !important;
   z-index: 999999 !important;
