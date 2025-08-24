@@ -12,6 +12,7 @@ export function createCustomPrismaAdapter() {
   const originalGetSessionAndUser = adapter.getSessionAndUser;
   const originalGetUser = adapter.getUser;
   const originalGetAccount = adapter.getAccount;
+  const originalGetSession = adapter.getSession;
 
   // Override only linkAccount - let NextAuth handle sessions normally
   adapter.linkAccount = async (account) => {
@@ -178,23 +179,46 @@ export function createCustomPrismaAdapter() {
     }
   };
 
-  // Ensure session retrieval works properly
+  // Ensure session retrieval works properly - override both methods
   if (originalGetSessionAndUser) {
     adapter.getSessionAndUser = async (sessionToken) => {
-      logOAuth('info', '🔍 Getting session and user', { 
+      logOAuth('info', '🔍 Getting session and user via getSessionAndUser', { 
         sessionTokenPreview: sessionToken.substring(0, 20) + '...' 
       });
       
       try {
         const result = await originalGetSessionAndUser(sessionToken);
-        logOAuth('info', '✅ Session and user retrieved', { 
+        logOAuth('info', '✅ Session and user retrieved via getSessionAndUser', { 
           hasSession: !!result?.session,
           hasUser: !!result?.user,
           userEmail: result?.user?.email
         });
         return result;
       } catch (error) {
-        logOAuth('error', '❌ Session retrieval failed', { 
+        logOAuth('error', '❌ Session retrieval failed via getSessionAndUser', { 
+          error: error instanceof Error ? error.message : error 
+        });
+        throw error;
+      }
+    };
+  }
+
+  // Also override getSession for NextAuth compatibility
+  if (originalGetSession) {
+    adapter.getSession = async (sessionToken) => {
+      logOAuth('info', '🔍 Getting session via getSession', { 
+        sessionTokenPreview: sessionToken.substring(0, 20) + '...' 
+      });
+      
+      try {
+        const session = await originalGetSession(sessionToken);
+        logOAuth('info', '✅ Session retrieved via getSession', { 
+          hasSession: !!session,
+          expires: session?.expires
+        });
+        return session;
+      } catch (error) {
+        logOAuth('error', '❌ Session retrieval failed via getSession', { 
           error: error instanceof Error ? error.message : error 
         });
         throw error;
