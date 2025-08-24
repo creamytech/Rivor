@@ -36,21 +36,23 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Create a basic Account record
+    // Create a basic Account record with encrypted fields
     // Note: Without fresh tokens from OAuth flow, we create a placeholder
+    const placeholderToken = Buffer.from('placeholder-needs-reauth');
+    
     const account = await prisma.account.create({
       data: {
         userId: dbUser.id,
         type: 'oauth',
         provider: 'google',
         providerAccountId: (session.user as any).providerId || 'unknown',
-        // These would normally come from fresh OAuth tokens
-        access_token: 'placeholder-needs-reauth',
-        refresh_token: null,
+        // Use encrypted fields as required by schema
+        access_token_enc: placeholderToken,
+        refresh_token_enc: null,
         expires_at: null,
         token_type: 'Bearer',
         scope: 'openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar',
-        id_token: null,
+        id_token_enc: null,
         session_state: null,
       }
     });
