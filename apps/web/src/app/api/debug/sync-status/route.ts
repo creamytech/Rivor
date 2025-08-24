@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
           include: {
             _count: {
               select: {
-                emailThreads: true
+                threads: true
               }
             }
           }
@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
             syncStatus: acc.syncStatus,
             encryptionStatus: acc.encryptionStatus,
             lastSyncedAt: acc.lastSyncedAt,
-            threadCount: acc._count.emailThreads,
+            threadCount: acc._count.threads,
             hasTokenRef: !!acc.tokenRef,
             externalAccountId: acc.externalAccountId
           })),
