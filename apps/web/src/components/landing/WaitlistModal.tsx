@@ -52,10 +52,12 @@ export default function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
     if (isOpen && typeof window !== 'undefined') {
       // Simple approach - just set data attributes
       document.body.setAttribute('data-waitlist-modal-open', 'true');
+      document.body.classList.add('modal-open');
       // Add debugging
       console.log('Waitlist modal should be open');
     } else {
       document.body.removeAttribute('data-waitlist-modal-open');
+      document.body.classList.remove('modal-open');
       console.log('Waitlist modal should be closed');
     }
   }, [isOpen]);

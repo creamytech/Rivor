@@ -323,7 +323,7 @@ export default function ReportingPage() {
                   <DropdownMenuContent className="glass-dropdown w-56">
                     <DropdownMenuLabel>Show Metrics</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    {reportData?.metrics?.map((metric) => (
+                    {(reportData?.metrics || []).map((metric) => (
                       <DropdownMenuItem
                         key={metric.id}
                         onClick={() => {
@@ -366,7 +366,7 @@ export default function ReportingPage() {
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
               >
-                {reportData?.metrics
+                {(reportData?.metrics || [])
                   .filter(metric => selectedMetrics.includes(metric.id))
                   .map((metric, index) => (
                   <motion.div

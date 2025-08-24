@@ -38,11 +38,19 @@ export default function Navigation({ onWaitlistClick }: NavigationProps) {
 
   return (
     <nav 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 glass-nav-enhanced ${
         scrolled 
-          ? 'glass-card border-b border-white/20' 
-          : 'bg-transparent'
+          ? 'glass-card border-b border-white/20 backdrop-blur-xl bg-black/30 glass-glow' 
+          : 'glass-panel backdrop-blur-lg bg-black/20 border-b border-white/10'
       }`}
+      style={{
+        backdropFilter: 'blur(20px) saturate(1.2) brightness(1.1)',
+        WebkitBackdropFilter: 'blur(20px) saturate(1.2) brightness(1.1)',
+        background: scrolled 
+          ? 'rgba(0, 0, 0, 0.4)' 
+          : 'rgba(0, 0, 0, 0.25)',
+        borderImage: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent) 1',
+      }}
     >
       <div className="max-w-[1200px] mx-auto px-6 md:px-8">
         <div className="flex items-center justify-between h-16">
@@ -98,7 +106,7 @@ export default function Navigation({ onWaitlistClick }: NavigationProps) {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden glass-card border-t border-white/20"
+            className="md:hidden glass-panel backdrop-blur-xl bg-black/30 border-t border-white/20"
           >
             <div className="px-6 py-4 space-y-4">
               {navLinks.map((link) => (

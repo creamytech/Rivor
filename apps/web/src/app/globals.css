@@ -3647,6 +3647,79 @@ header:not(.md\\:hidden),
   box-shadow: 0 4px 16px var(--glass-shadow);
 }
 
+/* Page blur effect when modal is open */
+.page-blur {
+  transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.page-blur > * {
+  filter: blur(8px) brightness(0.7) saturate(0.8) !important;
+  transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* More specific targeting for the blur effect */
+.page-blur nav,
+.page-blur main,
+.page-blur footer {
+  filter: blur(8px) brightness(0.7) saturate(0.8) !important;
+  transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Exclude the modal itself from the blur effect */
+.page-blur [data-radix-dialog-overlay],
+.page-blur [data-radix-dialog-content] {
+  filter: none !important;
+}
+
+/* Alternative approach using body class for global blur */
+body.modal-open > div:not([data-radix-portal]) {
+  filter: blur(6px) brightness(0.8) saturate(0.9) !important;
+  transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Enhanced navigation glass theming */
+.glass-nav-enhanced {
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 8px 32px -8px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-nav-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.3) 20%,
+    rgba(255, 255, 255, 0.6) 50%,
+    rgba(255, 255, 255, 0.3) 80%,
+    transparent 100%
+  );
+  opacity: 0.7;
+}
+
+.glass-nav-enhanced::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.1) 25%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 75%,
+    transparent 100%
+  );
+}
+
 /* Dropdown overlays */
 .glass-dropdown {
   position: relative;
@@ -3756,6 +3829,97 @@ header:not(.md\\:hidden),
   backdrop-filter: blur(28px) saturate(1.4) !important;
   -webkit-backdrop-filter: blur(28px) saturate(1.4) !important;
   border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Comprehensive dropdown fixes for all UI components */
+/* Shadcn Select components */
+[data-radix-select-content],
+.select-content,
+[role="listbox"] {
+  background: rgba(0, 0, 0, 0.95) !important;
+  backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 20px 40px -8px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Shadcn DropdownMenu components */
+[data-radix-dropdown-menu-content],
+.dropdown-menu-content {
+  background: rgba(0, 0, 0, 0.95) !important;
+  backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 20px 40px -8px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Shadcn Popover components */
+[data-radix-popover-content],
+.popover-content {
+  background: rgba(0, 0, 0, 0.95) !important;
+  backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 20px 40px -8px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* ComboBox and Command components */
+[data-radix-combobox-content],
+[cmdk-root],
+.command-menu {
+  background: rgba(0, 0, 0, 0.95) !important;
+  backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Context Menu and Menu components */
+[data-radix-context-menu-content],
+[data-radix-menubar-content],
+.context-menu-content {
+  background: rgba(0, 0, 0, 0.95) !important;
+  backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Tooltip components */
+[data-radix-tooltip-content],
+.tooltip-content {
+  background: rgba(0, 0, 0, 0.9) !important;
+  backdrop-filter: blur(16px) saturate(1.2) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Additional fallback for any missed dropdowns */
+[role="menu"],
+[role="listbox"],
+[role="combobox"],
+.dropdown,
+.select-dropdown,
+.menu-dropdown {
+  background: rgba(0, 0, 0, 0.95) !important;
+  backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Force glass theme for all dropdown portals */
+[data-radix-portal] [data-radix-select-content],
+[data-radix-portal] [data-radix-dropdown-menu-content],
+[data-radix-portal] [data-radix-popover-content] {
+  background: rgba(0, 0, 0, 0.95) !important;
+  backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
 }
 
 /* Global dark mode fixes for any overlays */
