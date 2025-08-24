@@ -35,8 +35,14 @@ export async function POST(req: NextRequest) {
 
     // Create KMS client and generate fresh DEK
     logOAuth('info', '🔑 Generating new DEK with KMS');
-    const kmsClient = createKmsClient();
-    const { encryptedDekBlob, dekVersion } = await generateDek(kmsClient);
+    const kmsProvider = (process.env.KMS_PROVIDER as any) || 'local';
+    const kmsKeyId = process.env.KMS_KEY_ID;
+    const kmsClient = createKmsClient(kmsProvider, kmsKeyId);
+    
+    // Generate a fresh DEK and encrypt it with KMS
+    const plaintextDek = generateDek(); // This creates a 32-byte DEK
+    const encryptedDekBlob = await kmsClient.encryptDek(plaintextDek);
+    const dekVersion = 1;
 
     // Create new default organization with proper DEK
     logOAuth('info', '🏢 Creating new default organization with valid DEK');
@@ -45,7 +51,7 @@ export async function POST(req: NextRequest) {
         id: 'default',
         name: 'Default Organization',
         slug: 'default',
-        encryptedDekBlob,
+        encryptedDekBlob: Buffer.from(encryptedDekBlob),
         dekVersion,
         ephemeralMode: true,
         retentionDays: 90
