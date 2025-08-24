@@ -53,6 +53,15 @@ export async function POST(req: NextRequest) {
     });
     results.push({ type: 'SecureToken', action: 'deleted', count: deletedSecureTokens.count });
 
+    // Delete existing OAuth Account records (to force re-authentication with proper encryption)
+    const deletedAccounts = await prisma.account.deleteMany({
+      where: {
+        userId: dbUser.id,
+        provider: 'google'
+      }
+    });
+    results.push({ type: 'Account', action: 'deleted', count: deletedAccounts.count });
+
     return NextResponse.json({
       success: true,
       message: 'Accounts cleaned up successfully',
