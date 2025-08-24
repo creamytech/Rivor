@@ -43,13 +43,15 @@ export async function checkTokenHealth(userEmail: string, skipValidation = false
       action: 'health_check_start'
     });
 
-    // For JWT strategy, check EmailAccount records instead of OAuthAccount
+    // Check all possible token sources: Account (NextAuth), OAuthAccount, EmailAccount, and SecureToken
     let user;
     try {
       user = await prisma.user.findUnique({
         where: { email: userEmail },
         include: {
-          emailAccounts: true,
+          accounts: true,           // NextAuth Account model with encrypted tokens
+          oauthAccounts: true,      // Custom OAuthAccount model  
+          emailAccounts: true,      // EmailAccount with tokenRef to SecureToken
           orgMembers: {
             include: { org: true }
           }
@@ -70,26 +72,54 @@ export async function checkTokenHealth(userEmail: string, skipValidation = false
       return [];
     }
 
-    const accounts = user.emailAccounts;
+    // Collect all token sources
+    const allTokenSources: TokenHealth[] = [];
 
-    // Add debugging for account lookup  
-    logger.info('EmailAccount lookup debug', {
+    // Add debugging for all token sources
+    logger.info('All token sources debug', {
       userEmail,
       correlationId,
-      foundAccounts: accounts.map(a => ({ 
-        id: a.id,
-        provider: a.provider, 
-        userId: a.userId,
-        status: a.status,
-        encryptionStatus: a.encryptionStatus,
-        tokenStatus: a.tokenStatus,
-        tokenRef: a.tokenRef,
-        updatedAt: a.updatedAt
-      })),
-      action: 'email_account_lookup_debug'
+      nextAuthAccounts: user.accounts.length,
+      oauthAccounts: user.oauthAccounts.length,
+      emailAccounts: user.emailAccounts.length,
+      action: 'token_sources_debug'
     });
 
-    const tokenHealthPromises = accounts.map(async (account): Promise<TokenHealth> => {
+    // 1. Check NextAuth Account model (encrypted tokens)
+    for (const account of user.accounts) {
+      if (account.provider === 'google') {
+        const hasTokens = !!(account.access_token_enc || account.refresh_token_enc);
+        const isExpired = account.expires_at ? (account.expires_at * 1000) < Date.now() : false;
+        
+        allTokenSources.push({
+          provider: 'google',
+          connected: hasTokens && !isExpired,
+          expired: isExpired,
+          expiresAt: account.expires_at ? new Date(account.expires_at * 1000) : undefined,
+          scopes: account.scope ? account.scope.split(' ') : [],
+          lastUpdated: account.updatedAt,
+          services: { gmail: null, calendar: null }
+        });
+      }
+    }
+
+    // 2. Check custom OAuthAccount model
+    for (const oauthAccount of user.oauthAccounts) {
+      const isExpired = oauthAccount.expiresAt ? oauthAccount.expiresAt < new Date() : false;
+      
+      allTokenSources.push({
+        provider: oauthAccount.provider,
+        connected: !isExpired,
+        expired: isExpired,
+        expiresAt: oauthAccount.expiresAt || undefined,
+        scopes: oauthAccount.scope ? oauthAccount.scope.split(' ') : [],
+        lastUpdated: oauthAccount.updatedAt,
+        services: { gmail: null, calendar: null }
+      });
+    }
+
+    // 3. Check EmailAccount records (linked to SecureToken via tokenRef)
+    const emailAccountHealthPromises = user.emailAccounts.map(async (account): Promise<TokenHealth> => {
       try {
         const orgId = user.orgMembers?.[0]?.org?.id;
         
@@ -179,17 +209,22 @@ export async function checkTokenHealth(userEmail: string, skipValidation = false
       }
     });
 
-    const tokenHealth = await Promise.all(tokenHealthPromises);
+    // Combine EmailAccount health with other token sources
+    const emailAccountHealth = await Promise.all(emailAccountHealthPromises);
+    const allTokenHealth = [...allTokenSources, ...emailAccountHealth];
 
     logger.info('Token health check completed', {
       userEmail,
       correlationId,
-      accountCount: accounts.length,
-      connectedCount: tokenHealth.filter(t => t.connected).length,
+      totalTokenSources: allTokenHealth.length,
+      nextAuthTokens: user.accounts.length,
+      oauthTokens: user.oauthAccounts.length,  
+      emailAccounts: user.emailAccounts.length,
+      connectedCount: allTokenHealth.filter(t => t.connected).length,
       action: 'health_check_complete'
     });
 
-    return tokenHealth;
+    return allTokenHealth;
   } catch (error) {
     logger.error('Error checking token health', {
       userEmail,
