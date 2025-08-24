@@ -8,19 +8,49 @@ export function createCustomPrismaAdapter() {
 
   // Override the linkAccount method to encrypt tokens and map to encrypted fields
   adapter.linkAccount = async (account) => {
-    console.log('🔗 Linking account with KMS encryption:', {
+    console.log('🔗 Starting linkAccount with data:', {
       provider: account.provider,
+      userId: account.userId,
+      providerAccountId: account.providerAccountId,
       hasAccessToken: !!account.access_token,
-      hasRefreshToken: !!account.refresh_token
+      hasRefreshToken: !!account.refresh_token,
+      hasIdToken: !!account.id_token,
+      tokenLengths: {
+        access: account.access_token?.length || 0,
+        refresh: account.refresh_token?.length || 0,
+        id: account.id_token?.length || 0
+      }
     });
 
     try {
-      // Get default org for encryption
-      const defaultOrg = await prisma.org.findFirst();
+      // Step 1: Get default org for encryption
+      console.log('🔍 Looking for organization...');
+      const defaultOrg = await prisma.org.findFirst({
+        select: { id: true, name: true, encryptedDekBlob: true }
+      });
       
       if (!defaultOrg) {
         console.error('❌ No organization found for token encryption');
-        throw new Error('No organization found for token encryption');
+        // Try to create default org as fallback
+        console.log('🔧 Attempting to create default organization...');
+        const { generateDek, createKmsClient } = await import('@rivor/crypto');
+        const kmsClient = createKmsClient();
+        const { encryptedDekBlob, dekVersion } = await generateDek(kmsClient);
+        
+        const newOrg = await prisma.org.create({
+          data: {
+            id: 'default',
+            name: 'Default Organization',
+            slug: 'default',
+            encryptedDekBlob,
+            dekVersion,
+            ephemeralMode: true,
+            retentionDays: 90
+          }
+        });
+        console.log('✅ Created default org:', newOrg.id);
+        defaultOrg.id = newOrg.id;
+        defaultOrg.name = newOrg.name;
       }
 
       console.log('🏢 Using org for KMS encryption:', {
@@ -28,17 +58,45 @@ export function createCustomPrismaAdapter() {
         orgName: defaultOrg.name
       });
 
-      // Encrypt OAuth tokens using KMS
-      const access_token_enc = account.access_token ? 
-        await encryptForOrg(defaultOrg.id, new TextEncoder().encode(account.access_token), `oauth:${account.provider}:access`) : null;
-      const refresh_token_enc = account.refresh_token ? 
-        await encryptForOrg(defaultOrg.id, new TextEncoder().encode(account.refresh_token), `oauth:${account.provider}:refresh`) : null;
-      const id_token_enc = account.id_token ? 
-        await encryptForOrg(defaultOrg.id, new TextEncoder().encode(account.id_token), `oauth:${account.provider}:id`) : null;
+      // Step 2: Encrypt OAuth tokens using KMS
+      console.log('🔒 Starting token encryption...');
+      
+      let access_token_enc = null;
+      let refresh_token_enc = null;
+      let id_token_enc = null;
 
-      console.log('🔒 Tokens encrypted, creating Account record...');
+      if (account.access_token) {
+        console.log('🔐 Encrypting access token...');
+        access_token_enc = await encryptForOrg(
+          defaultOrg.id, 
+          new TextEncoder().encode(account.access_token), 
+          `oauth:${account.provider}:access`
+        );
+        console.log('✅ Access token encrypted, size:', access_token_enc.length);
+      }
 
-      // Create Account record directly with encrypted fields (bypass NextAuth default mapping)
+      if (account.refresh_token) {
+        console.log('🔐 Encrypting refresh token...');
+        refresh_token_enc = await encryptForOrg(
+          defaultOrg.id, 
+          new TextEncoder().encode(account.refresh_token), 
+          `oauth:${account.provider}:refresh`
+        );
+        console.log('✅ Refresh token encrypted, size:', refresh_token_enc.length);
+      }
+
+      if (account.id_token) {
+        console.log('🔐 Encrypting ID token...');
+        id_token_enc = await encryptForOrg(
+          defaultOrg.id, 
+          new TextEncoder().encode(account.id_token), 
+          `oauth:${account.provider}:id`
+        );
+        console.log('✅ ID token encrypted, size:', id_token_enc.length);
+      }
+
+      // Step 3: Create Account record
+      console.log('💾 Creating Account record in database...');
       const createdAccount = await prisma.account.create({
         data: {
           userId: account.userId!,
@@ -55,12 +113,37 @@ export function createCustomPrismaAdapter() {
         }
       });
 
-      console.log('✅ Account created with encrypted tokens:', createdAccount.id);
+      console.log('✅ Account created successfully:', {
+        id: createdAccount.id,
+        provider: createdAccount.provider,
+        userId: createdAccount.userId,
+        hasEncryptedTokens: {
+          access: !!createdAccount.access_token_enc,
+          refresh: !!createdAccount.refresh_token_enc,
+          id: !!createdAccount.id_token_enc
+        }
+      });
+      
       return createdAccount;
 
     } catch (error) {
-      console.error('❌ Failed to create encrypted account:', error);
-      throw error; // Don't fall back to plain text - fail securely
+      console.error('❌ Critical linkAccount failure:', {
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined,
+        provider: account.provider,
+        userId: account.userId
+      });
+      
+      // For debugging: don't throw immediately, log more details
+      if (error instanceof Error) {
+        console.error('Error details:', {
+          name: error.name,
+          message: error.message,
+          cause: error.cause
+        });
+      }
+      
+      throw error; // Still fail securely, but with better logging
     }
   };
 
