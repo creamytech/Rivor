@@ -360,8 +360,11 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
 
   const pageContext = getPageContext();
 
+  // Check if any modal is open
+  const isAnyModalOpen = showComposeModal || showCreateContactModal || showCreateListingModal || showScheduleMeetingModal;
+
   return (
-    <div className={`${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'} min-h-screen`}>
+    <div className={`${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'} min-h-screen ${isAnyModalOpen ? 'page-blur' : ''}`}>
       {/* Subtle Background Pattern */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 opacity-10">
         <div className="absolute w-96 h-96 top-[10%] left-[20%] rounded-full glass-surface-subtle blur-3xl" />

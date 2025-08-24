@@ -208,11 +208,11 @@ export default function SyncDebugPage() {
                   </div>
                 </div>
                 
-                {debugInfo.errors.length > 0 && (
+                {debugInfo.errors && debugInfo.errors.length > 0 && (
                   <div className="mt-4">
                     <h4 className="font-semibold text-red-600 mb-2">Errors Found:</h4>
                     <ul className="space-y-1">
-                      {debugInfo.errors.map((error, i) => (
+                      {(debugInfo.errors || []).map((error, i) => (
                         <li key={i} className="text-sm text-red-600 bg-red-50 p-2 rounded">
                           {error}
                         </li>
@@ -235,37 +235,37 @@ export default function SyncDebugPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                   <div>
                     <p className="text-sm text-gray-600">Total Tokens</p>
-                    <p className="text-2xl font-bold">{debugInfo.auth.tokenCount}</p>
+                    <p className="text-2xl font-bold">{debugInfo.auth?.tokenCount || 0}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Valid Tokens</p>
-                    <p className="text-2xl font-bold">{debugInfo.auth.validTokens}</p>
+                    <p className="text-2xl font-bold">{debugInfo.auth?.validTokens || 0}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Gmail Access</p>
-                    <Badge variant={debugInfo.auth.hasGmailScopes ? 'default' : 'destructive'}>
-                      {debugInfo.auth.hasGmailScopes ? 'Yes' : 'No'}
+                    <Badge variant={debugInfo.auth?.hasGmailScopes ? 'default' : 'destructive'}>
+                      {debugInfo.auth?.hasGmailScopes ? 'Yes' : 'No'}
                     </Badge>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Calendar Access</p>
-                    <Badge variant={debugInfo.auth.hasCalendarScopes ? 'default' : 'destructive'}>
-                      {debugInfo.auth.hasCalendarScopes ? 'Yes' : 'No'}
+                    <Badge variant={debugInfo.auth?.hasCalendarScopes ? 'default' : 'destructive'}>
+                      {debugInfo.auth?.hasCalendarScopes ? 'Yes' : 'No'}
                     </Badge>
                   </div>
                 </div>
 
-                {debugInfo.auth.tokens.length > 0 && (
+                {debugInfo.auth?.tokens && debugInfo.auth.tokens.length > 0 && (
                   <div>
                     <h4 className="font-semibold mb-2">Token Details:</h4>
                     <div className="space-y-2">
-                      {debugInfo.auth.tokens.map((token, i) => (
+                      {(debugInfo.auth?.tokens || []).map((token, i) => (
                         <div key={i} className="flex items-center gap-4 p-2 bg-gray-50 rounded">
                           <Badge variant="outline">{token.provider}</Badge>
                           <Badge variant={token.connected && !token.expired ? 'default' : 'destructive'}>
                             {token.connected && !token.expired ? 'Valid' : 'Invalid'}
                           </Badge>
-                          <span className="text-sm">{token.scopes.length} scopes</span>
+                          <span className="text-sm">{token.scopes?.length || 0} scopes</span>
                           {token.error && <span className="text-sm text-red-600">{token.error}</span>}
                         </div>
                       ))}
@@ -288,9 +288,9 @@ export default function SyncDebugPage() {
                   <div>
                     <h4 className="font-semibold mb-3 flex items-center gap-2">
                       <Mail className="h-4 w-4" />
-                      Email Accounts ({debugInfo.database.emailAccounts.length})
+                      Email Accounts ({debugInfo.database?.emailAccounts?.length || 0})
                     </h4>
-                    {debugInfo.database.emailAccounts.map((account, i) => (
+                    {(debugInfo.database?.emailAccounts || []).map((account, i) => (
                       <div key={i} className="p-3 border rounded mb-2">
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-mono text-sm">{account.email}</span>
@@ -313,9 +313,9 @@ export default function SyncDebugPage() {
                   <div>
                     <h4 className="font-semibold mb-3 flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
-                      Calendar Accounts ({debugInfo.database.calendarAccounts.length})
+                      Calendar Accounts ({debugInfo.database?.calendarAccounts?.length || 0})
                     </h4>
-                    {debugInfo.database.calendarAccounts.map((account, i) => (
+                    {(debugInfo.database?.calendarAccounts || []).map((account, i) => (
                       <div key={i} className="p-3 border rounded mb-2">
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-mono text-sm">{account.provider}</span>
@@ -344,25 +344,25 @@ export default function SyncDebugPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <p className="text-sm text-gray-600">Client ID</p>
-                    <Badge variant={debugInfo.googleApi.clientIdSet ? 'default' : 'destructive'}>
-                      {debugInfo.googleApi.clientIdSet ? 'Set' : 'Missing'}
+                    <Badge variant={debugInfo.googleApi?.clientIdSet ? 'default' : 'destructive'}>
+                      {debugInfo.googleApi?.clientIdSet ? 'Set' : 'Missing'}
                     </Badge>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Client Secret</p>
-                    <Badge variant={debugInfo.googleApi.clientSecretSet ? 'default' : 'destructive'}>
-                      {debugInfo.googleApi.clientSecretSet ? 'Set' : 'Missing'}
+                    <Badge variant={debugInfo.googleApi?.clientSecretSet ? 'default' : 'destructive'}>
+                      {debugInfo.googleApi?.clientSecretSet ? 'Set' : 'Missing'}
                     </Badge>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Pub/Sub</p>
-                    <Badge variant={debugInfo.googleApi.pubsubConfigured ? 'default' : 'destructive'}>
-                      {debugInfo.googleApi.pubsubConfigured ? 'Configured' : 'Missing'}
+                    <Badge variant={debugInfo.googleApi?.pubsubConfigured ? 'default' : 'destructive'}>
+                      {debugInfo.googleApi?.pubsubConfigured ? 'Configured' : 'Missing'}
                     </Badge>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Scopes</p>
-                    <p className="text-xs font-mono">{debugInfo.googleApi.scopesConfigured}</p>
+                    <p className="text-xs font-mono">{debugInfo.googleApi?.scopesConfigured || 'Not set'}</p>
                   </div>
                 </div>
               </CardContent>
@@ -378,7 +378,7 @@ export default function SyncDebugPage() {
                   <div>
                     <h4 className="font-semibold mb-3">Recent Sync Logs</h4>
                     <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {debugInfo.sync.recentSyncLogs.map((log, i) => (
+                      {(debugInfo.sync?.recentSyncLogs || []).map((log, i) => (
                         <div key={i} className="flex items-center justify-between p-2 bg-gray-50 rounded text-sm">
                           <span className="flex items-center gap-2">
                             {log.success ? 
@@ -400,9 +400,9 @@ export default function SyncDebugPage() {
                     <div className="space-y-2">
                       <div>
                         <p className="text-sm text-gray-600">Recent Push Count (24h)</p>
-                        <p className="text-2xl font-bold">{debugInfo.sync.recentPushNotifications}</p>
+                        <p className="text-2xl font-bold">{debugInfo.sync?.recentPushNotifications || 0}</p>
                       </div>
-                      {debugInfo.sync.lastPushReceived && (
+                      {debugInfo.sync?.lastPushReceived && (
                         <div>
                           <p className="text-sm text-gray-600">Last Push Received</p>
                           <p className="text-sm">{new Date(debugInfo.sync.lastPushReceived).toLocaleString()}</p>
