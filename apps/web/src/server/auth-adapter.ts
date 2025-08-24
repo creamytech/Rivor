@@ -7,8 +7,13 @@ import { logOAuth } from "@/lib/oauth-logger";
 export function createCustomPrismaAdapter() {
   const adapter = PrismaAdapter(prisma);
 
-  // Override only linkAccount - let NextAuth handle sessions normally
+  // Store original methods
   const originalLinkAccount = adapter.linkAccount;
+  const originalGetSessionAndUser = adapter.getSessionAndUser;
+  const originalGetUser = adapter.getUser;
+  const originalGetAccount = adapter.getAccount;
+
+  // Override only linkAccount - let NextAuth handle sessions normally
   adapter.linkAccount = async (account) => {
     const linkData = {
       provider: account.provider,
@@ -172,6 +177,51 @@ export function createCustomPrismaAdapter() {
       throw error; // Still fail securely, but with better logging
     }
   };
+
+  // Ensure session retrieval works properly
+  if (originalGetSessionAndUser) {
+    adapter.getSessionAndUser = async (sessionToken) => {
+      logOAuth('info', '🔍 Getting session and user', { 
+        sessionTokenPreview: sessionToken.substring(0, 20) + '...' 
+      });
+      
+      try {
+        const result = await originalGetSessionAndUser(sessionToken);
+        logOAuth('info', '✅ Session and user retrieved', { 
+          hasSession: !!result?.session,
+          hasUser: !!result?.user,
+          userEmail: result?.user?.email
+        });
+        return result;
+      } catch (error) {
+        logOAuth('error', '❌ Session retrieval failed', { 
+          error: error instanceof Error ? error.message : error 
+        });
+        throw error;
+      }
+    };
+  }
+
+  // Ensure user retrieval works
+  if (originalGetUser) {
+    adapter.getUser = async (id) => {
+      logOAuth('info', '🔍 Getting user by ID', { userId: id });
+      
+      try {
+        const user = await originalGetUser(id);
+        logOAuth('info', '✅ User retrieved', { 
+          found: !!user,
+          email: user?.email
+        });
+        return user;
+      } catch (error) {
+        logOAuth('error', '❌ User retrieval failed', { 
+          error: error instanceof Error ? error.message : error 
+        });
+        throw error;
+      }
+    };
+  }
 
   return adapter;
 }
