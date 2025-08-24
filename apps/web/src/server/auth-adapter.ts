@@ -7,7 +7,8 @@ import { logOAuth } from "@/lib/oauth-logger";
 export function createCustomPrismaAdapter() {
   const adapter = PrismaAdapter(prisma);
 
-  // Override the linkAccount method to encrypt tokens and map to encrypted fields
+  // Override only linkAccount - let NextAuth handle sessions normally
+  const originalLinkAccount = adapter.linkAccount;
   adapter.linkAccount = async (account) => {
     const linkData = {
       provider: account.provider,
