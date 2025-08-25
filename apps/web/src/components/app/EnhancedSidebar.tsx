@@ -268,8 +268,34 @@ export default function EnhancedSidebar({
                 whileTap={{ scale: 0.95 }}
               >
                 {isCollapsed ? (
-                  // Collapsed - Show condensed logo with theme-based switching
-                  <div className="relative w-8 h-8 overflow-hidden">
+                  // Collapsed - Enhanced liquid glass condensed logo
+                  <div className="relative w-8 h-8 overflow-visible">
+                    {/* Glass backdrop blur layer */}
+                    <div 
+                      className="absolute inset-0 rounded-xl"
+                      style={{
+                        background: theme === 'black' 
+                          ? 'rgba(255, 255, 255, 0.05)' 
+                          : 'rgba(0, 0, 0, 0.05)',
+                        backdropFilter: 'blur(20px) saturate(1.8)',
+                        WebkitBackdropFilter: 'blur(20px) saturate(1.8)',
+                        boxShadow: `
+                          inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                          inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+                          0 4px 12px rgba(6, 182, 212, 0.15),
+                          0 8px 25px rgba(6, 182, 212, 0.1)
+                        `,
+                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                      }}
+                    />
+                    {/* Floating shimmer effect */}
+                    <div 
+                      className="absolute inset-0 rounded-xl opacity-40"
+                      style={{
+                        background: 'linear-gradient(135deg, transparent 30%, rgba(6, 182, 212, 0.1) 50%, transparent 70%)',
+                        animation: 'shimmer 3s ease-in-out infinite'
+                      }}
+                    />
                     <motion.img
                       key={`logo-condensed-${theme}`}
                       src={theme === 'black' 
@@ -277,25 +303,75 @@ export default function EnhancedSidebar({
                         : '/images/Light%20Mode%20Sidebar.svg'
                       }
                       alt="Logo"
-                      className="w-full h-full object-contain"
+                      className="relative w-full h-full object-contain z-10"
                       initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
                       animate={{ opacity: 1, scale: 1, rotate: 0 }}
                       exit={{ opacity: 0, scale: 0.8, rotate: 10 }}
                       transition={{ 
-                        duration: 0.6,
+                        duration: 0.8,
                         ease: [0.4, 0, 0.2, 1],
-                        opacity: { duration: 0.4 },
-                        scale: { duration: 0.5, ease: "backOut" },
-                        rotate: { duration: 0.6 }
+                        opacity: { duration: 0.5 },
+                        scale: { duration: 0.6, ease: "backOut" },
+                        rotate: { duration: 0.8 }
                       }}
                       style={{
-                        filter: 'drop-shadow(0 0 8px rgba(6, 182, 212, 0.3))'
+                        filter: `
+                          drop-shadow(0 0 8px rgba(6, 182, 212, 0.4))
+                          drop-shadow(0 0 16px rgba(6, 182, 212, 0.2))
+                          brightness(1.1)
+                          saturate(1.2)
+                        `,
+                        mixBlendMode: 'screen'
                       }}
+                      whileHover={{
+                        scale: 1.05,
+                        filter: `
+                          drop-shadow(0 0 12px rgba(6, 182, 212, 0.6))
+                          drop-shadow(0 0 24px rgba(6, 182, 212, 0.3))
+                          brightness(1.2)
+                          saturate(1.3)
+                        `
+                      }}
+                      transition={{ duration: 0.3 }}
                     />
                   </div>
                 ) : (
-                  // Expanded - Show full wordmark logo with theme-based switching
-                  <div className="relative h-10 overflow-hidden flex items-center justify-start">
+                  // Expanded - Enhanced liquid glass wordmark logo
+                  <div className="relative h-10 overflow-visible flex items-center justify-start">
+                    {/* Glass backdrop container */}
+                    <div 
+                      className="absolute -inset-2 rounded-2xl"
+                      style={{
+                        background: theme === 'black' 
+                          ? 'rgba(255, 255, 255, 0.03)' 
+                          : 'rgba(0, 0, 0, 0.03)',
+                        backdropFilter: 'blur(25px) saturate(1.8) brightness(1.1)',
+                        WebkitBackdropFilter: 'blur(25px) saturate(1.8) brightness(1.1)',
+                        boxShadow: `
+                          inset 0 1px 0 rgba(255, 255, 255, 0.08),
+                          inset 0 -1px 0 rgba(0, 0, 0, 0.05),
+                          0 6px 20px rgba(6, 182, 212, 0.1),
+                          0 12px 35px rgba(6, 182, 212, 0.08)
+                        `,
+                        border: '1px solid rgba(255, 255, 255, 0.08)'
+                      }}
+                    />
+                    {/* Liquid morphing border animation */}
+                    <div 
+                      className="absolute -inset-2 rounded-2xl opacity-60"
+                      style={{
+                        background: 'linear-gradient(45deg, rgba(6, 182, 212, 0.1) 0%, transparent 25%, rgba(147, 51, 234, 0.1) 50%, transparent 75%, rgba(6, 182, 212, 0.1) 100%)',
+                        animation: 'liquidMorph 8s ease-in-out infinite, gradientShift 6s ease-in-out infinite'
+                      }}
+                    />
+                    {/* Floating particles effect */}
+                    <div 
+                      className="absolute inset-0 rounded-2xl"
+                      style={{
+                        background: 'radial-gradient(circle at 20% 20%, rgba(6, 182, 212, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(147, 51, 234, 0.1) 0%, transparent 50%)',
+                        animation: 'float 4s ease-in-out infinite'
+                      }}
+                    />
                     <motion.img
                       key={`logo-full-${theme}`}
                       src={theme === 'black' 
@@ -303,21 +379,37 @@ export default function EnhancedSidebar({
                         : '/images/Full%20Sidebar%20Light%20Mode.svg'
                       }
                       alt="Rivor"
-                      className="h-full w-auto object-contain"
+                      className="relative h-full w-auto object-contain z-10"
                       initial={{ opacity: 0, x: -20, scale: 0.9 }}
                       animate={{ opacity: 1, x: 0, scale: 1 }}
                       exit={{ opacity: 0, x: 20, scale: 0.9 }}
                       transition={{ 
-                        duration: 0.6,
+                        duration: 0.8,
                         ease: [0.4, 0, 0.2, 1],
-                        opacity: { duration: 0.4 },
-                        x: { duration: 0.5 },
-                        scale: { duration: 0.5, ease: "backOut" }
+                        opacity: { duration: 0.5 },
+                        x: { duration: 0.6 },
+                        scale: { duration: 0.6, ease: "backOut" }
                       }}
                       style={{
-                        filter: 'drop-shadow(0 0 8px rgba(6, 182, 212, 0.3))',
-                        maxWidth: '200px'
+                        filter: `
+                          drop-shadow(0 0 12px rgba(6, 182, 212, 0.4))
+                          drop-shadow(0 0 20px rgba(6, 182, 212, 0.2))
+                          brightness(1.1)
+                          saturate(1.2)
+                        `,
+                        maxWidth: '200px',
+                        mixBlendMode: 'screen'
                       }}
+                      whileHover={{
+                        scale: 1.02,
+                        filter: `
+                          drop-shadow(0 0 16px rgba(6, 182, 212, 0.6))
+                          drop-shadow(0 0 30px rgba(6, 182, 212, 0.3))
+                          brightness(1.2)
+                          saturate(1.3)
+                        `
+                      }}
+                      transition={{ duration: 0.3 }}
                     />
                   </div>
                 )}
