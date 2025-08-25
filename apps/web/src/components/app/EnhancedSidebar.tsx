@@ -273,8 +273,8 @@ export default function EnhancedSidebar({
                     <motion.img
                       key={`logo-${theme}`}
                       src={theme === 'black' 
-                        ? '/images/Dark Mode Sidebar' 
-                        : '/images/Light Mode Sidebar'
+                        ? '/images/Dark%20mode%20Sidebar.svg' 
+                        : '/images/Light%20Mode%20Sidebar.svg'
                       }
                       alt="Logo"
                       className="w-full h-full object-contain"
@@ -300,8 +300,8 @@ export default function EnhancedSidebar({
                       <motion.img
                         key={`logo-expanded-${theme}`}
                         src={theme === 'black' 
-                          ? '/images/Dark Mode Sidebar' 
-                          : '/images/Light Mode Sidebar'
+                          ? '/images/Dark%20mode%20Sidebar.svg' 
+                          : '/images/Light%20Mode%20Sidebar.svg'
                         }
                         alt="Logo"
                         className="w-full h-full object-contain"
