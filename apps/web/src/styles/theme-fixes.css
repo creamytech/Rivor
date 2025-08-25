@@ -378,17 +378,43 @@ body[data-permanent-theme="true"] * {
   color: #000000 !important;
 }
 
-/* ULTRA HIGH SPECIFICITY FOR DROPDOWN ITEMS IN LIGHT MODE */
-html .glass-theme-white [data-radix-select-content] [data-radix-select-item],
-html .glass-theme-white [data-radix-dropdown-menu-content] [data-radix-dropdown-menu-item],
-html .glass-theme-white [data-radix-popover-content] [data-radix-select-item] {
+/* NUCLEAR SPECIFICITY FOR DROPDOWN ITEMS - ULTIMATE FIX */
+body.glass-theme-white [data-radix-select-content] [data-radix-select-item],
+body.glass-theme-white [data-radix-dropdown-menu-content] [data-radix-dropdown-menu-item],
+body.glass-theme-white [data-radix-popover-content] [data-radix-select-item],
+body.glass-theme-white [data-radix-select-content] *,
+body.glass-theme-white [data-radix-dropdown-menu-content] *,
+body.glass-theme-white [data-radix-popover-content] * {
   color: #000000 !important;
 }
 
-html .glass-theme-black [data-radix-select-content] [data-radix-select-item],
-html .glass-theme-black [data-radix-dropdown-menu-content] [data-radix-dropdown-menu-item],
-html .glass-theme-black [data-radix-popover-content] [data-radix-select-item] {
+body.glass-theme-black [data-radix-select-content] [data-radix-select-item],
+body.glass-theme-black [data-radix-dropdown-menu-content] [data-radix-dropdown-menu-item],
+body.glass-theme-black [data-radix-popover-content] [data-radix-select-item],
+body.glass-theme-black [data-radix-select-content] *,
+body.glass-theme-black [data-radix-dropdown-menu-content] *,
+body.glass-theme-black [data-radix-popover-content] * {
   color: #ffffff !important;
+}
+
+/* FORCE OVERRIDE ANY GLOBAL COLOR RULES */
+[data-radix-select-content] *,
+[data-radix-dropdown-menu-content] *,
+[data-radix-popover-content] * {
+  color: inherit !important;
+}
+
+/* SPECIFIC OVERRIDES FOR LIGHT MODE DROPDOWNS */
+.glass-theme-white [data-radix-select-content],
+.glass-theme-white [data-radix-dropdown-menu-content],
+.glass-theme-white [data-radix-popover-content] {
+  color: #000000 !important;
+}
+
+.glass-theme-white [data-radix-select-content] *,
+.glass-theme-white [data-radix-dropdown-menu-content] *,
+.glass-theme-white [data-radix-popover-content] * {
+  color: #000000 !important;
 }
 
 /* Select trigger improvements */
@@ -601,14 +627,14 @@ html .glass-theme-black [data-radix-popover-content] [data-radix-select-item] {
   color: #1a1a1a !important;
 }
 
-/* Prevent color inheritance issues - BUT EXCLUDE DROPDOWNS */
-.glass-theme-white *:not([data-radix-select-content] *):not([data-radix-dropdown-menu-content] *):not([data-radix-popover-content] *):not(.select-content *):not(.dropdown-content *) {
+/* DISABLE UNIVERSAL COLOR INHERITANCE - CAUSES DROPDOWN ISSUES */
+/* .glass-theme-white *:not([data-radix-select-content] *):not([data-radix-dropdown-menu-content] *):not([data-radix-popover-content] *):not(.select-content *):not(.dropdown-content *) {
   color: #1a1a1a !important;
 }
 
 .glass-theme-black *:not([data-radix-select-content] *):not([data-radix-dropdown-menu-content] *):not([data-radix-popover-content] *):not(.select-content *):not(.dropdown-content *) {
   color: #ffffff !important;
-}
+} */
 
 /* Override for specific elements that need different colors */
 .glass-theme-white .text-muted,
@@ -725,15 +751,20 @@ html .glass-theme-black [data-radix-popover-content] [data-radix-select-item] {
   fill: rgba(0, 0, 0, 0.7) !important;
 }
 
-/* Fix AI Assistant page chat bubble contrast issues */
+/* Fix AI Assistant page chat bubble contrast issues - ENHANCED */
 .glass-theme-black .assistant-page .chat-bubble,
 .glass-theme-black .assistant-page .message-bubble,
 .glass-theme-black .assistant-page .ai-bubble,
-.glass-theme-black .assistant-page .user-bubble {
-  background-color: rgba(255, 255, 255, 0.12) !important;
-  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+.glass-theme-black .assistant-page .user-bubble,
+.glass-theme-black .glass-task-card,
+.glass-theme-black .glass-task-card.glass-priority-high,
+.glass-theme-black .glass-task-card.glass-status-in-progress {
+  background-color: rgba(0, 0, 0, 0.85) !important;
+  border: 2px solid rgba(255, 255, 255, 0.4) !important;
   color: #ffffff !important;
-  backdrop-filter: blur(12px) !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  opacity: 1 !important;
 }
 
 .glass-theme-white .assistant-page .chat-bubble,
@@ -745,14 +776,16 @@ html .glass-theme-black [data-radix-popover-content] [data-radix-select-item] {
   color: #000000 !important;
 }
 
-/* AI Assistant page specific elements */
+/* AI Assistant page specific elements - ENHANCED */
 .glass-theme-black .assistant-page .glass-card,
 .glass-theme-black .assistant-page .message-container,
-.glass-theme-black .assistant-page .chat-container {
-  background-color: rgba(255, 255, 255, 0.12) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+.glass-theme-black .assistant-page .chat-container,
+.glass-theme-black .glass-task-card {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
   color: #ffffff !important;
-  backdrop-filter: blur(12px) !important;
+  backdrop-filter: blur(15px) !important;
+  opacity: 1 !important;
 }
 
 .glass-theme-white .assistant-page .glass-card,
