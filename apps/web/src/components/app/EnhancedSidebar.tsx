@@ -272,10 +272,7 @@ export default function EnhancedSidebar({
                   <div className="relative w-8 h-8 overflow-hidden">
                     <motion.img
                       key={`logo-${theme}`}
-                      src={theme === 'black' 
-                        ? '/images/Dark%20mode%20Sidebar.svg' 
-                        : '/images/Light%20Mode%20Sidebar.svg'
-                      }
+                      src='/images/Light%20Mode%20Sidebar.svg'
                       alt="Logo"
                       className="w-full h-full object-contain"
                       initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
