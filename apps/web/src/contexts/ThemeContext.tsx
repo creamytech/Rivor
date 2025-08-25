@@ -41,6 +41,46 @@ export const ThemeProvider: React.FC<GlassThemeProviderProps> = ({ children }) =
   useEffect(() => {
     const root = document.documentElement;
     
+    // CRITICAL: Ensure portals inherit theme context
+    const applyThemeToPortals = () => {
+      // Find all Radix portals and apply theme class
+      const portals = document.querySelectorAll('[data-radix-portal]');
+      portals.forEach(portal => {
+        // Remove existing theme classes
+        portal.classList.remove('glass-theme-black', 'glass-theme-white');
+        // Add current theme class
+        portal.classList.add(`glass-theme-${theme}`);
+        // Also set data attribute for CSS targeting
+        portal.setAttribute('data-theme', theme);
+      });
+    };
+    
+    // Apply immediately
+    applyThemeToPortals();
+    
+    // Also observe for new portals being added
+    const observer = new MutationObserver((mutations) => {
+      let shouldApplyTheme = false;
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node instanceof Element && node.hasAttribute('data-radix-portal')) {
+            shouldApplyTheme = true;
+          }
+        });
+      });
+      if (shouldApplyTheme) {
+        applyThemeToPortals();
+      }
+    });
+    
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+    
+    // Cleanup observer
+    const cleanup = () => observer.disconnect();
+    
     // Check if this is a permanent theme page (login, root, etc.)
     const isPermanentTheme = document.body.getAttribute('data-permanent-theme') === 'true' ||
                            document.documentElement.getAttribute('data-permanent-theme') === 'black' ||
@@ -131,6 +171,9 @@ export const ThemeProvider: React.FC<GlassThemeProviderProps> = ({ children }) =
 
     // Create liquid glass animations
     createGlassAnimations(theme);
+    
+    // Cleanup function
+    return cleanup;
   }, [theme]);
 
   const createGlassAnimations = (currentTheme: GlassTheme) => {

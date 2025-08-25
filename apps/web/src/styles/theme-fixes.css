@@ -412,11 +412,40 @@ body.glass-theme-black [data-radix-popover-content] * {
   color: #ffffff !important;
 }
 
-/* FORCE OVERRIDE ANY GLOBAL COLOR RULES */
-[data-radix-select-content] *,
-[data-radix-dropdown-menu-content] *,
-[data-radix-popover-content] * {
-  color: inherit !important;
+/* REMOVE PROBLEMATIC UNIVERSAL INHERITANCE - CAUSES CONFLICTS */
+
+/* PORTAL THEME CONTEXT INHERITANCE - CRITICAL FIX */
+body.glass-theme-white [data-radix-portal] [data-radix-select-content],
+body.glass-theme-white [data-radix-portal] [data-radix-dropdown-menu-content],
+body.glass-theme-white [data-radix-portal] [data-radix-popover-content] {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(0, 0, 0, 0.2) !important;
+  color: #000000 !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+}
+
+body.glass-theme-black [data-radix-portal] [data-radix-select-content],
+body.glass-theme-black [data-radix-portal] [data-radix-dropdown-menu-content],
+body.glass-theme-black [data-radix-portal] [data-radix-popover-content] {
+  background: rgba(0, 0, 0, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* PORTAL CONTENT INHERITANCE */
+body.glass-theme-white [data-radix-portal] [data-radix-select-content] *,
+body.glass-theme-white [data-radix-portal] [data-radix-dropdown-menu-content] *,
+body.glass-theme-white [data-radix-portal] [data-radix-popover-content] * {
+  color: #000000 !important;
+}
+
+body.glass-theme-black [data-radix-portal] [data-radix-select-content] *,
+body.glass-theme-black [data-radix-portal] [data-radix-dropdown-menu-content] *,
+body.glass-theme-black [data-radix-portal] [data-radix-popover-content] * {
+  color: #ffffff !important;
 }
 
 /* SPECIFIC OVERRIDES FOR LIGHT MODE DROPDOWNS */
