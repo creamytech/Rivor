@@ -3689,9 +3689,9 @@ header:not(.md\\:hidden),
   filter: none !important;
 }
 
-/* Waitlist modal blur - only for waitlist modal */
+/* Waitlist modal blur - DISABLED */
 body.modal-open[data-waitlist-modal-open="true"] > div:not([data-radix-portal]) {
-  filter: blur(6px) brightness(0.8) saturate(0.9) !important;
+  filter: none !important;
   transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
