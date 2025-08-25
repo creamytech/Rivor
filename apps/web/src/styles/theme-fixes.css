@@ -292,7 +292,7 @@ body[data-permanent-theme="true"] * {
   border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Enhanced dropdown and select improvements */
+/* Enhanced dropdown and select improvements - CRITICAL FIX */
 .glass-theme-black [data-radix-select-content],
 .glass-theme-black [data-radix-dropdown-menu-content],
 .glass-theme-black [data-radix-popover-content],
@@ -317,7 +317,20 @@ body[data-permanent-theme="true"] * {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
 }
 
-/* Dropdown item improvements */
+/* FORCE dropdown text colors to override universal selectors */
+.glass-theme-white [data-radix-select-content],
+.glass-theme-white [data-radix-dropdown-menu-content],
+.glass-theme-white [data-radix-popover-content] {
+  color: #000000 !important;
+}
+
+.glass-theme-black [data-radix-select-content],
+.glass-theme-black [data-radix-dropdown-menu-content],
+.glass-theme-black [data-radix-popover-content] {
+  color: #ffffff !important;
+}
+
+/* Dropdown item improvements - ENHANCED WITH HIGHER SPECIFICITY */
 .glass-theme-black [data-radix-select-item],
 .glass-theme-black [data-radix-dropdown-menu-item],
 .glass-theme-black .select-item,
@@ -341,6 +354,7 @@ body[data-permanent-theme="true"] * {
   color: #ffffff !important;
 }
 
+/* WHITE THEME DROPDOWN ITEMS - ENHANCED SPECIFICITY */
 .glass-theme-white [data-radix-select-item],
 .glass-theme-white [data-radix-dropdown-menu-item],
 .glass-theme-white .select-item,
@@ -362,6 +376,19 @@ body[data-permanent-theme="true"] * {
 .glass-theme-white [data-radix-select-item][data-state="checked"] {
   background-color: rgba(0, 0, 0, 0.15) !important;
   color: #000000 !important;
+}
+
+/* ULTRA HIGH SPECIFICITY FOR DROPDOWN ITEMS IN LIGHT MODE */
+html .glass-theme-white [data-radix-select-content] [data-radix-select-item],
+html .glass-theme-white [data-radix-dropdown-menu-content] [data-radix-dropdown-menu-item],
+html .glass-theme-white [data-radix-popover-content] [data-radix-select-item] {
+  color: #000000 !important;
+}
+
+html .glass-theme-black [data-radix-select-content] [data-radix-select-item],
+html .glass-theme-black [data-radix-dropdown-menu-content] [data-radix-dropdown-menu-item],
+html .glass-theme-black [data-radix-popover-content] [data-radix-select-item] {
+  color: #ffffff !important;
 }
 
 /* Select trigger improvements */
@@ -574,12 +601,12 @@ body[data-permanent-theme="true"] * {
   color: #1a1a1a !important;
 }
 
-/* Prevent color inheritance issues */
-.glass-theme-white * {
+/* Prevent color inheritance issues - BUT EXCLUDE DROPDOWNS */
+.glass-theme-white *:not([data-radix-select-content] *):not([data-radix-dropdown-menu-content] *):not([data-radix-popover-content] *):not(.select-content *):not(.dropdown-content *) {
   color: #1a1a1a !important;
 }
 
-.glass-theme-black * {
+.glass-theme-black *:not([data-radix-select-content] *):not([data-radix-dropdown-menu-content] *):not([data-radix-popover-content] *):not(.select-content *):not(.dropdown-content *) {
   color: #ffffff !important;
 }
 
@@ -703,9 +730,10 @@ body[data-permanent-theme="true"] * {
 .glass-theme-black .assistant-page .message-bubble,
 .glass-theme-black .assistant-page .ai-bubble,
 .glass-theme-black .assistant-page .user-bubble {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
   color: #ffffff !important;
+  backdrop-filter: blur(12px) !important;
 }
 
 .glass-theme-white .assistant-page .chat-bubble,
@@ -721,9 +749,10 @@ body[data-permanent-theme="true"] * {
 .glass-theme-black .assistant-page .glass-card,
 .glass-theme-black .assistant-page .message-container,
 .glass-theme-black .assistant-page .chat-container {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   color: #ffffff !important;
+  backdrop-filter: blur(12px) !important;
 }
 
 .glass-theme-white .assistant-page .glass-card,
