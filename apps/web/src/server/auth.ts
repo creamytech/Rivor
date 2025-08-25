@@ -8,6 +8,8 @@ import { getEnv } from "./env";
 import { encryptForOrg } from "./crypto";
 import { logger } from "@/lib/logger";
 import { handleOAuthCallback, isDuplicateCallback, type OAuthCallbackData } from "./onboarding";
+import { enqueueTokenEncryption, enqueueOnboarding, enqueueOrgSetup } from "./auth-background";
+import { syncUserSessions } from "./session-sync";
 import { validateAndLogStartupConfig } from "./env";
 import { createCustomPrismaAdapter } from "./auth-adapter";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
@@ -103,7 +105,7 @@ export const authOptions: NextAuthOptions = {
   session: { 
     strategy: "database",
     maxAge: 24 * 60 * 60, // 24 hours
-    updateAge: 60 * 60,   // 1 hour - refresh session
+    updateAge: 5 * 60,    // 5 minutes - faster session sync
   },
   cookies: {
     sessionToken: {
@@ -149,14 +151,26 @@ export const authOptions: NextAuthOptions = {
         logger.authEvent('signin', user.email, account.provider, true);
       }
       
-      // Optionally try to set up additional resources in background
-      // but don't block the authentication flow
-      if (account?.provider && user.email) {
-        logger.info('Setting up resources for user', {
-          userId: user.email,
-          action: 'setup_resources',
-          metadata: { provider: account.provider }
-        });
+      // Trigger cross-device session sync for same Google account
+      if (user.email) {
+        try {
+          const dbUser = await prisma.user.findUnique({ where: { email: user.email } });
+          if (dbUser) {
+            // Sync sessions across devices asynchronously
+            syncUserSessions(dbUser.id).catch(error => {
+              logger.error('Session sync failed during signIn', { 
+                userId: dbUser.id, 
+                error: error?.message || error 
+              });
+            });
+            console.log('✅ Session sync triggered for cross-device auth');
+          }
+        } catch (error) {
+          logger.error('Failed to trigger session sync', { 
+            userEmail: user.email, 
+            error: error?.message || error 
+          });
+        }
       }
     },
     
@@ -238,129 +252,87 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async jwt({ token, user, account, profile }) {
-      // On sign in (including re-auth), ensure user exists first
+      // On sign in (including re-auth), perform minimal operations for fast auth
       if (user && account) {
-        console.log('🔐 JWT callback triggered:', {
+        console.log('🔐 JWT callback triggered (optimized):', {
           userEmail: user.email,
           accountProvider: account.provider,
-          hasAccessToken: !!account.access_token,
-          hasRefreshToken: !!account.refresh_token
+          hasAccessToken: !!account.access_token
         });
         
         try {
-          // First, ensure basic user record exists (fallback safety)
+          // 1. Ensure basic user record exists (minimal required operation)
           if (user.email) {
-            try {
-              await prisma.user.upsert({
-                where: { email: user.email },
-                update: {
-                  name: user.name || undefined,
-                  image: user.image || undefined,
-                },
-                create: {
-                  email: user.email,
-                  name: user.name || null,
-                  image: user.image || null,
-                  emailVerified: new Date(),
-                },
-              });
-              console.log('✅ User record created/updated for:', user.email);
-            } catch (userError) {
-              console.error('❌ Failed to create user record:', userError);
-              // Don't throw - continue with auth flow
-            }
+            await prisma.user.upsert({
+              where: { email: user.email },
+              update: {
+                name: user.name || undefined,
+                image: user.image || undefined,
+              },
+              create: {
+                email: user.email,
+                name: user.name || null,
+                image: user.image || null,
+                emailVerified: new Date(),
+              },
+            });
+            console.log('✅ User record created/updated for:', user.email);
           }
 
-          // Ensure NextAuth Account record exists (critical for token storage)
+          // 2. Create minimal Account record WITHOUT encryption (defer to background)
           const externalAccountId = account.providerAccountId || (profile as unknown)?.sub || (profile as unknown)?.id || 'unknown';
           const dbUser = await prisma.user.findUnique({ where: { email: user.email } });
           
           if (dbUser) {
-            try {
-              // Get default org for encryption
-              const defaultOrg = await prisma.org.findFirst();
-              console.log('🏢 Org lookup result:', {
-                orgFound: !!defaultOrg,
-                orgId: defaultOrg?.id,
-                orgName: defaultOrg?.name
-              });
-              
-              if (!defaultOrg) {
-                console.error('❌ No organization found for token encryption');
-                throw new Error('No organization found for token encryption');
-              }
-
-              // Encrypt OAuth tokens using KMS
-              const accessTokenEnc = account.access_token ? 
-                await encryptForOrg(defaultOrg.id, new TextEncoder().encode(account.access_token), `oauth:${account.provider}:access`) : null;
-              const refreshTokenEnc = account.refresh_token ? 
-                await encryptForOrg(defaultOrg.id, new TextEncoder().encode(account.refresh_token), `oauth:${account.provider}:refresh`) : null;
-              const idTokenEnc = account.id_token ? 
-                await encryptForOrg(defaultOrg.id, new TextEncoder().encode(account.id_token), `oauth:${account.provider}:id`) : null;
-
-              // Create/update NextAuth Account record with encrypted tokens
-              await prisma.account.upsert({
-                where: {
-                  provider_providerAccountId: {
-                    provider: account.provider,
-                    providerAccountId: externalAccountId
-                  }
-                },
-                update: {
-                  access_token_enc: accessTokenEnc,
-                  refresh_token_enc: refreshTokenEnc,
-                  expires_at: account.expires_at,
-                  token_type: account.token_type,
-                  scope: account.scope,
-                  id_token_enc: idTokenEnc,
-                  session_state: account.session_state,
-                },
-                create: {
-                  userId: dbUser.id,
-                  type: account.type || 'oauth',
+            await prisma.account.upsert({
+              where: {
+                provider_providerAccountId: {
                   provider: account.provider,
-                  providerAccountId: externalAccountId,
-                  access_token_enc: accessTokenEnc,
-                  refresh_token_enc: refreshTokenEnc,
-                  expires_at: account.expires_at,
-                  token_type: account.token_type,
-                  scope: account.scope,
-                  id_token_enc: idTokenEnc,
-                  session_state: account.session_state,
+                  providerAccountId: externalAccountId
                 }
-              });
-              console.log('✅ NextAuth Account record created/updated with encrypted tokens');
-            } catch (accountError) {
-              console.error('❌ Failed to create Account record:', accountError);
-              console.error('Account error details:', {
+              },
+              update: {
+                expires_at: account.expires_at,
+                token_type: account.token_type,
+                scope: account.scope,
+                session_state: account.session_state,
+              },
+              create: {
+                userId: dbUser.id,
+                type: account.type || 'oauth',
                 provider: account.provider,
-                hasAccessToken: !!account.access_token,
-                hasRefreshToken: !!account.refresh_token,
-                orgExists: !!defaultOrg,
-                orgId: defaultOrg?.id
-              });
-              // Don't throw - allow auth to continue even if Account creation fails
-            }
+                providerAccountId: externalAccountId,
+                expires_at: account.expires_at,
+                token_type: account.token_type,
+                scope: account.scope,
+                session_state: account.session_state,
+              }
+            });
+            console.log('✅ NextAuth Account record created (tokens deferred)');
           }
 
-          // Check for duplicate callback (idempotency) for complex onboarding
-          const isDuplicate = await isDuplicateCallback(
-            user.email || user.id,
-            account.provider,
-            externalAccountId
-          );
+          // 3. Set minimal required token data for immediate auth success
+          (token as unknown).orgId = 'default'; // Use default immediately
+          (token as unknown).user = {
+            email: user.email || '',
+            name: user.name || '',
+            image: user.image || '',
+            provider: account.provider,
+            providerId: externalAccountId,
+          };
 
-          if (isDuplicate) {
-            logger.info('Duplicate OAuth callback detected, skipping complex onboarding', {
-              userId: user.email || '',
-              provider: account.provider,
-              externalAccountId,
-            });
-          } else {
-            // Prepare onboarding data
+          // 4. Queue heavy operations in background (non-blocking)
+          if (user.email) {
+            // Queue token encryption for background processing
+            enqueueTokenEncryption(user.email, 'default', account, externalAccountId);
+            
+            // Queue org setup for background processing
+            enqueueOrgSetup(user.email, user.email);
+            
+            // Queue onboarding for background processing
             const onboardingData: OAuthCallbackData = {
-              userId: user.email || user.id,
-              userEmail: user.email || '',
+              userId: user.email,
+              userEmail: user.email,
               userName: user.name || profile?.name || '',
               userImage: user.image || (profile as unknown)?.picture || '',
               provider: account.provider,
@@ -368,108 +340,19 @@ export const authOptions: NextAuthOptions = {
               account,
               profile,
             };
-
-            // Execute robust onboarding
-            const result = await handleOAuthCallback(onboardingData);
-
-            // Store results in token
-            (token as unknown).orgId = result.orgId;
-            (token as unknown).isFirstTime = result.isFirstTimeUser;
-            (token as unknown).requiresTokenRetry = result.requiresTokenRetry;
-
-            // Store user data for session access
-            (token as unknown).user = {
-              email: onboardingData.userEmail,
-              name: onboardingData.userName,
-              image: onboardingData.userImage,
-              provider: account.provider,
-              providerId: externalAccountId,
-            };
-
-            if (!result.success) {
-              logger.error('Onboarding failed but continuing with auth', {
-                userId: user.email || '',
-                provider: account.provider,
-                errors: result.errors,
-              });
-            }
-          }
-
-          // Always find and set orgId if not set
-          if (!(token as unknown).orgId && user.email) {
-            // Try to find existing org for user
-            let org = await prisma.org.findFirst({ 
-              where: { 
-                OR: [
-                  { name: user.email },
-                  { ownerUserId: user.email }, // Look by email as userId fallback
-                  { id: 'default' }
-                ]
-              } 
-            });
-
-            // If no org exists, create default org
-            if (!org) {
-              try {
-                org = await prisma.org.create({
-                  data: {
-                    id: 'default',
-                    name: 'Default Organization',
-                    slug: 'default',
-                    ownerUserId: user.email, // Use email as fallback
-                    encryptedDekBlob: Buffer.from('dummy-encryption-key-for-demo'),
-                    dekVersion: 1,
-                    ephemeralMode: true,
-                    retentionDays: 90
-                  }
-                });
-                console.log('✅ Created default org for user');
-              } catch (orgError) {
-                // If org creation fails, just use default
-                console.error('❌ Failed to create default org:', orgError);
-                // Don't break auth - just set default
-              }
-            }
-
-            // Ensure user is member of org  
-            if (org && user.email) {
-              try {
-                const dbUser = await prisma.user.findUnique({ where: { email: user.email } });
-                if (dbUser) {
-                  await prisma.orgMember.upsert({
-                    where: {
-                      orgId_userId: {
-                        orgId: org.id,
-                        userId: dbUser.id
-                      }
-                    },
-                    update: {},
-                    create: {
-                      orgId: org.id,
-                      userId: dbUser.id,
-                      role: 'owner'
-                    }
-                  });
-                  console.log('✅ User added to org as member');
-                }
-              } catch (memberError) {
-                console.error('❌ Failed to create org membership:', memberError);
-                // Don't break auth flow
-              }
-            }
-
-            (token as unknown).orgId = org?.id || 'default';
-            console.log('🎯 Final orgId set to:', (token as unknown).orgId);
+            enqueueOnboarding(onboardingData);
+            
+            console.log('✅ Heavy operations queued for background processing');
           }
 
         } catch (error: unknown) {
-          logger.error('OAuth callback processing failed', {
+          logger.error('JWT callback minimal processing failed', {
             userId: user.email || '',
             provider: account.provider,
             error: error?.message || error,
           });
           
-          // Fallback behavior - continue auth but set defaults
+          // Fallback behavior - continue auth with defaults
           (token as unknown).orgId = 'default';
           (token as unknown).user = {
             email: user.email || '',
@@ -481,22 +364,9 @@ export const authOptions: NextAuthOptions = {
         }
       }
       
-      // Always ensure we have an orgId
-      if (!(token as unknown).orgId && token.email) {
-        console.log('JWT callback - checking existing org for:', token.email);
-        try {
-          const org = await prisma.org.findFirst({ where: { name: token.email } });
-          if (org) {
-            (token as unknown).orgId = org.id;
-            console.log('Found existing orgId:', org.id);
-          } else {
-            (token as unknown).orgId = 'default';
-            console.log('No org found, using default');
-          }
-        } catch (error) {
-          console.error('Error finding org:', error);
-          (token as unknown).orgId = 'default';
-        }
+      // Always ensure we have an orgId (minimal operation)
+      if (!(token as unknown).orgId) {
+        (token as unknown).orgId = 'default';
       }
       
       return token;

@@ -179,7 +179,7 @@ export function createCustomPrismaAdapter() {
     }
   };
 
-  // Ensure session retrieval works properly - override both methods
+  // Ensure session retrieval works properly with optimized caching
   if (originalGetSessionAndUser) {
     adapter.getSessionAndUser = async (sessionToken) => {
       logOAuth('info', '🔍 Getting session and user via getSessionAndUser', { 
@@ -187,12 +187,52 @@ export function createCustomPrismaAdapter() {
       });
       
       try {
-        const result = await originalGetSessionAndUser(sessionToken);
-        logOAuth('info', '✅ Session and user retrieved via getSessionAndUser', { 
-          hasSession: !!result?.session,
-          hasUser: !!result?.user,
-          userEmail: result?.user?.email
+        // Use optimized query to reduce DB load and improve sync
+        const sessionWithUser = await prisma.session.findUnique({
+          where: { sessionToken },
+          include: { 
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                image: true,
+                emailVerified: true
+              }
+            }
+          }
         });
+
+        if (!sessionWithUser || !sessionWithUser.user) {
+          logOAuth('info', '❌ Session or user not found', { sessionToken: sessionToken.substring(0, 10) });
+          return null;
+        }
+
+        // Check if session is expired
+        if (sessionWithUser.expires < new Date()) {
+          logOAuth('info', '❌ Session expired', { 
+            expires: sessionWithUser.expires,
+            now: new Date()
+          });
+          return null;
+        }
+
+        const result = {
+          session: {
+            sessionToken: sessionWithUser.sessionToken,
+            userId: sessionWithUser.userId,
+            expires: sessionWithUser.expires
+          },
+          user: sessionWithUser.user
+        };
+
+        logOAuth('info', '✅ Session and user retrieved (optimized)', { 
+          hasSession: true,
+          hasUser: true,
+          userEmail: sessionWithUser.user.email,
+          expires: sessionWithUser.expires
+        });
+        
         return result;
       } catch (error) {
         logOAuth('error', '❌ Session retrieval failed via getSessionAndUser', { 

@@ -988,7 +988,7 @@ body[data-permanent-theme="true"] h6 {
   color: #ffffff !important;
 }
 
-/* GLASS-MODAL DROPDOWN FIXES */
+/* GLASS-MODAL AND CUSTOM DROPDOWN FIXES */
 .glass-theme-white .glass-modal {
   background: rgba(255, 255, 255, 0.98) !important;
   border: 1px solid rgba(0, 0, 0, 0.2) !important;
@@ -1011,6 +1011,100 @@ body[data-permanent-theme="true"] h6 {
 
 .glass-theme-black .glass-modal * {
   color: #ffffff !important;
+}
+
+/* CUSTOM APPSHELL DROPDOWN FIXES - HIGHEST PRIORITY */
+.glass-theme-white .glass-quick-dropdown,
+.glass-theme-white .glass-search-results,
+.glass-theme-white .glass-notification-preview,
+.glass-theme-white .glass-profile-menu {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(0, 0, 0, 0.2) !important;
+  color: #000000 !important;
+  backdrop-filter: blur(20px) saturate(1.4) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+}
+
+.glass-theme-black .glass-quick-dropdown,
+.glass-theme-black .glass-search-results,
+.glass-theme-black .glass-notification-preview,
+.glass-theme-black .glass-profile-menu {
+  background: rgba(0, 0, 0, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(20px) saturate(1.4) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* CUSTOM DROPDOWN CONTENT AND ITEMS */
+.glass-theme-white .glass-quick-dropdown *,
+.glass-theme-white .glass-search-results *,
+.glass-theme-white .glass-notification-preview *,
+.glass-theme-white .glass-profile-menu *,
+.glass-theme-white .glass-quick-action-item,
+.glass-theme-white .glass-profile-menu-item {
+  color: #000000 !important;
+}
+
+.glass-theme-black .glass-quick-dropdown *,
+.glass-theme-black .glass-search-results *,
+.glass-theme-black .glass-notification-preview *,
+.glass-theme-black .glass-profile-menu *,
+.glass-theme-black .glass-quick-action-item,
+.glass-theme-black .glass-profile-menu-item {
+  color: #ffffff !important;
+}
+
+/* CUSTOM DROPDOWN ITEM HOVER STATES */
+.glass-theme-white .glass-quick-action-item:hover,
+.glass-theme-white .glass-profile-menu-item:hover {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  color: #000000 !important;
+}
+
+.glass-theme-black .glass-quick-action-item:hover,
+.glass-theme-black .glass-profile-menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+/* SEARCH BAR ICON OVERLAP FIX - SPECIFIC TO DASHBOARD SEARCH */
+.glass-search-pill-enhanced {
+  position: relative !important;
+}
+
+.glass-search-pill-enhanced input {
+  padding-left: 3.5rem !important; /* 56px - more space for the search icon */
+}
+
+.glass-search-pill-enhanced .absolute.left-7 {
+  left: 1rem !important; /* 16px - proper positioning */
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  pointer-events: none !important;
+  z-index: 10 !important;
+}
+
+/* Additional search input padding fixes for glass theme */
+.glass-theme-white .glass-search-pill-enhanced input,
+.glass-theme-black .glass-search-pill-enhanced input {
+  padding-left: 3.5rem !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+}
+
+/* Fix search icon color and positioning */
+.glass-search-pill-enhanced svg {
+  color: var(--glass-text-muted) !important;
+}
+
+.glass-theme-white .glass-search-pill-enhanced svg {
+  color: rgba(0, 0, 0, 0.6) !important;
+}
+
+.glass-theme-black .glass-search-pill-enhanced svg {
+  color: rgba(255, 255, 255, 0.6) !important;
 }
 
 /* Enhanced liquid glass animations for sidebar logos */
