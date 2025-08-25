@@ -103,12 +103,18 @@ interface CalendarEvent {
 
 interface EnhancedCalendarProps {
   className?: string;
+  viewMode?: 'day' | 'week' | 'month';
 }
 
-export default function EnhancedCalendar({ className }: EnhancedCalendarProps) {
+export default function EnhancedCalendar({ className, viewMode: propViewMode = 'week' }: EnhancedCalendarProps) {
   // All hooks must be called at the top level
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week');
+  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>(propViewMode);
+
+  // Update viewMode when prop changes
+  useEffect(() => {
+    setViewMode(propViewMode);
+  }, [propViewMode]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [showEventModal, setShowEventModal] = useState(false);
@@ -286,11 +292,97 @@ export default function EnhancedCalendar({ className }: EnhancedCalendarProps) {
     );
   }
 
-  return (
-    <div className={cn("h-full", className)}>
+  const navigateDate = (direction: 'prev' | 'next') => {
+    const newDate = new Date(currentDate);
+    
+    if (viewMode === 'day') {
+      newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
+    } else if (viewMode === 'week') {
+      newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
+    } else if (viewMode === 'month') {
+      newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
+    }
+    
+    setCurrentDate(newDate);
+  };
 
+  const goToToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  const formatHeaderDate = () => {
+    if (viewMode === 'day') {
+      return currentDate.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    } else if (viewMode === 'week') {
+      const startOfWeek = new Date(currentDate);
+      startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      
+      if (startOfWeek.getMonth() === endOfWeek.getMonth()) {
+        return `${startOfWeek.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} ${startOfWeek.getDate()}-${endOfWeek.getDate()}`;
+      } else {
+        return `${startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+      }
+    } else {
+      return currentDate.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long' 
+      });
+    }
+  };
+
+  return (
+    <div className={cn("h-full flex flex-col", className)}>
+      {/* Calendar Navigation Header */}
+      <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigateDate('prev')}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigateDate('next')}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={goToToday}
+            className="text-sm font-medium"
+          >
+            Today
+          </Button>
+          
+          <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            {formatHeaderDate()}
+          </div>
+        </div>
+
+        <div className="text-sm text-slate-600 dark:text-slate-400">
+          {events.length} event{events.length !== 1 ? 's' : ''} 
+          {viewMode === 'day' ? ' today' : viewMode === 'week' ? ' this week' : ' this month'}
+        </div>
+      </div>
 
       {/* Calendar View */}
+      <div className="flex-1 overflow-auto">
       {viewMode === 'week' && (
         <div className="grid grid-cols-8 gap-1 h-[calc(100vh-200px)]">
           {/* Time column */}
@@ -587,6 +679,7 @@ export default function EnhancedCalendar({ className }: EnhancedCalendarProps) {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 }

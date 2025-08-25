@@ -79,6 +79,7 @@ export default function CalendarPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'my-events' | 'team' | 'all'>('my-events');
+  const [calendarView, setCalendarView] = useState<'day' | 'week' | 'month'>('week');
   const [meetingType, setMeetingType] = useState<'all' | 'intro' | 'demo' | 'follow-up' | 'internal'>('all');
   const [isSyncing, setIsSyncing] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -247,6 +248,26 @@ export default function CalendarPage() {
                       className="glass-pill-button"
                     >
                       {mode === 'my-events' ? 'My Events' : mode === 'team' ? 'Team' : 'All'}
+                    </Button>
+                  ))}
+                </div>
+
+                {/* Calendar View Toggle */}
+                <div className={`glass-pill-container ${isMobile ? 'justify-center' : ''}`}>
+                  {[
+                    { key: 'day', label: 'Day', icon: Calendar },
+                    { key: 'week', label: 'Week', icon: Calendar },
+                    { key: 'month', label: 'Month', icon: Calendar }
+                  ].map((view) => (
+                    <Button
+                      key={view.key}
+                      variant={calendarView === view.key ? 'liquid' : 'ghost'}
+                      size="sm"
+                      onClick={() => setCalendarView(view.key as any)}
+                      className="glass-pill-button"
+                    >
+                      <view.icon className="h-4 w-4 mr-1" />
+                      {view.label}
                     </Button>
                   ))}
                 </div>
@@ -428,7 +449,10 @@ export default function CalendarPage() {
           }}
         >
           <div className={`${isMobile ? 'overflow-x-auto' : ''}`}>
-            <EnhancedCalendar className={`h-full glass-calendar ${isMobile ? 'min-w-[600px]' : ''}`} />
+            <EnhancedCalendar 
+              className={`h-full glass-calendar ${isMobile ? 'min-w-[600px]' : ''}`} 
+              viewMode={calendarView}
+            />
           </div>
         </motion.div>
         </div>
