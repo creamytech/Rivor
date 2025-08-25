@@ -164,12 +164,70 @@ export default function SignInPage() {
       <section className="relative z-10 min-h-screen flex flex-col items-center justify-center p-4" aria-labelledby="signin-title">
         {/* Logo and branding */}
         <div className="mb-8 text-center animate-fade-up">
-          <div className="glass-panel p-6 inline-block mb-4 bg-white/5 border-white/10">
-            <div className="inline-flex items-center group transition-all duration-300">
-              <span className="font-bold tracking-tight text-3xl bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 bg-clip-text text-transparent">
-                Rivor
-              </span>
-              <div className="ml-2 w-3 h-3 rounded-full bg-gradient-to-r from-cyan-400 to-blue-400 opacity-80 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-110 shadow-lg shadow-cyan-400/50" />
+          <div className="relative inline-block mb-4">
+            {/* Enhanced liquid glass backdrop */}
+            <div 
+              className="absolute -inset-4 rounded-3xl opacity-70"
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                backdropFilter: 'blur(25px) saturate(1.8) brightness(1.1)',
+                WebkitBackdropFilter: 'blur(25px) saturate(1.8) brightness(1.1)',
+                boxShadow: `
+                  inset 0 1px 0 rgba(255, 255, 255, 0.15),
+                  inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+                  0 6px 25px rgba(6, 182, 212, 0.2),
+                  0 12px 40px rgba(6, 182, 212, 0.15)
+                `,
+                border: '1px solid rgba(255, 255, 255, 0.12)'
+              }}
+            />
+            {/* Liquid morphing border */}
+            <div 
+              className="absolute -inset-4 rounded-3xl opacity-50"
+              style={{
+                background: 'linear-gradient(45deg, rgba(6, 182, 212, 0.15) 0%, transparent 25%, rgba(147, 51, 234, 0.15) 50%, transparent 75%, rgba(6, 182, 212, 0.15) 100%)',
+                animation: 'liquidMorph 10s ease-in-out infinite, gradientShift 8s ease-in-out infinite'
+              }}
+            />
+            {/* Floating particles */}
+            <div 
+              className="absolute -inset-4 rounded-3xl"
+              style={{
+                background: 'radial-gradient(circle at 30% 30%, rgba(6, 182, 212, 0.1) 0%, transparent 50%), radial-gradient(circle at 70% 70%, rgba(147, 51, 234, 0.1) 0%, transparent 50%)',
+                animation: 'float 6s ease-in-out infinite'
+              }}
+            />
+            <div className="relative p-6 z-10">
+              <motion.img
+                src='/images/Full%20Sidebar%20Dark%20Mode.svg'
+                alt="Rivor"
+                className="h-12 w-auto object-contain mx-auto"
+                initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
+                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                transition={{ 
+                  duration: 0.8,
+                  ease: [0.4, 0, 0.2, 1],
+                  scale: { duration: 0.6, ease: "backOut" }
+                }}
+                whileHover={{
+                  scale: 1.05,
+                  filter: `
+                    drop-shadow(0 0 15px rgba(6, 182, 212, 0.6))
+                    drop-shadow(0 0 30px rgba(6, 182, 212, 0.3))
+                    brightness(1.2)
+                    saturate(1.3)
+                  `
+                }}
+                style={{
+                  filter: `
+                    drop-shadow(0 0 12px rgba(6, 182, 212, 0.4))
+                    drop-shadow(0 0 24px rgba(6, 182, 212, 0.2))
+                    brightness(1.1)
+                    saturate(1.2)
+                  `,
+                  maxWidth: '200px'
+                }}
+              />
             </div>
           </div>
           <div className="flex items-center justify-center space-x-2 text-cyan-300/80">

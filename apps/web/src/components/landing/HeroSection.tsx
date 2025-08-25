@@ -51,21 +51,68 @@ export default function HeroSection({ onWaitlistClick }: HeroSectionProps) {
               <Button
                 onClick={onWaitlistClick}
                 size="lg"
-                className="rounded-xl px-4 sm:px-6 md:px-8 py-3 sm:py-4 font-medium text-slate-900 bg-gradient-to-r from-[#1E5EFF] via-[#16C4D9] to-[#3AF6C3] hover:opacity-95 focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-[#0E1420] transition-all text-sm sm:text-base md:text-lg whitespace-nowrap"
+                className="rounded-xl px-4 sm:px-6 md:px-8 py-3 sm:py-4 font-medium text-white relative overflow-hidden group transition-all duration-300 text-sm sm:text-base md:text-lg whitespace-nowrap"
                 aria-label="Join the Rivor waitlist"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.12)',
+                  backdropFilter: 'blur(25px) saturate(1.6)',
+                  WebkitBackdropFilter: 'blur(25px) saturate(1.6)',
+                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                  boxShadow: `
+                    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+                    0 8px 32px rgba(6, 182, 212, 0.15),
+                    0 12px 48px rgba(6, 182, 212, 0.1)
+                  `
+                }}
               >
-                Join the Waitlist
+                <span className="relative z-10">Join the Waitlist</span>
+                {/* Enhanced hover effect */}
+                <div 
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{
+                    background: 'rgba(6, 182, 212, 0.2)',
+                    backdropFilter: 'blur(30px)'
+                  }}
+                />
+                {/* Liquid shimmer */}
+                <div 
+                  className="absolute inset-0 opacity-40 group-hover:opacity-70 transition-opacity duration-300"
+                  style={{
+                    background: 'linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.15) 50%, transparent 70%)',
+                    animation: 'shimmer 4s ease-in-out infinite'
+                  }}
+                />
               </Button>
               
               <Button
                 onClick={scrollToFeatures}
                 variant="outline"
                 size="lg"
-                className="rounded-xl px-4 sm:px-6 md:px-8 py-3 sm:py-4 font-medium border-white/20 text-[#EAF2FF] hover:bg-white/5 focus:ring-2 focus:ring-white/20 focus:ring-offset-2 focus:ring-offset-[#0E1420] transition-all text-sm sm:text-base md:text-lg whitespace-nowrap"
+                className="rounded-xl px-4 sm:px-6 md:px-8 py-3 sm:py-4 font-medium text-white relative overflow-hidden group transition-all duration-300 text-sm sm:text-base md:text-lg whitespace-nowrap"
                 aria-label="Learn more about Rivor features"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  backdropFilter: 'blur(20px) saturate(1.4)',
+                  WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  boxShadow: `
+                    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                    0 4px 20px rgba(255, 255, 255, 0.05)
+                  `
+                }}
               >
-                See the product
-                <ArrowDown className="ml-2 h-4 w-4" />
+                <span className="relative z-10 flex items-center">
+                  See the product
+                  <ArrowDown className="ml-2 h-4 w-4" />
+                </span>
+                {/* Subtle hover effect */}
+                <div 
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    backdropFilter: 'blur(25px)'
+                  }}
+                />
               </Button>
             </div>
 

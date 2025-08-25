@@ -60,8 +60,46 @@ export default function Navigation({ onWaitlistClick }: NavigationProps) {
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center"
           >
-            <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent">
-              Rivor
+            <div className="relative overflow-visible">
+              {/* Liquid glass backdrop */}
+              <div 
+                className="absolute -inset-3 rounded-2xl opacity-60"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  backdropFilter: 'blur(20px) saturate(1.6)',
+                  WebkitBackdropFilter: 'blur(20px) saturate(1.6)',
+                  boxShadow: `
+                    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                    0 4px 20px rgba(6, 182, 212, 0.15),
+                    0 8px 32px rgba(6, 182, 212, 0.1)
+                  `,
+                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                }}
+              />
+              {/* Shimmer effect */}
+              <div 
+                className="absolute -inset-3 rounded-2xl opacity-40"
+                style={{
+                  background: 'linear-gradient(135deg, transparent 30%, rgba(6, 182, 212, 0.2) 50%, transparent 70%)',
+                  animation: 'shimmer 4s ease-in-out infinite'
+                }}
+              />
+              <motion.img
+                src='/images/Full%20Sidebar%20Dark%20Mode.svg'
+                alt="Rivor"
+                className="relative h-8 w-auto object-contain z-10"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                style={{
+                  filter: `
+                    drop-shadow(0 0 10px rgba(6, 182, 212, 0.4))
+                    drop-shadow(0 0 20px rgba(6, 182, 212, 0.2))
+                    brightness(1.1)
+                    saturate(1.2)
+                  `,
+                  maxWidth: '160px'
+                }}
+              />
             </div>
           </motion.div>
 
@@ -78,10 +116,36 @@ export default function Navigation({ onWaitlistClick }: NavigationProps) {
             ))}
             <Button
               onClick={onWaitlistClick}
-              className="rounded-xl px-5 py-2 font-medium text-white bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 hover:opacity-95 focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-black transition-all"
+              className="rounded-xl px-5 py-2 font-medium text-white relative overflow-hidden group transition-all duration-300"
               aria-label="Join the Rivor waitlist"
+              style={{
+                background: 'rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(20px) saturate(1.4)',
+                WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                boxShadow: `
+                  inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                  0 4px 15px rgba(6, 182, 212, 0.1)
+                `
+              }}
             >
-              Join Waitlist
+              <span className="relative z-10">Join Waitlist</span>
+              {/* Hover effect */}
+              <div 
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{
+                  background: 'rgba(6, 182, 212, 0.15)',
+                  backdropFilter: 'blur(25px)'
+                }}
+              />
+              {/* Shimmer effect */}
+              <div 
+                className="absolute inset-0 opacity-30 group-hover:opacity-60 transition-opacity duration-300"
+                style={{
+                  background: 'linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%)',
+                  animation: 'shimmer 3s ease-in-out infinite'
+                }}
+              />
             </Button>
           </div>
 
@@ -123,10 +187,36 @@ export default function Navigation({ onWaitlistClick }: NavigationProps) {
                   onWaitlistClick();
                   setIsMenuOpen(false);
                 }}
-                className="w-full rounded-xl px-5 py-2 font-medium text-white bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 hover:opacity-95 focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-black transition-all mt-4"
+                className="w-full rounded-xl px-5 py-2 font-medium text-white relative overflow-hidden group transition-all duration-300 mt-4"
                 aria-label="Join the Rivor waitlist"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  backdropFilter: 'blur(20px) saturate(1.4)',
+                  WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  boxShadow: `
+                    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                    0 4px 15px rgba(6, 182, 212, 0.1)
+                  `
+                }}
               >
-                Join Waitlist
+                <span className="relative z-10">Join Waitlist</span>
+                {/* Hover effect */}
+                <div 
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{
+                    background: 'rgba(6, 182, 212, 0.15)',
+                    backdropFilter: 'blur(25px)'
+                  }}
+                />
+                {/* Shimmer effect */}
+                <div 
+                  className="absolute inset-0 opacity-30 group-hover:opacity-60 transition-opacity duration-300"
+                  style={{
+                    background: 'linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%)',
+                    animation: 'shimmer 3s ease-in-out infinite'
+                  }}
+                />
               </Button>
             </div>
           </motion.div>
