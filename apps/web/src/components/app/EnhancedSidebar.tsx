@@ -423,24 +423,6 @@ export default function EnhancedSidebar({
         <div className="flex-1 flex flex-col relative z-10">
           {/* Core Navigation */}
           <div className={`py-4 flex-1 ${isCollapsed ? 'px-1' : 'px-3'}`}>
-            <AnimatePresence mode="wait">
-              {!isCollapsed && (
-                <motion.div
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -5 }}
-                  transition={{ duration: 0.15 }}
-                  className="mb-4"
-                >
-                  <h3 
-                    className="text-xs font-semibold uppercase tracking-wider mb-2 px-2"
-                    style={{ color: 'var(--glass-text-muted)' }}
-                  >
-                    Core Features
-                  </h3>
-                </motion.div>
-              )}
-            </AnimatePresence>
 
             <nav className="space-y-1">
               {groupedItems.core.map((item, index) => {
