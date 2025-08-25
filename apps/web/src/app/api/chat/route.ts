@@ -11,13 +11,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const orgId = (session as { orgId?: string }).orgId;
+    if (!orgId) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
+    }
+
     const { message, threadId, context } = await req.json();
 
     if (!message || typeof message !== 'string') {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 });
     }
 
-    const response = await AIService.sendMessage(message, threadId, context);
+    // Add orgId to context so AI service can access user data
+    const enhancedContext = {
+      ...context,
+      orgId,
+      userEmail: session.user.email
+    };
+
+    const response = await AIService.sendMessage(message, threadId, enhancedContext);
     return NextResponse.json(response);
   } catch (error) {
     console.error('Chat API error:', error);
