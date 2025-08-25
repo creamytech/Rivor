@@ -277,9 +277,16 @@ export default function EnhancedCalendar({ className, viewMode: propViewMode = '
 
   const getEventsForTimeSlot = (date: Date, hour: number) => {
     return events.filter(event => {
-      const eventDate = new Date(event.start);
-      return eventDate.toDateString() === date.toDateString() && 
-             eventDate.getHours() === hour;
+      const eventStart = new Date(event.start);
+      const eventEnd = new Date(event.end);
+      const slotStart = new Date(date);
+      slotStart.setHours(hour, 0, 0, 0);
+      const slotEnd = new Date(date);
+      slotEnd.setHours(hour + 1, 0, 0, 0);
+      
+      // Check if event starts in this time slot (not spans through it)
+      return eventStart.toDateString() === date.toDateString() && 
+             eventStart.getHours() === hour;
     });
   };
 
