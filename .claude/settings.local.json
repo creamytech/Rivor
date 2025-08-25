@@ -22,7 +22,9 @@
       "Bash(npx turbo:*)",
       "Bash(npm run:*)",
       "Bash(npx next build:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(curl:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": [],

@@ -61,9 +61,17 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Failed to get Calendar sync status:', error);
+    console.error('Failed to get Calendar sync status:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      orgId: (session as { orgId?: string })?.orgId || 'unknown',
+      userEmail: session?.user?.email || 'unknown'
+    });
+    
     return NextResponse.json({ 
-      error: 'Failed to get sync status' 
+      error: 'Failed to get sync status',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
     }, { status: 500 });
   }
 }
