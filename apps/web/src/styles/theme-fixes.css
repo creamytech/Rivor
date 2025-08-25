@@ -310,29 +310,26 @@ body[data-permanent-theme="true"] * {
 .glass-theme-white [data-radix-popover-content],
 .glass-theme-white .select-content,
 .glass-theme-white .dropdown-content {
-  background-color: rgba(255, 255, 255, 0.98) !important;
+  background: rgba(255, 255, 255, 0.98) !important;
   border: 1px solid rgba(0, 0, 0, 0.2) !important;
   color: #000000 !important;
   backdrop-filter: blur(20px) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
 }
 
-/* ULTIMATE DROPDOWN TEXT FIX FOR LIGHT MODE */
-.glass-theme-white [data-radix-select-content],
-.glass-theme-white [data-radix-dropdown-menu-content],
-.glass-theme-white [data-radix-popover-content] {
-  background: white !important;
-  color: black !important;
+/* FORCE WHITE BACKGROUND AND BLACK TEXT FOR ALL DROPDOWN CONTENT */
+.glass-theme-white [data-radix-select-content] *,
+.glass-theme-white [data-radix-dropdown-menu-content] *,
+.glass-theme-white [data-radix-popover-content] *,
+.glass-theme-white .select-content *,
+.glass-theme-white .dropdown-content * {
+  background-color: rgba(255, 255, 255, 0.98) !important;
+  color: #000000 !important;
 }
 
-.glass-theme-white [data-radix-select-content] span,
-.glass-theme-white [data-radix-dropdown-menu-content] span,
-.glass-theme-white [data-radix-popover-content] span,
-.glass-theme-white [data-radix-select-content] div,
-.glass-theme-white [data-radix-dropdown-menu-content] div,
-.glass-theme-white [data-radix-popover-content] div {
-  color: black !important;
-  background: transparent !important;
+.glass-theme-white [data-radix-select-viewport],
+.glass-theme-white [data-radix-dropdown-menu-viewport] {
+  background-color: rgba(255, 255, 255, 0.98) !important;
 }
 
 /* FORCE dropdown text colors to override universal selectors */

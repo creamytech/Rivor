@@ -478,24 +478,11 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                       }}
                       onFocus={() => setShowSearchResults(searchQuery.length > 0 || true)} // Always show on focus for demo
                       onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
-                      className="w-full pl-20 pr-24 text-base bg-transparent border-none outline-none font-medium py-5"
+                      className="w-full pl-20 pr-8 text-base bg-transparent border-none outline-none font-medium py-4"
                       style={{ 
                         color: 'var(--glass-text)',
                       }}
                     />
-                    <div className="absolute right-6 top-1/2 -translate-y-1/2 z-10">
-                      <div 
-                        className="text-xs px-3 py-2 rounded-xl font-semibold border backdrop-blur-sm transition-all duration-200 hover:scale-105"
-                        style={{
-                          background: 'var(--glass-surface-subtle)',
-                          color: 'var(--glass-text-muted)',
-                          borderColor: 'var(--glass-border)',
-                          boxShadow: 'inset 0 1px 0 var(--glass-highlight), 0 2px 4px var(--glass-shadow)'
-                        }}
-                      >
-                        ⌘K
-                      </div>
-                    </div>
                   </div>
                   
                 </div>
