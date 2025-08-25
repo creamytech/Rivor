@@ -4945,3 +4945,209 @@ body.modal-open[data-waitlist-modal-open="true"] [data-radix-portal] {
   font-size: 0.9em;
   opacity: 0.9;
 }
+
+/* ========================================
+   PERMANENT THEME OVERRIDES
+   Force liquid glass black theme on specific pages
+   ======================================== */
+
+/* Login and Root pages - Force permanent liquid glass black theme */
+[data-permanent-theme="black"],
+[data-permanent-theme="black"] *,
+body[data-glass-theme="black"][data-permanent-theme="true"],
+body[data-glass-theme="black"][data-permanent-theme="true"] * {
+  /* Override any theme context changes with !important */
+  --glass-bg: #000000 !important;
+  --glass-surface: rgba(255, 255, 255, 0.1) !important;
+  --glass-surface-strong: rgba(255, 255, 255, 0.15) !important;
+  --glass-surface-subtle: rgba(255, 255, 255, 0.05) !important;
+  --glass-surface-alpha: rgba(255, 255, 255, 0.08) !important;
+  --glass-surface-muted: rgba(255, 255, 255, 0.06) !important;
+  --glass-surface-hover: rgba(255, 255, 255, 0.12) !important;
+  --glass-border: rgba(255, 255, 255, 0.2) !important;
+  --glass-border-strong: rgba(255, 255, 255, 0.3) !important;
+  --glass-border-subtle: rgba(255, 255, 255, 0.15) !important;
+  --glass-text: #ffffff !important;
+  --glass-text-secondary: rgba(255, 255, 255, 0.8) !important;
+  --glass-text-muted: rgba(255, 255, 255, 0.7) !important;
+  --glass-text-subtle: rgba(255, 255, 255, 0.5) !important;
+  --glass-text-inverse: #000000 !important;
+  --glass-primary: #ffffff !important;
+  --glass-primary-muted: rgba(255, 255, 255, 0.15) !important;
+  --glass-secondary: rgba(255, 255, 255, 0.6) !important;
+  --glass-accent: #ffffff !important;
+  --glass-shadow: rgba(255, 255, 255, 0.1) !important;
+  --glass-shadow-glow: rgba(59, 130, 246, 0.2) !important;
+  --glass-glow: rgba(255, 255, 255, 0.2) !important;
+  --glass-glow-cyan: rgba(6, 182, 212, 0.3) !important;
+  --glass-glow-purple: rgba(147, 51, 234, 0.3) !important;
+  --glass-ripple: rgba(255, 255, 255, 0.3) !important;
+  --glass-highlight: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Force background and text colors for permanent theme containers */
+[data-permanent-theme="black"] {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+/* Override any dynamic theme class changes */
+body.glass-theme-white[data-permanent-theme="true"] {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+/* Force liquid glass theme class for permanent theme pages */
+.glass-theme-black[data-permanent-theme="true"] {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+/* Ensure all child elements inherit the forced theme */
+[data-permanent-theme="black"] .glass-card,
+[data-permanent-theme="black"] .glass-panel,
+[data-permanent-theme="black"] .glass-button {
+  color: var(--glass-text) !important;
+  background-color: var(--glass-surface) !important;
+  border-color: var(--glass-border) !important;
+}
+
+/* Force text colors in permanent theme */
+[data-permanent-theme="black"] h1,
+[data-permanent-theme="black"] h2,
+[data-permanent-theme="black"] h3,
+[data-permanent-theme="black"] h4,
+[data-permanent-theme="black"] h5,
+[data-permanent-theme="black"] h6,
+[data-permanent-theme="black"] p,
+[data-permanent-theme="black"] span,
+[data-permanent-theme="black"] div {
+  color: inherit !important;
+}
+
+/* ========================================
+   MODAL AND OVERLAY IMPROVEMENTS
+   Better contrast and visibility for both themes
+   ======================================== */
+
+/* Modal overlays */
+.glass-theme-black [role="dialog"],
+.glass-theme-black .modal-overlay,
+.glass-theme-black .dialog-overlay {
+  background-color: rgba(0, 0, 0, 0.85) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+.glass-theme-white [role="dialog"],
+.glass-theme-white .modal-overlay,
+.glass-theme-white .dialog-overlay {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+/* Modal content */
+.glass-theme-black .modal-content,
+.glass-theme-black .dialog-content {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.glass-theme-white .modal-content,
+.glass-theme-white .dialog-content {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #1a1a1a !important;
+}
+
+/* Dropdown menus */
+.glass-theme-black .dropdown-content,
+.glass-theme-black [role="menu"] {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+.glass-theme-white .dropdown-content,
+.glass-theme-white [role="menu"] {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+/* Button variants for better contrast */
+.glass-theme-black .btn-primary,
+.glass-theme-black button[data-variant="primary"] {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+
+.glass-theme-white .btn-primary,
+.glass-theme-white button[data-variant="primary"] {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+  color: #1a1a1a !important;
+  border: 1px solid rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Input fields */
+.glass-theme-black input,
+.glass-theme-black textarea,
+.glass-theme-black select {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.glass-theme-black input::placeholder,
+.glass-theme-black textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.glass-theme-white input,
+.glass-theme-white textarea,
+.glass-theme-white select {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #1a1a1a !important;
+}
+
+.glass-theme-white input::placeholder,
+.glass-theme-white textarea::placeholder {
+  color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Card hover states */
+.glass-theme-black .glass-card:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.glass-theme-white .glass-card:hover {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Text color overrides for better readability */
+.glass-theme-black h1, .glass-theme-black h2, .glass-theme-black h3,
+.glass-theme-black h4, .glass-theme-black h5, .glass-theme-black h6 {
+  color: #ffffff !important;
+}
+
+.glass-theme-white h1, .glass-theme-white h2, .glass-theme-white h3,
+.glass-theme-white h4, .glass-theme-white h5, .glass-theme-white h6 {
+  color: #1a1a1a !important;
+}
+
+/* Sidebar and navigation */
+.glass-theme-black .sidebar,
+.glass-theme-black .navigation {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.glass-theme-white .sidebar,
+.glass-theme-white .navigation {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+}

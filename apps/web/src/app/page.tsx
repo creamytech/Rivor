@@ -49,7 +49,33 @@ export default function Home() {
       
       // Add data attributes for dark theme
       document.documentElement.setAttribute('data-theme', 'dark');
+      document.documentElement.setAttribute('data-permanent-theme', 'black');
       document.body.setAttribute('data-glass-theme', 'black');
+      document.body.setAttribute('data-permanent-theme', 'true');
+      
+      // Force override any theme context changes with !important styles
+      const forceThemeStyle = document.getElementById('force-root-theme');
+      if (forceThemeStyle) {
+        forceThemeStyle.remove();
+      }
+      
+      const style = document.createElement('style');
+      style.id = 'force-root-theme';
+      style.textContent = `
+        html, body {
+          background-color: #000000 !important;
+          color: #ffffff !important;
+        }
+        * {
+          border-color: rgba(255, 255, 255, 0.2) !important;
+        }
+        .glass-card, .glass-panel, .glass-button {
+          background-color: rgba(255, 255, 255, 0.1) !important;
+          border-color: rgba(255, 255, 255, 0.2) !important;
+          color: #ffffff !important;
+        }
+      `;
+      document.head.appendChild(style);
     }
   }, []);
 
@@ -58,7 +84,7 @@ export default function Home() {
   };
 
   return (
-    <div className={`min-h-screen glass-theme-black text-white overflow-x-hidden ${isWaitlistOpen ? 'page-blur' : ''}`} data-glass-theme="black" style={{backgroundColor: '#000000', color: '#ffffff'}}>
+    <div className={`min-h-screen glass-theme-black text-white overflow-x-hidden ${isWaitlistOpen ? 'page-blur' : ''}`} data-glass-theme="black" data-permanent-theme="black" style={{backgroundColor: '#000000', color: '#ffffff'}}>
       {/* Navigation */}
       <Navigation onWaitlistClick={openWaitlist} />
       

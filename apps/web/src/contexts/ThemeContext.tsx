@@ -41,6 +41,16 @@ export const ThemeProvider: React.FC<GlassThemeProviderProps> = ({ children }) =
   useEffect(() => {
     const root = document.documentElement;
     
+    // Check if this is a permanent theme page (login, root, etc.)
+    const isPermanentTheme = document.body.getAttribute('data-permanent-theme') === 'true' ||
+                           document.documentElement.getAttribute('data-permanent-theme') === 'black';
+    
+    // Don't override permanent theme pages
+    if (isPermanentTheme) {
+      console.log('Skipping theme application on permanent theme page');
+      return;
+    }
+    
     // Remove existing theme classes
     document.body.className = document.body.className.replace(/glass-theme-\w+/g, '');
     document.body.classList.add(`glass-theme-${theme}`);
@@ -48,35 +58,71 @@ export const ThemeProvider: React.FC<GlassThemeProviderProps> = ({ children }) =
     // Set data-theme attribute
     document.documentElement.setAttribute('data-glass-theme', theme);
     
-    // Apply theme-specific CSS custom properties
+    // Apply theme-specific CSS custom properties with better contrast
     if (theme === 'black') {
+      // Black theme - improved contrast and visibility
       root.style.setProperty('--glass-bg', '#000000');
-      root.style.setProperty('--glass-surface', 'rgba(255, 255, 255, 0.1)');
-      root.style.setProperty('--glass-surface-strong', 'rgba(255, 255, 255, 0.15)');
-      root.style.setProperty('--glass-surface-subtle', 'rgba(255, 255, 255, 0.05)');
-      root.style.setProperty('--glass-border', 'rgba(255, 255, 255, 0.2)');
-      root.style.setProperty('--glass-border-strong', 'rgba(255, 255, 255, 0.3)');
+      root.style.setProperty('--glass-surface', 'rgba(255, 255, 255, 0.08)');
+      root.style.setProperty('--glass-surface-strong', 'rgba(255, 255, 255, 0.12)');
+      root.style.setProperty('--glass-surface-subtle', 'rgba(255, 255, 255, 0.04)');
+      root.style.setProperty('--glass-surface-alpha', 'rgba(255, 255, 255, 0.06)');
+      root.style.setProperty('--glass-surface-muted', 'rgba(255, 255, 255, 0.05)');
+      root.style.setProperty('--glass-surface-hover', 'rgba(255, 255, 255, 0.1)');
+      root.style.setProperty('--glass-border', 'rgba(255, 255, 255, 0.15)');
+      root.style.setProperty('--glass-border-strong', 'rgba(255, 255, 255, 0.25)');
+      root.style.setProperty('--glass-border-subtle', 'rgba(255, 255, 255, 0.08)');
       root.style.setProperty('--glass-text', '#ffffff');
-      root.style.setProperty('--glass-text-muted', 'rgba(255, 255, 255, 0.7)');
-      root.style.setProperty('--glass-text-subtle', 'rgba(255, 255, 255, 0.5)');
+      root.style.setProperty('--glass-text-secondary', 'rgba(255, 255, 255, 0.85)');
+      root.style.setProperty('--glass-text-muted', 'rgba(255, 255, 255, 0.65)');
+      root.style.setProperty('--glass-text-subtle', 'rgba(255, 255, 255, 0.45)');
+      root.style.setProperty('--glass-text-inverse', '#000000');
+      root.style.setProperty('--glass-primary', '#ffffff');
+      root.style.setProperty('--glass-primary-muted', 'rgba(255, 255, 255, 0.12)');
+      root.style.setProperty('--glass-secondary', 'rgba(255, 255, 255, 0.55)');
       root.style.setProperty('--glass-accent', '#ffffff');
-      root.style.setProperty('--glass-shadow', 'rgba(255, 255, 255, 0.1)');
-      root.style.setProperty('--glass-glow', 'rgba(255, 255, 255, 0.2)');
-      root.style.setProperty('--glass-ripple', 'rgba(255, 255, 255, 0.3)');
+      root.style.setProperty('--glass-shadow', 'rgba(255, 255, 255, 0.08)');
+      root.style.setProperty('--glass-shadow-glow', 'rgba(59, 130, 246, 0.15)');
+      root.style.setProperty('--glass-glow', 'rgba(255, 255, 255, 0.15)');
+      root.style.setProperty('--glass-glow-cyan', 'rgba(6, 182, 212, 0.25)');
+      root.style.setProperty('--glass-glow-purple', 'rgba(147, 51, 234, 0.25)');
+      root.style.setProperty('--glass-ripple', 'rgba(255, 255, 255, 0.2)');
+      root.style.setProperty('--glass-highlight', 'rgba(255, 255, 255, 0.08)');
+      
+      // Set document background
+      document.body.style.backgroundColor = '#000000';
+      document.body.style.color = '#ffffff';
     } else {
+      // White theme - improved contrast and visibility  
       root.style.setProperty('--glass-bg', '#ffffff');
-      root.style.setProperty('--glass-surface', 'rgba(0, 0, 0, 0.1)');
-      root.style.setProperty('--glass-surface-strong', 'rgba(0, 0, 0, 0.15)');
-      root.style.setProperty('--glass-surface-subtle', 'rgba(0, 0, 0, 0.05)');
-      root.style.setProperty('--glass-border', 'rgba(0, 0, 0, 0.2)');
-      root.style.setProperty('--glass-border-strong', 'rgba(0, 0, 0, 0.3)');
-      root.style.setProperty('--glass-text', '#000000');
-      root.style.setProperty('--glass-text-muted', 'rgba(0, 0, 0, 0.7)');
-      root.style.setProperty('--glass-text-subtle', 'rgba(0, 0, 0, 0.5)');
-      root.style.setProperty('--glass-accent', '#000000');
-      root.style.setProperty('--glass-shadow', 'rgba(0, 0, 0, 0.1)');
-      root.style.setProperty('--glass-glow', 'rgba(0, 0, 0, 0.2)');
-      root.style.setProperty('--glass-ripple', 'rgba(0, 0, 0, 0.3)');
+      root.style.setProperty('--glass-surface', 'rgba(0, 0, 0, 0.06)');
+      root.style.setProperty('--glass-surface-strong', 'rgba(0, 0, 0, 0.1)');
+      root.style.setProperty('--glass-surface-subtle', 'rgba(0, 0, 0, 0.03)');
+      root.style.setProperty('--glass-surface-alpha', 'rgba(0, 0, 0, 0.04)');
+      root.style.setProperty('--glass-surface-muted', 'rgba(0, 0, 0, 0.05)');
+      root.style.setProperty('--glass-surface-hover', 'rgba(0, 0, 0, 0.08)');
+      root.style.setProperty('--glass-border', 'rgba(0, 0, 0, 0.12)');
+      root.style.setProperty('--glass-border-strong', 'rgba(0, 0, 0, 0.2)');
+      root.style.setProperty('--glass-border-subtle', 'rgba(0, 0, 0, 0.06)');
+      root.style.setProperty('--glass-text', '#1a1a1a');
+      root.style.setProperty('--glass-text-secondary', 'rgba(0, 0, 0, 0.85)');
+      root.style.setProperty('--glass-text-muted', 'rgba(0, 0, 0, 0.65)');
+      root.style.setProperty('--glass-text-subtle', 'rgba(0, 0, 0, 0.45)');
+      root.style.setProperty('--glass-text-inverse', '#ffffff');
+      root.style.setProperty('--glass-primary', '#1a1a1a');
+      root.style.setProperty('--glass-primary-muted', 'rgba(0, 0, 0, 0.08)');
+      root.style.setProperty('--glass-secondary', 'rgba(0, 0, 0, 0.55)');
+      root.style.setProperty('--glass-accent', '#1a1a1a');
+      root.style.setProperty('--glass-shadow', 'rgba(0, 0, 0, 0.08)');
+      root.style.setProperty('--glass-shadow-glow', 'rgba(59, 130, 246, 0.15)');
+      root.style.setProperty('--glass-glow', 'rgba(0, 0, 0, 0.12)');
+      root.style.setProperty('--glass-glow-cyan', 'rgba(6, 182, 212, 0.25)');
+      root.style.setProperty('--glass-glow-purple', 'rgba(147, 51, 234, 0.25)');
+      root.style.setProperty('--glass-ripple', 'rgba(0, 0, 0, 0.15)');
+      root.style.setProperty('--glass-highlight', 'rgba(0, 0, 0, 0.06)');
+      
+      // Set document background
+      document.body.style.backgroundColor = '#ffffff';
+      document.body.style.color = '#1a1a1a';
     }
 
     // Create liquid glass animations

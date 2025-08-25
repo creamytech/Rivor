@@ -55,7 +55,33 @@ export default function SignInPage() {
       
       // Add data attributes for dark theme
       document.documentElement.setAttribute('data-theme', 'dark');
+      document.documentElement.setAttribute('data-permanent-theme', 'black');
       document.body.setAttribute('data-glass-theme', 'black');
+      document.body.setAttribute('data-permanent-theme', 'true');
+      
+      // Force override any theme context changes with !important styles
+      const forceThemeStyle = document.getElementById('force-login-theme');
+      if (forceThemeStyle) {
+        forceThemeStyle.remove();
+      }
+      
+      const style = document.createElement('style');
+      style.id = 'force-login-theme';
+      style.textContent = `
+        html, body {
+          background-color: #000000 !important;
+          color: #ffffff !important;
+        }
+        * {
+          border-color: rgba(255, 255, 255, 0.2) !important;
+        }
+        .glass-card, .glass-panel, .glass-button {
+          background-color: rgba(255, 255, 255, 0.1) !important;
+          border-color: rgba(255, 255, 255, 0.2) !important;
+          color: #ffffff !important;
+        }
+      `;
+      document.head.appendChild(style);
     }
     
     return () => { cancelled = true; };
@@ -86,7 +112,7 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="glass-theme-black min-h-screen relative overflow-hidden" role="main" data-glass-theme="black" style={{backgroundColor: '#000000', color: '#ffffff'}}>
+    <div className="glass-theme-black min-h-screen relative overflow-hidden" role="main" data-glass-theme="black" data-permanent-theme="black" style={{backgroundColor: '#000000', color: '#ffffff'}}>
       {/* Flowing River Background */}
       <div className="absolute inset-0">
         {/* Main gradient overlay */}
