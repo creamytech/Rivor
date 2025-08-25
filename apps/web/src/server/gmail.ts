@@ -194,31 +194,190 @@ export class GmailService {
     }
   }
 
-  private async processThread(orgId: string, emailAccountId: string, threadId: string): Promise<void> {
+  private async processThread(orgId: string, emailAccountId: string, gmailThreadId: string): Promise<void> {
     const gmail = await this.getGmail();
     
     try {
       const response = await gmail.users.threads.get({
         userId: 'me',
-        id: threadId,
+        id: gmailThreadId,
         format: 'full',
       });
 
-      const thread = response.data;
-      if (!thread?.messages) return;
+      const gmailThread = response.data;
+      if (!gmailThread?.messages || gmailThread.messages.length === 0) return;
+
+      // Get the first message to extract thread metadata (subject, participants)
+      const firstMessage = gmailThread.messages[0];
+      const headers = firstMessage?.payload?.headers || [];
+      const getHeader = (name: string) => headers.find(h => h.name.toLowerCase() === name.toLowerCase())?.value || '';
+      
+      const subject = getHeader('Subject');
+      const from = getHeader('From');
+      const to = getHeader('To');
+      
+      // Encrypt thread metadata
+      const subjectEnc = await encryptForOrg(orgId, subject, 'email:subject');
+      const participantsEnc = await encryptForOrg(orgId, `${from}, ${to}`, 'email:participants');
+      
+      // Find or create thread using Gmail threadId stored as external reference
+      // Since we can't add a gmailThreadId field easily, we'll use subject matching for now
+      let thread = await prisma.emailThread.findFirst({
+        where: { 
+          orgId,
+          accountId: emailAccountId,
+          subjectEnc: subjectEnc
+        }
+      });
+
+      if (!thread) {
+        thread = await prisma.emailThread.create({
+          data: {
+            orgId,
+            accountId: emailAccountId,
+            subjectEnc,
+            participantsEnc,
+          }
+        });
+        
+        logger.info('Created email thread', {
+          orgId,
+          emailAccountId,
+          threadId: thread.id,
+          gmailThreadId,
+          subject: subject.substring(0, 50),
+          messageCount: gmailThread.messages.length,
+          action: 'email_thread_created'
+        });
+      }
 
       // Process each message in the thread
-      for (const message of thread.messages) {
+      let messagesProcessed = 0;
+      for (const message of gmailThread.messages) {
         if (message.id) {
-          await this.processMessage(orgId, emailAccountId, message.id);
+          // Check if message already exists before processing
+          const existing = await prisma.emailMessage.findFirst({
+            where: { messageId: message.id, orgId }
+          });
+
+          if (!existing) {
+            await this.processMessageInThread(orgId, emailAccountId, thread.id, message);
+            messagesProcessed++;
+          }
         }
+      }
+      
+      // Update thread timestamp if we processed new messages
+      if (messagesProcessed > 0) {
+        await prisma.emailThread.update({
+          where: { id: thread.id },
+          data: { updatedAt: new Date() }
+        });
       }
 
     } catch (error) {
-      logger.warn(`Error processing thread ${threadId}`, {
+      logger.warn(`Error processing Gmail thread ${gmailThreadId}`, {
+        orgId,
+        emailAccountId,
+        gmailThreadId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  private async processMessageInThread(orgId: string, emailAccountId: string, threadId: string, message: any): Promise<void> {
+    try {
+      if (!message?.payload?.headers) return;
+
+      // Extract headers
+      const headers = message.payload.headers || [];
+      const getHeader = (name: string) => headers.find(h => h.name.toLowerCase() === name.toLowerCase())?.value || '';
+      
+      const subject = getHeader('Subject');
+      const from = getHeader('From');
+      const to = getHeader('To');
+      const cc = getHeader('Cc');
+      const bcc = getHeader('Bcc');
+      const date = getHeader('Date');
+
+      // Extract body content
+      let htmlBody = '';
+      let textBody = '';
+      let attachments: Array<{filename: string, mimeType: string, size: number}> = [];
+
+      if (message.payload.body?.data) {
+        // Single part message
+        const bodyData = Buffer.from(message.payload.body.data, 'base64').toString('utf-8');
+        const contentType = getHeader('Content-Type');
+        
+        if (contentType?.includes('text/html')) {
+          htmlBody = bodyData;
+        } else {
+          textBody = bodyData;
+        }
+      } else if (message.payload.parts) {
+        // Multipart message
+        for (const part of message.payload.parts) {
+          if (part.body?.data) {
+            const partData = Buffer.from(part.body.data, 'base64').toString('utf-8');
+            const partHeaders = part.headers || [];
+            const partContentType = partHeaders.find((h: { name: string; value: string }) => h.name.toLowerCase() === 'content-type')?.value || '';
+            
+            if (partContentType.includes('text/html')) {
+              htmlBody = partData;
+            } else if (partContentType.includes('text/plain')) {
+              textBody = partData;
+            } else if (part.filename) {
+              attachments.push({
+                filename: part.filename,
+                mimeType: partContentType || 'application/octet-stream',
+                size: part.body.size || 0
+              });
+            }
+          }
+        }
+      }
+
+      // Create snippet from text body or HTML body
+      let snippet = '';
+      if (textBody) {
+        snippet = textBody.substring(0, 200).replace(/\s+/g, ' ').trim();
+      } else if (htmlBody) {
+        snippet = htmlBody.replace(/<[^>]*>/g, '').substring(0, 200).replace(/\s+/g, ' ').trim();
+      }
+
+      // Encrypt sensitive data
+      const subjectEnc = await encryptForOrg(orgId, subject, 'email:subject');
+      const bodyEnc = await encryptForOrg(orgId, htmlBody || textBody, 'email:body');
+      const fromEnc = await encryptForOrg(orgId, from, 'email:from');
+      const toEnc = await encryptForOrg(orgId, to, 'email:to');
+      const ccEnc = await encryptForOrg(orgId, cc, 'email:cc');
+      const bccEnc = await encryptForOrg(orgId, bcc, 'email:bcc');
+      const snippetEnc = await encryptForOrg(orgId, snippet, 'email:snippet');
+
+      // Create message in the provided thread
+      await prisma.emailMessage.create({
+        data: {
+          orgId,
+          threadId,
+          messageId: message.id,
+          sentAt: new Date(message.internalDate ? parseInt(message.internalDate) : Date.now()),
+          subjectEnc,
+          bodyRefEnc: bodyEnc,
+          fromEnc,
+          toEnc,
+          ccEnc,
+          bccEnc,
+          snippetEnc,
+        }
+      });
+
+    } catch (error) {
+      logger.error(`Error processing message ${message.id} in thread`, {
         orgId,
         emailAccountId,
         threadId,
+        messageId: message.id,
         error: error instanceof Error ? error.message : String(error)
       });
     }
@@ -230,35 +389,64 @@ export class GmailService {
     try {
       let pageToken: string | undefined;
       let processedCount = 0;
+      let threadsCreated = 0;
 
+      logger.info('Starting Gmail sync', {
+        orgId,
+        emailAccountId,
+        action: 'gmail_sync_start'
+      });
+
+      // Use threads API instead of messages for better grouping
       do {
-        const response = await gmail.users.messages.list({
+        const response = await gmail.users.threads.list({
           userId: 'me',
-          maxResults: 100,
+          maxResults: 50, // Fewer threads but more comprehensive
           pageToken,
           q: 'in:inbox OR in:sent', // Sync inbox and sent items
         });
 
-        const messages = response.data.messages || [];
+        const threads = response.data.threads || [];
         
-        for (const message of messages) {
-          if (message.id) {
-            await this.processMessage(orgId, emailAccountId, message.id);
+        for (const thread of threads) {
+          if (thread.id) {
+            await this.processThread(orgId, emailAccountId, thread.id);
             processedCount++;
+            threadsCreated++; // Each thread is a conversation
+            
+            // Log progress
+            if (processedCount % 10 === 0) {
+              logger.info('Gmail sync progress', {
+                orgId,
+                emailAccountId,
+                processedThreads: processedCount,
+                action: 'gmail_sync_progress'
+              });
+            }
           }
         }
 
         pageToken = response.data.nextPageToken || undefined;
         
-        // Limit to 500 messages per sync to avoid timeouts
-        if (processedCount >= 500) break;
+        // Limit to 100 threads per sync to avoid timeouts
+        if (processedCount >= 100) break;
         
       } while (pageToken);
 
-      console.log(`Synced ${processedCount} messages for account ${emailAccountId}`);
+      logger.info('Gmail sync completed', {
+        orgId,
+        emailAccountId,
+        threadsProcessed: processedCount,
+        action: 'gmail_sync_complete'
+      });
 
     } catch (error) {
-      console.error('Gmail sync error:', error);
+      logger.error('Gmail sync error', {
+        orgId,
+        emailAccountId,
+        error: error instanceof Error ? error.message : String(error),
+        action: 'gmail_sync_error'
+      });
       
       // Update account status if authentication failed
       if (error && typeof error === 'object' && 'code' in error && error.code === 401) {
@@ -361,13 +549,29 @@ export class GmailService {
       const bccEnc = await encryptForOrg(orgId, bcc, 'email:bcc');
       const snippetEnc = await encryptForOrg(orgId, snippet, 'email:snippet');
 
-             // Find or create thread based on subject (SOC2 compliant)
+             // Find or create thread using Gmail threadId for proper grouping
+       // First check if we have a thread with matching subject
        let thread = await prisma.emailThread.findFirst({
          where: { 
            orgId,
-           accountId: emailAccountId
+           accountId: emailAccountId,
+           subjectEnc: subjectEnc
          }
        });
+
+       // If no exact subject match, try finding by similar subject (Re: FW: etc)
+       if (!thread && subject) {
+         const cleanSubject = subject.replace(/^(Re:|Fw:|Fwd:)\s*/i, '').trim();
+         const cleanSubjectEnc = await encryptForOrg(orgId, cleanSubject, 'email:subject');
+         
+         thread = await prisma.emailThread.findFirst({
+           where: { 
+             orgId,
+             accountId: emailAccountId,
+             subjectEnc: cleanSubjectEnc
+           }
+         });
+       }
 
              if (!thread) {
          const participantsEnc = await encryptForOrg(orgId, `${from}, ${to}`, 'email:participants');
@@ -379,6 +583,15 @@ export class GmailService {
              subjectEnc,
              participantsEnc,
            }
+         });
+         
+         logger.info('Created new email thread', {
+           orgId,
+           emailAccountId,
+           threadId: thread.id,
+           subject: subject.substring(0, 50),
+           gmailThreadId: message.threadId,
+           action: 'email_thread_created'
          });
        } else {
          // Update thread's updatedAt when new message is added
