@@ -602,3 +602,98 @@ body[data-permanent-theme="true"] * {
 .glass-theme-white [data-radix-select-trigger] {
   color: #000000 !important;
 }
+
+/* Fix AI chat widget contrast issues */
+.glass-theme-black .chat-widget,
+.glass-theme-black .chat-bubble,
+.glass-theme-black .ai-chat-container {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+.glass-theme-white .chat-widget,
+.glass-theme-white .chat-bubble,
+.glass-theme-white .ai-chat-container {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(0, 0, 0, 0.2) !important;
+  color: #000000 !important;
+}
+
+/* Chat widget button */
+.glass-theme-black .chat-widget-button,
+.glass-theme-black [data-chat-widget-button] {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+
+.glass-theme-white .chat-widget-button,
+.glass-theme-white [data-chat-widget-button] {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(0, 0, 0, 0.2) !important;
+  color: #000000 !important;
+}
+
+/* Chat messages */
+.glass-theme-black .chat-message,
+.glass-theme-black .ai-message,
+.glass-theme-black .user-message {
+  color: #ffffff !important;
+}
+
+.glass-theme-white .chat-message,
+.glass-theme-white .ai-message,
+.glass-theme-white .user-message {
+  color: #000000 !important;
+}
+
+/* Chat input */
+.glass-theme-black .chat-input,
+.glass-theme-black .chat-widget input {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.glass-theme-white .chat-input,
+.glass-theme-white .chat-widget input {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #000000 !important;
+}
+
+/* Chat widget positioning and z-index */
+.chat-widget,
+.ai-chat-container {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  z-index: 99999 !important;
+}
+
+/* Ensure text is readable on all chat elements */
+.glass-theme-black .chat-widget *,
+.glass-theme-black .chat-bubble *,
+.glass-theme-black .ai-chat-container * {
+  color: #ffffff !important;
+}
+
+.glass-theme-white .chat-widget *,
+.glass-theme-white .chat-bubble *,
+.glass-theme-white .ai-chat-container * {
+  color: #000000 !important;
+}
+
+/* Special handling for icons */
+.glass-theme-black .chat-widget svg,
+.glass-theme-black .chat-bubble svg {
+  color: rgba(255, 255, 255, 0.8) !important;
+  fill: rgba(255, 255, 255, 0.8) !important;
+}
+
+.glass-theme-white .chat-widget svg,
+.glass-theme-white .chat-bubble svg {
+  color: rgba(0, 0, 0, 0.7) !important;
+  fill: rgba(0, 0, 0, 0.7) !important;
+}
