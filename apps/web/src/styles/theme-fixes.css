@@ -1,0 +1,547 @@
+/* ========================================
+   THEME CONTRAST FIXES & BLUR REMOVAL
+   ======================================== */
+
+/* Remove page blur effects entirely */
+.page-blur > *,
+.page-blur > div,
+.page-blur aside,
+.page-blur header,
+.page-blur main,
+.page-blur nav,
+.page-blur footer,
+.page-blur section,
+.page-blur .sidebar,
+.page-blur .enhanced-sidebar {
+  filter: none !important;
+  transition: none !important;
+}
+
+/* Enhanced permanent theme protection */
+[data-permanent-theme="true"],
+[data-permanent-theme="black"],
+html[data-permanent-theme="black"],
+body[data-permanent-theme="true"] {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+/* Force permanent theme styles on all children */
+[data-permanent-theme="true"] *,
+[data-permanent-theme="black"] *,
+html[data-permanent-theme="black"] *,
+body[data-permanent-theme="true"] * {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Permanent theme glass components */
+[data-permanent-theme="true"] .glass-card,
+[data-permanent-theme="black"] .glass-card,
+[data-permanent-theme="true"] .glass-panel,
+[data-permanent-theme="black"] .glass-panel,
+[data-permanent-theme="true"] .glass-button,
+[data-permanent-theme="black"] .glass-button {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+/* Permanent theme text colors */
+[data-permanent-theme="true"] .glass-text-accent,
+[data-permanent-theme="black"] .glass-text-accent,
+[data-permanent-theme="true"] .glass-text-primary,
+[data-permanent-theme="black"] .glass-text-primary {
+  color: #ffffff !important;
+}
+
+[data-permanent-theme="true"] .glass-text-secondary,
+[data-permanent-theme="black"] .glass-text-secondary {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+[data-permanent-theme="true"] .glass-text-muted,
+[data-permanent-theme="black"] .glass-text-muted {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+/* Permanent theme links */
+[data-permanent-theme="true"] a,
+[data-permanent-theme="black"] a {
+  color: rgba(6, 182, 212, 0.9) !important;
+}
+
+[data-permanent-theme="true"] a:hover,
+[data-permanent-theme="black"] a:hover {
+  color: rgba(6, 182, 212, 1) !important;
+}
+
+/* Enhanced Black Theme Contrast */
+.glass-theme-black {
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-surface: rgba(255, 255, 255, 0.08);
+  --glass-surface-strong: rgba(255, 255, 255, 0.12);
+  --glass-surface-subtle: rgba(255, 255, 255, 0.04);
+  --glass-surface-alpha: rgba(255, 255, 255, 0.06);
+  --glass-surface-muted: rgba(255, 255, 255, 0.05);
+  --glass-surface-hover: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.15);
+  --glass-border-strong: rgba(255, 255, 255, 0.25);
+  --glass-border-subtle: rgba(255, 255, 255, 0.08);
+  --glass-text: #ffffff;
+  --glass-text-secondary: rgba(255, 255, 255, 0.85);
+  --glass-text-muted: rgba(255, 255, 255, 0.65);
+  --glass-text-subtle: rgba(255, 255, 255, 0.45);
+  --glass-text-inverse: #000000;
+  --glass-primary: #ffffff;
+  --glass-primary-muted: rgba(255, 255, 255, 0.12);
+  --glass-secondary: rgba(255, 255, 255, 0.55);
+  --glass-accent: #ffffff;
+  --glass-shadow: rgba(255, 255, 255, 0.08);
+  --glass-shadow-glow: rgba(59, 130, 246, 0.15);
+  --glass-glow: rgba(255, 255, 255, 0.15);
+  --glass-glow-cyan: rgba(6, 182, 212, 0.25);
+  --glass-glow-purple: rgba(147, 51, 234, 0.25);
+  --glass-ripple: rgba(255, 255, 255, 0.2);
+  --glass-highlight: rgba(255, 255, 255, 0.08);
+}
+
+/* Enhanced White Theme Contrast */
+.glass-theme-white {
+  --glass-bg: #ffffff;
+  --glass-surface: rgba(0, 0, 0, 0.06);
+  --glass-surface-strong: rgba(0, 0, 0, 0.1);
+  --glass-surface-subtle: rgba(0, 0, 0, 0.03);
+  --glass-surface-alpha: rgba(0, 0, 0, 0.04);
+  --glass-surface-muted: rgba(0, 0, 0, 0.05);
+  --glass-surface-hover: rgba(0, 0, 0, 0.08);
+  --glass-surface-highlight: rgba(0, 0, 0, 0.1);
+  --glass-border: rgba(0, 0, 0, 0.12);
+  --glass-border-strong: rgba(0, 0, 0, 0.2);
+  --glass-border-subtle: rgba(0, 0, 0, 0.06);
+  --glass-text: #1a1a1a;
+  --glass-text-secondary: rgba(0, 0, 0, 0.85);
+  --glass-text-muted: rgba(0, 0, 0, 0.65);
+  --glass-text-subtle: rgba(0, 0, 0, 0.45);
+  --glass-text-inverse: #ffffff;
+  --glass-primary: #1a1a1a;
+  --glass-primary-muted: rgba(0, 0, 0, 0.08);
+  --glass-secondary: rgba(0, 0, 0, 0.55);
+  --glass-accent: #1a1a1a;
+  --glass-shadow: rgba(0, 0, 0, 0.08);
+  --glass-shadow-glow: rgba(59, 130, 246, 0.15);
+  --glass-glow: rgba(0, 0, 0, 0.12);
+  --glass-glow-cyan: rgba(6, 182, 212, 0.25);
+  --glass-glow-purple: rgba(147, 51, 234, 0.25);
+  --glass-ripple: rgba(0, 0, 0, 0.15);
+  --glass-highlight: rgba(0, 0, 0, 0.06);
+}
+
+/* Improved modal and dialog contrast */
+.glass-theme-black [role="dialog"],
+.glass-theme-black .modal-overlay,
+.glass-theme-black .dialog-overlay {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.glass-theme-white [role="dialog"],
+.glass-theme-white .modal-overlay,
+.glass-theme-white .dialog-overlay {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #1a1a1a !important;
+}
+
+/* Better button contrast */
+.glass-theme-black .glass-button,
+.glass-theme-black button {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.glass-theme-black .glass-button:hover,
+.glass-theme-black button:hover {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.glass-theme-white .glass-button,
+.glass-theme-white button {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+  color: #1a1a1a !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+}
+
+.glass-theme-white .glass-button:hover,
+.glass-theme-white button:hover {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+  border-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Input field improvements */
+.glass-theme-black input,
+.glass-theme-black textarea,
+.glass-theme-black select {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.glass-theme-black input::placeholder,
+.glass-theme-black textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.glass-theme-white input,
+.glass-theme-white textarea,
+.glass-theme-white select {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #1a1a1a !important;
+}
+
+.glass-theme-white input::placeholder,
+.glass-theme-white textarea::placeholder {
+  color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Enhanced card visibility */
+.glass-theme-black .glass-card {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.glass-theme-black .glass-card:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.glass-theme-white .glass-card {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #1a1a1a !important;
+}
+
+.glass-theme-white .glass-card:hover {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Headings contrast */
+.glass-theme-black h1, 
+.glass-theme-black h2, 
+.glass-theme-black h3,
+.glass-theme-black h4, 
+.glass-theme-black h5, 
+.glass-theme-black h6 {
+  color: #ffffff !important;
+}
+
+.glass-theme-white h1, 
+.glass-theme-white h2, 
+.glass-theme-white h3,
+.glass-theme-white h4, 
+.glass-theme-white h5, 
+.glass-theme-white h6 {
+  color: #1a1a1a !important;
+}
+
+/* Badge and label improvements */
+.glass-theme-black .glass-badge,
+.glass-theme-black .badge {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.glass-theme-white .glass-badge,
+.glass-theme-white .badge {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  color: #1a1a1a !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Dropdown improvements */
+.glass-theme-black .dropdown-content,
+.glass-theme-black [role="menu"] {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.glass-theme-white .dropdown-content,
+.glass-theme-white [role="menu"] {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #1a1a1a !important;
+}
+
+/* Navigation improvements */
+.glass-theme-black .sidebar,
+.glass-theme-black .navigation {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.glass-theme-white .sidebar,
+.glass-theme-white .navigation {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Enhanced dropdown and select improvements */
+.glass-theme-black [data-radix-select-content],
+.glass-theme-black [data-radix-dropdown-menu-content],
+.glass-theme-black [data-radix-popover-content],
+.glass-theme-black .select-content,
+.glass-theme-black .dropdown-content {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+.glass-theme-white [data-radix-select-content],
+.glass-theme-white [data-radix-dropdown-menu-content],
+.glass-theme-white [data-radix-popover-content],
+.glass-theme-white .select-content,
+.glass-theme-white .dropdown-content {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  color: #1a1a1a !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Dropdown item improvements */
+.glass-theme-black [data-radix-select-item],
+.glass-theme-black [data-radix-dropdown-menu-item],
+.glass-theme-black .select-item,
+.glass-theme-black .dropdown-item {
+  color: #ffffff !important;
+  background-color: transparent !important;
+}
+
+.glass-theme-black [data-radix-select-item]:hover,
+.glass-theme-black [data-radix-dropdown-menu-item]:hover,
+.glass-theme-black .select-item:hover,
+.glass-theme-black .dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+.glass-theme-black [data-radix-select-item][data-highlighted],
+.glass-theme-black [data-radix-dropdown-menu-item][data-highlighted],
+.glass-theme-black [data-radix-select-item][data-state="checked"] {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.glass-theme-white [data-radix-select-item],
+.glass-theme-white [data-radix-dropdown-menu-item],
+.glass-theme-white .select-item,
+.glass-theme-white .dropdown-item {
+  color: #1a1a1a !important;
+  background-color: transparent !important;
+}
+
+.glass-theme-white [data-radix-select-item]:hover,
+.glass-theme-white [data-radix-dropdown-menu-item]:hover,
+.glass-theme-white .select-item:hover,
+.glass-theme-white .dropdown-item:hover {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  color: #1a1a1a !important;
+}
+
+.glass-theme-white [data-radix-select-item][data-highlighted],
+.glass-theme-white [data-radix-dropdown-menu-item][data-highlighted],
+.glass-theme-white [data-radix-select-item][data-state="checked"] {
+  background-color: rgba(0, 0, 0, 0.12) !important;
+  color: #1a1a1a !important;
+}
+
+/* Select trigger improvements */
+.glass-theme-black [data-radix-select-trigger],
+.glass-theme-black .select-trigger {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.glass-theme-black [data-radix-select-trigger]:hover,
+.glass-theme-black .select-trigger:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.glass-theme-white [data-radix-select-trigger],
+.glass-theme-white .select-trigger {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #1a1a1a !important;
+}
+
+.glass-theme-white [data-radix-select-trigger]:hover,
+.glass-theme-white .select-trigger:hover {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  border-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Search input improvements - fix icon overlap */
+.glass-theme-black input[type="search"],
+.glass-theme-black .search-input,
+.glass-theme-black input.glass-input {
+  padding-left: 40px !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.glass-theme-white input[type="search"],
+.glass-theme-white .search-input,
+.glass-theme-white input.glass-input {
+  padding-left: 40px !important;
+  background-color: rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #1a1a1a !important;
+}
+
+/* Search icon positioning */
+.glass-theme-black .search-icon,
+.glass-theme-white .search-icon {
+  position: absolute !important;
+  left: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+/* Specific search input containers */
+.search-container {
+  position: relative !important;
+}
+
+.search-container input {
+  padding-left: 40px !important;
+}
+
+.search-container .search-icon {
+  position: absolute !important;
+  left: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+/* Input field improvements with proper padding */
+.glass-theme-black input,
+.glass-theme-black textarea {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.glass-theme-black input:focus,
+.glass-theme-black textarea:focus {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1) !important;
+}
+
+.glass-theme-white input,
+.glass-theme-white textarea {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #1a1a1a !important;
+}
+
+.glass-theme-white input:focus,
+.glass-theme-white textarea:focus {
+  border-color: rgba(0, 0, 0, 0.25) !important;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Placeholder text improvements */
+.glass-theme-black input::placeholder,
+.glass-theme-black textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.glass-theme-white input::placeholder,
+.glass-theme-white textarea::placeholder {
+  color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Modal and dialog content improvements */
+.glass-theme-black [data-radix-dialog-content],
+.glass-theme-black .modal-content {
+  background-color: rgba(0, 0, 0, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+.glass-theme-white [data-radix-dialog-content],
+.glass-theme-white .modal-content {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  color: #1a1a1a !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+/* Fix specific search input paddings that overlap with icons */
+.glass-theme-black input.pl-10,
+.glass-theme-black input.pl-12,
+.glass-theme-black input.pl-16,
+.glass-theme-white input.pl-10,
+.glass-theme-white input.pl-12,
+.glass-theme-white input.pl-16 {
+  padding-left: 2.5rem !important; /* 40px for consistent icon spacing */
+}
+
+.glass-theme-black input.pl-9,
+.glass-theme-white input.pl-9 {
+  padding-left: 2.25rem !important; /* 36px for slightly smaller spacing */
+}
+
+/* Ensure search icons are positioned correctly */
+.glass-theme-black .relative .absolute.left-3,
+.glass-theme-black .relative .absolute.left-4,
+.glass-theme-white .relative .absolute.left-3,
+.glass-theme-white .relative .absolute.left-4 {
+  left: 0.75rem !important; /* 12px consistent positioning */
+}
+
+/* Fix overlapping text in various common search patterns */
+.glass-theme-black .relative input[class*="pl-"],
+.glass-theme-white .relative input[class*="pl-"] {
+  padding-left: 2.5rem !important;
+}
+
+.glass-theme-black .relative input + .absolute,
+.glass-theme-white .relative input + .absolute {
+  left: 0.75rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+/* Fix search inputs in specific components */
+.glass-theme-black .glass-input.pl-16,
+.glass-theme-white .glass-input.pl-16 {
+  padding-left: 2.5rem !important;
+}
+
+.glass-theme-black .glass-input.pl-10,
+.glass-theme-white .glass-input.pl-10 {
+  padding-left: 2.5rem !important;
+}
+
+.glass-theme-black .glass-input.pl-9,
+.glass-theme-white .glass-input.pl-9 {
+  padding-left: 2.25rem !important;
+}

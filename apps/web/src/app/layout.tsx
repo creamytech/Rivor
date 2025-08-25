@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
+import "../styles/theme-fixes.css";
 
 // Import polyfills for server-side compatibility
 import "./polyfills.js";

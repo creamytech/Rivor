@@ -84,7 +84,7 @@ export default function Home() {
   };
 
   return (
-    <div className={`min-h-screen glass-theme-black text-white overflow-x-hidden ${isWaitlistOpen ? 'page-blur' : ''}`} data-glass-theme="black" data-permanent-theme="black" style={{backgroundColor: '#000000', color: '#ffffff'}}>
+    <div className={`min-h-screen glass-theme-black text-white overflow-x-hidden`} data-glass-theme="black" data-permanent-theme="black" style={{backgroundColor: '#000000', color: '#ffffff'}}>
       {/* Navigation */}
       <Navigation onWaitlistClick={openWaitlist} />
       

@@ -40,7 +40,8 @@ import {
   Filter,
   X,
   Eye,
-  EyeOff
+  EyeOff,
+  Download
 } from "lucide-react";
 
 interface Email {
@@ -81,6 +82,8 @@ export default function InboxPage() {
   const [emails, setEmails] = useState<Email[]>([]);
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
   const [activeEmail, setActiveEmail] = useState<Email | null>(null);
+  const [activeThread, setActiveThread] = useState<any>(null);
+  const [loadingThread, setLoadingThread] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
@@ -95,6 +98,7 @@ export default function InboxPage() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
   const [replyToEmail, setReplyToEmail] = useState<{ email: string; name: string; subject: string; threadId: string } | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Load emails from API
   const loadEmails = async (filter: string = 'all') => {
@@ -165,7 +169,7 @@ export default function InboxPage() {
         
         setEmails(transformedEmails);
         if (transformedEmails.length > 0 && !activeEmail) {
-          setActiveEmail(transformedEmails[0]);
+          handleEmailSelect(transformedEmails[0]);
         }
       } else {
         console.error('Failed to load emails:', response.statusText);
@@ -283,6 +287,7 @@ export default function InboxPage() {
       // Clear active email if it was archived
       if (activeEmail && emailIds.includes(activeEmail.id)) {
         setActiveEmail(null);
+        setActiveThread(null);
       }
       
       // Call new consolidated thread action API
@@ -305,6 +310,7 @@ export default function InboxPage() {
       // Clear active email if it was deleted
       if (activeEmail && emailIds.includes(activeEmail.id)) {
         setActiveEmail(null);
+        setActiveThread(null);
       }
       
       // Call new consolidated thread action API
@@ -341,11 +347,78 @@ export default function InboxPage() {
   const starredCount = emails.filter(e => e.isStarred).length;
   const importantCount = emails.filter(e => e.isImportant).length;
 
+  // Fetch real thread content when an email is selected
+  const fetchThreadContent = async (threadId: string) => {
+    setLoadingThread(true);
+    try {
+      const response = await fetch(`/api/inbox/threads/${threadId}`);
+      if (response.ok) {
+        const threadData = await response.json();
+        setActiveThread(threadData);
+        console.log('Fetched thread data:', threadData);
+      } else {
+        console.error('Failed to fetch thread content:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error fetching thread content:', error);
+    } finally {
+      setLoadingThread(false);
+    }
+  };
+
+  // Handle email selection and fetch its content
+  const handleEmailSelect = async (email: Email) => {
+    setActiveEmail(email);
+    await fetchThreadContent(email.id);
+    
+    // Mark as read when opened
+    if (!email.isRead) {
+      markAsRead([email.id]);
+    }
+  };
+
   // Handle email sent callback
   const handleEmailSent = () => {
     // Refresh the inbox to show the latest emails
     loadEmails(activeFilter);
     setReplyToEmail(null);
+  };
+
+  // Handle email sync
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      const response = await fetch('/api/sync/gmail', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        console.log('Email sync successful:', result);
+        // Refresh the inbox to show new emails
+        loadEmails(activeFilter);
+        // Show success message
+        alert(`Email sync successful! ${result.stats?.threadsCreated || 0} new threads, ${result.stats?.messagesCreated || 0} new messages.`);
+      } else {
+        console.error('Email sync failed:', result);
+        alert(`Email sync failed: ${result.message || result.error}`);
+        
+        if (result.action === 'connect_google_first') {
+          if (confirm('Connect Google account now?')) {
+            window.location.href = '/api/auth/signin/google';
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Email sync request failed:', error);
+      alert('Email sync failed due to network error. Please try again.');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   // Mobile view
@@ -386,6 +459,15 @@ export default function InboxPage() {
               <Button variant="liquid" size="sm" onClick={() => loadEmails(activeFilter)}>
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleSync}
+                disabled={isSyncing}
+              >
+                <Download className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                {isSyncing ? 'Syncing...' : 'Sync Gmail'}
               </Button>
               <Button 
                 variant="liquid"
@@ -568,7 +650,7 @@ export default function InboxPage() {
                         activeEmail?.id === email.id ? 'bg-[var(--glass-surface-hover)]' : ''
                       } ${!email.isRead ? 'border-l-4 border-l-blue-500' : ''}`}
                       style={{ borderColor: 'var(--glass-border)' }}
-                      onClick={() => setActiveEmail(email)}
+                      onClick={() => handleEmailSelect(email)}
                     >
                       <div className="flex items-start gap-3">
                         <input
@@ -727,12 +809,57 @@ export default function InboxPage() {
                   
                   {/* Email Content */}
                   <div className="flex-1 p-6 overflow-y-auto">
-                    <div 
-                      className="prose max-w-none whitespace-pre-wrap"
-                      style={{ color: 'var(--glass-text)' }}
-                    >
-                      {activeEmail.body}
-                    </div>
+                    {loadingThread ? (
+                      <div className="flex items-center justify-center h-32">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                      </div>
+                    ) : activeThread ? (
+                      <div className="space-y-6">
+                        {activeThread.messages.map((message: any, index: number) => (
+                          <div key={message.id || index} className="border-b pb-6" style={{ borderColor: 'var(--glass-border)' }}>
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                  <span className="text-white text-xs font-medium">
+                                    {message.from?.name?.charAt(0) || message.from?.email?.charAt(0) || 'U'}
+                                  </span>
+                                </div>
+                                <div>
+                                  <div className="font-medium" style={{ color: 'var(--glass-text)' }}>
+                                    {message.from?.name || message.from?.email || 'Unknown Sender'}
+                                  </div>
+                                  <div className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                                    {new Date(message.sentAt).toLocaleString()}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div 
+                              className="prose max-w-none email-content"
+                              style={{ color: 'var(--glass-text)' }}
+                            >
+                              {message.htmlBody ? (
+                                <div 
+                                  dangerouslySetInnerHTML={{ __html: message.htmlBody }}
+                                  className="email-content"
+                                />
+                              ) : (
+                                <div className="whitespace-pre-wrap">
+                                  {message.textBody || 'No content available'}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div 
+                        className="prose max-w-none whitespace-pre-wrap"
+                        style={{ color: 'var(--glass-text)' }}
+                      >
+                        {activeEmail.body}
+                      </div>
+                    )}
                     
                     {/* Quick Actions */}
                     <div className="mt-8 pt-6 border-t" style={{ borderColor: 'var(--glass-border)' }}>

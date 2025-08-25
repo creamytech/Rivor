@@ -86,6 +86,13 @@ export async function POST(req: NextRequest) {
       sendUpdates: 'all'
     });
 
+    // Encrypt data before saving to database
+    const { encryptForOrg } = await import('@/server/crypto');
+    const titleEnc = await encryptForOrg(orgId, event.data.summary || title, 'calendar:title');
+    const locationEnc = event.data.location ? await encryptForOrg(orgId, event.data.location, 'calendar:location') : null;
+    const notesEnc = description ? await encryptForOrg(orgId, description, 'calendar:notes') : null;
+    const attendeesEnc = attendees && attendees.length > 0 ? await encryptForOrg(orgId, JSON.stringify(attendees), 'calendar:attendees') : null;
+    
     // Save event to database
     const savedEvent = await prisma.calendarEvent.create({
       data: {
@@ -93,10 +100,10 @@ export async function POST(req: NextRequest) {
         orgId,
         start: new Date(event.data.start?.dateTime || event.data.start?.date!),
         end: new Date(event.data.end?.dateTime || event.data.end?.date!),
-        titleIndex: event.data.summary || title,
-        locationIndex: event.data.location || location || '',
-        notesEnc: null,
-        attendeesEnc: null
+        titleEnc,
+        locationEnc,
+        notesEnc,
+        attendeesEnc
       }
     });
 
@@ -166,24 +173,76 @@ export async function GET(req: NextRequest) {
         id: true,
         start: true,
         end: true,
-        titleIndex: true,
-        locationIndex: true,
+        titleEnc: true,
+        locationEnc: true,
         notesEnc: true,
         attendeesEnc: true
       }
     });
 
-    // Transform events to match expected format
-    const transformedEvents = events.map(event => ({
-      id: event.id,
-      title: event.titleIndex || 'Untitled Event',
-      description: '', // We can decrypt notesEnc if needed
-      start: event.start,
-      end: event.end,
-      location: event.locationIndex || '',
-      attendees: [], // We can decrypt attendeesEnc if needed
-      htmlLink: '',
-      isAllDay: false // We can determine this from start/end times if needed
+    // Decrypt and transform events to match expected format
+    const transformedEvents = await Promise.all(events.map(async (event) => {
+      let title = 'Untitled Event';
+      let location = '';
+      let description = '';
+      let attendees: any[] = [];
+      
+      // Decrypt title
+      if (event.titleEnc) {
+        try {
+          const { decryptForOrg } = await import('@/server/crypto');
+          const titleBytes = await decryptForOrg(orgId, event.titleEnc, 'calendar:title');
+          title = new TextDecoder().decode(titleBytes);
+        } catch (error) {
+          logger.warn('Failed to decrypt event title', { eventId: event.id, error });
+        }
+      }
+      
+      // Decrypt location
+      if (event.locationEnc) {
+        try {
+          const { decryptForOrg } = await import('@/server/crypto');
+          const locationBytes = await decryptForOrg(orgId, event.locationEnc, 'calendar:location');
+          location = new TextDecoder().decode(locationBytes);
+        } catch (error) {
+          logger.warn('Failed to decrypt event location', { eventId: event.id, error });
+        }
+      }
+      
+      // Decrypt notes/description
+      if (event.notesEnc) {
+        try {
+          const { decryptForOrg } = await import('@/server/crypto');
+          const notesBytes = await decryptForOrg(orgId, event.notesEnc, 'calendar:notes');
+          description = new TextDecoder().decode(notesBytes);
+        } catch (error) {
+          logger.warn('Failed to decrypt event notes', { eventId: event.id, error });
+        }
+      }
+      
+      // Decrypt attendees if available
+      if (event.attendeesEnc) {
+        try {
+          const { decryptForOrg } = await import('@/server/crypto');
+          const attendeesBytes = await decryptForOrg(orgId, event.attendeesEnc, 'calendar:attendees');
+          const attendeesStr = new TextDecoder().decode(attendeesBytes);
+          attendees = JSON.parse(attendeesStr) || [];
+        } catch (error) {
+          logger.warn('Failed to decrypt event attendees', { eventId: event.id, error });
+        }
+      }
+      
+      return {
+        id: event.id,
+        title,
+        description,
+        start: event.start,
+        end: event.end,
+        location,
+        attendees,
+        htmlLink: '',
+        isAllDay: false // We can determine this from start/end times if needed
+      };
     }));
 
     return NextResponse.json({ events: transformedEvents });
