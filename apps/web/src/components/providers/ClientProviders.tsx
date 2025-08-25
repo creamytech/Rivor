@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { AnimationProvider } from "@/contexts/AnimationContext";
 import { Toaster } from "@/components/ui/toaster";
 import { ToastProvider } from "@/components/river/RiverToast";
 
@@ -18,16 +19,18 @@ export default function ClientProviders({ children }: ClientProvidersProps) {
   return (
     <SessionProviderWrapper>
       <ThemeProvider>
-        <TRPCProvider>
-          <ToastProvider>
-            {children}
-            <ClientRoot />
-            <Toaster />
-            <div id="portal-toasts" />
-            <div id="portal-modals" />
-            <div id="portal-drawers" />
-          </ToastProvider>
-        </TRPCProvider>
+        <AnimationProvider>
+          <TRPCProvider>
+            <ToastProvider>
+              {children}
+              <ClientRoot />
+              <Toaster />
+              <div id="portal-toasts" />
+              <div id="portal-modals" />
+              <div id="portal-drawers" />
+            </ToastProvider>
+          </TRPCProvider>
+        </AnimationProvider>
       </ThemeProvider>
     </SessionProviderWrapper>
   );

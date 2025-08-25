@@ -1107,6 +1107,75 @@ body[data-permanent-theme="true"] h6 {
   color: rgba(255, 255, 255, 0.6) !important;
 }
 
+/* ANIMATION CONTROL SYSTEM */
+/* CSS custom properties for animation control */
+:root {
+  --animation-duration: 1;
+  --animation-enabled: 1;
+}
+
+/* Reduced motion overrides - respects both user setting and system preference */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after,
+body.reduce-motion *,
+body.reduce-motion *::before,
+body.reduce-motion *::after {
+  animation-duration: 0.001s !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.001s !important;
+  transition-delay: 0s !important;
+}
+
+/* System preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001s !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001s !important;
+    transition-delay: 0s !important;
+  }
+}
+
+/* Disable specific animations when reduced motion is enabled */
+.reduce-motion .glass-spinner,
+.reduce-motion .glass-spinner-large,
+.reduce-motion .glass-spinner-container,
+body.reduce-motion .glass-spinner,
+body.reduce-motion .glass-spinner-large,
+body.reduce-motion .glass-spinner-container {
+  animation: none !important;
+}
+
+.reduce-motion .glass-hover-pulse,
+.reduce-motion .glass-press-feedback,
+.reduce-motion .glass-ripple-effect,
+body.reduce-motion .glass-hover-pulse,
+body.reduce-motion .glass-press-feedback,
+body.reduce-motion .glass-ripple-effect {
+  transform: none !important;
+  transition: none !important;
+}
+
+/* Framer Motion overrides for reduced motion */
+.reduce-motion [data-framer-motion],
+body.reduce-motion [data-framer-motion] {
+  transform: none !important;
+  opacity: 1 !important;
+}
+
+/* Conditional animations using CSS variables */
+.conditional-animation {
+  animation-duration: calc(var(--animation-duration) * 0.3s);
+  transition-duration: calc(var(--animation-duration) * 0.2s);
+}
+
 /* Enhanced liquid glass animations for sidebar logos */
 @keyframes shimmer {
   0% { transform: translateX(-100%) skewX(-15deg); opacity: 0; }
@@ -1140,4 +1209,39 @@ body[data-permanent-theme="true"] h6 {
   50% { 
     filter: drop-shadow(0 0 16px rgba(6, 182, 212, 0.6)) drop-shadow(0 0 24px rgba(147, 51, 234, 0.4)) brightness(1.1);
   }
+}
+
+/* Disable keyframe animations when reduced motion is active */
+.reduce-motion *,
+body.reduce-motion * {
+  animation-name: none !important;
+}
+
+/* Specific glass component animation overrides */
+.reduce-motion .glass-topbar-shimmer,
+.reduce-motion .glass-ambient-orb,
+.reduce-motion .glass-logo-glow,
+body.reduce-motion .glass-topbar-shimmer,
+body.reduce-motion .glass-ambient-orb,
+body.reduce-motion .glass-logo-glow {
+  animation: none !important;
+  transform: none !important;
+}
+
+/* Button animation overrides */
+.reduce-motion button,
+.reduce-motion .glass-button,
+.reduce-motion .glass-hover-pulse,
+body.reduce-motion button,
+body.reduce-motion .glass-button,
+body.reduce-motion .glass-hover-pulse {
+  transform: none !important;
+  transition: none !important;
+}
+
+.reduce-motion button:hover,
+.reduce-motion .glass-button:hover,
+body.reduce-motion button:hover,
+body.reduce-motion .glass-button:hover {
+  transform: none !important;
 }

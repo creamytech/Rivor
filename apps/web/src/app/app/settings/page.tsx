@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatedWrapper, AnimatedCard, AnimatedFadeIn, AnimatedSlideIn } from '@/components/common/AnimatedWrapper';
 import AppShell from '@/components/app/AppShell';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAnimations } from '@/contexts/AnimationContext';
 import { useMobileDetection } from '@/hooks/useMobileDetection';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -115,6 +117,7 @@ interface UserSettings {
 
 export default function SettingsPage() {
   const { theme } = useTheme();
+  const { shouldAnimate, setAnimationsEnabled } = useAnimations();
   const { isMobile } = useMobileDetection();
   const [activeTab, setActiveTab] = useState('profile');
   const [settings, setSettings] = useState<UserSettings | null>(null);
@@ -326,6 +329,11 @@ export default function SettingsPage() {
     
     setSettings(newSettings);
     
+    // Special handling for animations setting
+    if (section === 'appearance' && key === 'animations') {
+      setAnimationsEnabled(value);
+    }
+    
     // Auto-save to localStorage
     try {
       localStorage.setItem('rivor-user-settings', JSON.stringify(newSettings));
@@ -359,10 +367,8 @@ export default function SettingsPage() {
       <AppShell>
         <div className="px-4 mt-4 mb-2 main-content-area">
           {/* Liquid Glass Header */}
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+          <AnimatedSlideIn 
+            direction="down"
             className="glass-card glass-border-active mb-6"
             style={{ 
               backgroundColor: 'var(--glass-surface)', 
@@ -423,15 +429,13 @@ export default function SettingsPage() {
                 ))}
               </div>
             </div>
-          </motion.div>
+          </AnimatedSlideIn>
 
           <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'grid-cols-12'}`}>
             {/* Settings Sidebar */}
             {!isMobile && (
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
+              <AnimatedSlideIn 
+                direction="left"
                 className="col-span-3"
               >
               <div className="glass-card glass-border mb-6"
@@ -495,15 +499,14 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
-              </motion.div>
+              </AnimatedSlideIn>
             )}
 
             {/* Mobile Settings Navigation */}
             {isMobile && (
-              <motion.div 
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
+              <AnimatedSlideIn 
+                direction="up"
+                distance={10}
                 className="mb-4"
               >
                 <div className="glass-card glass-border"
@@ -531,14 +534,12 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </AnimatedSlideIn>
             )}
 
             {/* Main Settings Content */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+            <AnimatedSlideIn 
+              direction="up"
               className={isMobile ? 'col-span-1' : 'col-span-9'}
             >
               <div className="glass-card glass-border-active"
@@ -747,18 +748,33 @@ export default function SettingsPage() {
                             </div>
 
                             <div className="flex items-center justify-between p-4 rounded-lg bg-white/30 dark:bg-black/20">
-                              <div>
-                                <h3 className="text-sm font-medium" style={{ color: 'var(--glass-text)' }}>
-                                  Animations
-                                </h3>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="text-sm font-medium" style={{ color: 'var(--glass-text)' }}>
+                                    Animations
+                                  </h3>
+                                  {!shouldAnimate && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      Disabled for Performance
+                                    </Badge>
+                                  )}
+                                </div>
                                 <p className="text-xs mt-1" style={{ color: 'var(--glass-text-muted)' }}>
-                                  Enable smooth transitions and animations
+                                  Enable smooth transitions and animations. Disable for better performance on slower devices.
                                 </p>
+                                {typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches && (
+                                  <p className="text-xs mt-1 text-amber-600 dark:text-amber-400">
+                                    ⚠️ System preference set to reduce motion
+                                  </p>
+                                )}
                               </div>
-                              <Switch
-                                checked={settings?.appearance.animations || false}
-                                onCheckedChange={(checked) => updateSetting('appearance', 'animations', checked)}
-                              />
+                              <div className="flex items-center gap-2 ml-4">
+                                <div className={`w-2 h-2 rounded-full ${shouldAnimate ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                                <Switch
+                                  checked={settings?.appearance.animations || false}
+                                  onCheckedChange={(checked) => updateSetting('appearance', 'animations', checked)}
+                                />
+                              </div>
                             </div>
 
                             <div className="flex items-center justify-between p-4 rounded-lg bg-white/30 dark:bg-black/20">
@@ -784,6 +800,49 @@ export default function SettingsPage() {
                                 <Sparkles className="h-4 w-4" />
                                 Restart Tour
                               </Button>
+                            </div>
+                          </div>
+
+                          {/* Animation Demo Section */}
+                          <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                                <Zap className="h-4 w-4 text-white" />
+                              </div>
+                              <div>
+                                <h3 className="text-sm font-semibold" style={{ color: 'var(--glass-text)' }}>
+                                  Animation Preview
+                                </h3>
+                                <p className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
+                                  Test how animations look with your current setting
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-3">
+                              <AnimatedCard 
+                                className="p-3 bg-white/50 dark:bg-black/20 rounded-lg border"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                                  <span className="text-xs font-medium">Card Animation</span>
+                                </div>
+                              </AnimatedCard>
+                              
+                              <AnimatedWrapper
+                                className="p-3 bg-white/50 dark:bg-black/20 rounded-lg border cursor-pointer"
+                                whileHover={{ scale: 1.05, rotate: 1 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                  <span className="text-xs font-medium">Hover Effect</span>
+                                </div>
+                              </AnimatedWrapper>
+                            </div>
+                            
+                            <div className="mt-3 text-xs text-center" style={{ color: 'var(--glass-text-muted)' }}>
+                              {shouldAnimate ? '✨ Animations enabled' : '⚡ Animations disabled - Performance mode'}
                             </div>
                           </div>
                         </div>
@@ -1055,7 +1114,7 @@ export default function SettingsPage() {
                   </AnimatePresence>
                 </div>
               </div>
-            </motion.div>
+            </AnimatedSlideIn>
           </div>
         </div>
       </AppShell>
