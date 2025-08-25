@@ -3886,11 +3886,11 @@ body.modal-open[data-waitlist-modal-open="true"] [data-radix-portal] {
   border-color: rgba(255, 255, 255, 0.4) !important;
 }
 
-/* Comprehensive dropdown fixes for all UI components */
+/* Comprehensive dropdown fixes - DARK THEME ONLY */
 /* Shadcn Select components */
-[data-radix-select-content],
-.select-content,
-[role="listbox"] {
+.glass-theme-black [data-radix-select-content],
+.glass-theme-black .select-content,
+.glass-theme-black [role="listbox"] {
   background: rgba(0, 0, 0, 0.95) !important;
   backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
   -webkit-backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
@@ -3900,9 +3900,9 @@ body.modal-open[data-waitlist-modal-open="true"] [data-radix-portal] {
     0 20px 40px -8px rgba(0, 0, 0, 0.8) !important;
 }
 
-/* Shadcn DropdownMenu components */
-[data-radix-dropdown-menu-content],
-.dropdown-menu-content {
+/* Shadcn DropdownMenu components - DARK THEME ONLY */
+.glass-theme-black [data-radix-dropdown-menu-content],
+.glass-theme-black .dropdown-menu-content {
   background: rgba(0, 0, 0, 0.95) !important;
   backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
   -webkit-backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
@@ -3912,9 +3912,9 @@ body.modal-open[data-waitlist-modal-open="true"] [data-radix-portal] {
     0 20px 40px -8px rgba(0, 0, 0, 0.8) !important;
 }
 
-/* Shadcn Popover components */
-[data-radix-popover-content],
-.popover-content {
+/* Shadcn Popover components - DARK THEME ONLY */
+.glass-theme-black [data-radix-popover-content],
+.glass-theme-black .popover-content {
   background: rgba(0, 0, 0, 0.95) !important;
   backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
   -webkit-backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
@@ -3953,23 +3953,23 @@ body.modal-open[data-waitlist-modal-open="true"] [data-radix-portal] {
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
 
-/* Additional fallback for any missed dropdowns */
-[role="menu"],
-[role="listbox"],
-[role="combobox"],
-.dropdown,
-.select-dropdown,
-.menu-dropdown {
+/* Additional fallback for any missed dropdowns - DARK THEME ONLY */
+.glass-theme-black [role="menu"],
+.glass-theme-black [role="listbox"],
+.glass-theme-black [role="combobox"],
+.glass-theme-black .dropdown,
+.glass-theme-black .select-dropdown,
+.glass-theme-black .menu-dropdown {
   background: rgba(0, 0, 0, 0.95) !important;
   backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
   -webkit-backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
 }
 
-/* Force glass theme for all dropdown portals */
-[data-radix-portal] [data-radix-select-content],
-[data-radix-portal] [data-radix-dropdown-menu-content],
-[data-radix-portal] [data-radix-popover-content] {
+/* Force glass theme for dropdown portals - DARK THEME ONLY */
+.glass-theme-black [data-radix-portal] [data-radix-select-content],
+.glass-theme-black [data-radix-portal] [data-radix-dropdown-menu-content],
+.glass-theme-black [data-radix-portal] [data-radix-popover-content] {
   background: rgba(0, 0, 0, 0.95) !important;
   backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
   -webkit-backdrop-filter: blur(32px) saturate(1.4) brightness(1.1) !important;
