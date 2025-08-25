@@ -41,7 +41,8 @@ import {
   X,
   Eye,
   EyeOff,
-  Download
+  Download,
+  Eraser
 } from "lucide-react";
 
 interface Email {
@@ -99,6 +100,7 @@ export default function InboxPage() {
   }, []);
   const [replyToEmail, setReplyToEmail] = useState<{ email: string; name: string; subject: string; threadId: string } | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
 
   // Load emails from API
   const loadEmails = async (filter: string = 'all') => {
@@ -421,6 +423,42 @@ export default function InboxPage() {
     }
   };
 
+  // Handle clear all emails and events
+  const handleClearAll = async () => {
+    if (!confirm('Are you sure you want to clear ALL emails and calendar events? This action cannot be undone.')) {
+      return;
+    }
+
+    setIsClearing(true);
+    try {
+      const response = await fetch('/api/clear-all', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        console.log('Clear all successful:', result);
+        // Clear local state
+        setEmails([]);
+        setActiveEmail(null);
+        setActiveThread(null);
+        alert(`Successfully cleared ${result.emailsDeleted || 0} emails and ${result.eventsDeleted || 0} calendar events.`);
+      } else {
+        console.error('Clear all failed:', result);
+        alert(`Clear all failed: ${result.message || result.error}`);
+      }
+    } catch (error) {
+      console.error('Clear all request failed:', error);
+      alert('Clear all failed due to network error. Please try again.');
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
   // Mobile view
   if (isMobile) {
     return (
@@ -468,6 +506,16 @@ export default function InboxPage() {
               >
                 <Download className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
                 {isSyncing ? 'Syncing...' : 'Sync Gmail'}
+              </Button>
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={handleClearAll}
+                disabled={isClearing}
+                className="bg-red-500 hover:bg-red-600 text-white"
+              >
+                <Eraser className={`h-4 w-4 mr-2 ${isClearing ? 'animate-pulse' : ''}`} />
+                {isClearing ? 'Clearing...' : 'Clear All'}
               </Button>
               <Button 
                 variant="liquid"
