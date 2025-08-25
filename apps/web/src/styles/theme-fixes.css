@@ -317,6 +317,24 @@ body[data-permanent-theme="true"] * {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
 }
 
+/* ULTIMATE DROPDOWN TEXT FIX FOR LIGHT MODE */
+.glass-theme-white [data-radix-select-content],
+.glass-theme-white [data-radix-dropdown-menu-content],
+.glass-theme-white [data-radix-popover-content] {
+  background: white !important;
+  color: black !important;
+}
+
+.glass-theme-white [data-radix-select-content] span,
+.glass-theme-white [data-radix-dropdown-menu-content] span,
+.glass-theme-white [data-radix-popover-content] span,
+.glass-theme-white [data-radix-select-content] div,
+.glass-theme-white [data-radix-dropdown-menu-content] div,
+.glass-theme-white [data-radix-popover-content] div {
+  color: black !important;
+  background: transparent !important;
+}
+
 /* FORCE dropdown text colors to override universal selectors */
 .glass-theme-white [data-radix-select-content],
 .glass-theme-white [data-radix-dropdown-menu-content],
@@ -759,12 +777,23 @@ body.glass-theme-black [data-radix-popover-content] * {
 .glass-theme-black .glass-task-card,
 .glass-theme-black .glass-task-card.glass-priority-high,
 .glass-theme-black .glass-task-card.glass-status-in-progress {
-  background-color: rgba(0, 0, 0, 0.85) !important;
-  border: 2px solid rgba(255, 255, 255, 0.4) !important;
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
   color: #ffffff !important;
-  backdrop-filter: blur(20px) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(15px) !important;
   opacity: 1 !important;
+}
+
+/* AI CHAT BUBBLES DEFAULT STATE - NOT HOVER */
+.glass-theme-black .glass-task-card {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+.glass-theme-black .glass-task-card * {
+  color: #ffffff !important;
 }
 
 .glass-theme-white .assistant-page .chat-bubble,
