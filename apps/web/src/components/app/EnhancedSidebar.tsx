@@ -294,50 +294,24 @@ export default function EnhancedSidebar({
                     />
                   </div>
                 ) : (
-                  // Expanded - Show logo with text
-                  <div className="flex items-center gap-3">
-                    <div className="relative w-8 h-8 overflow-hidden">
-                      <motion.img
-                        key={`logo-expanded-${theme}`}
-                        src={theme === 'black' 
-                          ? '/images/Dark%20mode%20Sidebar.svg' 
-                          : '/images/Light%20Mode%20Sidebar.svg'
-                        }
-                        alt="Logo"
-                        className="w-full h-full object-contain"
-                        initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
-                        animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                        exit={{ opacity: 0, scale: 0.8, rotate: 10 }}
-                        transition={{ 
-                          duration: 0.6,
-                          ease: [0.4, 0, 0.2, 1],
-                          opacity: { duration: 0.4 },
-                          scale: { duration: 0.5, ease: "backOut" },
-                          rotate: { duration: 0.6 }
-                        }}
-                        style={{
-                          filter: 'drop-shadow(0 0 8px rgba(6, 182, 212, 0.3))'
-                        }}
-                      />
-                    </div>
-                    <motion.span 
-                      className="font-bold leading-none tracking-tight glass-gradient-text cursor-pointer text-2xl"
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.2, duration: 0.4 }}
-                      style={{
-                        background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 25%, #9333ea 50%, #06b6d4 75%, #3b82f6 100%)',
-                        backgroundSize: '400% 400%',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                        animation: 'gradientShift 8s ease-in-out infinite',
-                        filter: 'drop-shadow(0 0 8px rgba(6, 182, 212, 0.3))'
-                      }}
-                    >
-                      Rivor
-                    </motion.span>
-                  </div>
+                  // Expanded - Show only text (ready for wordmark logo replacement)
+                  <motion.span 
+                    className="font-bold leading-none tracking-tight glass-gradient-text cursor-pointer text-2xl"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1, duration: 0.4 }}
+                    style={{
+                      background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 25%, #9333ea 50%, #06b6d4 75%, #3b82f6 100%)',
+                      backgroundSize: '400% 400%',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                      animation: 'gradientShift 8s ease-in-out infinite',
+                      filter: 'drop-shadow(0 0 8px rgba(6, 182, 212, 0.3))'
+                    }}
+                  >
+                    Rivor
+                  </motion.span>
                 )}
               </motion.div>
             </Link>
