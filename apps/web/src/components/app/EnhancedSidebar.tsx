@@ -295,7 +295,7 @@ export default function EnhancedSidebar({
                   </div>
                 ) : (
                   // Expanded - Show full wordmark logo with theme-based switching
-                  <div className="relative h-10 overflow-hidden">
+                  <div className="relative h-10 overflow-hidden flex items-center justify-start">
                     <motion.img
                       key={`logo-full-${theme}`}
                       src={theme === 'black' 
