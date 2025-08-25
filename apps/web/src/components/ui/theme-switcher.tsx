@@ -82,7 +82,16 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({
                       return (
                         <div
                           key={themeOption.id}
-                          className="flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors hover:bg-white/5"
+                          className="flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors"
+                          style={{
+                            background: 'transparent'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'var(--glass-surface-hover)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                          }}
                           onClick={() => handleThemeSelect(themeOption.id)}
                         >
                           <div className="flex items-center justify-center w-8 h-8 rounded-lg" 

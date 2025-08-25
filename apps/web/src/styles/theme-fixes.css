@@ -988,6 +988,31 @@ body[data-permanent-theme="true"] h6 {
   color: #ffffff !important;
 }
 
+/* GLASS-MODAL DROPDOWN FIXES */
+.glass-theme-white .glass-modal {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(0, 0, 0, 0.2) !important;
+  color: #000000 !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+}
+
+.glass-theme-black .glass-modal {
+  background: rgba(0, 0, 0, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+}
+
+.glass-theme-white .glass-modal * {
+  color: #000000 !important;
+}
+
+.glass-theme-black .glass-modal * {
+  color: #ffffff !important;
+}
+
 /* Enhanced liquid glass animations for sidebar logos */
 @keyframes shimmer {
   0% { transform: translateX(-100%) skewX(-15deg); opacity: 0; }

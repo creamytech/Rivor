@@ -238,7 +238,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
             {/* Header */}
             <div className="p-4 border-b border-[var(--glass-border)]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: 'var(--glass-text-muted)' }} />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -278,19 +278,25 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
                                   : 'hover:bg-[var(--glass-surface-hover)] border-transparent'
                               } border`}
                             >
-                              <div className="text-slate-600 dark:text-slate-400">
+                              <div style={{ color: 'var(--glass-text-muted)' }}>
                                 {action.icon}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <div className="font-medium text-sm text-slate-900 dark:text-slate-100">
+                                <div className="font-medium text-sm" style={{ color: 'var(--glass-text)' }}>
                                   {action.title}
                                 </div>
-                                <div className="text-xs text-slate-600 dark:text-slate-400">
+                                <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
                                   {action.description}
                                 </div>
                               </div>
                               {action.shortcut && (
-                                <div className="text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
+                                <div 
+                                  className="text-xs px-2 py-1 rounded"
+                                  style={{
+                                    color: 'var(--glass-text-muted)',
+                                    background: 'var(--glass-surface-subtle)'
+                                  }}
+                                >
                                   {action.shortcut}
                                 </div>
                               )}
@@ -307,16 +313,22 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
 
                 {filteredActions.length === 0 && (
                   <div className="text-center py-8">
-                    <Search className="h-12 w-12 text-slate-400 mx-auto mb-3" />
-                    <p className="text-slate-600 dark:text-slate-400">No actions found</p>
+                    <Search className="h-12 w-12 mx-auto mb-3" style={{ color: 'var(--glass-text-muted)' }} />
+                    <p style={{ color: 'var(--glass-text-muted)' }}>No actions found</p>
                   </div>
                 )}
               </div>
             </ScrollArea>
 
             {/* Footer */}
-            <div className="p-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+            <div 
+              className="p-3 border-t"
+              style={{
+                borderColor: 'var(--glass-border)',
+                background: 'var(--glass-surface-subtle)'
+              }}
+            >
+              <div className="flex items-center justify-between text-xs" style={{ color: 'var(--glass-text-muted)' }}>
                 <div className="flex items-center gap-4">
                   <span>↑↓ Navigate</span>
                   <span>↵ Select</span>
