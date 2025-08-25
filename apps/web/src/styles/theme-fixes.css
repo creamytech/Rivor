@@ -697,3 +697,91 @@ body[data-permanent-theme="true"] * {
   color: rgba(0, 0, 0, 0.7) !important;
   fill: rgba(0, 0, 0, 0.7) !important;
 }
+
+/* Fix AI Assistant page chat bubble contrast issues */
+.glass-theme-black .assistant-page .chat-bubble,
+.glass-theme-black .assistant-page .message-bubble,
+.glass-theme-black .assistant-page .ai-bubble,
+.glass-theme-black .assistant-page .user-bubble {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+.glass-theme-white .assistant-page .chat-bubble,
+.glass-theme-white .assistant-page .message-bubble,
+.glass-theme-white .assistant-page .ai-bubble,
+.glass-theme-white .assistant-page .user-bubble {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(0, 0, 0, 0.2) !important;
+  color: #000000 !important;
+}
+
+/* AI Assistant page specific elements */
+.glass-theme-black .assistant-page .glass-card,
+.glass-theme-black .assistant-page .message-container,
+.glass-theme-black .assistant-page .chat-container {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.glass-theme-white .assistant-page .glass-card,
+.glass-theme-white .assistant-page .message-container,
+.glass-theme-white .assistant-page .chat-container {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  color: #000000 !important;
+}
+
+/* Ensure all text in AI assistant is visible */
+.glass-theme-black .assistant-page *,
+.glass-theme-black .assistant-page .chat-bubble *,
+.glass-theme-black .assistant-page .message-bubble * {
+  color: #ffffff !important;
+}
+
+.glass-theme-white .assistant-page *,
+.glass-theme-white .assistant-page .chat-bubble *,
+.glass-theme-white .assistant-page .message-bubble * {
+  color: #000000 !important;
+}
+
+/* AI Assistant input area */
+.glass-theme-black .assistant-page input,
+.glass-theme-black .assistant-page textarea,
+.glass-theme-black .assistant-page .input-container {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.glass-theme-white .assistant-page input,
+.glass-theme-white .assistant-page textarea,
+.glass-theme-white .assistant-page .input-container {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #000000 !important;
+}
+
+/* AI Assistant scroll area and content */
+.glass-theme-black .assistant-page .scroll-area,
+.glass-theme-black .assistant-page [data-radix-scroll-area-viewport] {
+  background-color: transparent !important;
+}
+
+.glass-theme-white .assistant-page .scroll-area,
+.glass-theme-white .assistant-page [data-radix-scroll-area-viewport] {
+  background-color: transparent !important;
+}
+
+/* AI Assistant placeholder text */
+.glass-theme-black .assistant-page input::placeholder,
+.glass-theme-black .assistant-page textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.glass-theme-white .assistant-page input::placeholder,
+.glass-theme-white .assistant-page textarea::placeholder {
+  color: rgba(0, 0, 0, 0.5) !important;
+}
