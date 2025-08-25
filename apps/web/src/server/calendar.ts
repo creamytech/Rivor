@@ -29,8 +29,8 @@ export async function getUpcomingEvents(orgId: string, limit = 10): Promise<UiCa
     take: limit,
     select: { 
       id: true, 
-      titleIndex: true, 
-      locationIndex: true, 
+      titleEnc: true, 
+      locationEnc: true, 
       notesEnc: true,
       attendeesEnc: true,
       start: true, 
@@ -43,8 +43,27 @@ export async function getUpcomingEvents(orgId: string, limit = 10): Promise<UiCa
 
   const events: UiCalendarEvent[] = [];
   for (const event of raws) {
-    let title = event.titleIndex || 'Untitled Event';
-    let location = event.locationIndex || '';
+    // Decrypt title and location from encrypted fields
+    let title = 'Untitled Event';
+    let location = '';
+    
+    if (event.titleEnc) {
+      try {
+        const titleBytes = await decryptForOrg(orgId, event.titleEnc, 'calendar:title');
+        title = new TextDecoder().decode(titleBytes);
+      } catch {
+        title = 'Untitled Event';
+      }
+    }
+    
+    if (event.locationEnc) {
+      try {
+        const locationBytes = await decryptForOrg(orgId, event.locationEnc, 'calendar:location');
+        location = new TextDecoder().decode(locationBytes);
+      } catch {
+        location = '';
+      }
+    }
     let attendees = '';
 
     // Try to decrypt notes if available
@@ -208,8 +227,8 @@ export class GoogleCalendarService {
       take: limit,
       select: {
         id: true,
-        titleIndex: true, // Changed from titleEnc
-        locationIndex: true, // Changed from locationEnc
+        titleEnc: true,
+        locationEnc: true,
         notesEnc: true, // Added
         attendeesEnc: true,
         start: true,
@@ -219,8 +238,27 @@ export class GoogleCalendarService {
     });
     const events: UiCalendarEvent[] = [];
     for (const event of raws) {
-      let title = event.titleIndex || 'Untitled Event'; // Use titleIndex directly
-      let location = event.locationIndex || ''; // Use locationIndex directly
+      // Decrypt title and location
+      let title = 'Untitled Event';
+      let location = '';
+      
+      if (event.titleEnc) {
+        try {
+          const titleBytes = await decryptForOrg(orgId, event.titleEnc, 'calendar:title');
+          title = new TextDecoder().decode(titleBytes);
+        } catch {
+          title = 'Untitled Event';
+        }
+      }
+      
+      if (event.locationEnc) {
+        try {
+          const locationBytes = await decryptForOrg(orgId, event.locationEnc, 'calendar:location');
+          location = new TextDecoder().decode(locationBytes);
+        } catch {
+          location = '';
+        }
+      }
       let attendees = '';
       if (event.notesEnc) { // Decrypt notesEnc for attendees/description
         try {
@@ -283,8 +321,7 @@ export class GoogleCalendarService {
 
       // Store watch metadata
       const updateData: any = {
-        status: 'connected',
-        lastSyncedAt: new Date()
+        status: 'connected'
       };
       
       if (response.data.expiration) {
@@ -379,7 +416,7 @@ export class GoogleCalendarService {
             accountId: calendarAccountId,
             start: new Date(event.start.dateTime || event.start.date!),
             end: new Date(event.end?.dateTime || event.end?.date!),
-            titleIndex: event.summary || 'Untitled Event'
+            titleEnc: await encryptForOrg(orgId, event.summary || 'Untitled Event', 'calendar:title')
           }
         });
 
@@ -388,8 +425,8 @@ export class GoogleCalendarService {
           accountId: calendarAccountId,
           start: new Date(event.start.dateTime || event.start.date!),
           end: new Date(event.end?.dateTime || event.end?.date!),
-          titleIndex: event.summary || 'Untitled Event',
-          locationIndex: event.location || '',
+          titleEnc: await encryptForOrg(orgId, event.summary || 'Untitled Event', 'calendar:title'),
+          locationEnc: event.location ? await encryptForOrg(orgId, event.location, 'calendar:location') : null,
           notesEnc: event.description ? await encryptForOrg(orgId, event.description, 'calendar:notes') : null,
           attendeesEnc: event.attendees ? await encryptForOrg(orgId, JSON.stringify(event.attendees), 'calendar:attendees') : null
         };
@@ -413,7 +450,7 @@ export class GoogleCalendarService {
       // Update last synced timestamp
       await prisma.calendarAccount.update({
         where: { id: calendarAccountId },
-        data: { lastSyncedAt: new Date() }
+        data: { updatedAt: new Date() }
       });
 
       logger.info('Calendar sync completed', {
@@ -469,14 +506,14 @@ export class GoogleCalendarService {
         where: { id: calendarAccountId }
       });
 
-      if (!calendarAccount?.lastSyncedAt) {
+      if (!calendarAccount?.updatedAt) {
         // Full sync if no last sync time
         await this.syncEvents(orgId, calendarAccountId);
         return;
       }
 
       // Incremental sync - get events since last sync
-      const lastSyncTime = calendarAccount.lastSyncedAt;
+      const lastSyncTime = calendarAccount.updatedAt;
       const now = new Date();
 
       const response = await calendar.events.list({
@@ -499,7 +536,7 @@ export class GoogleCalendarService {
             accountId: calendarAccountId,
             start: new Date(event.start.dateTime || event.start.date!),
             end: new Date(event.end?.dateTime || event.end?.date!),
-            titleIndex: event.summary || 'Untitled Event'
+            titleEnc: await encryptForOrg(orgId, event.summary || 'Untitled Event', 'calendar:title')
           }
         });
 
@@ -508,8 +545,8 @@ export class GoogleCalendarService {
           accountId: calendarAccountId,
           start: new Date(event.start.dateTime || event.start.date!),
           end: new Date(event.end?.dateTime || event.end?.date!),
-          titleIndex: event.summary || 'Untitled Event',
-          locationIndex: event.location || '',
+          titleEnc: await encryptForOrg(orgId, event.summary || 'Untitled Event', 'calendar:title'),
+          locationEnc: event.location ? await encryptForOrg(orgId, event.location, 'calendar:location') : null,
           notesEnc: event.description ? await encryptForOrg(orgId, event.description, 'calendar:notes') : null,
           attendeesEnc: event.attendees ? await encryptForOrg(orgId, JSON.stringify(event.attendees), 'calendar:attendees') : null
         };
@@ -531,7 +568,7 @@ export class GoogleCalendarService {
       // Update last synced timestamp
       await prisma.calendarAccount.update({
         where: { id: calendarAccountId },
-        data: { lastSyncedAt: new Date() }
+        data: { updatedAt: new Date() }
       });
 
       logger.info('Calendar push notification processed', {

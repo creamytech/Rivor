@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
       select: {
         id: true,
         status: true,
-        lastSyncedAt: true,
+        updatedAt: true,
         provider: true
       }
     });
@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       connected: calendarAccount.status === 'connected',
       status: calendarAccount.status,
-      lastSyncedAt: calendarAccount.lastSyncedAt?.toISOString(),
+      lastSyncedAt: calendarAccount.updatedAt?.toISOString(),
       provider: calendarAccount.provider,
       eventCount
     });

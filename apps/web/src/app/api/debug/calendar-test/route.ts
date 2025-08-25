@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
       calendarAccount: {
         exists: !!calendarAccount,
         status: calendarAccount?.status || 'not_found',
-        lastSynced: calendarAccount?.lastSyncedAt?.toISOString() || null
+        lastSynced: calendarAccount?.updatedAt?.toISOString() || null
       },
       tokenCheck: {
         hasGoogleAccount: false,

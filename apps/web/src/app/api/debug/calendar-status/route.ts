@@ -72,7 +72,6 @@ export async function GET(req: NextRequest) {
         select: {
           id: true,
           status: true,
-          lastSyncedAt: true,
           provider: true,
           createdAt: true,
           updatedAt: true

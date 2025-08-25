@@ -79,12 +79,12 @@ export async function POST(req: NextRequest) {
     // Perform sync - get events from 30 days ago to 90 days in the future
     const result = await calendarService.syncEvents(orgId, calendarAccount.id, 30, 90);
 
-    // Update last sync time
+    // Update last sync time (using updatedAt as sync timestamp)
     await prisma.calendarAccount.update({
       where: { id: calendarAccount.id },
       data: { 
-        lastSyncedAt: new Date(),
-        status: 'connected'
+        status: 'connected',
+        updatedAt: new Date()
       }
     });
 
@@ -145,7 +145,7 @@ export async function GET(req: NextRequest) {
       select: {
         id: true,
         status: true,
-        lastSyncedAt: true,
+        updatedAt: true,
         provider: true
       }
     });
@@ -168,7 +168,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       connected: calendarAccount.status === 'connected',
       status: calendarAccount.status,
-      lastSyncedAt: calendarAccount.lastSyncedAt?.toISOString(),
+      lastSyncedAt: calendarAccount.updatedAt?.toISOString(),
       provider: calendarAccount.provider,
       eventCount
     });
