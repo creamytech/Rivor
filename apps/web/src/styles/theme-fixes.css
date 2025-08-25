@@ -17,11 +17,11 @@
   transition: none !important;
 }
 
-/* Enhanced permanent theme protection */
-[data-permanent-theme="true"],
-[data-permanent-theme="black"],
+/* Enhanced permanent theme protection - STRONGEST PRIORITY */
 html[data-permanent-theme="black"],
-body[data-permanent-theme="true"] {
+html[data-permanent-theme="true"],
+body[data-permanent-theme="true"],
+body[data-permanent-theme="black"] {
   background-color: #000000 !important;
   color: #ffffff !important;
 }
@@ -784,4 +784,89 @@ body[data-permanent-theme="true"] * {
 .glass-theme-white .assistant-page input::placeholder,
 .glass-theme-white .assistant-page textarea::placeholder {
   color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* STRONGEST PERMANENT THEME OVERRIDES - ROOT AND LOGIN PAGES */
+/* These rules have the highest specificity to prevent theme switching */
+html[data-permanent-theme="black"] *,
+html[data-permanent-theme="black"] .glass-theme-white *,
+html[data-permanent-theme="black"] .glass-theme-black *,
+body[data-permanent-theme="true"] *,
+body[data-permanent-theme="black"] * {
+  color: #ffffff !important;
+  background-color: transparent !important;
+}
+
+/* Force black backgrounds only on root elements */
+html[data-permanent-theme="black"],
+body[data-permanent-theme="true"],
+body[data-permanent-theme="black"] {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+/* Override any theme class applied to permanent theme pages */
+html[data-permanent-theme="black"] .glass-theme-white,
+html[data-permanent-theme="black"] .glass-theme-black,
+body[data-permanent-theme="true"] .glass-theme-white,
+body[data-permanent-theme="true"] .glass-theme-black {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+/* Prevent theme variables from affecting permanent pages */
+html[data-permanent-theme="black"] {
+  --glass-bg: #000000 !important;
+  --glass-surface: rgba(255, 255, 255, 0.08) !important;
+  --glass-text: #ffffff !important;
+  --glass-text-secondary: rgba(255, 255, 255, 0.85) !important;
+  --glass-text-muted: rgba(255, 255, 255, 0.65) !important;
+  --glass-border: rgba(255, 255, 255, 0.15) !important;
+  --glass-primary: #ffffff !important;
+}
+
+/* Glass components on permanent theme pages */
+html[data-permanent-theme="black"] .glass-card,
+html[data-permanent-theme="black"] .glass-panel,
+html[data-permanent-theme="black"] .glass-button,
+body[data-permanent-theme="true"] .glass-card,
+body[data-permanent-theme="true"] .glass-panel,
+body[data-permanent-theme="true"] .glass-button {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+/* Input fields on permanent theme pages */
+html[data-permanent-theme="black"] input,
+html[data-permanent-theme="black"] textarea,
+html[data-permanent-theme="black"] select,
+body[data-permanent-theme="true"] input,
+body[data-permanent-theme="true"] textarea,
+body[data-permanent-theme="true"] select {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+/* Links on permanent theme pages */
+html[data-permanent-theme="black"] a,
+body[data-permanent-theme="true"] a {
+  color: rgba(6, 182, 212, 0.9) !important;
+}
+
+/* Headings on permanent theme pages */
+html[data-permanent-theme="black"] h1,
+html[data-permanent-theme="black"] h2,
+html[data-permanent-theme="black"] h3,
+html[data-permanent-theme="black"] h4,
+html[data-permanent-theme="black"] h5,
+html[data-permanent-theme="black"] h6,
+body[data-permanent-theme="true"] h1,
+body[data-permanent-theme="true"] h2,
+body[data-permanent-theme="true"] h3,
+body[data-permanent-theme="true"] h4,
+body[data-permanent-theme="true"] h5,
+body[data-permanent-theme="true"] h6 {
+  color: #ffffff !important;
 }

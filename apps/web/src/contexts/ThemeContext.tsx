@@ -43,11 +43,15 @@ export const ThemeProvider: React.FC<GlassThemeProviderProps> = ({ children }) =
     
     // Check if this is a permanent theme page (login, root, etc.)
     const isPermanentTheme = document.body.getAttribute('data-permanent-theme') === 'true' ||
-                           document.documentElement.getAttribute('data-permanent-theme') === 'black';
+                           document.documentElement.getAttribute('data-permanent-theme') === 'black' ||
+                           window.location.pathname === '/' ||
+                           window.location.pathname === '/auth/signin' ||
+                           window.location.pathname === '/signin' ||
+                           window.location.pathname.startsWith('/auth/');
     
     // Don't override permanent theme pages
     if (isPermanentTheme) {
-      console.log('Skipping theme application on permanent theme page');
+      console.log('Skipping theme application on permanent theme page:', window.location.pathname);
       return;
     }
     
