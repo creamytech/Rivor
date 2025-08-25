@@ -150,16 +150,15 @@ export default function Navigation({ onWaitlistClick }: NavigationProps) {
           </div>
 
           {/* Mobile Menu Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden p-2 text-white/80 hover:text-white"
+          <button
+            className="md:hidden p-2 text-white/80 hover:text-white transition-colors bg-transparent border-none"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle navigation menu"
             aria-expanded={isMenuOpen}
+            style={{ background: 'transparent', border: 'none' }}
           >
             {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </Button>
+          </button>
         </div>
       </div>
 

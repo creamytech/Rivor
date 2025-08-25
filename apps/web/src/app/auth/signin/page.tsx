@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { signIn } from "next-auth/react";
+import { motion } from "framer-motion";
 import { Shield, CheckCircle, Users, ArrowRight, Sparkles, Lock, Eye, EyeOff, Waves } from "lucide-react";
 import Logo from "@/components/branding/Logo";
 
