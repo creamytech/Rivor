@@ -4849,3 +4849,99 @@ body.modal-open[data-waitlist-modal-open="true"] [data-radix-portal] {
   animation: riverFlow 25s linear infinite;
   filter: blur(3px);
 }
+
+/* ========================================
+   EMAIL CONTENT STYLING
+   ======================================== */
+
+.email-content {
+  line-height: 1.6;
+  color: var(--glass-text);
+}
+
+.email-content p {
+  margin: 0.75em 0;
+}
+
+.email-content h1,
+.email-content h2,
+.email-content h3,
+.email-content h4,
+.email-content h5,
+.email-content h6 {
+  margin: 1em 0 0.5em 0;
+  color: var(--glass-text);
+  font-weight: 600;
+}
+
+.email-content ul,
+.email-content ol {
+  margin: 0.75em 0;
+  padding-left: 1.5em;
+}
+
+.email-content li {
+  margin: 0.25em 0;
+}
+
+.email-content a {
+  color: #3b82f6;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.email-content a:hover {
+  color: #1d4ed8;
+}
+
+.email-content blockquote {
+  border-left: 4px solid var(--glass-border);
+  margin: 1em 0;
+  padding: 0.5em 0 0.5em 1em;
+  background: var(--glass-surface-subtle);
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+}
+
+.email-content code {
+  background: var(--glass-surface-muted);
+  padding: 0.25em 0.5em;
+  border-radius: 4px;
+  font-family: 'Fira Code', 'JetBrains Mono', 'Cascadia Code', 'Source Code Pro', monospace;
+  font-size: 0.9em;
+}
+
+.email-content pre {
+  background: var(--glass-surface-muted);
+  padding: 1em;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.email-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 0.5em 0;
+}
+
+/* Email quote/reply styling */
+.email-content .gmail_quote,
+.email-content [class*="quote"] {
+  border-left: 3px solid var(--glass-border-subtle);
+  margin: 1em 0;
+  padding-left: 1em;
+  opacity: 0.8;
+  font-size: 0.95em;
+}
+
+/* Signature styling */
+.email-content .gmail_signature,
+.email-content [class*="signature"] {
+  border-top: 1px solid var(--glass-border-subtle);
+  margin-top: 1.5em;
+  padding-top: 0.75em;
+  font-size: 0.9em;
+  opacity: 0.9;
+}

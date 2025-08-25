@@ -69,6 +69,9 @@ export type UiEmailMessage = {
   subject: string;
   snippet: string;
   body: string;
+  htmlBody?: string;
+  textBody?: string;
+  contentType?: 'html' | 'text';
 };
 
 export async function getThreadWithMessages(orgId: string, threadId: string): Promise<{ thread: UiEmailThread | null; messages: UiEmailMessage[] }>{
@@ -137,7 +140,32 @@ export async function getThreadWithMessages(orgId: string, threadId: string): Pr
     }
     
     const dec = async (blob?: Buffer, aad?: string) => blob ? new TextDecoder().decode(await decryptForOrg(orgId, blob, aad!)) : '';
-    const body = await dec(m.bodyRefEnc as unknown as Buffer, 'email:body');
+    const bodyData = await dec(m.bodyRefEnc as unknown as Buffer, 'email:body');
+    
+    // Parse body content to determine type and extract content
+    let body = bodyData;
+    let htmlBody: string | undefined;
+    let textBody: string | undefined;
+    let contentType: 'html' | 'text' = 'text';
+    
+    try {
+      const parsedBody = JSON.parse(bodyData);
+      if (parsedBody.type && parsedBody.content) {
+        contentType = parsedBody.type;
+        body = parsedBody.content;
+        if (parsedBody.type === 'html') {
+          htmlBody = parsedBody.content;
+          // Create text version by stripping HTML
+          textBody = parsedBody.content.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+        } else {
+          textBody = parsedBody.content;
+        }
+      }
+    } catch {
+      // Fallback to original body if parsing fails
+      textBody = bodyData;
+    }
+    
     messages.push({
       id: m.id,
       sentAt: m.sentAt,
@@ -148,6 +176,9 @@ export async function getThreadWithMessages(orgId: string, threadId: string): Pr
       subject: messageSubject,
       snippet: messageSnippet,
       body: body,
+      htmlBody: htmlBody,
+      textBody: textBody,
+      contentType: contentType,
     });
   }
   return { thread: { id: thread.id, subject, participants, updatedAt: thread.updatedAt }, messages };

@@ -348,7 +348,12 @@ export class GmailService {
 
       // Encrypt sensitive data
       const subjectEnc = await encryptForOrg(orgId, subject, 'email:subject');
-      const bodyEnc = await encryptForOrg(orgId, htmlBody || textBody, 'email:body');
+      
+      // Store body content with type information for better display
+      const bodyContent = htmlBody 
+        ? JSON.stringify({ type: 'html', content: htmlBody })
+        : JSON.stringify({ type: 'text', content: textBody });
+      const bodyEnc = await encryptForOrg(orgId, bodyContent, 'email:body');
       const fromEnc = await encryptForOrg(orgId, from, 'email:from');
       const toEnc = await encryptForOrg(orgId, to, 'email:to');
       const ccEnc = await encryptForOrg(orgId, cc, 'email:cc');
@@ -542,7 +547,12 @@ export class GmailService {
 
       // Encrypt sensitive data - prioritize HTML content for rich formatting
       const subjectEnc = await encryptForOrg(orgId, subject, 'email:subject');
-      const bodyEnc = await encryptForOrg(orgId, htmlBody || textBody, 'email:body');
+      
+      // Store body content with type information for better display
+      const bodyContent = htmlBody 
+        ? JSON.stringify({ type: 'html', content: htmlBody })
+        : JSON.stringify({ type: 'text', content: textBody });
+      const bodyEnc = await encryptForOrg(orgId, bodyContent, 'email:body');
       const fromEnc = await encryptForOrg(orgId, from, 'email:from');
       const toEnc = await encryptForOrg(orgId, to, 'email:to');
       const ccEnc = await encryptForOrg(orgId, cc, 'email:cc');

@@ -90,8 +90,8 @@ export async function GET(req: NextRequest, { params }: { params: { threadId: st
             name: email.split('@')[0],
             email: email.trim()
           })) : [],
-          htmlBody: message.body || 'No HTML content available',
-          textBody: message.body || 'No text content available',
+          htmlBody: message.htmlBody || null,
+          textBody: message.textBody || message.snippet || 'No text content available',
           attachments: [], // Not implemented in current schema
           sentAt: message.sentAt.toISOString(),
           receivedAt: message.sentAt.toISOString()
