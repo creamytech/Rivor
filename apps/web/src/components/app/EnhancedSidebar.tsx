@@ -260,7 +260,7 @@ export default function EnhancedSidebar({
           }}
         >
           {/* Logo Section */}
-          <div className={`flex items-center ${isCollapsed ? 'flex-1 justify-center' : 'flex-1'}`}>
+          <div className={`flex items-center ${isCollapsed ? 'flex-1 justify-center' : 'flex-1 justify-center'}`}>
             <Link href="/app" className="flex items-center group">
               <motion.div 
                 className="relative"
