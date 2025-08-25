@@ -337,7 +337,7 @@ export default function EnhancedSidebar({
                   </div>
                 ) : (
                   // Expanded - Enhanced liquid glass wordmark logo
-                  <div className="relative h-10 overflow-visible flex items-center justify-start">
+                  <div className="relative h-10 overflow-visible flex items-center justify-center w-full">
                     {/* Glass backdrop container */}
                     <div 
                       className="absolute -inset-2 rounded-2xl"
