@@ -186,18 +186,20 @@ export const authOptions: NextAuthOptions = {
     maxAge: 7 * 24 * 60 * 60, // 7 days
     updateAge: 24 * 60 * 60,  // 24 hours
   },
-  // Remove custom cookies to use NextAuth defaults for better compatibility
-  // cookies: {
-  //   sessionToken: {
-  //     name: `__Secure-next-auth.session-token`,
-  //     options: {
-  //       httpOnly: true,
-  //       sameSite: 'lax',  
-  //       path: '/',
-  //       secure: process.env.NODE_ENV === 'production'
-  //     }
-  //   }
-  // },
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === 'production' 
+        ? `__Secure-next-auth.session-token`
+        : `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production' ? '.rivor.ai' : undefined
+      }
+    }
+  },
   events: {
     async signIn({ user, account, profile }) {
       console.log('🔐 OAuth callback reached', {

@@ -17,11 +17,15 @@ export async function GET(req: NextRequest) {
       take: 5
     });
     
-    // Check cookies
+    // Check cookies - get all auth-related cookies
     const cookies = req.headers.get('cookie') || '';
+    const allCookies = cookies.split(';').map(c => c.trim()).filter(c => c.includes('auth'));
+    
     const sessionToken = cookies
       .split(';')
-      .find(cookie => cookie.trim().startsWith('__Secure-next-auth.session-token=') || cookie.trim().startsWith('next-auth.session-token='))
+      .find(cookie => cookie.trim().startsWith('__Secure-next-auth.session-token=') || 
+                     cookie.trim().startsWith('next-auth.session-token=') ||
+                     cookie.trim().startsWith('__Host-next-auth.session-token='))
       ?.split('=')[1];
     
     const result = {
@@ -34,7 +38,8 @@ export async function GET(req: NextRequest) {
       },
       sessionCookie: {
         found: !!sessionToken,
-        preview: sessionToken ? sessionToken.substring(0, 20) + '...' : null
+        preview: sessionToken ? sessionToken.substring(0, 20) + '...' : null,
+        allAuthCookies: allCookies
       },
       databaseSessions: dbSessions.map(s => ({
         id: s.id,
