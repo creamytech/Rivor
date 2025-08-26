@@ -79,7 +79,7 @@ export default function CalendarPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'my-events' | 'team' | 'all'>('my-events');
-  const [calendarView, setCalendarView] = useState<'day' | 'week' | 'month'>('week');
+  const [calendarView, setCalendarView] = useState<'day' | 'week' | 'month'>('month');
   const [meetingType, setMeetingType] = useState<'all' | 'intro' | 'demo' | 'follow-up' | 'internal'>('all');
   
   // Calendar ref for refreshing events

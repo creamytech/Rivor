@@ -114,7 +114,7 @@ export interface EnhancedCalendarRef {
 }
 
 const EnhancedCalendar = forwardRef<EnhancedCalendarRef, EnhancedCalendarProps>(
-  ({ className, viewMode: propViewMode = 'week', onRefreshNeeded }, ref) => {
+  ({ className, viewMode: propViewMode = 'month', onRefreshNeeded }, ref) => {
   // All hooks must be called at the top level
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>(propViewMode);
