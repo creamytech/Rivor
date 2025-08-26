@@ -311,10 +311,65 @@ export const authOptions: NextAuthOptions = {
       };
       
       logOAuth('info', '🚀 OAuth signIn callback triggered', signInData);
-      console.log('🚀 OAuth signIn callback - allowing PrismaAdapter to handle user/account creation');
+      console.log('🚀 OAuth signIn callback start');
       
-      // Let PrismaAdapter handle User and Account creation automatically
-      // This callback just validates that the sign-in is allowed
+      // Handle the case where user exists but Account record is missing
+      // This happens when PrismaAdapter created the user but failed to create the account
+      if (user.email && account) {
+        try {
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email },
+            include: { accounts: true }
+          });
+          
+          if (existingUser) {
+            // Check if this OAuth account already exists
+            const existingAccount = existingUser.accounts.find(
+              acc => acc.provider === account.provider && 
+                     acc.providerAccountId === account.providerAccountId
+            );
+            
+            if (!existingAccount) {
+              console.log('🔗 User exists but OAuth account missing - creating account record manually');
+              logOAuth('info', '🔗 Creating missing OAuth account for existing user', {
+                userId: existingUser.id,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId
+              });
+              
+              // Manually create the missing Account record
+              await prisma.account.create({
+                data: {
+                  userId: existingUser.id,
+                  type: account.type,
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                  refresh_token: account.refresh_token,
+                  access_token: account.access_token,
+                  expires_at: account.expires_at,
+                  token_type: account.token_type,
+                  scope: account.scope,
+                  id_token: account.id_token,
+                }
+              });
+              
+              logOAuth('info', '✅ Successfully created missing OAuth account', {
+                provider: account.provider,
+                userId: existingUser.id
+              });
+              console.log('✅ Successfully created missing OAuth account');
+            }
+          }
+        } catch (error) {
+          console.error('❌ Failed to handle missing OAuth account:', error);
+          logOAuth('error', '❌ Failed to handle missing OAuth account', {
+            error: error instanceof Error ? error.message : error
+          });
+          // Don't block sign-in on this error - let NextAuth try its normal flow
+        }
+      }
+      
+      console.log('✅ SignIn callback complete - allowing authentication');
       return true;
     },
     async redirect({ url, baseUrl }) {
