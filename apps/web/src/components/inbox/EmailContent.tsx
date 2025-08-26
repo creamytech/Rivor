@@ -80,18 +80,58 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/inbox/thread/${threadId}`);
+      const response = await fetch(`/api/inbox/threads/${threadId}`);
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to load thread details');
       }
 
-      setThread(data.thread);
+      // Transform messages to match EmailMessage interface
+      const transformedMessages = (data.messages || []).map((message: any) => ({
+        id: message.id,
+        messageId: message.id, // Use same ID
+        subject: message.subject,
+        snippet: message.textBody ? message.textBody.substring(0, 200) + '...' : '',
+        bodyText: message.textBody,
+        bodyHtml: message.htmlBody,
+        fromEmail: message.from?.email || 'unknown@example.com',
+        fromName: message.from?.name || message.from?.email || 'Unknown',
+        toEmail: message.to ? message.to.map((t: any) => t.email) : [],
+        toName: message.to ? message.to.map((t: any) => t.name) : [],
+        ccEmail: message.cc ? message.cc.map((c: any) => c.email) : [],
+        bccEmail: message.bcc ? message.bcc.map((b: any) => b.email) : [],
+        receivedAt: message.receivedAt || message.sentAt,
+        sentAt: message.sentAt,
+        isRead: true, // Assume read if viewing
+        labelIds: [],
+        hasAttachments: (message.attachments && message.attachments.length > 0) || false,
+        inReplyTo: null,
+        references: null,
+        createdAt: message.sentAt,
+        updatedAt: message.sentAt
+      }));
+
+      // Ensure the data has all required fields with defaults
+      const threadData = {
+        ...data,
+        snippet: data.snippet || (transformedMessages[0]?.snippet || ''),
+        participants: data.participants || [],
+        messageCount: transformedMessages.length,
+        unread: data.unread || false,
+        starred: data.starred || false,
+        hasAttachments: transformedMessages.some((msg: any) => msg.hasAttachments) || false,
+        labels: data.labels || [],
+        lastMessageAt: transformedMessages[transformedMessages.length - 1]?.receivedAt || new Date().toISOString(),
+        updatedAt: data.updatedAt || new Date().toISOString(),
+        messages: transformedMessages
+      };
+      
+      setThread(threadData);
       
       // Expand the latest message by default
-      if (data.thread.messages.length > 0) {
-        const latestMessage = data.thread.messages[data.thread.messages.length - 1];
+      if (threadData.messages.length > 0) {
+        const latestMessage = threadData.messages[threadData.messages.length - 1];
         setExpandedMessages(new Set([latestMessage.id]));
       }
 
