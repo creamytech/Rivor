@@ -20,10 +20,15 @@ export async function GET(req: NextRequest) {
       where: { email: session.user.email },
       include: {
         orgMembers: {
-          include: { org: true }
+          include: { 
+            org: {
+              include: {
+                calendarAccounts: true
+              }
+            }
+          }
         },
         emailAccounts: true,
-        calendarAccounts: true,
         accounts: true
       }
     });
@@ -46,7 +51,7 @@ export async function GET(req: NextRequest) {
         orgId: user.orgMembers[0]?.orgId || null,
         orgName: user.orgMembers[0]?.org?.name || null,
         emailAccountsCount: user.emailAccounts.length,
-        calendarAccountsCount: user.calendarAccounts.length,
+        calendarAccountsCount: user.orgMembers[0]?.org?.calendarAccounts?.length || 0,
         nextAuthAccountsCount: user.accounts.length,
         emailAccounts: user.emailAccounts.map(acc => ({
           id: acc.id,

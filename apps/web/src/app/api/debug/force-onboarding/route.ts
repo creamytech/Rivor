@@ -65,10 +65,15 @@ export async function POST(req: NextRequest) {
       where: { email: session.user.email },
       include: {
         orgMembers: {
-          include: { org: true }
+          include: { 
+            org: {
+              include: {
+                calendarAccounts: true
+              }
+            }
+          }
         },
-        emailAccounts: true,
-        calendarAccounts: true
+        emailAccounts: true
       }
     });
 
@@ -80,7 +85,7 @@ export async function POST(req: NextRequest) {
         orgId: updatedUser?.orgMembers[0]?.orgId || null,
         orgName: updatedUser?.orgMembers[0]?.org?.name || null,
         emailAccountsCount: updatedUser?.emailAccounts.length || 0,
-        calendarAccountsCount: updatedUser?.calendarAccounts.length || 0
+        calendarAccountsCount: updatedUser?.orgMembers[0]?.org?.calendarAccounts?.length || 0
       },
       timestamp: new Date().toISOString()
     });
