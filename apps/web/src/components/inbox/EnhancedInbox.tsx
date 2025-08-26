@@ -292,7 +292,7 @@ export default function EnhancedInbox({ activeTab = 'all', searchQuery = '', sel
       case 'market_update':
         return <TrendingUp className="h-3 w-3" />;
       default:
-        return <Mail className=\"h-3 w-3\" />;
+        return <Mail className="h-3 w-3" />;
     }
   };
 

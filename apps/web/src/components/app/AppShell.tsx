@@ -545,7 +545,71 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                     />
                   </div>
                   
-                  
+                  {/* Search Results Dropdown - positioned relative to search container */}
+                  <div className={`glass-search-results ${showSearchResults ? 'visible' : ''}`} style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '600px',
+                    maxWidth: '90vw',
+                    zIndex: 10000,
+                    marginTop: '4px'
+                  }}>
+                    <div className="space-y-3">
+                      {searchLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="glass-spinner w-5 h-5"></div>
+                        </div>
+                      ) : searchResults.length > 0 ? (
+                        searchResults.map((result: any) => {
+                          const IconComponent = result.icon === 'User' ? User :
+                                               result.icon === 'TrendingUp' ? TrendingUp :
+                                               result.icon === 'CheckSquare' ? CheckSquare :
+                                               result.icon === 'Calendar' ? Calendar :
+                                               result.icon === 'Mail' ? Mail : Search;
+                          
+                          return (
+                            <Link
+                              key={result.id}
+                              href={result.href}
+                              className="glass-search-result-item group"
+                              onClick={() => {
+                                setShowSearchResults(false);
+                                setSearchQuery('');
+                              }}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="glass-icon-container-small">
+                                  <IconComponent className="h-4 w-4" style={{ color: 'var(--glass-text)' }} />
+                                </div>
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium" style={{ color: 'var(--glass-text)' }}>
+                                    {result.title}
+                                  </div>
+                                  <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
+                                    {result.subtitle}
+                                  </div>
+                                </div>
+                              </div>
+                            </Link>
+                          );
+                        })
+                      ) : searchQuery.length > 1 ? (
+                        <div className="text-center py-8">
+                          <div className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                            No results found for "{searchQuery}"
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <div className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                            Start typing to search...
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -616,64 +680,6 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
             </div>
           </header>
 
-          {/* Search Results Dropdown - positioned outside header to avoid clipping */}
-          <div className={`glass-search-results ${showSearchResults ? 'visible' : ''}`} style={{
-            position: 'fixed',
-            top: '76px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: '600px',
-            maxWidth: '90vw',
-            zIndex: 10000
-          }}>
-            <div className="space-y-3">
-              {searchLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="glass-spinner w-5 h-5"></div>
-                </div>
-              ) : searchResults.length > 0 ? (
-                searchResults.map((result: any) => {
-                  const IconComponent = result.icon === 'User' ? User :
-                                       result.icon === 'TrendingUp' ? TrendingUp :
-                                       result.icon === 'CheckSquare' ? CheckSquare :
-                                       result.icon === 'Calendar' ? Calendar :
-                                       result.icon === 'Mail' ? Mail : Search;
-                  
-                  return (
-                    <Link
-                      key={result.id}
-                      href={result.href}
-                      className="glass-search-result-item group"
-                      onClick={() => {
-                        setShowSearchResults(false);
-                        setSearchQuery('');
-                      }}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="glass-icon-container">
-                          <IconComponent className="h-4 w-4" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold truncate" style={{ color: 'var(--glass-text)' }}>
-                            {result.title}
-                          </div>
-                          <div className="text-sm truncate" style={{ color: 'var(--glass-text-muted)' }}>
-                            {result.subtitle}
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })
-              ) : searchQuery.length > 1 ? (
-                <div className="text-center py-8">
-                  <div className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
-                    No results found for "{searchQuery}"
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </div>
 
           {/* Main Content */}
           <main className={`overflow-auto h-[calc(100vh-64px)] pb-16 md:pb-0 relative ${rightDrawer && showDrawer ? "pr-[360px]" : ""}`}>

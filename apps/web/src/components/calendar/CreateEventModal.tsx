@@ -1,5 +1,6 @@
 "use client";
 import { useState } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +38,7 @@ export default function CreateEventModal({
   defaultHour = 9,
   onEventCreated
 }: CreateEventModalProps) {
+  const { theme } = useTheme();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -152,7 +154,7 @@ export default function CreateEventModal({
         <form onSubmit={handleSubmit} className="space-y-6 mt-6">
           {/* Title */}
           <div>
-            <label className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 block">
+            <label className="text-sm font-medium mb-2 block" style={{ color: 'var(--glass-text)' }}>
               Event Title *
             </label>
             <Input
@@ -167,7 +169,7 @@ export default function CreateEventModal({
           {/* Date and Time */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 block">
+              <label className="text-sm font-medium mb-2 block" style={{ color: 'var(--glass-text)' }}>
                 Date
               </label>
               <Input
@@ -182,7 +184,7 @@ export default function CreateEventModal({
             </div>
             
             <div>
-              <label className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 block">
+              <label className="text-sm font-medium mb-2 block" style={{ color: 'var(--glass-text)' }}>
                 All Day
               </label>
               <div className="flex items-center h-9">
@@ -195,7 +197,7 @@ export default function CreateEventModal({
                   }))}
                   className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
                 />
-                <span className="ml-2 text-sm text-slate-600 dark:text-slate-400">
+                <span className="ml-2 text-sm" style={{ color: 'var(--glass-text-muted)' }}>
                   All day event
                 </span>
               </div>
@@ -206,7 +208,7 @@ export default function CreateEventModal({
           {!formData.isAllDay && (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 block">
+                <label className="text-sm font-medium mb-2 block" style={{ color: 'var(--glass-text)' }}>
                   Start Time
                 </label>
                 <Input
@@ -221,7 +223,7 @@ export default function CreateEventModal({
               </div>
               
               <div>
-                <label className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 block">
+                <label className="text-sm font-medium mb-2 block" style={{ color: 'var(--glass-text)' }}>
                   End Time
                 </label>
                 <Input
@@ -239,7 +241,7 @@ export default function CreateEventModal({
 
           {/* Description */}
           <div>
-            <label className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 block">
+            <label className="text-sm font-medium mb-2 block" style={{ color: 'var(--glass-text)' }}>
               Description
             </label>
             <textarea
@@ -257,11 +259,11 @@ export default function CreateEventModal({
 
           {/* Location */}
           <div>
-            <label className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 block">
+            <label className="text-sm font-medium mb-2 block" style={{ color: 'var(--glass-text)' }}>
               Location
             </label>
             <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: 'var(--glass-text-subtle)' }} />
               <Input
                 value={formData.location}
                 onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
@@ -282,21 +284,21 @@ export default function CreateEventModal({
               }))}
               className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
             />
-            <Video className="h-4 w-4 text-slate-400" />
-            <span className="text-sm text-slate-600 dark:text-slate-400">
+            <Video className="h-4 w-4" style={{ color: 'var(--glass-text-subtle)' }} />
+            <span className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
               Add video call link
             </span>
           </div>
 
           {/* Attendees */}
           <div>
-            <label className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 block">
+            <label className="text-sm font-medium mb-2 block" style={{ color: 'var(--glass-text)' }}>
               Attendees
             </label>
             
             <div className="flex gap-2 mb-3">
               <div className="relative flex-1">
-                <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: 'var(--glass-text-subtle)' }} />
                 <Input
                   value={attendeeInput}
                   onChange={(e) => setAttendeeInput(e.target.value)}
@@ -330,9 +332,9 @@ export default function CreateEventModal({
                       initial={prefersReducedMotion ? {} : { opacity: 0, x: -20 }}
                       animate={prefersReducedMotion ? {} : { opacity: 1, x: 0 }}
                       exit={prefersReducedMotion ? {} : { opacity: 0, x: 20 }}
-                      className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800 rounded-lg"
+                      className="flex items-center justify-between p-2 rounded-lg" style={{ backgroundColor: 'var(--glass-surface-subtle)' }}
                     >
-                      <span className="text-sm text-slate-900 dark:text-slate-100">
+                      <span className="text-sm" style={{ color: 'var(--glass-text)' }}>
                         {email}
                       </span>
                       <Button

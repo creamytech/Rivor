@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import AppShell from "@/components/app/AppShell";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useMobileDetection } from "@/hooks/useMobileDetection";
-import EnhancedCalendar from "@/components/calendar/EnhancedCalendar";
+import EnhancedCalendar, { EnhancedCalendarRef } from "@/components/calendar/EnhancedCalendar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -81,6 +81,9 @@ export default function CalendarPage() {
   const [viewMode, setViewMode] = useState<'my-events' | 'team' | 'all'>('my-events');
   const [calendarView, setCalendarView] = useState<'day' | 'week' | 'month'>('week');
   const [meetingType, setMeetingType] = useState<'all' | 'intro' | 'demo' | 'follow-up' | 'internal'>('all');
+  
+  // Calendar ref for refreshing events
+  const calendarRef = useRef<EnhancedCalendarRef>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -160,8 +163,8 @@ export default function CalendarPage() {
       if (response.ok) {
         console.log('Calendar sync successful:', result);
         alert(`Calendar sync successful! ${result.stats?.eventsCreated || 0} events created, ${result.stats?.eventsUpdated || 0} events updated.`);
-        // Refresh to show new events
-        window.location.reload();
+        // Refresh calendar events without page reload
+        calendarRef.current?.refreshEvents();
       } else {
         console.error('Calendar sync failed:', result);
         alert(`Calendar sync failed: ${result.message || result.error}`);
@@ -450,6 +453,7 @@ export default function CalendarPage() {
         >
           <div className={`${isMobile ? 'overflow-x-auto' : ''}`}>
             <EnhancedCalendar 
+              ref={calendarRef}
               className={`h-full glass-calendar ${isMobile ? 'min-w-[600px]' : ''}`} 
               viewMode={calendarView}
             />

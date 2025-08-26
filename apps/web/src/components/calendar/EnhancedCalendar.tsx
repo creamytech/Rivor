@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -104,9 +105,16 @@ interface CalendarEvent {
 interface EnhancedCalendarProps {
   className?: string;
   viewMode?: 'day' | 'week' | 'month';
+  onRefreshNeeded?: () => void;
 }
 
-export default function EnhancedCalendar({ className, viewMode: propViewMode = 'week' }: EnhancedCalendarProps) {
+// Add a ref to expose refresh function
+export interface EnhancedCalendarRef {
+  refreshEvents: () => Promise<void>;
+}
+
+const EnhancedCalendar = forwardRef<EnhancedCalendarRef, EnhancedCalendarProps>(
+  ({ className, viewMode: propViewMode = 'week', onRefreshNeeded }, ref) => {
   // All hooks must be called at the top level
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>(propViewMode);
@@ -119,9 +127,9 @@ export default function EnhancedCalendar({ className, viewMode: propViewMode = '
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [showEventModal, setShowEventModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const { theme } = useTheme();
 
-  useEffect(() => {
-    const fetchEvents = async () => {
+  const fetchEvents = async () => {
       try {
         // Calculate date range for the current view
         const startDate = new Date(currentDate);
@@ -178,8 +186,14 @@ export default function EnhancedCalendar({ className, viewMode: propViewMode = '
       }
     };
 
-    fetchEvents();
-  }, [currentDate, viewMode]);
+    // Expose refresh function via ref
+    useImperativeHandle(ref, () => ({
+      refreshEvents: fetchEvents
+    }), [currentDate, viewMode]);
+
+    useEffect(() => {
+      fetchEvents();
+    }, [currentDate, viewMode]);
 
   // Helper functions - moved outside of render to avoid recreation
   const getEventTypeColor = (type: string) => {
@@ -549,14 +563,21 @@ export default function EnhancedCalendar({ className, viewMode: propViewMode = '
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className={`fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center p-4 ${
+              theme === 'black' ? 'bg-black/50' : 'bg-white/50'
+            }`}
             onClick={() => setSelectedEvent(null)}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              className="rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto glass-card glass-border"
+              style={{
+                backgroundColor: 'var(--glass-surface)',
+                color: 'var(--glass-text)',
+                backdropFilter: 'var(--glass-blur)'
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-6">
@@ -570,7 +591,7 @@ export default function EnhancedCalendar({ className, viewMode: propViewMode = '
                     </div>
                     <div>
                       <h2 className="text-xl font-semibold">{selectedEvent.title}</h2>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                      <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
                         {formatDate(selectedEvent.start)} • {formatTime(selectedEvent.start)} - {formatTime(selectedEvent.end)}
                       </p>
                     </div>
@@ -588,7 +609,7 @@ export default function EnhancedCalendar({ className, viewMode: propViewMode = '
                 {selectedEvent.description && (
                   <div className="mb-4">
                     <h3 className="font-medium mb-2">Description</h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                    <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
                       {selectedEvent.description}
                     </p>
                   </div>
@@ -598,13 +619,13 @@ export default function EnhancedCalendar({ className, viewMode: propViewMode = '
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   {selectedEvent.location && (
                     <div className="flex items-center gap-2">
-                      <MapPinIcon className="h-4 w-4 text-slate-400" />
+                      <MapPinIcon className="h-4 w-4" style={{ color: 'var(--glass-text-subtle)' }} />
                       <span className="text-sm">{selectedEvent.location}</span>
                     </div>
                   )}
                   {selectedEvent.videoUrl && (
                     <div className="flex items-center gap-2">
-                      <VideoIcon className="h-4 w-4 text-slate-400" />
+                      <VideoIcon className="h-4 w-4" style={{ color: 'var(--glass-text-subtle)' }} />
                       <a href={selectedEvent.videoUrl} className="text-sm text-blue-600 hover:underline">
                         Join Meeting
                       </a>
@@ -627,7 +648,7 @@ export default function EnhancedCalendar({ className, viewMode: propViewMode = '
                           </Avatar>
                           <div className="flex-1">
                             <div className="text-sm font-medium">{attendee.name}</div>
-                            <div className="text-xs text-slate-600 dark:text-slate-400">
+                            <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
                               {attendee.email}
                             </div>
                           </div>
@@ -650,10 +671,10 @@ export default function EnhancedCalendar({ className, viewMode: propViewMode = '
 
                 {/* Related Item */}
                 {selectedEvent.relatedTo && (
-                  <div className="mb-4 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                  <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: 'var(--glass-surface-subtle)' }}>
                     <h3 className="font-medium mb-2">Related to</h3>
                     <div className="flex items-center gap-2">
-                      <BriefcaseIcon className="h-4 w-4 text-slate-400" />
+                      <BriefcaseIcon className="h-4 w-4" style={{ color: 'var(--glass-text-subtle)' }} />
                       <span className="text-sm font-medium">{selectedEvent.relatedTo.title}</span>
                       <Badge variant="outline" className="text-xs">
                         {selectedEvent.relatedTo.type}
@@ -663,7 +684,7 @@ export default function EnhancedCalendar({ className, viewMode: propViewMode = '
                 )}
 
                 {/* Quick Actions */}
-                <div className="flex items-center gap-2 pt-4 border-t border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-2 pt-4 border-t" style={{ borderColor: 'var(--glass-border-subtle)' }}>
                   <Button size="sm" className="flex items-center gap-2">
                     <VideoIcon className="h-4 w-4" />
                     Join
@@ -689,4 +710,8 @@ export default function EnhancedCalendar({ className, viewMode: propViewMode = '
       </div>
     </div>
   );
-}
+});
+
+EnhancedCalendar.displayName = 'EnhancedCalendar';
+
+export default EnhancedCalendar;
