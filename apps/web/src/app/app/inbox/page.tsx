@@ -626,9 +626,9 @@ export default function InboxPage() {
 
         {/* Main Content */}
         <div className="flex-1 px-4 pb-4 main-content-area">
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 h-full min-h-[600px]">
+          <div className="flex flex-col xl:flex-row gap-4 h-full min-h-[600px]">
             {/* Email List */}
-            <div className="xl:col-span-5 glass-card flex flex-col min-h-0">
+            <div className="xl:w-[42%] xl:flex-shrink-0 glass-card flex flex-col min-h-0">
               {/* Selection Controls */}
               {selectedEmails.length > 0 && (
                 <div className="p-4 border-b" style={{ borderColor: 'var(--glass-border)' }}>
@@ -769,7 +769,7 @@ export default function InboxPage() {
             </div>
 
             {/* Email Detail View */}
-            <div className="xl:col-span-7 glass-card flex flex-col min-h-0">
+            <div className="xl:w-[58%] xl:flex-shrink-0 glass-card flex flex-col min-h-0 overflow-hidden">
               {activeEmail ? (
                 <div className="h-full flex flex-col">
                   {/* Email Header */}

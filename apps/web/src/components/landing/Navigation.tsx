@@ -104,15 +104,17 @@ export default function Navigation({ onWaitlistClick }: NavigationProps) {
           </motion.div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-4">
             {navLinks.map((link) => (
-              <button
+              <Button
                 key={link.label}
+                variant="liquid"
+                size="sm"
                 onClick={() => scrollToSection(link.href.slice(1))}
-                className="text-white/80 hover:text-white transition-colors text-sm font-medium"
+                className="text-white/80 hover:text-white transition-colors"
               >
                 {link.label}
-              </button>
+              </Button>
             ))}
             <Button
               variant="liquid"
@@ -125,15 +127,16 @@ export default function Navigation({ onWaitlistClick }: NavigationProps) {
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 text-white/80 hover:text-white transition-colors bg-transparent border-none"
+          <Button
+            variant="liquid"
+            size="sm"
+            className="md:hidden text-white/80 hover:text-white"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle navigation menu"
             aria-expanded={isMenuOpen}
-            style={{ background: 'transparent', border: 'none' }}
           >
-            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
         </div>
       </div>
 
@@ -148,13 +151,15 @@ export default function Navigation({ onWaitlistClick }: NavigationProps) {
           >
             <div className="px-6 py-4 space-y-4">
               {navLinks.map((link) => (
-                <button
+                <Button
                   key={link.label}
+                  variant="liquid"
+                  size="sm"
+                  className="w-full justify-start text-white/80 hover:text-white"
                   onClick={() => scrollToSection(link.href.slice(1))}
-                  className="block text-white/80 hover:text-white transition-colors text-sm font-medium w-full text-left"
                 >
                   {link.label}
-                </button>
+                </Button>
               ))}
               <Button
                 variant="liquid"

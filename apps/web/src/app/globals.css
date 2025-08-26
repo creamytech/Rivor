@@ -3441,10 +3441,9 @@ header:not(.md\\:hidden),
     -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
   }
   
-  /* Enhanced background blur for mobile waitlist modal */
+  /* Mobile waitlist modal - NO BLUR */
   body.modal-open[data-waitlist-modal-open="true"] > div:not([data-radix-portal]) {
-    filter: blur(6px) saturate(0.8) brightness(0.8) !important;
-    transition: filter 0.3s ease !important;
+    filter: none !important;
   }
   
   /* Force dark theme on mobile for dialog overlay with enhanced blur */
@@ -3697,30 +3696,23 @@ header:not(.md\\:hidden),
   filter: none !important;
 }
 
-/* Waitlist modal blur - ENABLED for better desktop UX */
+/* WAITLIST MODAL BLUR DISABLED - NO MORE BLUR CONFLICTS */
+/* All waitlist modals appear without blur effects */
+
 body.modal-open[data-waitlist-modal-open="true"] > div:not([data-radix-portal]) {
-  filter: blur(8px) saturate(0.8) brightness(0.7) !important;
-  transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  filter: none !important;
 }
 
-/* Desktop-specific enhancements for waitlist modal blur */
-@media (min-width: 769px) {
-  body.modal-open[data-waitlist-modal-open="true"] > div:not([data-radix-portal]) {
-    filter: blur(12px) saturate(0.7) brightness(0.6) contrast(1.1) !important;
-    transition: filter 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  }
-  
-  /* Enhanced backdrop blur for desktop waitlist modal overlay */
-  [data-waitlist-modal-open="true"] [data-radix-dialog-overlay] {
-    background: rgba(0, 0, 0, 0.8) !important;
-    backdrop-filter: blur(20px) saturate(1.2) brightness(0.8) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(1.2) brightness(0.8) !important;
-  }
+[data-waitlist-modal-open="true"] [data-radix-dialog-overlay] {
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  z-index: 999999 !important;
 }
 
-/* Exclude waitlist modal content from blur */
 body.modal-open[data-waitlist-modal-open="true"] [data-radix-portal] {
   filter: none !important;
+  z-index: 999999 !important;
 }
 
 /* ========================================
@@ -3728,105 +3720,42 @@ body.modal-open[data-waitlist-modal-open="true"] [data-radix-portal] {
    Same high-quality effects as waitlist modal
    ======================================== */
 
-/* Dashboard modals blur - applies to all glass-modal components */
-body:has(.glass-modal[data-state="open"]) #__next,
-body:has(.glass-modal[data-state="open"]) main,
-body:has(.glass-modal[data-state="open"]) .main-content-area {
-  filter: blur(8px) saturate(0.8) brightness(0.7) !important;
-  transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
+/* COMPLETELY DISABLE ALL MODAL BLUR EFFECTS - NO MORE BLUR ISSUES */
+/* All modals will appear without any background blur to prevent conflicts */
 
-/* Desktop-specific enhancements for dashboard modals */
-@media (min-width: 769px) {
-  body:has(.glass-modal[data-state="open"]) #__next,
-  body:has(.glass-modal[data-state="open"]) main,
-  body:has(.glass-modal[data-state="open"]) .main-content-area {
-    filter: blur(12px) saturate(0.7) brightness(0.6) contrast(1.1) !important;
-    transition: filter 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  }
-  
-  /* Enhanced backdrop blur for desktop dashboard modal overlays */
-  body:has(.glass-modal[data-state="open"]) [data-radix-dialog-overlay] {
-    background: rgba(0, 0, 0, 0.75) !important;
-    backdrop-filter: blur(20px) saturate(1.2) brightness(0.8) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(1.2) brightness(0.8) !important;
-  }
-}
-
-/* Mobile-specific enhancements for dashboard modals */
-@media (max-width: 768px) {
-  body:has(.glass-modal[data-state="open"]) #__next,
-  body:has(.glass-modal[data-state="open"]) main,
-  body:has(.glass-modal[data-state="open"]) .main-content-area {
-    filter: blur(6px) saturate(0.8) brightness(0.8) !important;
-    transition: filter 0.3s ease !important;
-  }
-  
-  /* Enhanced backdrop blur for mobile dashboard modal overlays */
-  body:has(.glass-modal[data-state="open"]) [data-radix-dialog-overlay] {
-    background: rgba(0, 0, 0, 0.9) !important;
-    backdrop-filter: blur(25px) saturate(1.3) brightness(0.7) !important;
-    -webkit-backdrop-filter: blur(25px) saturate(1.3) brightness(0.7) !important;
-  }
-}
-
-/* Exclude dashboard modal content from blur */
-body:has(.glass-modal[data-state="open"]) [data-radix-portal] {
-  filter: none !important;
-}
-
-/* Alternative approach for browsers that don't support :has() */
-.dashboard-modal-open #__next,
-.dashboard-modal-open main,
-.dashboard-modal-open .main-content-area {
-  filter: blur(8px) saturate(0.8) brightness(0.7) !important;
-  transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-@media (min-width: 769px) {
-  .dashboard-modal-open #__next,
-  .dashboard-modal-open main,
-  .dashboard-modal-open .main-content-area {
-    filter: blur(12px) saturate(0.7) brightness(0.6) contrast(1.1) !important;
-  }
-}
-
-@media (max-width: 768px) {
-  .dashboard-modal-open #__next,
-  .dashboard-modal-open main,
-  .dashboard-modal-open .main-content-area {
-    filter: blur(6px) saturate(0.8) brightness(0.8) !important;
-  }
-}
-
-.dashboard-modal-open [data-radix-portal] {
-  filter: none !important;
-}
-
-/* Ensure all modals stay above blur with proper z-index */
+/* Ensure all modals have maximum z-index priority */
 [data-radix-dialog-overlay] {
-  z-index: 9999 !important;
+  z-index: 999999 !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 [data-radix-dialog-content] {
-  z-index: 10000 !important;
-  position: relative;
-}
-
-/* Special handling for waitlist modal - highest priority */
-[data-waitlist-modal-open="true"] [data-radix-dialog-overlay] {
-  z-index: 99999 !important;
-}
-
-[data-waitlist-modal-open="true"] [data-radix-dialog-content],
-.waitlist-modal-content {
-  z-index: 100000 !important;
-  position: relative;
-}
-
-/* Ensure modal portals are not affected by page blur */
-[data-radix-portal] {
+  z-index: 999999 !important;
+  position: relative !important;
   filter: none !important;
+}
+
+[data-radix-portal] {
+  z-index: 999999 !important;
+  filter: none !important;
+}
+
+/* Completely disable all page blur effects */
+body:has(.glass-modal[data-state="open"]) * {
+  filter: none !important;
+}
+
+.dashboard-modal-open * {
+  filter: none !important;
+}
+
+/* Ensure modals are always visible and on top */
+.glass-modal {
+  z-index: 999999 !important;
+  filter: none !important;
+}
   z-index: 10001 !important;
 }
 
@@ -5258,15 +5187,19 @@ body.glass-theme-white[data-permanent-theme="true"] {
 /* Email content constraints to prevent layout breaking */
 .email-content {
   max-width: 100%;
+  width: 100%;
   word-wrap: break-word;
   word-break: break-word;
   overflow-wrap: break-word;
   hyphens: auto;
+  overflow: hidden;
 }
 
 .email-content * {
   max-width: 100% !important;
+  width: auto !important;
   box-sizing: border-box !important;
+  flex-shrink: 1 !important;
 }
 
 .email-content img {
