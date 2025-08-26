@@ -70,6 +70,8 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
+  const [showImages, setShowImages] = useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<'text' | 'html'>('html');
 
   console.log('EmailContent component mounted/updated with threadId:', threadId);
 
@@ -203,10 +205,10 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
     }
   };
 
-  const sanitizeHtml = (html: string) => {
+  const sanitizeHtml = (html: string, allowImages: boolean = false) => {
     // Basic HTML sanitization - remove potentially dangerous elements
     // In production, use a proper sanitization library like DOMPurify
-    return html
+    let sanitized = html
       .replace(/<script[^>]*>.*?<\/script>/gi, '')
       .replace(/<iframe[^>]*>.*?<\/iframe>/gi, '')
       .replace(/<object[^>]*>.*?<\/object>/gi, '')
@@ -214,6 +216,35 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
       .replace(/<form[^>]*>.*?<\/form>/gi, '')
       .replace(/on\w+="[^"]*"/gi, '') // Remove event handlers
       .replace(/javascript:/gi, ''); // Remove javascript: URLs
+    
+    // Handle images based on user preference
+    if (!allowImages) {
+      // Replace img tags with placeholder showing image info
+      sanitized = sanitized.replace(/<img[^>]*>/gi, (match) => {
+        const srcMatch = match.match(/src="([^"]*)"/i);
+        const altMatch = match.match(/alt="([^"]*)"/i);
+        const src = srcMatch ? srcMatch[1] : '';
+        const alt = altMatch ? altMatch[1] : 'Image';
+        
+        return `<div style="
+          border: 2px dashed #ccc; 
+          padding: 16px; 
+          margin: 8px 0; 
+          text-align: center; 
+          background: #f9f9f9;
+          border-radius: 8px;
+        ">
+          <div style="font-size: 14px; color: #666; margin-bottom: 8px;">
+            📷 Image: ${alt}
+          </div>
+          <div style="font-size: 12px; color: #999; word-break: break-all;">
+            ${src}
+          </div>
+        </div>`;
+      });
+    }
+    
+    return sanitized;
   };
 
   const extractTextFromHtml = (html: string) => {
@@ -430,6 +461,57 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
                           )}
                         </div>
                         
+                        {/* Email Controls */}
+                        {message.bodyHtml && (
+                          <div className="flex items-center gap-4 mb-4 p-3 rounded-lg" style={{
+                            background: theme === 'black' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
+                          }}>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-sm font-medium ${theme === 'black' ? 'text-white/80' : 'text-black/80'}`}>View:</span>
+                              <div className="flex rounded-lg overflow-hidden border" style={{
+                                borderColor: theme === 'black' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'
+                              }}>
+                                <button
+                                  onClick={() => setViewMode('html')}
+                                  className={`px-3 py-1 text-xs font-medium transition-colors ${
+                                    viewMode === 'html' 
+                                      ? 'bg-blue-500 text-white' 
+                                      : theme === 'black' ? 'bg-transparent text-white/60 hover:text-white/80' : 'bg-transparent text-black/60 hover:text-black/80'
+                                  }`}
+                                >
+                                  Rich HTML
+                                </button>
+                                <button
+                                  onClick={() => setViewMode('text')}
+                                  className={`px-3 py-1 text-xs font-medium transition-colors ${
+                                    viewMode === 'text' 
+                                      ? 'bg-blue-500 text-white' 
+                                      : theme === 'black' ? 'bg-transparent text-white/60 hover:text-white/80' : 'bg-transparent text-black/60 hover:text-black/80'
+                                  }`}
+                                >
+                                  Text Only
+                                </button>
+                              </div>
+                            </div>
+                            
+                            {viewMode === 'html' && (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => setShowImages(!showImages)}
+                                  className={`flex items-center gap-2 px-3 py-1 text-xs font-medium rounded transition-colors ${
+                                    showImages 
+                                      ? 'bg-green-500 text-white' 
+                                      : theme === 'black' ? 'bg-white/10 text-white/60 hover:bg-white/20' : 'bg-black/10 text-black/60 hover:bg-black/20'
+                                  }`}
+                                >
+                                  <span>📷</span>
+                                  {showImages ? 'Images Loaded' : 'Load Images'}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         {/* Message Body */}
                         <div className={`prose max-w-none ${
                           theme === 'black' 
@@ -438,29 +520,29 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
                         }`}>
                           {message.bodyHtml ? (
                             <>
-                              <div className={`p-4 mb-4 rounded-lg ${theme === 'black' ? 'bg-white/5 text-white/90' : 'bg-black/5 text-black/90'}`}>
-                                <div className="font-sans leading-relaxed">
-                                  {extractTextFromHtml(message.bodyHtml)}
+                              {viewMode === 'text' ? (
+                                <div className={`p-4 rounded-lg ${theme === 'black' ? 'bg-white/5 text-white/90' : 'bg-black/5 text-black/90'}`}>
+                                  <div className="font-sans leading-relaxed whitespace-pre-wrap">
+                                    {extractTextFromHtml(message.bodyHtml)}
+                                  </div>
                                 </div>
-                              </div>
-                              
-                              <details className="mb-4">
-                                <summary className={`cursor-pointer text-sm font-medium mb-2 ${theme === 'black' ? 'text-white/70' : 'text-black/70'}`}>
-                                  View original HTML formatting
-                                </summary>
+                              ) : (
                                 <div 
                                   dangerouslySetInnerHTML={{ 
-                                    __html: sanitizeHtml(message.bodyHtml)
+                                    __html: sanitizeHtml(message.bodyHtml, showImages)
                                   }}
-                                  className="email-content border rounded-lg p-4 bg-white text-black"
+                                  className="email-content rounded-lg p-4"
                                   style={{
+                                    background: 'white',
+                                    color: 'black',
                                     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                                     lineHeight: '1.6',
-                                    maxHeight: '400px',
-                                    overflow: 'auto'
+                                    maxHeight: '600px',
+                                    overflow: 'auto',
+                                    border: theme === 'black' ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)'
                                   }}
                                 />
-                              </details>
+                              )}
                             </>
                           ) : message.bodyText ? (
                             <div className="whitespace-pre-wrap font-sans leading-relaxed">
