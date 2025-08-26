@@ -159,9 +159,6 @@ export class GmailService {
         org: {
           include: {
             secureTokens: {
-              where: {
-                tokenRef: { not: null }
-              },
               select: {
                 id: true,
                 tokenRef: true,

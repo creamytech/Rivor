@@ -185,28 +185,19 @@ export class GoogleCalendarService {
       throw new Error(`No Google OAuth account found for calendar account ${calendarAccountId}`);
     }
 
-    // Decrypt access token from Account model
-    if (!googleAccount.access_token_enc) {
-      throw new Error(`No encrypted access token found for Google calendar account ${calendarAccountId}`);
+    // Use plain access token from Account model (NextAuth)
+    if (!googleAccount.access_token) {
+      throw new Error(`No access token found for Google calendar account ${calendarAccountId}. Account ID: ${googleAccount.id}`);
     }
 
-    const accessTokenBytes = await decryptForOrg(
-      orgId, 
-      googleAccount.access_token_enc, 
-      `oauth:${googleAccount.provider}:access`
-    );
-    const accessToken = new TextDecoder().decode(accessTokenBytes);
+    const accessToken = googleAccount.access_token;
+    logger.info('Using plain tokens from Account storage for calendar', {
+      calendarAccountId,
+      accountId: googleAccount.id
+    });
 
-    // Decrypt refresh token (optional)
-    let refreshToken: string | undefined;
-    if (googleAccount.refresh_token_enc) {
-      const refreshTokenBytes = await decryptForOrg(
-        orgId, 
-        googleAccount.refresh_token_enc, 
-        `oauth:${googleAccount.provider}:refresh`
-      );
-      refreshToken = new TextDecoder().decode(refreshTokenBytes);
-    }
+    // Use plain refresh token (optional)
+    const refreshToken = googleAccount.refresh_token || undefined;
 
     return new GoogleCalendarService(accessToken, refreshToken);
   }
