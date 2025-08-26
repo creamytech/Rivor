@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
                 where: { id: emailAccount.id },
                 data: { 
                   historyId: syncStats.historyId,
-                  lastSyncAt: new Date(),
+                  lastSyncedAt: new Date(),
                   updatedAt: new Date(),
                   status: 'connected',
                   syncStatus: 'ready',
@@ -192,7 +192,6 @@ export async function POST(req: NextRequest) {
             await prisma.calendarAccount.update({
               where: { id: calendarAccount.id },
               data: { 
-                lastSyncAt: new Date(),
                 updatedAt: new Date(),
                 status: 'connected'
               }

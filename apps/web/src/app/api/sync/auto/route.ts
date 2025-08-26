@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
                   where: { id: emailAccount.id },
                   data: { 
                     historyId: syncStats.historyId,
-                    lastSyncAt: new Date(),
+                    lastSyncedAt: new Date(),
                     updatedAt: new Date(),
                     status: 'connected', // Mark as connected on successful sync
                     syncStatus: 'ready',
@@ -224,7 +224,7 @@ export async function POST(req: NextRequest) {
               await prisma.calendarAccount.update({
                 where: { id: calendarAccount.id },
                 data: { 
-                  lastSyncAt: new Date(),
+                  lastSyncedAt: new Date(),
                   updatedAt: new Date()
                 }
               });
@@ -324,7 +324,7 @@ export async function GET() {
           provider: true,
           status: true,
           tokenStatus: true,
-          lastSyncAt: true,
+          lastSyncedAt: true,
           updatedAt: true,
           historyId: true,
           errorReason: true
@@ -336,7 +336,7 @@ export async function GET() {
           id: true,
           provider: true,
           status: true,
-          lastSyncAt: true,
+          lastSyncedAt: true,
           updatedAt: true
         }
       })
