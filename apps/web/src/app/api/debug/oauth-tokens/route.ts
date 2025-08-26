@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
                     tokenStatus: true,
                     syncStatus: true,
                     externalAccountId: true,
-                    hasTokenRef: true,
+                    tokenRef: true,
                     errorReason: true
                   }
                 },
@@ -73,9 +73,8 @@ export async function GET(req: NextRequest) {
                     id: true,
                     provider: true,
                     status: true,
-                    externalAccountId: true,
-                    tokenRef: true,
-                    tokenStatus: true
+                    createdAt: true,
+                    updatedAt: true
                   }
                 },
                 secureTokens: {
@@ -152,24 +151,20 @@ export async function GET(req: NextRequest) {
         }) || [],
         calendarToOAuth: user.orgMembers[0]?.org?.calendarAccounts?.map(calendar => {
           const matchingAccount = user.accounts.find(acc => 
-            acc.provider === 'google' && 
-            acc.providerAccountId === calendar.externalAccountId
+            acc.provider === 'google'
+            // Note: CalendarAccount doesn't have externalAccountId, so we can't match directly
           );
           const matchingOAuthAccount = user.oauthAccounts.find(acc =>
-            acc.provider === 'google' &&
-            acc.providerId === calendar.externalAccountId
-          );
-          const secureToken = user.orgMembers[0]?.org?.secureTokens?.find(token => 
-            token.tokenRef === calendar.tokenRef
+            acc.provider === 'google'
+            // Note: CalendarAccount doesn't have externalAccountId, so we can't match directly
           );
           return {
             calendarAccountId: calendar.id,
-            externalAccountId: calendar.externalAccountId,
-            tokenRef: calendar.tokenRef,
-            tokenStatus: calendar.tokenStatus,
+            provider: calendar.provider,
+            status: calendar.status,
+            note: "CalendarAccount model doesn't have externalAccountId or tokenRef fields",
             matchingNextAuthAccount: matchingAccount?.id || 'NOT_FOUND',
             matchingOAuthAccount: matchingOAuthAccount?.id || 'NOT_FOUND',
-            hasSecureToken: !!secureToken,
             hasPlainTokens: !!(matchingAccount?.access_token && matchingAccount?.refresh_token)
           };
         }) || []
@@ -186,7 +181,7 @@ export async function GET(req: NextRequest) {
 }
 
 /**
- * POST endpoint to manually encrypt existing plain tokens
+ * POST endpoint placeholder - token encryption needs proper OAuth flow setup
  */
 export async function POST(req: NextRequest) {
   try {
@@ -195,112 +190,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgId = (session as any).orgId;
-    if (!orgId) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
-    }
-
-    const { encryptPlainTokens } = await req.json().catch(() => ({ encryptPlainTokens: false }));
-
-    if (!encryptPlainTokens) {
-      return NextResponse.json({ error: 'Set encryptPlainTokens: true to proceed' }, { status: 400 });
-    }
-
-    const { encryptForOrg } = await import('@/server/secure-tokens');
-
-    // Find accounts with plain tokens but no encrypted tokens
-    const accountsNeedingEncryption = await prisma.account.findMany({
-      where: {
-        user: { email: session.user.email },
-        provider: 'google',
-        OR: [
-          {
-            access_token: { not: null },
-            access_token_enc: null
-          },
-          {
-            refresh_token: { not: null },
-            refresh_token_enc: null
-          }
-        ]
-      }
-    });
-
-    const results = [];
-
-    for (const account of accountsNeedingEncryption) {
-      try {
-        const updateData: any = {};
-
-        // Encrypt access token if it exists
-        if (account.access_token && !account.access_token_enc) {
-          const encryptedAccessToken = await encryptForOrg(
-            orgId,
-            new TextEncoder().encode(account.access_token),
-            `oauth:${account.provider}:access`
-          );
-          updateData.access_token_enc = encryptedAccessToken;
-          updateData.access_token = null; // Clear plain token
-        }
-
-        // Encrypt refresh token if it exists
-        if (account.refresh_token && !account.refresh_token_enc) {
-          const encryptedRefreshToken = await encryptForOrg(
-            orgId,
-            new TextEncoder().encode(account.refresh_token),
-            `oauth:${account.provider}:refresh`
-          );
-          updateData.refresh_token_enc = encryptedRefreshToken;
-          updateData.refresh_token = null; // Clear plain token
-        }
-
-        if (Object.keys(updateData).length > 0) {
-          await prisma.account.update({
-            where: { id: account.id },
-            data: updateData
-          });
-
-          results.push({
-            accountId: account.id,
-            provider: account.provider,
-            providerAccountId: account.providerAccountId,
-            success: true,
-            encryptedFields: Object.keys(updateData).filter(k => k.endsWith('_enc'))
-          });
-        }
-
-      } catch (error) {
-        results.push({
-          accountId: account.id,
-          provider: account.provider,
-          providerAccountId: account.providerAccountId,
-          success: false,
-          error: error instanceof Error ? error.message : String(error)
-        });
-      }
-    }
-
-    // Update email account token status
-    await prisma.emailAccount.updateMany({
-      where: { orgId },
-      data: { 
-        tokenStatus: 'encrypted',
-        status: 'connected',
-        syncStatus: 'ready'
-      }
-    });
-
     return NextResponse.json({
-      success: true,
-      message: `Encrypted tokens for ${results.filter(r => r.success).length} accounts`,
-      results,
-      totalProcessed: results.length
+      success: false,
+      message: "Token encryption is handled during OAuth flow",
+      explanation: "Based on the database schema analysis, tokens should be encrypted automatically during the OAuth authentication process. If you're missing tokens, you need to reconnect your Google account through the proper OAuth flow.",
+      recommendations: [
+        "1. Check if you have plain tokens in the Account model (NextAuth)",
+        "2. If tokens exist, the Gmail service will use them as fallback",
+        "3. For proper encrypted storage, reconnect through OAuth flow",
+        "4. The system supports multiple token storage methods (SecureToken, OAuthAccount, Account)"
+      ]
     });
 
   } catch (error) {
     console.error('Token encryption error:', error);
     return NextResponse.json({
-      error: 'Failed to encrypt tokens',
+      error: 'Failed to process token encryption request',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
