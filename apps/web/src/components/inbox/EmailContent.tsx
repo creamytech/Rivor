@@ -247,20 +247,6 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
 
   return (
     <div className="flex-1 flex flex-col">
-      {/* Debug indicator with thread data */}
-      <div className="bg-red-500 text-white p-2 text-xs font-bold">
-        🚨 COMPONENT RENDERED - Thread: {threadId} | Messages: {thread?.messages?.length || 0} | Loading: {loading.toString()} | Error: {error || 'none'}
-        {thread && (
-          <div className="mt-1 text-left">
-            Subject: {thread.subject} | Participants: {thread.participants?.length || 0} | 
-            First Message: {thread.messages?.[0]?.fromEmail || 'N/A'} | 
-            Body Text: {thread.messages?.[0]?.bodyText ? 'YES' : 'NO'} | 
-            Body HTML: {thread.messages?.[0]?.bodyHtml ? 'YES' : 'NO'} |
-            Expanded Messages: {Array.from(expandedMessages).join(', ') || 'NONE'} |
-            Latest Message ID: {thread.messages?.[thread.messages.length - 1]?.id || 'N/A'}
-          </div>
-        )}
-      </div>
       
       {/* Thread Header */}
       <div className={`p-6 border-b ${theme === 'black' ? 'border-white/10' : 'border-black/10'}`}>
@@ -411,11 +397,6 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
                   )}
                 </div>
 
-                {/* Debug message expansion */}
-                <div className="bg-blue-500 text-white p-1 text-xs">
-                  Msg {index}: isExpanded={isExpanded.toString()} | isLatest={isLatest.toString()} | shouldShow={(isExpanded || isLatest).toString()}
-                </div>
-                
                 {/* Message Content */}
                 {(isExpanded || isLatest) && (
                   <div>
@@ -436,38 +417,46 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
                           )}
                         </div>
                         
-                        {/* Debug content info */}
-                        <div className="bg-green-500 text-white p-1 text-xs mb-2">
-                          Content Debug - HTML: {message.bodyHtml ? `${message.bodyHtml.substring(0, 100)}...` : 'NONE'} | 
-                          Text: {message.bodyText ? `${message.bodyText.substring(0, 100)}...` : 'NONE'}
-                        </div>
-                        
                         {/* Message Body */}
-                        <div className={`prose max-w-none ${
-                          theme === 'black' 
-                            ? 'prose-invert prose-headings:text-white prose-p:text-white/90 prose-strong:text-white prose-a:text-blue-400' 
-                            : 'prose-headings:text-black prose-p:text-black/90 prose-strong:text-black prose-a:text-blue-600'
-                        }`}>
-                          {message.bodyHtml ? (
-                            <div 
-                              dangerouslySetInnerHTML={{ 
-                                __html: sanitizeHtml(message.bodyHtml) 
-                              }}
-                              className="email-content"
-                              style={{
-                                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                                lineHeight: '1.6'
-                              }}
-                            />
-                          ) : message.bodyText ? (
-                            <div className="whitespace-pre-wrap font-sans leading-relaxed">
-                              {message.bodyText}
-                            </div>
-                          ) : (
-                            <div className={`italic ${theme === 'black' ? 'text-white/50' : 'text-black/50'}`}>
-                              No content available
-                            </div>
-                          )}
+                        <div className="border border-yellow-400 p-4">
+                          <div className="bg-yellow-200 text-black p-2 text-xs mb-2">
+                            CONTENT TEST: HTML={message.bodyHtml ? 'EXISTS' : 'NULL'} TEXT={message.bodyText ? 'EXISTS' : 'NULL'}
+                          </div>
+                          
+                          <div className="bg-purple-200 text-black p-2 text-xs mb-2">
+                            RAW HTML: {message.bodyHtml ? message.bodyHtml.substring(0, 200) : 'NO HTML'}
+                          </div>
+                          
+                          <div className="bg-orange-200 text-black p-2 text-xs mb-2">
+                            RAW TEXT: {message.bodyText ? message.bodyText.substring(0, 200) : 'NO TEXT'}
+                          </div>
+
+                          <div className={`prose max-w-none ${
+                            theme === 'black' 
+                              ? 'prose-invert prose-headings:text-white prose-p:text-white/90 prose-strong:text-white prose-a:text-blue-400' 
+                              : 'prose-headings:text-black prose-p:text-black/90 prose-strong:text-black prose-a:text-blue-600'
+                          }`}>
+                            {message.bodyHtml ? (
+                              <div 
+                                dangerouslySetInnerHTML={{ 
+                                  __html: message.bodyHtml 
+                                }}
+                                className="email-content bg-red-100"
+                                style={{
+                                  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                  lineHeight: '1.6'
+                                }}
+                              />
+                            ) : message.bodyText ? (
+                              <div className="whitespace-pre-wrap font-sans leading-relaxed bg-blue-100">
+                                {message.bodyText}
+                              </div>
+                            ) : (
+                              <div className={`italic ${theme === 'black' ? 'text-white/50' : 'text-black/50'}`}>
+                                No content available
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                   </div>
