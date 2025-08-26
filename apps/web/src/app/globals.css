@@ -4342,7 +4342,9 @@ body:has(.glass-modal[data-state="open"]) * {
 }
 
 /* WAITLIST MODAL SOLID BLACK BACKGROUND - FINAL FIX */
-[data-waitlist-modal] [data-radix-dialog-content],
+.waitlist-modal-content,
+.waitlist-modal-content[data-radix-dialog-content],
+[data-waitlist-modal-open="true"] .waitlist-modal-content,
 [data-waitlist-modal-open="true"] [data-radix-dialog-content] {
   background: #000000 !important;
   backdrop-filter: none !important;
