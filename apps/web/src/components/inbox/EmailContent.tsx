@@ -71,7 +71,10 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
   const [error, setError] = useState<string | null>(null);
   const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
 
+  console.log('EmailContent component mounted/updated with threadId:', threadId);
+
   useEffect(() => {
+    console.log('EmailContent useEffect triggered for threadId:', threadId);
     fetchThreadDetails();
   }, [threadId]);
 
@@ -207,7 +210,7 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
           <div className={`animate-spin h-8 w-8 border-2 border-current border-t-transparent rounded-full mx-auto mb-4 ${
             theme === 'black' ? 'text-white/40' : 'text-black/40'
           }`} />
-          <p className={`${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>Loading email content...</p>
+          <p className={`${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>Loading email content for thread: {threadId}</p>
         </div>
       </div>
     );
