@@ -31,22 +31,36 @@ export async function POST(req: NextRequest) {
     });
     
     // Clear the session cookie
-    response.cookies.set('__Secure-next-auth.session-token', '', {
-      expires: new Date(0),
-      path: '/',
-      domain: '.rivor.ai'
-    });
+    if (process.env.NODE_ENV === 'production') {
+      response.cookies.set('__Secure-next-auth.session-token', '', {
+        expires: new Date(0),
+        path: '/',
+        domain: '.rivor.ai',
+        secure: true
+      });
+      
+      response.cookies.set('__Secure-next-auth.callback-url', '', {
+        expires: new Date(0),
+        path: '/',
+        domain: '.rivor.ai',
+        secure: true
+      });
+    } else {
+      response.cookies.set('next-auth.session-token', '', {
+        expires: new Date(0),
+        path: '/'
+      });
+      
+      response.cookies.set('next-auth.callback-url', '', {
+        expires: new Date(0),
+        path: '/'
+      });
+    }
     
-    // Also clear other auth cookies
+    // Clear CSRF token (always uses __Host- prefix)
     response.cookies.set('__Host-next-auth.csrf-token', '', {
       expires: new Date(0),
       path: '/'
-    });
-    
-    response.cookies.set('__Secure-next-auth.callback-url', '', {
-      expires: new Date(0),
-      path: '/',
-      domain: '.rivor.ai'
     });
     
     return response;

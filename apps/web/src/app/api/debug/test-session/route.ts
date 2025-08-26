@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     
     // If we have a cookie but no server session, it means there's a mismatch
     // Check if we can manually retrieve the session from the database
-    let manualSessionCheck = null;
+    let manualSessionCheck: any = null;
     const cookies = req.headers.get('cookie') || '';
     const sessionToken = cookies
       .split(';')
