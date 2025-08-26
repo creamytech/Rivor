@@ -15,9 +15,9 @@ export async function GET(req: NextRequest) {
             id: true,
             provider: true,
             providerAccountId: true,
-            access_token_enc: true,
-            refresh_token_enc: true,
-            id_token_enc: true,
+            access_token: true,
+            refresh_token: true,
+            id_token: true,
             expires_at: true,
             createdAt: true,
             updatedAt: true
@@ -48,15 +48,15 @@ export async function GET(req: NextRequest) {
       id: account.id,
       provider: account.provider,
       providerAccountId: account.providerAccountId,
-      hasEncryptedTokens: {
-        access: !!account.access_token_enc,
-        refresh: !!account.refresh_token_enc,
-        id: !!account.id_token_enc
+      hasTokens: {
+        access: !!account.access_token,
+        refresh: !!account.refresh_token,
+        id: !!account.id_token
       },
       tokenSizes: {
-        access: account.access_token_enc?.length || 0,
-        refresh: account.refresh_token_enc?.length || 0,
-        id: account.id_token_enc?.length || 0
+        access: account.access_token?.length || 0,
+        refresh: account.refresh_token?.length || 0,
+        id: account.id_token?.length || 0
       },
       expiresAt: account.expires_at,
       createdAt: account.createdAt,
@@ -91,13 +91,13 @@ export async function GET(req: NextRequest) {
       summary: {
         totalAccounts: user.accounts.length,
         googleAccounts: user.accounts.filter(a => a.provider === 'google').length,
-        accountsWithTokens: accountAnalysis.filter(a => a.hasEncryptedTokens.access).length,
+        accountsWithTokens: accountAnalysis.filter(a => a.hasTokens.access).length,
         activeSessions: user.sessions.filter(s => s.expires > new Date()).length
       },
       diagnosis: {
         hasUser: true,
         hasGoogleAccount: user.accounts.some(a => a.provider === 'google'),
-        hasTokens: accountAnalysis.some(a => a.hasEncryptedTokens.access),
+        hasTokens: accountAnalysis.some(a => a.hasTokens.access),
         whyNoLinkAccount: user.accounts.length > 0 ? 'Account exists - NextAuth skips linkAccount' : 'Should call linkAccount'
       },
       timestamp: new Date().toISOString()

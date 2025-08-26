@@ -250,94 +250,10 @@ export const authOptions: NextAuthOptions = {
       };
       
       logOAuth('info', '🚀 OAuth signIn callback triggered', signInData);
-      console.log('🚀 OAuth signIn callback start', signInData);
+      console.log('🚀 OAuth signIn callback - allowing PrismaAdapter to handle user/account creation');
       
-      // Debug: Check if user and account exist in database
-      if (user.email && account) {
-        try {
-          console.log('🔍 Checking database state before PrismaAdapter processing...');
-          
-          // Check if user exists
-          const existingUser = await prisma.user.findUnique({
-            where: { email: user.email },
-            include: { accounts: true }
-          });
-          
-          console.log('👤 Existing user check:', {
-            found: !!existingUser,
-            id: existingUser?.id,
-            accountsCount: existingUser?.accounts?.length || 0,
-            hasGoogleAccount: existingUser?.accounts?.some(acc => acc.provider === 'google')
-          });
-          
-          // Check if this specific OAuth account exists
-          if (existingUser) {
-            const existingAccount = await prisma.account.findFirst({
-              where: {
-                userId: existingUser.id,
-                provider: account.provider,
-                providerAccountId: account.providerAccountId
-              }
-            });
-            
-            console.log('🔗 OAuth account check:', {
-              found: !!existingAccount,
-              provider: account.provider,
-              providerAccountId: account.providerAccountId,
-              userId: existingUser.id
-            });
-
-            // If account doesn't exist, try to manually link it to see what error occurs
-            if (!existingAccount) {
-              console.log('🔧 Account not found - testing manual linking...');
-              try {
-                // Simulate what PrismaAdapter.linkAccount should do
-                const testLink = await prisma.account.create({
-                  data: {
-                    userId: existingUser.id,
-                    type: account.type,
-                    provider: account.provider,
-                    providerAccountId: account.providerAccountId,
-                    refresh_token: account.refresh_token,
-                    access_token: account.access_token,
-                    expires_at: account.expires_at,
-                    token_type: account.token_type,
-                    scope: account.scope,
-                    id_token: account.id_token,
-                  }
-                });
-                console.log('✅ Manual account linking succeeded:', {
-                  accountId: testLink.id,
-                  provider: testLink.provider
-                });
-                
-                // Clean up the test - let PrismaAdapter handle the real one
-                await prisma.account.delete({ where: { id: testLink.id } });
-                console.log('🧹 Cleaned up test account');
-                
-              } catch (linkError) {
-                console.error('❌ Manual account linking failed:', linkError);
-                logOAuth('error', 'Manual account linking failed', { 
-                  error: linkError instanceof Error ? linkError.message : linkError,
-                  code: (linkError as any)?.code,
-                  meta: (linkError as any)?.meta
-                });
-              }
-            }
-          }
-          
-          console.log('✅ Database state check completed');
-        } catch (dbError) {
-          console.error('❌ Database check failed in signIn callback:', dbError);
-          logOAuth('error', 'Database check failed in signIn', { 
-            error: dbError instanceof Error ? dbError.message : dbError 
-          });
-        }
-      }
-      
-      // NextAuth should create User and Account records automatically with database strategy
-      // This callback just validates the sign-in is allowed
-      console.log('✅ Allowing sign-in to proceed with PrismaAdapter');
+      // Let PrismaAdapter handle User and Account creation automatically
+      // This callback just validates that the sign-in is allowed
       return true;
     },
     async redirect({ url, baseUrl }) {
@@ -393,36 +309,14 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async jwt({ token, user, account, profile }) {
-      // With database strategy, PrismaAdapter handles user/account creation
-      // JWT callback should only handle token enrichment
+      // With database strategy, JWT callback just enriches the token
+      // PrismaAdapter handles all database operations
       if (user && account) {
-        console.log('🔐 JWT callback - PrismaAdapter should handle account creation:', {
+        console.log('🔐 JWT callback - user and account present:', {
           userEmail: user.email,
-          accountProvider: account.provider,
-          hasAccessToken: !!account.access_token,
-          hasRefreshToken: !!account.refresh_token,
-          providerAccountId: account.providerAccountId
+          accountProvider: account.provider
         });
-        
-        // Debug: Verify the account was created properly
-        try {
-          const dbUser = await prisma.user.findUnique({
-            where: { email: user.email },
-            include: { accounts: { where: { provider: account.provider } } }
-          });
-          
-          console.log('🔍 JWT callback - database verification:', {
-            userFound: !!dbUser,
-            userId: dbUser?.id,
-            accountsFound: dbUser?.accounts?.length || 0,
-            accountId: dbUser?.accounts?.[0]?.id
-          });
-        } catch (dbError) {
-          console.error('❌ JWT callback - database verification failed:', dbError);
-        }
       }
-
-      // Always return the token for JWT strategy compatibility
       return token;
     },
   },

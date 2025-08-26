@@ -4,14 +4,25 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 
 export async function POST(req: NextRequest) {
   try {
-    const { action = 'test_oauth_flow' } = await req.json();
+    const body = await req.json();
+    const { action = 'test_oauth_flow', email = 'benjaminscott18@gmail.com' } = body;
     
     console.log(`🧪 Testing PrismaAdapter ${action}...`);
     
     const adapter = PrismaAdapter(prisma);
     const results = [];
     
-    if (action === 'test_oauth_flow') {
+    if (action === 'clean_user') {
+      // Clean up test user
+      try {
+        await prisma.account.deleteMany({ where: { user: { email } } });
+        await prisma.session.deleteMany({ where: { user: { email } } });
+        await prisma.user.delete({ where: { email } });
+        results.push({ step: 'clean_user', success: true, email });
+      } catch (error) {
+        results.push({ step: 'clean_user', success: false, error: error instanceof Error ? error.message : error });
+      }
+    } else if (action === 'test_oauth_flow') {
       // Simulate the OAuth sign-in process that's failing
       const testUser = {
         email: 'benjaminscott18@gmail.com',
