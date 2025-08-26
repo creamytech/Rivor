@@ -23,6 +23,27 @@ export const authOptions: NextAuthOptions = {
   session: { 
     strategy: "database",
   },
+  callbacks: {
+    async session({ session, user }) {
+      if (session?.user?.email) {
+        // Get user's org ID and add to session
+        const userWithOrg = await prisma.user.findUnique({
+          where: { email: session.user.email },
+          include: {
+            orgMembers: {
+              include: { org: true }
+            }
+          }
+        });
+        
+        if (userWithOrg?.orgMembers[0]) {
+          (session as any).orgId = userWithOrg.orgMembers[0].orgId;
+          (session as any).orgName = userWithOrg.orgMembers[0].org.name;
+        }
+      }
+      return session;
+    },
+  },
   pages: {
     signIn: "/auth/signin",
     error: "/auth/error",
