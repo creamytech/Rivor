@@ -626,9 +626,9 @@ export default function InboxPage() {
 
         {/* Main Content */}
         <div className="flex-1 px-4 pb-4 main-content-area">
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 h-full">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 h-full min-h-[600px]">
             {/* Email List */}
-            <div className="xl:col-span-5 glass-card">
+            <div className="xl:col-span-5 glass-card flex flex-col min-h-0">
               {/* Selection Controls */}
               {selectedEmails.length > 0 && (
                 <div className="p-4 border-b" style={{ borderColor: 'var(--glass-border)' }}>
@@ -769,7 +769,7 @@ export default function InboxPage() {
             </div>
 
             {/* Email Detail View */}
-            <div className="xl:col-span-7 glass-card">
+            <div className="xl:col-span-7 glass-card flex flex-col min-h-0">
               {activeEmail ? (
                 <div className="h-full flex flex-col">
                   {/* Email Header */}
@@ -856,7 +856,7 @@ export default function InboxPage() {
                   </div>
                   
                   {/* Email Content */}
-                  <div className="flex-1 p-6 overflow-y-auto">
+                  <div className="flex-1 p-6 overflow-y-auto min-h-0 max-h-full">
                     {loadingThread ? (
                       <div className="flex items-center justify-center h-32">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>

@@ -115,37 +115,12 @@ export default function Navigation({ onWaitlistClick }: NavigationProps) {
               </button>
             ))}
             <Button
+              variant="liquid"
+              size="default"
               onClick={onWaitlistClick}
-              className="rounded-xl px-5 py-2 font-medium text-white relative overflow-hidden group transition-all duration-300"
               aria-label="Join the Rivor waitlist"
-              style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                backdropFilter: 'blur(20px) saturate(1.4)',
-                WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                boxShadow: `
-                  inset 0 1px 0 rgba(255, 255, 255, 0.1),
-                  0 4px 15px rgba(6, 182, 212, 0.1)
-                `
-              }}
             >
-              <span className="relative z-10">Join Waitlist</span>
-              {/* Hover effect */}
-              <div 
-                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{
-                  background: 'rgba(6, 182, 212, 0.15)',
-                  backdropFilter: 'blur(25px)'
-                }}
-              />
-              {/* Shimmer effect */}
-              <div 
-                className="absolute inset-0 opacity-30 group-hover:opacity-60 transition-opacity duration-300"
-                style={{
-                  background: 'linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%)',
-                  animation: 'shimmer 3s ease-in-out infinite'
-                }}
-              />
+              Join Waitlist
             </Button>
           </div>
 
@@ -182,40 +157,16 @@ export default function Navigation({ onWaitlistClick }: NavigationProps) {
                 </button>
               ))}
               <Button
+                variant="liquid"
+                size="default"
+                className="w-full mt-4"
                 onClick={() => {
                   onWaitlistClick();
                   setIsMenuOpen(false);
                 }}
-                className="w-full rounded-xl px-5 py-2 font-medium text-white relative overflow-hidden group transition-all duration-300 mt-4"
                 aria-label="Join the Rivor waitlist"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  backdropFilter: 'blur(20px) saturate(1.4)',
-                  WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  boxShadow: `
-                    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-                    0 4px 15px rgba(6, 182, 212, 0.1)
-                  `
-                }}
               >
-                <span className="relative z-10">Join Waitlist</span>
-                {/* Hover effect */}
-                <div 
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  style={{
-                    background: 'rgba(6, 182, 212, 0.15)',
-                    backdropFilter: 'blur(25px)'
-                  }}
-                />
-                {/* Shimmer effect */}
-                <div 
-                  className="absolute inset-0 opacity-30 group-hover:opacity-60 transition-opacity duration-300"
-                  style={{
-                    background: 'linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%)',
-                    animation: 'shimmer 3s ease-in-out infinite'
-                  }}
-                />
+                Join Waitlist
               </Button>
             </div>
           </motion.div>

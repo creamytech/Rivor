@@ -3729,14 +3729,18 @@ body.modal-open[data-waitlist-modal-open="true"] [data-radix-portal] {
    ======================================== */
 
 /* Dashboard modals blur - applies to all glass-modal components */
-body:has(.glass-modal[data-state="open"]) > div:not([data-radix-portal]) {
+body:has(.glass-modal[data-state="open"]) #__next,
+body:has(.glass-modal[data-state="open"]) main,
+body:has(.glass-modal[data-state="open"]) .main-content-area {
   filter: blur(8px) saturate(0.8) brightness(0.7) !important;
   transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 /* Desktop-specific enhancements for dashboard modals */
 @media (min-width: 769px) {
-  body:has(.glass-modal[data-state="open"]) > div:not([data-radix-portal]) {
+  body:has(.glass-modal[data-state="open"]) #__next,
+  body:has(.glass-modal[data-state="open"]) main,
+  body:has(.glass-modal[data-state="open"]) .main-content-area {
     filter: blur(12px) saturate(0.7) brightness(0.6) contrast(1.1) !important;
     transition: filter 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
@@ -3751,7 +3755,9 @@ body:has(.glass-modal[data-state="open"]) > div:not([data-radix-portal]) {
 
 /* Mobile-specific enhancements for dashboard modals */
 @media (max-width: 768px) {
-  body:has(.glass-modal[data-state="open"]) > div:not([data-radix-portal]) {
+  body:has(.glass-modal[data-state="open"]) #__next,
+  body:has(.glass-modal[data-state="open"]) main,
+  body:has(.glass-modal[data-state="open"]) .main-content-area {
     filter: blur(6px) saturate(0.8) brightness(0.8) !important;
     transition: filter 0.3s ease !important;
   }
@@ -3770,19 +3776,25 @@ body:has(.glass-modal[data-state="open"]) [data-radix-portal] {
 }
 
 /* Alternative approach for browsers that don't support :has() */
-.dashboard-modal-open > div:not([data-radix-portal]) {
+.dashboard-modal-open #__next,
+.dashboard-modal-open main,
+.dashboard-modal-open .main-content-area {
   filter: blur(8px) saturate(0.8) brightness(0.7) !important;
   transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 @media (min-width: 769px) {
-  .dashboard-modal-open > div:not([data-radix-portal]) {
+  .dashboard-modal-open #__next,
+  .dashboard-modal-open main,
+  .dashboard-modal-open .main-content-area {
     filter: blur(12px) saturate(0.7) brightness(0.6) contrast(1.1) !important;
   }
 }
 
 @media (max-width: 768px) {
-  .dashboard-modal-open > div:not([data-radix-portal]) {
+  .dashboard-modal-open #__next,
+  .dashboard-modal-open main,
+  .dashboard-modal-open .main-content-area {
     filter: blur(6px) saturate(0.8) brightness(0.8) !important;
   }
 }
@@ -5241,4 +5253,66 @@ body.glass-theme-white[data-permanent-theme="true"] {
 .glass-theme-white .navigation {
   background-color: rgba(0, 0, 0, 0.03) !important;
   border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Email content constraints to prevent layout breaking */
+.email-content {
+  max-width: 100%;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+.email-content * {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.email-content img {
+  max-width: 100% !important;
+  height: auto !important;
+  display: block;
+  margin: 1rem 0;
+}
+
+.email-content table {
+  width: auto !important;
+  max-width: 100% !important;
+  table-layout: fixed !important;
+  word-wrap: break-word;
+}
+
+.email-content td,
+.email-content th {
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  max-width: none !important;
+}
+
+.email-content pre {
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+  overflow-x: auto !important;
+  max-width: 100% !important;
+}
+
+.email-content blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 3px solid var(--glass-border);
+  background: var(--glass-surface-subtle);
+  border-radius: 0.375rem;
+}
+
+/* Inbox layout constraints */
+.inbox-email-list {
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.inbox-email-detail {
+  min-width: 0;
+  flex-shrink: 1;
+  overflow: hidden;
 }
