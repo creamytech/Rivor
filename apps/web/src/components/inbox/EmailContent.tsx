@@ -216,6 +216,19 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
       .replace(/javascript:/gi, ''); // Remove javascript: URLs
   };
 
+  const extractTextFromHtml = (html: string) => {
+    // Create a temporary div to parse HTML and extract text
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    
+    // Remove style and script tags
+    const styleElements = tempDiv.querySelectorAll('style, script');
+    styleElements.forEach(el => el.remove());
+    
+    // Get text content and clean it up
+    return tempDiv.textContent || tempDiv.innerText || '';
+  };
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -436,34 +449,31 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
                               ? 'prose-invert prose-headings:text-white prose-p:text-white/90 prose-strong:text-white prose-a:text-blue-400' 
                               : 'prose-headings:text-black prose-p:text-black/90 prose-strong:text-black prose-a:text-blue-600'
                           }`}>
-                            <div className="bg-green-200 p-2 mb-2">
-                              <strong>FALLBACK TEXT CONTENT:</strong>
-                              <div className="text-black font-mono text-sm">
-                                {message.bodyText ? message.bodyText.substring(0, 500) : 'No text content'}
+                            <div className="bg-green-200 p-4 mb-4 rounded">
+                              <strong className="text-green-800">📧 EMAIL CONTENT (Extracted from HTML):</strong>
+                              <div className="text-black font-sans text-sm mt-2 leading-relaxed">
+                                {message.bodyHtml ? extractTextFromHtml(message.bodyHtml) : message.bodyText || 'No content available'}
                               </div>
                             </div>
                             
-                            {message.bodyHtml ? (
-                              <div 
-                                dangerouslySetInnerHTML={{ 
-                                  __html: message.bodyHtml 
-                                }}
-                                className="email-content bg-red-100"
-                                style={{
-                                  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                                  lineHeight: '1.6',
-                                  color: 'black !important',
-                                  backgroundColor: 'white !important'
-                                }}
-                              />
-                            ) : message.bodyText ? (
-                              <div className="whitespace-pre-wrap font-sans leading-relaxed bg-blue-100 text-black p-4">
-                                {message.bodyText}
-                              </div>
-                            ) : (
-                              <div className={`italic ${theme === 'black' ? 'text-white/50' : 'text-black/50'}`}>
-                                No content available
-                              </div>
+                            {message.bodyHtml && (
+                              <details className="mb-4">
+                                <summary className="cursor-pointer text-sm font-medium text-gray-700 mb-2">
+                                  🔧 Show Original HTML Email
+                                </summary>
+                                <div 
+                                  dangerouslySetInnerHTML={{ 
+                                    __html: sanitizeHtml(message.bodyHtml)
+                                  }}
+                                  className="email-content border border-gray-300 p-4 rounded bg-white"
+                                  style={{
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                    lineHeight: '1.6',
+                                    maxHeight: '400px',
+                                    overflow: 'auto'
+                                  }}
+                                />
+                              </details>
                             )}
                           </div>
                         </div>
