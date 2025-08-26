@@ -40,7 +40,7 @@ export function SyncStatusIndicator({
 }: SyncStatusIndicatorProps) {
   const sync = useAutoSync({
     interval: 10, // 10 minutes
-    enabled: true,
+    enabled: false, // Disable auto-sync - only manual sync
     showToasts: false // Don't show toasts from the indicator
   });
 
