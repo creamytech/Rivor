@@ -431,41 +431,28 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
                         </div>
                         
                         {/* Message Body */}
-                        <div className="border border-yellow-400 p-4">
-                          <div className="bg-yellow-200 text-black p-2 text-xs mb-2">
-                            CONTENT TEST: HTML={message.bodyHtml ? 'EXISTS' : 'NULL'} TEXT={message.bodyText ? 'EXISTS' : 'NULL'}
-                          </div>
-                          
-                          <div className="bg-purple-200 text-black p-2 text-xs mb-2">
-                            RAW HTML: {message.bodyHtml ? message.bodyHtml.substring(0, 200) : 'NO HTML'}
-                          </div>
-                          
-                          <div className="bg-orange-200 text-black p-2 text-xs mb-2">
-                            RAW TEXT: {message.bodyText ? message.bodyText.substring(0, 200) : 'NO TEXT'}
-                          </div>
-
-                          <div className={`prose max-w-none ${
-                            theme === 'black' 
-                              ? 'prose-invert prose-headings:text-white prose-p:text-white/90 prose-strong:text-white prose-a:text-blue-400' 
-                              : 'prose-headings:text-black prose-p:text-black/90 prose-strong:text-black prose-a:text-blue-600'
-                          }`}>
-                            <div className="bg-green-200 p-4 mb-4 rounded">
-                              <strong className="text-green-800">📧 EMAIL CONTENT (Extracted from HTML):</strong>
-                              <div className="text-black font-sans text-sm mt-2 leading-relaxed">
-                                {message.bodyHtml ? extractTextFromHtml(message.bodyHtml) : message.bodyText || 'No content available'}
+                        <div className={`prose max-w-none ${
+                          theme === 'black' 
+                            ? 'prose-invert prose-headings:text-white prose-p:text-white/90 prose-strong:text-white prose-a:text-blue-400' 
+                            : 'prose-headings:text-black prose-p:text-black/90 prose-strong:text-black prose-a:text-blue-600'
+                        }`}>
+                          {message.bodyHtml ? (
+                            <>
+                              <div className={`p-4 mb-4 rounded-lg ${theme === 'black' ? 'bg-white/5 text-white/90' : 'bg-black/5 text-black/90'}`}>
+                                <div className="font-sans leading-relaxed">
+                                  {extractTextFromHtml(message.bodyHtml)}
+                                </div>
                               </div>
-                            </div>
-                            
-                            {message.bodyHtml && (
+                              
                               <details className="mb-4">
-                                <summary className="cursor-pointer text-sm font-medium text-gray-700 mb-2">
-                                  🔧 Show Original HTML Email
+                                <summary className={`cursor-pointer text-sm font-medium mb-2 ${theme === 'black' ? 'text-white/70' : 'text-black/70'}`}>
+                                  View original HTML formatting
                                 </summary>
                                 <div 
                                   dangerouslySetInnerHTML={{ 
                                     __html: sanitizeHtml(message.bodyHtml)
                                   }}
-                                  className="email-content border border-gray-300 p-4 rounded bg-white"
+                                  className="email-content border rounded-lg p-4 bg-white text-black"
                                   style={{
                                     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                                     lineHeight: '1.6',
@@ -474,8 +461,16 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
                                   }}
                                 />
                               </details>
-                            )}
-                          </div>
+                            </>
+                          ) : message.bodyText ? (
+                            <div className="whitespace-pre-wrap font-sans leading-relaxed">
+                              {message.bodyText}
+                            </div>
+                          ) : (
+                            <div className={`italic ${theme === 'black' ? 'text-white/50' : 'text-black/50'}`}>
+                              No content available
+                            </div>
+                          )}
                         </div>
                       </div>
                   </div>
