@@ -35,6 +35,8 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAutoSync } from '@/hooks/useAutoSync';
+import { SyncStatusIndicator } from '@/components/sync/SyncStatusIndicator';
 
 // Types for real email data
 interface EmailThread {
@@ -64,6 +66,19 @@ interface ThreadsResponse {
 export default function InboxPage() {
   const { theme } = useTheme();
   const { toast } = useToast();
+  
+  // Setup auto-sync with refresh on new content
+  const autoSync = useAutoSync({
+    interval: 5, // Sync every 5 minutes for inbox
+    enabled: true,
+    showToasts: true,
+    onSyncComplete: (result) => {
+      // Refresh inbox if new messages/threads were found
+      if (result.email.newMessages || result.email.newThreads) {
+        fetchThreads(pagination.page, activeFilter, searchQuery);
+      }
+    }
+  });
   const [threads, setThreads] = useState<EmailThread[]>([]);
   const [activeThread, setActiveThread] = useState<EmailThread | null>(null);
   const [selectedThreads, setSelectedThreads] = useState<string[]>([]);
@@ -321,13 +336,20 @@ export default function InboxPage() {
               </div>
               
               <div className="flex items-center gap-3">
+                <SyncStatusIndicator 
+                  variant="compact" 
+                  className="mr-2"
+                />
                 <Button 
                   variant="liquid" 
                   size="sm"
-                  onClick={() => fetchThreads(pagination.page, activeFilter, searchQuery)}
-                  disabled={loading}
+                  onClick={() => {
+                    fetchThreads(pagination.page, activeFilter, searchQuery);
+                    autoSync.triggerSync();
+                  }}
+                  disabled={loading || autoSync.isRunning}
                 >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`h-4 w-4 mr-2 ${loading || autoSync.isRunning ? 'animate-spin' : ''}`} />
                   Refresh
                 </Button>
                 <Button variant="liquid" size="sm">
