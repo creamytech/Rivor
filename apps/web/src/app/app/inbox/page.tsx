@@ -38,6 +38,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAutoSync } from '@/hooks/useAutoSync';
 import { SyncStatusIndicator } from '@/components/sync/SyncStatusIndicator';
 import { AIReplyModal } from '@/components/inbox/AIReplyModal';
+import { ContextMenu } from '@/components/inbox/ContextMenu';
+import { EmailContent } from '@/components/inbox/EmailContent';
 
 // Types for real email data
 interface EmailThread {
@@ -96,6 +98,17 @@ export default function InboxPage() {
     limit: 50,
     total: 0,
     totalPages: 0
+  });
+
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{
+    isOpen: boolean;
+    position: { x: number; y: number };
+    thread: EmailThread | null;
+  }>({
+    isOpen: false,
+    position: { x: 0, y: 0 },
+    thread: null
   });
 
   // Fetch threads from API
@@ -489,6 +502,117 @@ export default function InboxPage() {
     }
   };
 
+  // Context menu handlers
+  const handleContextMenu = (event: React.MouseEvent, thread: EmailThread) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    setContextMenu({
+      isOpen: true,
+      position: { x: event.clientX, y: event.clientY },
+      thread
+    });
+  };
+
+  const handleContextMenuClose = () => {
+    setContextMenu({
+      isOpen: false,
+      position: { x: 0, y: 0 },
+      thread: null
+    });
+  };
+
+  const handleContextMenuAction = async (action: string, threadId: string) => {
+    try {
+      switch (action) {
+        case 'mark-read':
+        case 'mark-unread':
+          await updateThread(threadId, { isRead: action === 'mark-read' });
+          break;
+        case 'star':
+        case 'unstar':
+          await updateThread(threadId, { starred: action === 'star' });
+          break;
+        case 'archive':
+          await updateThread(threadId, { labels: ['archived'] });
+          break;
+        case 'delete':
+          // Implement delete functionality
+          toast({
+            title: "Delete",
+            description: "Delete functionality coming soon",
+          });
+          break;
+        case 'reply':
+          // Set active thread and show reply interface
+          const thread = threads.find(t => t.id === threadId);
+          if (thread) {
+            setActiveThread(thread);
+            await generateAIReply(threadId);
+          }
+          break;
+        case 'reply-all':
+        case 'forward':
+        case 'add-label':
+        case 'more':
+          toast({
+            title: action.charAt(0).toUpperCase() + action.slice(1),
+            description: `${action} functionality coming soon`,
+          });
+          break;
+        default:
+          console.warn('Unknown action:', action);
+      }
+    } catch (error) {
+      console.error('Context menu action error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to perform action",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateThread = async (threadId: string, updates: { isRead?: boolean; starred?: boolean; labels?: string[] }) => {
+    try {
+      const response = await fetch(`/api/inbox/thread/${threadId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update thread');
+      }
+
+      // Update local state
+      setThreads(prevThreads => 
+        prevThreads.map(thread => 
+          thread.id === threadId 
+            ? { ...thread, ...updates, unread: updates.isRead === false }
+            : thread
+        )
+      );
+
+      if (activeThread?.id === threadId) {
+        setActiveThread(prev => prev ? { ...prev, ...updates, unread: updates.isRead === false } : null);
+      }
+
+      toast({
+        title: "Success",
+        description: "Thread updated successfully",
+      });
+
+    } catch (error) {
+      console.error('Error updating thread:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update thread",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Get category badge color
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -647,6 +771,7 @@ export default function InboxPage() {
                             activeThread?.id === thread.id ? (theme === 'black' ? 'bg-white/10' : 'bg-black/10') : ''
                           } ${analysis?.urgency === 'critical' || (analysis?.leadScore >= 90) ? 'ring-1 ring-red-400/50' : ''}`}
                           onClick={() => handleThreadSelect(thread)}
+                          onContextMenu={(e) => handleContextMenu(e, thread)}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.05 }}
@@ -920,30 +1045,10 @@ export default function InboxPage() {
                   )}
 
                   {/* Thread Content */}
-                  <div className="flex-1 p-6 overflow-y-auto">
-                    <motion.div 
-                      className="prose prose-invert max-w-none"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                    >
-                      <div className={`${theme === 'black' ? 'text-white/90' : 'text-black/90'} leading-relaxed`}>
-                        <p className="mb-4">
-                          This is a real email thread from your inbox. 
-                          Thread ID: {activeThread.id}
-                        </p>
-                        <p className="mb-4">
-                          Messages: {activeThread.messageCount}
-                        </p>
-                        <p className="mb-4">
-                          Status: {activeThread.unread ? 'Unread' : 'Read'} | 
-                          {activeThread.starred ? ' Starred' : ' Not starred'}
-                        </p>
-                        <p className="text-sm opacity-60">
-                          Full message content decryption and display coming soon...
-                        </p>
-                      </div>
-                    </motion.div>
-                  </div>
+                  <EmailContent 
+                    threadId={activeThread.id}
+                    onAction={handleContextMenuAction}
+                  />
                 </>
               ) : (
                 <div className="flex-1 flex items-center justify-center">
@@ -977,6 +1082,15 @@ export default function InboxPage() {
         onApprove={handleApproveReply}
         onReject={handleRejectReply}
         onRegenerate={handleRegenerateReply}
+      />
+
+      {/* Context Menu */}
+      <ContextMenu
+        isOpen={contextMenu.isOpen}
+        position={contextMenu.position}
+        thread={contextMenu.thread}
+        onClose={handleContextMenuClose}
+        onAction={handleContextMenuAction}
       />
     </div>
   );
