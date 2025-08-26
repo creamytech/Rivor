@@ -306,166 +306,23 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async jwt({ token, user, account, profile }) {
-      // On sign in (including re-auth), perform minimal operations for fast auth
+      // With database strategy, PrismaAdapter handles user/account creation
+      // JWT callback should only handle token enrichment
       if (user && account) {
-        console.log('🔐 JWT callback triggered (optimized):', {
+        console.log('🔐 JWT callback - PrismaAdapter handling account creation:', {
           userEmail: user.email,
           accountProvider: account.provider,
           hasAccessToken: !!account.access_token
         });
-        
-        try {
-          // 1. Ensure basic user record exists (minimal required operation)
-          if (user.email) {
-            await prisma.user.upsert({
-              where: { email: user.email },
-              update: {
-                name: user.name || undefined,
-                image: user.image || undefined,
-              },
-              create: {
-                email: user.email,
-                name: user.name || null,
-                image: user.image || null,
-                emailVerified: new Date(),
-              },
-            });
-            console.log('✅ User record created/updated for:', user.email);
-          }
-
-          // 2. Create minimal Account record WITHOUT encryption (defer to background)
-          const externalAccountId = account.providerAccountId || (profile as unknown)?.sub || (profile as unknown)?.id || 'unknown';
-          const dbUser = await prisma.user.findUnique({ where: { email: user.email } });
-          
-          if (dbUser) {
-            await prisma.account.upsert({
-              where: {
-                provider_providerAccountId: {
-                  provider: account.provider,
-                  providerAccountId: externalAccountId
-                }
-              },
-              update: {
-                expires_at: account.expires_at,
-                token_type: account.token_type,
-                scope: account.scope,
-                session_state: account.session_state,
-              },
-              create: {
-                userId: dbUser.id,
-                type: account.type || 'oauth',
-                provider: account.provider,
-                providerAccountId: externalAccountId,
-                expires_at: account.expires_at,
-                token_type: account.token_type,
-                scope: account.scope,
-                session_state: account.session_state,
-              }
-            });
-            console.log('✅ NextAuth Account record created (tokens deferred)');
-          }
-
-          // 3. Set minimal required token data for immediate auth success
-          (token as unknown).orgId = 'default'; // Use default immediately
-          (token as unknown).user = {
-            email: user.email || '',
-            name: user.name || '',
-            image: user.image || '',
-            provider: account.provider,
-            providerId: externalAccountId,
-          };
-
-          // 4. Skip background operations if DISABLE_QUEUES is set (for development)
-          if (user.email && !process.env.DISABLE_QUEUES) {
-            // Queue operations without delay for faster auth
-            try {
-              enqueueTokenEncryption(user.email!, 'default', account, externalAccountId);
-              enqueueOrgSetup(user.email!, user.email!);
-              const onboardingData: OAuthCallbackData = {
-                userId: user.email!,
-                userEmail: user.email!,
-                userName: user.name || profile?.name || '',
-                userImage: user.image || (profile as unknown)?.picture || '',
-                provider: account.provider,
-                externalAccountId,
-                account,
-                profile,
-              };
-              enqueueOnboarding(onboardingData);
-              console.log('✅ Background operations queued');
-            } catch (error) {
-              console.warn('⚠️ Failed to queue background operations, continuing auth:', error?.message);
-            }
-          } else if (process.env.DISABLE_QUEUES) {
-            console.log('🚫 Background queues disabled in development mode');
-          }
-
-        } catch (error: unknown) {
-          logger.error('JWT callback minimal processing failed', {
-            userId: user.email || '',
-            provider: account.provider,
-            error: error?.message || error,
-          });
-          
-          // Fallback behavior - continue auth with defaults
-          (token as unknown).orgId = 'default';
-          (token as unknown).user = {
-            email: user.email || '',
-            name: user.name || '',
-            image: user.image || '',
-            provider: account.provider,
-            providerId: account.providerAccountId || '',
-          };
-        }
       }
-      
-      // Always ensure we have an orgId (minimal operation)
-      if (!(token as unknown).orgId) {
-        (token as unknown).orgId = 'default';
-      }
-      
+
+      // Always return the token for JWT strategy compatibility
       return token;
     },
   },
 };
 
-// v4 compatibility: provide an auth() helper for server components/routes
-export const auth = async () => {
-  try {
-    // Use our working custom adapter instead of broken getServerSession
-    const { cookies } = await import('next/headers');
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get('__Secure-next-auth.session-token')?.value || 
-                        cookieStore.get('next-auth.session-token')?.value;
-
-    if (!sessionToken) {
-      return null;
-    }
-
-    const adapter = createCustomPrismaAdapter();
-    if (!adapter.getSessionAndUser) {
-      return null;
-    }
-
-    const result = await adapter.getSessionAndUser(sessionToken);
-    if (!result || !result.session || !result.user) {
-      return null;
-    }
-
-    // Return session in NextAuth format (keep it simple to avoid breaking auth)
-    return {
-      user: {
-        email: result.user.email,
-        name: result.user.name,
-        image: result.user.image,
-      },
-      expires: result.session.expires.toISOString(),
-      orgId: 'default' // Use default org for now
-    };
-  } catch (error) {
-    console.error('Auth helper failed:', error);
-    return null;
-  }
-};
+// Use standard getServerSession since we're using PrismaAdapter now
+export const auth = () => getServerSession(authOptions);
 
 
