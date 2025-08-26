@@ -26,14 +26,14 @@ model User {
 }
 
 model Account {
-  id                String   @id @default(cuid())
+  id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token_enc Bytes?   // Encrypted OAuth tokens (SOC2 compliant)
-  access_token_enc  Bytes?   // Encrypted OAuth tokens (SOC2 compliant) 
-  id_token_enc      Bytes?   // Encrypted OAuth tokens (SOC2 compliant)
+  refresh_token     String? // Standard NextAuth fields
+  access_token      String?
+  id_token          String?
   expires_at        Int?
   token_type        String?
   scope             String?
