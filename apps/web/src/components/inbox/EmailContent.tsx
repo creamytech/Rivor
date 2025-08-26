@@ -87,6 +87,9 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
         throw new Error(data.error || 'Failed to load thread details');
       }
 
+      console.log('Raw thread data received:', data);
+      console.log('Messages in thread:', data.messages);
+
       // Transform messages to match EmailMessage interface
       const transformedMessages = (data.messages || []).map((message: any) => ({
         id: message.id,
@@ -111,6 +114,8 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
         createdAt: message.sentAt,
         updatedAt: message.sentAt
       }));
+
+      console.log('Transformed messages:', transformedMessages);
 
       // Ensure the data has all required fields with defaults
       const threadData = {
