@@ -29,6 +29,7 @@ interface UseAutoSyncOptions {
   interval?: number; // Minutes between syncs (default: 10)
   enabled?: boolean; // Enable/disable auto-sync (default: true)
   showToasts?: boolean; // Show toast notifications for sync results (default: true)
+  runOnMount?: boolean; // Run initial sync on mount (default: true)
   onSyncComplete?: (result: SyncResult) => void;
   onSyncError?: (error: string) => void;
 }
@@ -48,6 +49,7 @@ export function useAutoSync(options: UseAutoSyncOptions = {}) {
     interval = 10, // 10 minutes default
     enabled = true,
     showToasts = true,
+    runOnMount = true, // Run initial sync by default
     onSyncComplete,
     onSyncError
   } = options;
@@ -165,10 +167,13 @@ export function useAutoSync(options: UseAutoSyncOptions = {}) {
       return;
     }
 
-    // Perform initial sync after a short delay
-    const initialDelay = setTimeout(() => {
-      performSync();
-    }, 2000); // 2 second delay to let the page load
+    // Perform initial sync after a short delay (if enabled)
+    let initialDelay: NodeJS.Timeout | null = null;
+    if (runOnMount) {
+      initialDelay = setTimeout(() => {
+        performSync();
+      }, 2000); // 2 second delay to let the page load
+    }
 
     // Setup recurring sync
     intervalRef.current = setInterval(() => {
@@ -178,13 +183,13 @@ export function useAutoSync(options: UseAutoSyncOptions = {}) {
     }, interval * 60 * 1000);
 
     return () => {
-      clearTimeout(initialDelay);
+      if (initialDelay) clearTimeout(initialDelay);
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
     };
-  }, [enabled, interval, isVisible]);
+  }, [enabled, interval, isVisible, runOnMount]);
 
   // Update next sync time when interval changes
   useEffect(() => {
