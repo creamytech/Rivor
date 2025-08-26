@@ -245,6 +245,7 @@ export const authOptions: NextAuthOptions = {
         hasProfile: !!profile,
         hasAccessToken: !!account?.access_token,
         hasRefreshToken: !!account?.refresh_token,
+        providerAccountId: account?.providerAccountId,
         timestamp: new Date().toISOString()
       };
       
@@ -285,6 +286,44 @@ export const authOptions: NextAuthOptions = {
               providerAccountId: account.providerAccountId,
               userId: existingUser.id
             });
+
+            // If account doesn't exist, try to manually link it to see what error occurs
+            if (!existingAccount) {
+              console.log('🔧 Account not found - testing manual linking...');
+              try {
+                // Simulate what PrismaAdapter.linkAccount should do
+                const testLink = await prisma.account.create({
+                  data: {
+                    userId: existingUser.id,
+                    type: account.type,
+                    provider: account.provider,
+                    providerAccountId: account.providerAccountId,
+                    refresh_token: account.refresh_token,
+                    access_token: account.access_token,
+                    expires_at: account.expires_at,
+                    token_type: account.token_type,
+                    scope: account.scope,
+                    id_token: account.id_token,
+                  }
+                });
+                console.log('✅ Manual account linking succeeded:', {
+                  accountId: testLink.id,
+                  provider: testLink.provider
+                });
+                
+                // Clean up the test - let PrismaAdapter handle the real one
+                await prisma.account.delete({ where: { id: testLink.id } });
+                console.log('🧹 Cleaned up test account');
+                
+              } catch (linkError) {
+                console.error('❌ Manual account linking failed:', linkError);
+                logOAuth('error', 'Manual account linking failed', { 
+                  error: linkError instanceof Error ? linkError.message : linkError,
+                  code: (linkError as any)?.code,
+                  meta: (linkError as any)?.meta
+                });
+              }
+            }
           }
           
           console.log('✅ Database state check completed');
