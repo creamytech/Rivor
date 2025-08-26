@@ -25,7 +25,8 @@
       "Bash(pkill:*)",
       "Bash(curl:*)",
       "Bash(node:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": [],
