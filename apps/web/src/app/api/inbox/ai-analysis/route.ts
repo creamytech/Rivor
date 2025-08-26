@@ -151,6 +151,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const emailId = searchParams.get('emailId');
+    const threadIds = searchParams.get('threadIds');
 
     if (emailId) {
       // Get specific analysis
@@ -158,6 +159,16 @@ export async function GET(request: NextRequest) {
         where: { emailId }
       });
       return NextResponse.json({ analysis });
+    } else if (threadIds) {
+      // Get analyses for specific threads
+      const threadIdArray = threadIds.split(',').filter(id => id.trim());
+      const analyses = await db.emailAIAnalysis.findMany({
+        where: { 
+          threadId: { in: threadIdArray }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      return NextResponse.json({ analyses });
     } else {
       // Get recent analyses
       const analyses = await db.emailAIAnalysis.findMany({
