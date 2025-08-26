@@ -247,9 +247,17 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
 
   return (
     <div className="flex-1 flex flex-col">
-      {/* Debug indicator */}
-      <div className="bg-red-500 text-white p-2 text-center font-bold">
-        🚨 EMAIL CONTENT COMPONENT RENDERED 🚨 Thread ID: {threadId}
+      {/* Debug indicator with thread data */}
+      <div className="bg-red-500 text-white p-2 text-xs font-bold">
+        🚨 COMPONENT RENDERED - Thread: {threadId} | Messages: {thread?.messages?.length || 0} | Loading: {loading.toString()} | Error: {error || 'none'}
+        {thread && (
+          <div className="mt-1 text-left">
+            Subject: {thread.subject} | Participants: {thread.participants?.length || 0} | 
+            First Message: {thread.messages?.[0]?.fromEmail || 'N/A'} | 
+            Body Text: {thread.messages?.[0]?.bodyText ? 'YES' : 'NO'} | 
+            Body HTML: {thread.messages?.[0]?.bodyHtml ? 'YES' : 'NO'}
+          </div>
+        )}
       </div>
       
       {/* Thread Header */}
