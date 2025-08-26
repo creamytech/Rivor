@@ -93,19 +93,42 @@ const finalProviders = providers.length > 0 ? providers : [
 
 console.log('🚀 Final providers array length:', finalProviders.length);
 
+// Create a logging wrapper around PrismaAdapter to debug what methods are called
+const loggingAdapter = {
+  ...PrismaAdapter(prisma),
+  async createUser(user: any) {
+    console.log('🔍 PrismaAdapter.createUser called:', user);
+    const result = await PrismaAdapter(prisma).createUser!(user);
+    console.log('✅ PrismaAdapter.createUser result:', result);
+    return result;
+  },
+  async linkAccount(account: any) {
+    console.log('🔍 PrismaAdapter.linkAccount called:', account);
+    const result = await PrismaAdapter(prisma).linkAccount!(account);
+    console.log('✅ PrismaAdapter.linkAccount result:', result);
+    return result;
+  },
+  async createSession(session: any) {
+    console.log('🔍 PrismaAdapter.createSession called:', session);
+    const result = await PrismaAdapter(prisma).createSession!(session);
+    console.log('✅ PrismaAdapter.createSession result:', result);
+    return result;
+  }
+};
+
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma), // Temporary: Use standard adapter to fix auth issues
+  adapter: loggingAdapter,
   pages: {
     signIn: "/auth/signin",
     error: "/auth/error",
   },
-  debug: false, // Disable debug mode for better performance
+  debug: true, // Enable debug mode to troubleshoot OAuth issues
   secret: process.env.NEXTAUTH_SECRET,
   providers: finalProviders,
   session: { 
     strategy: "database",
-    maxAge: 7 * 24 * 60 * 60, // 7 days - more stable sessions
-    updateAge: 24 * 60 * 60,  // 24 hours - less frequent updates
+    maxAge: 7 * 24 * 60 * 60, // 7 days
+    updateAge: 24 * 60 * 60,  // 24 hours
   },
   cookies: {
     sessionToken: {

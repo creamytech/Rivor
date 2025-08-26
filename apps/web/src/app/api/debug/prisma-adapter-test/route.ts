@@ -22,6 +22,34 @@ export async function POST(req: NextRequest) {
       } catch (error) {
         results.push({ step: 'clean_user', success: false, error: error instanceof Error ? error.message : error });
       }
+    } else if (action === 'test_direct_account_creation') {
+      // Test direct account creation without PrismaAdapter
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (user) {
+        try {
+          const account = await prisma.account.create({
+            data: {
+              userId: user.id,
+              type: 'oauth',
+              provider: 'google',
+              providerAccountId: 'direct_test_123',
+              access_token: 'test_token',
+              refresh_token: 'test_refresh',
+              expires_at: Math.floor(Date.now() / 1000) + 3600,
+              token_type: 'Bearer',
+              scope: 'email profile'
+            }
+          });
+          results.push({ step: 'direct_create_account', success: true, accountId: account.id });
+          
+          // Clean up
+          await prisma.account.delete({ where: { id: account.id } });
+        } catch (error) {
+          results.push({ step: 'direct_create_account', success: false, error: error instanceof Error ? error.message : error });
+        }
+      } else {
+        results.push({ step: 'direct_create_account', success: false, error: 'User not found' });
+      }
     } else if (action === 'test_oauth_flow') {
       // Simulate the OAuth sign-in process that's failing
       const testUser = {
