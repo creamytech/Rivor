@@ -79,19 +79,25 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
   }, [threadId]);
 
   const fetchThreadDetails = async () => {
+    console.log('🔍 fetchThreadDetails called for threadId:', threadId);
     try {
       setLoading(true);
       setError(null);
 
+      console.log('📡 Making API call to:', `/api/inbox/threads/${threadId}`);
       const response = await fetch(`/api/inbox/threads/${threadId}`);
+      console.log('📡 API response status:', response.status, response.statusText);
+      
       const data = await response.json();
+      console.log('📡 API response data:', data);
 
       if (!response.ok) {
+        console.error('❌ API response not ok:', data);
         throw new Error(data.error || 'Failed to load thread details');
       }
 
-      console.log('Raw thread data received:', data);
-      console.log('Messages in thread:', data.messages);
+      console.log('✅ Raw thread data received:', data);
+      console.log('📨 Messages in thread:', data.messages);
 
       // Transform messages to match EmailMessage interface
       const transformedMessages = (data.messages || []).map((message: any) => ({
@@ -118,7 +124,8 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
         updatedAt: message.sentAt
       }));
 
-      console.log('Transformed messages:', transformedMessages);
+      console.log('🔄 Transformed messages:', transformedMessages);
+      console.log('📊 Number of messages transformed:', transformedMessages.length);
 
       // Ensure the data has all required fields with defaults
       const threadData = {
@@ -135,16 +142,22 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
         messages: transformedMessages
       };
       
+      console.log('💾 Final thread data:', threadData);
+      console.log('📝 Setting thread state with:', threadData.messages.length, 'messages');
+      
       setThread(threadData);
       
       // Expand the latest message by default
       if (threadData.messages.length > 0) {
         const latestMessage = threadData.messages[threadData.messages.length - 1];
+        console.log('🔧 Expanding latest message:', latestMessage.id);
         setExpandedMessages(new Set([latestMessage.id]));
+      } else {
+        console.log('⚠️ No messages to expand');
       }
 
     } catch (error) {
-      console.error('Error fetching thread details:', error);
+      console.error('❌ Error fetching thread details:', error);
       setError(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setLoading(false);
