@@ -436,6 +436,13 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
                               ? 'prose-invert prose-headings:text-white prose-p:text-white/90 prose-strong:text-white prose-a:text-blue-400' 
                               : 'prose-headings:text-black prose-p:text-black/90 prose-strong:text-black prose-a:text-blue-600'
                           }`}>
+                            <div className="bg-green-200 p-2 mb-2">
+                              <strong>FALLBACK TEXT CONTENT:</strong>
+                              <div className="text-black font-mono text-sm">
+                                {message.bodyText ? message.bodyText.substring(0, 500) : 'No text content'}
+                              </div>
+                            </div>
+                            
                             {message.bodyHtml ? (
                               <div 
                                 dangerouslySetInnerHTML={{ 
@@ -444,11 +451,13 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
                                 className="email-content bg-red-100"
                                 style={{
                                   fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                                  lineHeight: '1.6'
+                                  lineHeight: '1.6',
+                                  color: 'black !important',
+                                  backgroundColor: 'white !important'
                                 }}
                               />
                             ) : message.bodyText ? (
-                              <div className="whitespace-pre-wrap font-sans leading-relaxed bg-blue-100">
+                              <div className="whitespace-pre-wrap font-sans leading-relaxed bg-blue-100 text-black p-4">
                                 {message.bodyText}
                               </div>
                             ) : (
