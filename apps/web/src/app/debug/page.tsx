@@ -36,14 +36,15 @@ export default function DebugDashboard() {
   const [results, setResults] = useState<DebugResult[]>([]);
   const [loading, setLoading] = useState<string | null>(null);
 
-  const executeDebug = async (endpoint: string, method: string = 'GET', description: string) => {
+  const executeDebug = async (endpoint: string, method: string = 'GET', description: string, body?: any) => {
     setLoading(endpoint);
     const startTime = Date.now();
     
     try {
       const response = await fetch(endpoint, {
         method,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        ...(body && { body: JSON.stringify(body) })
       });
       
       const data = await response.json();
@@ -112,6 +113,20 @@ ${JSON.stringify(result.data, null, 2)}
           description: "Check session retrieval performance",
           endpoint: "/api/debug/minimal-auth-test",
           method: "GET"
+        },
+        {
+          name: "OAuth Token Debug",
+          description: "Inspect OAuth token storage and mapping",
+          endpoint: "/api/debug/oauth-tokens",
+          method: "GET"
+        },
+        {
+          name: "Encrypt Plain Tokens",
+          description: "Convert plain OAuth tokens to encrypted format",
+          endpoint: "/api/debug/oauth-tokens",
+          method: "POST",
+          requiresAuth: true,
+          body: { encryptPlainTokens: true }
         }
       ]
     },
@@ -248,7 +263,7 @@ ${JSON.stringify(result.data, null, 2)}
                         </div>
                       </div>
                       <Button
-                        onClick={() => executeDebug(endpoint.endpoint, endpoint.method, endpoint.description)}
+                        onClick={() => executeDebug(endpoint.endpoint, endpoint.method, endpoint.description, (endpoint as any).body)}
                         disabled={loading === endpoint.endpoint}
                         size="sm"
                         className="ml-3"
