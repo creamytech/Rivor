@@ -7,8 +7,28 @@ export async function GET(req: NextRequest) {
   try {
     logOAuth('info', '🧪 Testing session retrieval');
     
-    // Test server-side session retrieval
+    // Test server-side session retrieval  
     const session = await auth();
+    
+    // If we have a cookie but no server session, it means there's a mismatch
+    // Check if we can manually retrieve the session from the database
+    let manualSessionCheck = null;
+    const cookies = req.headers.get('cookie') || '';
+    const sessionToken = cookies
+      .split(';')
+      .find(cookie => cookie.trim().startsWith('__Secure-next-auth.session-token='))
+      ?.split('=')[1];
+      
+    if (sessionToken && !session) {
+      try {
+        manualSessionCheck = await prisma.session.findUnique({
+          where: { sessionToken },
+          include: { user: true }
+        });
+      } catch (error) {
+        console.error('Manual session check failed:', error);
+      }
+    }
     
     // Check current sessions in database
     const dbSessions = await prisma.session.findMany({
@@ -49,12 +69,20 @@ export async function GET(req: NextRequest) {
         tokenPreview: s.sessionToken.substring(0, 20) + '...',
         createdAt: s.createdAt
       })),
+      manualSessionCheck: manualSessionCheck ? {
+        found: true,
+        userId: manualSessionCheck.userId,
+        userEmail: manualSessionCheck.user.email,
+        expires: manualSessionCheck.expires
+      } : { found: false },
       analysis: {
         hasServerSession: !!session,
         hasSessionCookie: !!sessionToken,
         dbSessionsCount: dbSessions.length,
         cookieMatchesDb: dbSessions.some(s => s.sessionToken === sessionToken),
-        recommendation: !session && dbSessions.length > 0 ? 'Session exists in DB but not retrieved by auth()' : 
+        manualRetrievalWorks: !!manualSessionCheck,
+        recommendation: !session && manualSessionCheck ? 'NextAuth session retrieval broken - need to recreate session' :
+                      !session && dbSessions.length > 0 ? 'Session exists in DB but not retrieved by auth()' : 
                       !session && !sessionToken ? 'No session cookie found' :
                       session ? 'Session working correctly' : 'Unknown issue'
       }
