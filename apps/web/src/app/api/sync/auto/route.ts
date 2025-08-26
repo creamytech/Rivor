@@ -60,8 +60,7 @@ export async function POST(req: NextRequest) {
       const emailAccounts = await prisma.emailAccount.findMany({
         where: { 
           orgId, 
-          status: 'connected',
-          tokenStatus: 'encrypted' // Only sync accounts with valid tokens
+          status: { in: ['connected', 'action_needed'] } // Include accounts that might need token refresh
         }
       });
 
@@ -99,14 +98,18 @@ export async function POST(req: NextRequest) {
                 emailAccount.historyId || undefined
               );
               
-              // Update historyId from sync results
+              // Update historyId and account status from sync results
               if (syncStats?.historyId) {
                 await prisma.emailAccount.update({
                   where: { id: emailAccount.id },
                   data: { 
                     historyId: syncStats.historyId,
                     lastSyncAt: new Date(),
-                    updatedAt: new Date()
+                    updatedAt: new Date(),
+                    status: 'connected', // Mark as connected on successful sync
+                    syncStatus: 'ready',
+                    tokenStatus: 'encrypted',
+                    errorReason: null // Clear any previous errors
                   }
                 });
               }

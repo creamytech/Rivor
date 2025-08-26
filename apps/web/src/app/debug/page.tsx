@@ -160,6 +160,26 @@ ${JSON.stringify(result.data, null, 2)}
           description: "Check email synchronization status",
           endpoint: "/api/debug/sync-status",
           method: "GET"
+        },
+        {
+          name: "Auto Sync Status",
+          description: "Check auto-sync system status",
+          endpoint: "/api/sync/auto",
+          method: "GET"
+        },
+        {
+          name: "Force Manual Sync",
+          description: "Force immediate sync of email and calendar (tests token refresh)",
+          endpoint: "/api/sync/manual",
+          method: "POST",
+          requiresAuth: true
+        },
+        {
+          name: "Force Auto Sync",
+          description: "Trigger auto-sync process",
+          endpoint: "/api/sync/auto",
+          method: "POST",
+          requiresAuth: true
         }
       ]
     },

@@ -25,7 +25,12 @@ export class GmailService {
   private oauth2Client: import('google-auth-library').OAuth2Client;
   private google: Awaited<ReturnType<typeof getGoogleApisLazy>> | null = null;
 
-  constructor(accessToken: string, refreshToken?: string) {
+  constructor(
+    accessToken: string, 
+    refreshToken?: string,
+    private orgId?: string,
+    private emailAccountId?: string
+  ) {
     // Will be initialized lazily in getGoogle()
     this.oauth2Client = null as any;
     this.initializeAuth(accessToken, refreshToken);
@@ -50,6 +55,100 @@ export class GmailService {
       this.google = await getGoogleApisLazy();
     }
     return this.google;
+  }
+
+  private async refreshTokenIfNeeded(): Promise<void> {
+    if (!this.oauth2Client || !this.orgId || !this.emailAccountId) {
+      return; // Can't refresh without proper context
+    }
+
+    try {
+      // Check if token is expired by making a test call
+      const credentials = this.oauth2Client.credentials;
+      if (!credentials.expiry_date || Date.now() < credentials.expiry_date) {
+        return; // Token is still valid
+      }
+
+      logger.info('Refreshing expired OAuth token', {
+        orgId: this.orgId,
+        emailAccountId: this.emailAccountId
+      });
+
+      // Refresh the token
+      const { credentials: newCredentials } = await this.oauth2Client.refreshAccessToken();
+      this.oauth2Client.setCredentials(newCredentials);
+
+      // If we got a new access token, save it to the database
+      if (newCredentials.access_token && this.orgId && this.emailAccountId) {
+        const { encryptForOrg } = await import('@/server/secure-tokens');
+        
+        // Encrypt and save new access token
+        const encryptedAccessToken = await encryptForOrg(
+          this.orgId,
+          new TextEncoder().encode(newCredentials.access_token),
+          `oauth:google:access`
+        );
+
+        // Update the Account record with new token
+        const emailAccount = await prisma.emailAccount.findUnique({
+          where: { id: this.emailAccountId },
+          include: { user: { include: { accounts: true } } }
+        });
+
+        if (emailAccount) {
+          const googleAccount = emailAccount.user.accounts.find(acc => 
+            acc.provider === 'google' && 
+            acc.providerAccountId === emailAccount.externalAccountId
+          );
+
+          if (googleAccount) {
+            await prisma.account.update({
+              where: { id: googleAccount.id },
+              data: {
+                access_token_enc: encryptedAccessToken,
+                expires_at: newCredentials.expiry_date ? Math.floor(newCredentials.expiry_date / 1000) : null,
+              }
+            });
+
+            // Update email account status
+            await prisma.emailAccount.update({
+              where: { id: this.emailAccountId },
+              data: { 
+                status: 'connected',
+                tokenStatus: 'encrypted',
+                syncStatus: 'ready' 
+              }
+            });
+
+            logger.info('Successfully refreshed and saved OAuth token', {
+              orgId: this.orgId,
+              emailAccountId: this.emailAccountId
+            });
+          }
+        }
+      }
+
+    } catch (error) {
+      logger.error('Failed to refresh OAuth token', {
+        orgId: this.orgId,
+        emailAccountId: this.emailAccountId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      // Mark account as needing reauth
+      if (this.emailAccountId) {
+        await prisma.emailAccount.update({
+          where: { id: this.emailAccountId },
+          data: { 
+            status: 'action_needed',
+            syncStatus: 'error',
+            errorReason: 'Token refresh failed - please reconnect account'
+          }
+        }).catch(() => {}); // Ignore update errors
+      }
+      
+      throw error;
+    }
   }
 
   static async createFromAccount(orgId: string, emailAccountId: string): Promise<GmailService> {
@@ -107,10 +206,11 @@ export class GmailService {
       refreshToken = new TextDecoder().decode(refreshTokenBytes);
     }
 
-    return new GmailService(accessToken, refreshToken);
+    return new GmailService(accessToken, refreshToken, orgId, emailAccountId);
   }
 
   async getGmail() {
+    await this.refreshTokenIfNeeded();
     const google = await this.getGoogle();
     return google.gmail({ version: 'v1', auth: this.oauth2Client });
   }
