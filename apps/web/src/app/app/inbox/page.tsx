@@ -1,983 +1,828 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter } from "next/navigation";
-import AppShell from "@/components/app/AppShell";
-import MobileInbox from "@/components/app/MobileInbox";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { useTheme } from "@/contexts/ThemeContext";
-import ComposeEmailModal from "@/components/inbox/ComposeEmailModal";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Mail,
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { 
+  Mail, 
+  Star, 
+  Archive, 
+  Trash2, 
+  Reply, 
+  ReplyAll, 
+  Forward, 
   Search,
-  Edit3,
-  RefreshCw,
-  Archive,
-  Trash2,
-  Tag,
-  Forward,
-  Reply,
-  MoreHorizontal,
-  Star,
-  Clock,
-  AlertTriangle,
-  CheckCircle,
-  User,
-  Phone,
-  Calendar,
-  MessageSquare,
-  Inbox,
   Filter,
+  CheckCircle,
+  Circle,
+  Bot,
+  Sparkles,
+  TrendingUp,
+  Clock,
+  MapPin,
+  DollarSign,
+  Home,
+  Users,
+  Calendar,
+  AlertCircle,
+  Check,
   X,
-  Eye,
-  EyeOff,
-  Download,
-  Eraser
-} from "lucide-react";
+  Edit,
+  Send,
+  Zap
+} from 'lucide-react';
+
+// Types for our AI-powered email system
+interface AIAnalysis {
+  category: 'hot-lead' | 'showing-request' | 'price-inquiry' | 'seller-lead' | 'buyer-lead' | 'follow-up' | 'contract' | 'marketing';
+  priorityScore: number;
+  leadScore: number;
+  suggestedResponse?: string;
+  confidenceScore: number;
+  keyEntities: {
+    addresses?: string[];
+    priceRange?: string;
+    contacts?: string[];
+    propertyType?: string;
+  };
+  sentimentScore: number;
+}
 
 interface Email {
   id: string;
-  from: string;
-  fromEmail: string;
+  threadId: string;
+  from: { name: string; email: string };
   subject: string;
   preview: string;
   body: string;
-  time: string;
+  timestamp: Date;
   isRead: boolean;
   isStarred: boolean;
-  isImportant: boolean;
-  type: 'lead' | 'business' | 'follow-up' | 'inquiry' | 'personal';
-  priority: 'high' | 'normal' | 'low';
-  avatar: string;
-  attachments?: number;
+  isArchived: boolean;
+  aiAnalysis?: AIAnalysis;
+  hasAISuggestion?: boolean;
+  attachments: number;
   labels: string[];
 }
 
-interface ApiThread {
+interface AISuggestion {
   id: string;
-  subject: string;
-  snippet: string;
-  participants: Array<{ name: string; email: string }>;
-  messageCount: number;
-  unread: boolean;
-  starred: boolean;
-  hasAttachments: boolean;
-  labels: string[];
-  lastMessageAt: string;
-  updatedAt: string;
+  emailId: string;
+  suggestedContent: string;
+  status: 'pending' | 'approved' | 'rejected' | 'modified';
+  confidenceScore: number;
+  category: string;
+  userModifications?: string;
 }
 
-export default function InboxPage() {
-  const { theme } = useTheme();
-  const router = useRouter();
+// Category styling configuration
+const categoryConfig = {
+  'hot-lead': { 
+    color: '#ef4444', 
+    label: 'Hot Lead', 
+    icon: TrendingUp,
+    glow: 'drop-shadow(0 0 8px rgba(239, 68, 68, 0.6))'
+  },
+  'showing-request': { 
+    color: '#06b6d4', 
+    label: 'Showing Request', 
+    icon: Calendar,
+    glow: 'drop-shadow(0 0 8px rgba(6, 182, 212, 0.6))'
+  },
+  'price-inquiry': { 
+    color: '#eab308', 
+    label: 'Price Inquiry', 
+    icon: DollarSign,
+    glow: 'drop-shadow(0 0 8px rgba(234, 179, 8, 0.6))'
+  },
+  'seller-lead': { 
+    color: '#10b981', 
+    label: 'Seller Lead', 
+    icon: Home,
+    glow: 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.6))'
+  },
+  'buyer-lead': { 
+    color: '#8b5cf6', 
+    label: 'Buyer Lead', 
+    icon: Users,
+    glow: 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.6))'
+  },
+  'follow-up': { 
+    color: '#f59e0b', 
+    label: 'Follow-up Required', 
+    icon: Clock,
+    glow: 'drop-shadow(0 0 8px rgba(245, 158, 11, 0.6))'
+  },
+  'contract': { 
+    color: '#dc2626', 
+    label: 'Contract/Legal', 
+    icon: AlertCircle,
+    glow: 'drop-shadow(0 0 8px rgba(220, 38, 38, 0.6))'
+  },
+  'marketing': { 
+    color: '#6b7280', 
+    label: 'Marketing', 
+    icon: Mail,
+    glow: 'drop-shadow(0 0 8px rgba(107, 114, 128, 0.3))'
+  }
+};
+
+export default function AIInboxPage() {
   const [emails, setEmails] = useState<Email[]>([]);
-  const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
   const [activeEmail, setActiveEmail] = useState<Email | null>(null);
-  const [activeThread, setActiveThread] = useState<any>(null);
-  const [loadingThread, setLoadingThread] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
-  const [showComposeModal, setShowComposeModal] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<AISuggestion[]>([]);
+  const [showAIApproval, setShowAIApproval] = useState(false);
+  const [currentSuggestion, setCurrentSuggestion] = useState<AISuggestion | null>(null);
+  const [editingReply, setEditingReply] = useState(false);
+  const [replyContent, setReplyContent] = useState('');
 
-  // Detect mobile
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-  const [replyToEmail, setReplyToEmail] = useState<{ email: string; name: string; subject: string; threadId: string } | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [isClearing, setIsClearing] = useState(false);
+  // Mock data for demonstration - replace with actual API calls
+  const mockEmails: Email[] = [
+    {
+      id: '1',
+      threadId: 't1',
+      from: { name: 'Sarah Johnson', email: 'sarah.j@gmail.com' },
+      subject: 'Interested in 123 Oak Street listing',
+      preview: 'Hi, I saw your listing for the beautiful home on Oak Street and would love to schedule a showing...',
+      body: `Hi there,
 
-  // Load emails from API
-  const loadEmails = async (filter: string = 'all') => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/inbox/threads?filter=${filter}&limit=50`);
-      if (response.ok) {
-        const data = await response.json();
-        const transformedEmails: Email[] = data.threads.map((thread: ApiThread) => {
-          const primaryParticipant = thread.participants[0] || { name: 'Unknown', email: 'unknown@example.com' };
-          
-          // Generate initials for avatar
-          const getInitials = (name: string) => {
-            return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-          };
-          
-          // Determine type based on content/labels (with fallback to business logic)
-          const getEmailType = (subject: string, labels: string[]): Email['type'] => {
-            const subjectLower = subject.toLowerCase();
-            if (subjectLower.includes('property') || subjectLower.includes('listing') || subjectLower.includes('viewing')) return 'lead';
-            if (subjectLower.includes('follow') || subjectLower.includes('thank') || subjectLower.includes('tour')) return 'follow-up';
-            if (subjectLower.includes('question') || subjectLower.includes('help') || subjectLower.includes('mortgage')) return 'inquiry';
-            if (labels.some(l => l.toLowerCase().includes('business'))) return 'business';
-            return 'business'; // default
-          };
-          
-          // Determine priority based on subject/labels
-          const getPriority = (subject: string, labels: string[]): Email['priority'] => {
-            const subjectLower = subject.toLowerCase();
-            if (subjectLower.includes('urgent') || subjectLower.includes('asap') || labels.some(l => l.toLowerCase().includes('urgent'))) return 'high';
-            if (subjectLower.includes('low priority') || subjectLower.includes('when convenient')) return 'low';
-            return 'normal';
-          };
-          
-          // Format relative time
-          const getRelativeTime = (dateStr: string) => {
-            const date = new Date(dateStr);
-            const now = new Date();
-            const diffMs = now.getTime() - date.getTime();
-            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-            const diffDays = Math.floor(diffHours / 24);
-            
-            if (diffHours < 1) return 'Just now';
-            if (diffHours < 24) return `${diffHours} hours ago`;
-            if (diffDays === 1) return '1 day ago';
-            if (diffDays < 7) return `${diffDays} days ago`;
-            return date.toLocaleDateString();
-          };
-          
-          return {
-            id: thread.id,
-            from: primaryParticipant.name,
-            fromEmail: primaryParticipant.email,
-            subject: thread.subject,
-            preview: thread.snippet,
-            body: `Email content from ${primaryParticipant.name}.\n\nThis is a real email thread with ${thread.messageCount} message${thread.messageCount !== 1 ? 's' : ''}.\n\nTo view the full conversation, additional API integration is needed.`,
-            time: getRelativeTime(thread.lastMessageAt),
-            isRead: !thread.unread,
-            isStarred: thread.starred,
-            isImportant: getPriority(thread.subject, thread.labels) === 'high',
-            type: getEmailType(thread.subject, thread.labels),
-            priority: getPriority(thread.subject, thread.labels),
-            avatar: getInitials(primaryParticipant.name),
-            attachments: thread.hasAttachments ? 1 : 0,
-            labels: thread.labels
-          };
-        });
-        
-        setEmails(transformedEmails);
-        if (transformedEmails.length > 0 && !activeEmail) {
-          handleEmailSelect(transformedEmails[0]);
-        }
-      } else {
-        console.error('Failed to load emails:', response.statusText);
-        // Fallback to empty array
-        setEmails([]);
+I saw your listing for the beautiful 4-bedroom home at 123 Oak Street and I'm very interested. The photos look amazing and it seems perfect for my family.
+
+Could we schedule a showing this weekend? I'm pre-approved for up to $850,000 and ready to move quickly on the right property.
+
+My phone number is (555) 123-4567.
+
+Thanks!
+Sarah Johnson`,
+      timestamp: new Date('2024-01-15T10:30:00'),
+      isRead: false,
+      isStarred: false,
+      isArchived: false,
+      hasAISuggestion: true,
+      attachments: 0,
+      labels: ['inbox'],
+      aiAnalysis: {
+        category: 'hot-lead',
+        priorityScore: 95,
+        leadScore: 88,
+        confidenceScore: 0.92,
+        keyEntities: {
+          addresses: ['123 Oak Street'],
+          priceRange: '$850,000',
+          contacts: ['(555) 123-4567'],
+          propertyType: '4-bedroom home'
+        },
+        sentimentScore: 0.85
       }
-    } catch (error) {
-      console.error('Error loading emails:', error);
-      // Fallback to empty array
-      setEmails([]);
-    } finally {
-      setLoading(false);
+    },
+    {
+      id: '2', 
+      threadId: 't2',
+      from: { name: 'Michael Chen', email: 'm.chen@realestate.com' },
+      subject: 'Price negotiation on Maple Ave property',
+      preview: 'Following up on our discussion about the Maple Avenue listing. My clients are prepared to make an offer...',
+      body: `Hello,
+
+Following up on our discussion about the Maple Avenue listing. My clients have seen the property and are very interested.
+
+They're prepared to make an offer of $720,000, which is $30,000 below asking. They can close within 30 days with cash.
+
+Let me know your thoughts.
+
+Best regards,
+Michael Chen
+Chen Realty Group`,
+      timestamp: new Date('2024-01-15T09:15:00'),
+      isRead: true,
+      isStarred: true,
+      isArchived: false,
+      hasAISuggestion: true,
+      attachments: 1,
+      labels: ['inbox', 'negotiation'],
+      aiAnalysis: {
+        category: 'price-inquiry',
+        priorityScore: 85,
+        leadScore: 82,
+        confidenceScore: 0.89,
+        keyEntities: {
+          addresses: ['Maple Avenue'],
+          priceRange: '$720,000',
+          contacts: [],
+          propertyType: ''
+        },
+        sentimentScore: 0.72
+      }
+    },
+    {
+      id: '3',
+      threadId: 't3', 
+      from: { name: 'Jennifer Martinez', email: 'jmart.homes@gmail.com' },
+      subject: 'Looking to sell my downtown condo',
+      preview: 'I\'m thinking about selling my 2-bedroom condo in the downtown area. Can you help me with a market analysis...',
+      body: `Hi,
+
+I'm thinking about selling my 2-bedroom condo in the downtown area and I've heard great things about your services.
+
+The unit is at 456 Main Street, Unit 12A. It's about 1,200 sq ft with updated kitchen and bathrooms. 
+
+Can you help me with a market analysis and let me know what you think it might be worth in today's market?
+
+I'd also love to know about your commission structure and marketing approach.
+
+Thanks,
+Jennifer Martinez
+(555) 987-6543`,
+      timestamp: new Date('2024-01-14T16:45:00'),
+      isRead: false,
+      isStarred: false,
+      isArchived: false,
+      hasAISuggestion: true,
+      attachments: 0,
+      labels: ['inbox'],
+      aiAnalysis: {
+        category: 'seller-lead',
+        priorityScore: 78,
+        leadScore: 85,
+        confidenceScore: 0.94,
+        keyEntities: {
+          addresses: ['456 Main Street, Unit 12A'],
+          priceRange: '',
+          contacts: ['(555) 987-6543'],
+          propertyType: '2-bedroom condo'
+        },
+        sentimentScore: 0.80
+      }
+    }
+  ];
+
+  const mockSuggestions: AISuggestion[] = [
+    {
+      id: 's1',
+      emailId: '1',
+      suggestedContent: `Hi Sarah,
+
+Thank you for your interest in 123 Oak Street! I'd be delighted to show you this beautiful property.
+
+I have availability this Saturday at 2 PM or Sunday at 10 AM for a private showing. Given your pre-approval amount and timeline, this home would be an excellent fit.
+
+The property features:
+- 4 spacious bedrooms
+- Updated kitchen with granite countertops  
+- Landscaped backyard perfect for families
+- Top-rated school district
+- Move-in ready condition
+
+Would either time work for you? I can also answer any questions about the neighborhood or property details.
+
+Looking forward to meeting you!
+
+Best regards,
+[Your Name]`,
+      status: 'pending',
+      confidenceScore: 0.91,
+      category: 'showing-response'
+    },
+    {
+      id: 's2', 
+      emailId: '2',
+      suggestedContent: `Hi Michael,
+
+Thank you for the offer on the Maple Avenue property. I've discussed it with my seller and we appreciate your clients' interest.
+
+While the offer of $720,000 shows serious intent, we're currently at $750,000 as our best price given:
+- Recent comparable sales in the area
+- The property's excellent condition
+- High demand we've been seeing
+
+Would your clients consider $740,000? This represents a $10,000 reduction from asking and reflects our motivation to work with qualified buyers.
+
+Let me know your thoughts and we can discuss further.
+
+Best regards,
+[Your Name]`,
+      status: 'pending',
+      confidenceScore: 0.87,
+      category: 'negotiation-response'
+    }
+  ];
+
+  useEffect(() => {
+    // Simulate loading emails with AI analysis
+    const loadEmails = async () => {
+      setLoading(true);
+      // In real implementation, this would be API calls
+      setTimeout(() => {
+        setEmails(mockEmails);
+        setAiSuggestions(mockSuggestions);
+        setLoading(false);
+      }, 1000);
+    };
+
+    loadEmails();
+  }, []);
+
+  const handleEmailSelect = (email: Email) => {
+    setActiveEmail(email);
+    if (!email.isRead) {
+      // Mark as read
+      setEmails(prev => 
+        prev.map(e => e.id === email.id ? { ...e, isRead: true } : e)
+      );
     }
   };
 
-  useEffect(() => {
-    loadEmails(activeFilter);
-  }, [activeFilter]);
+  const handleAISuggestionReview = (suggestion: AISuggestion) => {
+    setCurrentSuggestion(suggestion);
+    setReplyContent(suggestion.suggestedContent);
+    setShowAIApproval(true);
+  };
+
+  const handleApproveSuggestion = () => {
+    if (currentSuggestion) {
+      // In real implementation, this would send the email
+      console.log('Approving and sending:', replyContent);
+      setShowAIApproval(false);
+      setCurrentSuggestion(null);
+    }
+  };
+
+  const handleRejectSuggestion = () => {
+    setShowAIApproval(false); 
+    setCurrentSuggestion(null);
+  };
 
   const filteredEmails = emails.filter(email => {
+    // Filter logic
     if (activeFilter === 'unread' && email.isRead) return false;
     if (activeFilter === 'starred' && !email.isStarred) return false;
-    if (activeFilter === 'important' && !email.isImportant) return false;
-    if (activeFilter !== 'all' && activeFilter !== 'unread' && activeFilter !== 'starred' && activeFilter !== 'important') {
-      if (email.type !== activeFilter) return false;
+    if (activeFilter === 'ai-suggestions' && !email.hasAISuggestion) return false;
+    if (activeFilter !== 'all' && activeFilter !== 'unread' && activeFilter !== 'starred' && activeFilter !== 'ai-suggestions') {
+      if (email.aiAnalysis?.category !== activeFilter) return false;
     }
     if (searchQuery) {
       return email.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-             email.from.toLowerCase().includes(searchQuery.toLowerCase()) ||
+             email.from.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
              email.preview.toLowerCase().includes(searchQuery.toLowerCase());
     }
     return true;
   });
 
-  const toggleEmailSelection = (emailId: string) => {
-    setSelectedEmails(prev => 
-      prev.includes(emailId) 
-        ? prev.filter(id => id !== emailId)
-        : [...prev, emailId]
-    );
+  const getPriorityGlow = (score: number) => {
+    if (score >= 90) return 'drop-shadow(0 0 12px rgba(239, 68, 68, 0.8))';
+    if (score >= 70) return 'drop-shadow(0 0 8px rgba(245, 158, 11, 0.6))';
+    return '';
   };
-
-  const selectAllEmails = () => {
-    setSelectedEmails(
-      selectedEmails.length === filteredEmails.length 
-        ? [] 
-        : filteredEmails.map(e => e.id)
-    );
-  };
-
-  const markAsRead = async (emailIds: string[]) => {
-    try {
-      // Update UI optimistically
-      setEmails(prev => prev.map(email => 
-        emailIds.includes(email.id) ? { ...email, isRead: true } : email
-      ));
-      
-      // Call new consolidated thread action API
-      await Promise.all(emailIds.map(id => 
-        fetch(`/api/inbox/threads/${id}/read`, { method: 'PATCH' })
-      ));
-    } catch (error) {
-      console.error('Error marking as read:', error);
-      // Reload to get correct state
-      loadEmails(activeFilter);
-    }
-  };
-
-  const markAsUnread = async (emailIds: string[]) => {
-    try {
-      // Update UI optimistically
-      setEmails(prev => prev.map(email => 
-        emailIds.includes(email.id) ? { ...email, isRead: false } : email
-      ));
-      
-      // Call new consolidated thread action API
-      await Promise.all(emailIds.map(id => 
-        fetch(`/api/inbox/threads/${id}/unread`, { method: 'PATCH' })
-      ));
-    } catch (error) {
-      console.error('Error marking as unread:', error);
-      // Reload to get correct state
-      loadEmails(activeFilter);
-    }
-  };
-
-  const toggleStar = async (emailId: string) => {
-    try {
-      const email = emails.find(e => e.id === emailId);
-      const newStarred = !email?.isStarred;
-      
-      // Update UI optimistically
-      setEmails(prev => prev.map(email => 
-        email.id === emailId ? { ...email, isStarred: newStarred } : email
-      ));
-      
-      // Call new consolidated thread action API
-      const action = newStarred ? 'star' : 'unstar';
-      await fetch(`/api/inbox/threads/${emailId}/${action}`, { 
-        method: 'PATCH' 
-      });
-    } catch (error) {
-      console.error('Error toggling star:', error);
-      // Reload to get correct state
-      loadEmails(activeFilter);
-    }
-  };
-
-  const archiveEmails = async (emailIds: string[]) => {
-    try {
-      // Update UI optimistically
-      setEmails(prev => prev.filter(email => !emailIds.includes(email.id)));
-      setSelectedEmails([]);
-      
-      // Clear active email if it was archived
-      if (activeEmail && emailIds.includes(activeEmail.id)) {
-        setActiveEmail(null);
-        setActiveThread(null);
-      }
-      
-      // Call new consolidated thread action API
-      await Promise.all(emailIds.map(id => 
-        fetch(`/api/inbox/threads/${id}/archive`, { method: 'PATCH' })
-      ));
-    } catch (error) {
-      console.error('Error archiving emails:', error);
-      // Reload to get correct state
-      loadEmails(activeFilter);
-    }
-  };
-
-  const deleteEmails = async (emailIds: string[]) => {
-    try {
-      // Update UI optimistically
-      setEmails(prev => prev.filter(email => !emailIds.includes(email.id)));
-      setSelectedEmails([]);
-      
-      // Clear active email if it was deleted
-      if (activeEmail && emailIds.includes(activeEmail.id)) {
-        setActiveEmail(null);
-        setActiveThread(null);
-      }
-      
-      // Call new consolidated thread action API
-      await Promise.all(emailIds.map(id => 
-        fetch(`/api/inbox/threads/${id}/delete`, { method: 'PATCH' })
-      ));
-    } catch (error) {
-      console.error('Error deleting emails:', error);
-      // Reload to get correct state
-      loadEmails(activeFilter);
-    }
-  };
-
-  const getPriorityIcon = (priority: string) => {
-    switch (priority) {
-      case 'high': return <AlertTriangle className="h-4 w-4 text-red-500" />;
-      case 'low': return <Clock className="h-4 w-4 text-blue-500" />;
-      default: return null;
-    }
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'lead': return 'bg-green-100 text-green-800';
-      case 'business': return 'bg-blue-100 text-blue-800';
-      case 'follow-up': return 'bg-yellow-100 text-yellow-800';
-      case 'inquiry': return 'bg-purple-100 text-purple-800';
-      case 'personal': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const unreadCount = emails.filter(e => !e.isRead).length;
-  const starredCount = emails.filter(e => e.isStarred).length;
-  const importantCount = emails.filter(e => e.isImportant).length;
-
-  // Fetch real thread content when an email is selected
-  const fetchThreadContent = async (threadId: string) => {
-    setLoadingThread(true);
-    try {
-      const response = await fetch(`/api/inbox/threads/${threadId}`);
-      if (response.ok) {
-        const threadData = await response.json();
-        setActiveThread(threadData);
-        console.log('Fetched thread data:', threadData);
-      } else {
-        console.error('Failed to fetch thread content:', response.statusText);
-      }
-    } catch (error) {
-      console.error('Error fetching thread content:', error);
-    } finally {
-      setLoadingThread(false);
-    }
-  };
-
-  // Handle email selection and fetch its content
-  const handleEmailSelect = async (email: Email) => {
-    setActiveEmail(email);
-    await fetchThreadContent(email.id);
-    
-    // Mark as read when opened
-    if (!email.isRead) {
-      markAsRead([email.id]);
-    }
-  };
-
-  // Handle email sent callback
-  const handleEmailSent = () => {
-    // Refresh the inbox to show the latest emails
-    loadEmails(activeFilter);
-    setReplyToEmail(null);
-  };
-
-  // Handle email sync
-  const handleSync = async () => {
-    setIsSyncing(true);
-    try {
-      const response = await fetch('/api/sync/gmail', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        console.log('Email sync successful:', result);
-        // Refresh the inbox to show new emails
-        loadEmails(activeFilter);
-        // Show success message
-        alert(`Email sync successful! ${result.stats?.threadsCreated || 0} new threads, ${result.stats?.messagesCreated || 0} new messages.`);
-      } else {
-        console.error('Email sync failed:', result);
-        alert(`Email sync failed: ${result.message || result.error}`);
-        
-        if (result.action === 'connect_google_first') {
-          if (confirm('Connect Google account now?')) {
-            window.location.href = '/api/auth/signin/google';
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Email sync request failed:', error);
-      alert('Email sync failed due to network error. Please try again.');
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  // Handle clear all emails and events
-  const handleClearAll = async () => {
-    if (!confirm('Are you sure you want to clear ALL emails and calendar events? This action cannot be undone.')) {
-      return;
-    }
-
-    setIsClearing(true);
-    try {
-      const response = await fetch('/api/clear-all', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        console.log('Clear all successful:', result);
-        // Clear local state
-        setEmails([]);
-        setActiveEmail(null);
-        setActiveThread(null);
-        alert(`Successfully cleared ${result.emailsDeleted || 0} emails and ${result.eventsDeleted || 0} calendar events.`);
-      } else {
-        console.error('Clear all failed:', result);
-        alert(`Clear all failed: ${result.message || result.error}`);
-      }
-    } catch (error) {
-      console.error('Clear all request failed:', error);
-      alert('Clear all failed due to network error. Please try again.');
-    } finally {
-      setIsClearing(false);
-    }
-  };
-
-  // Mobile view
-  if (isMobile) {
-    return (
-      <div className={`${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'}`}>
-        <AppShell>
-          <MobileInbox />
-        </AppShell>
-      </div>
-    );
-  }
 
   return (
-    <div className={`${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'}`}>
-      <AppShell>
-        {/* Header */}
-        <div className="px-4 mt-4 mb-2 main-content-area">
-          <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-xl glass-card">
-                  <Inbox className="h-6 w-6" style={{ color: 'var(--glass-primary)' }} />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold" style={{ color: 'var(--glass-text)' }}>
-                    Inbox
-                  </h1>
-                  <p style={{ color: 'var(--glass-text-secondary)' }}>
-                    {filteredEmails.length} conversations • {unreadCount} unread
-                  </p>
-                </div>
-              </div>
+    <div className="h-full flex flex-col glass-theme-black overflow-hidden">
+      {/* AI-Powered Header */}
+      <motion.div 
+        className="p-6 border-b border-white/10"
+        style={{
+          background: 'rgba(0, 0, 0, 0.4)',
+          backdropFilter: 'blur(20px) saturate(1.3)',
+          WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
+        }}
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl" style={{
+              background: 'rgba(139, 92, 246, 0.15)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(139, 92, 246, 0.2)'
+            }}>
+              <Bot className="h-6 w-6 text-purple-400" />
             </div>
-            
-            <div className="flex items-center gap-2">
-              <Button variant="liquid" size="sm" onClick={() => loadEmails(activeFilter)}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleSync}
-                disabled={isSyncing}
-              >
-                <Download className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-                {isSyncing ? 'Syncing...' : 'Sync Gmail'}
-              </Button>
-              <Button 
-                variant="destructive" 
-                size="sm" 
-                onClick={handleClearAll}
-                disabled={isClearing}
-                className="bg-red-500 hover:bg-red-600 text-white"
-              >
-                <Eraser className={`h-4 w-4 mr-2 ${isClearing ? 'animate-pulse' : ''}`} />
-                {isClearing ? 'Clearing...' : 'Clear All'}
-              </Button>
-              <Button 
-                variant="liquid"
-                size="lg"
-                className="px-6"
-                onClick={() => {
-                  console.log('Compose button clicked in inbox');
-                  setShowComposeModal(true);
-                }}
-              >
-                <Edit3 className="h-5 w-5 mr-2" />
-                Compose
-              </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-white">AI-Powered Inbox</h1>
+              <p className="text-sm text-white/60">Smart real estate email management</p>
             </div>
           </div>
-
-          {/* Search and Filter Tabs */}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 max-w-2xl relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" 
-                style={{ color: 'var(--glass-text-muted)' }} />
-              <Input
-                variant="pill"
-                placeholder="Search emails, contacts, or content..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 text-sm"
-              />
-              {searchQuery && (
-                <Button
-                  variant="liquid"
-                  size="sm"
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
-                  onClick={() => setSearchQuery('')}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="liquid" size="sm">
-                    <Filter className="h-4 w-4 mr-2" />
-                    Filter
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Filter Options</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setActiveFilter('all')}>
-                    All Mail
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveFilter('unread')}>
-                    Unread
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveFilter('starred')}>
-                    Starred
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveFilter('important')}>
-                    Important
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setActiveFilter('lead')}>
-                    Leads
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveFilter('business')}>
-                    Business
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveFilter('follow-up')}>
-                    Follow-ups
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-
-          {/* Filter Tabs */}
-          <div className="flex items-center gap-2">
-            {[
-              { key: 'all', label: 'All Mail', count: emails.length },
-              { key: 'unread', label: 'Unread', count: unreadCount },
-              { key: 'starred', label: 'Starred', count: starredCount },
-              { key: 'important', label: 'Important', count: importantCount },
-              { key: 'lead', label: 'Leads', count: emails.filter(e => e.type === 'lead').length }
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveFilter(tab.key)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                  activeFilter === tab.key
-                    ? "glass-badge"
-                    : "glass-badge-muted"
-                }`}
-              >
-                {tab.label}
-                {tab.count > 0 && (
-                  <Badge variant="liquid" className="ml-2 text-xs">
-                    {tab.count}
-                  </Badge>
-                )}
-              </button>
-            ))}
-          </div>
+          
+          <div className="flex items-center gap-3">
+            <Button variant="liquid" size="sm">
+              <Sparkles className="h-4 w-4 mr-2" />
+              AI Insights
+            </Button>
+            <Button variant="liquid" size="sm">
+              <Send className="h-4 w-4 mr-2" />
+              Compose
+            </Button>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="fixed-inbox-container px-4 pb-4" style={{ 
-          width: '100%', 
-          height: 'calc(100vh - 120px)', 
-          maxHeight: '800px',
-          minHeight: '600px',
-          overflow: 'hidden'
-        }}>
-          <div className="flex flex-col xl:flex-row gap-4" style={{ 
-            width: '100%', 
-            height: '100%'
-          }}>
-            {/* Email List */}
-            <div className="xl:w-[42%] xl:flex-shrink-0 glass-card flex flex-col" style={{ 
-              height: '100%', 
-              overflow: 'hidden'
-            }}>
-              {/* Selection Controls */}
-              {selectedEmails.length > 0 && (
-                <div className="p-4 border-b" style={{ borderColor: 'var(--glass-border)' }}>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm" style={{ color: 'var(--glass-text-secondary)' }}>
-                      {selectedEmails.length} selected
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <Button variant="liquid" size="sm" onClick={() => markAsRead(selectedEmails)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="liquid" size="sm" onClick={() => markAsUnread(selectedEmails)}>
-                        <EyeOff className="h-4 w-4" />
-                      </Button>
-                      <Button variant="liquid" size="sm" onClick={() => archiveEmails(selectedEmails)}>
-                        <Archive className="h-4 w-4" />
-                      </Button>
-                      <Button variant="liquid" size="sm" onClick={() => deleteEmails(selectedEmails)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                      <Button variant="liquid" size="sm">
-                        <Tag className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
+        {/* Search and Filters */}
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/40" />
+            <input
+              type="text"
+              placeholder="Search emails..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              style={{
+                backdropFilter: 'blur(20px) saturate(1.3)',
+                WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
+              }}
+            />
+          </div>
 
-              {/* Email List Header */}
-              <div className="p-4 border-b" style={{ borderColor: 'var(--glass-border)' }}>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={selectedEmails.length === filteredEmails.length}
-                    onChange={selectAllEmails}
-                    className="rounded"
-                  />
-                  <span className="text-sm" style={{ color: 'var(--glass-text-secondary)' }}>
-                    {filteredEmails.length} conversations
-                  </span>
-                </div>
-              </div>
+          <div className="flex items-center gap-2">
+            {[
+              { key: 'all', label: 'All', icon: Mail },
+              { key: 'unread', label: 'Unread', icon: Circle },
+              { key: 'starred', label: 'Starred', icon: Star },
+              { key: 'ai-suggestions', label: 'AI Suggestions', icon: Bot },
+              { key: 'hot-lead', label: 'Hot Leads', icon: TrendingUp },
+            ].map(filter => (
+              <Button
+                key={filter.key}
+                variant={activeFilter === filter.key ? "liquid" : "outline"}
+                size="sm"
+                onClick={() => setActiveFilter(filter.key)}
+                className="text-xs"
+              >
+                <filter.icon className="h-3 w-3 mr-1" />
+                {filter.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </motion.div>
 
-              {/* Email List */}
-              <div className="flex-1 overflow-y-auto">
-                {loading ? (
-                  <div className="p-8 text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4" 
-                         style={{ borderColor: 'var(--glass-primary)' }}></div>
-                    <p style={{ color: 'var(--glass-text-muted)' }}>Loading emails...</p>
-                  </div>
-                ) : filteredEmails.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <Mail className="h-12 w-12 mx-auto mb-4" style={{ color: 'var(--glass-text-muted)' }} />
-                    <h3 className="font-medium mb-2" style={{ color: 'var(--glass-text)' }}>
-                      No emails found
-                    </h3>
-                    <p style={{ color: 'var(--glass-text-muted)' }}>
-                      {searchQuery ? 'Try adjusting your search terms' : 'Your inbox is empty'}
-                    </p>
-                  </div>
-                ) : (
-                  filteredEmails.map((email) => (
-                    <div
-                      key={email.id}
-                      className={`p-4 border-b cursor-pointer transition-colors ${
-                        activeEmail?.id === email.id ? 'bg-[var(--glass-surface-hover)]' : ''
-                      } ${!email.isRead ? 'border-l-4 border-l-blue-500' : ''}`}
-                      style={{ borderColor: 'var(--glass-border)' }}
-                      onClick={() => handleEmailSelect(email)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <input
-                          type="checkbox"
-                          checked={selectedEmails.includes(email.id)}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            toggleEmailSelection(email.id);
-                          }}
-                          className="mt-1 rounded"
-                        />
-                        
-                        <div className="w-10 h-10 rounded-full glass-card flex items-center justify-center text-sm font-medium">
-                          {email.avatar}
+      {/* Main Inbox Layout */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Email List Panel */}
+        <motion.div 
+          className="w-96 border-r border-white/10 flex flex-col"
+          style={{
+            background: 'rgba(0, 0, 0, 0.2)',
+            backdropFilter: 'blur(20px) saturate(1.3)',
+            WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
+          }}
+          initial={{ x: -100, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+        >
+          <div className="p-4 border-b border-white/10">
+            <div className="text-sm text-white/60">
+              {filteredEmails.length} emails • {filteredEmails.filter(e => !e.isRead).length} unread
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            <AnimatePresence>
+              {loading ? (
+                <div className="p-8 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
+                  <p className="text-white/60">Analyzing emails with AI...</p>
+                </div>
+              ) : filteredEmails.length === 0 ? (
+                <div className="p-8 text-center">
+                  <Mail className="h-12 w-12 text-white/40 mx-auto mb-4" />
+                  <p className="text-white/60">No emails found</p>
+                </div>
+              ) : (
+                filteredEmails.map((email, index) => (
+                  <motion.div
+                    key={email.id}
+                    className={`p-4 border-b border-white/5 cursor-pointer transition-all duration-300 hover:bg-white/5 ${
+                      activeEmail?.id === email.id ? 'bg-white/10' : ''
+                    }`}
+                    onClick={() => handleEmailSelect(email)}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    style={{
+                      filter: email.aiAnalysis?.priorityScore ? getPriorityGlow(email.aiAnalysis.priorityScore) : ''
+                    }}
+                  >
+                    <div className="flex items-start gap-3">
+                      {/* AI Priority Indicator */}
+                      {email.aiAnalysis && (
+                        <div className="mt-1">
+                          <div 
+                            className="w-3 h-3 rounded-full"
+                            style={{ 
+                              background: email.aiAnalysis.priorityScore >= 90 ? '#ef4444' : 
+                                         email.aiAnalysis.priorityScore >= 70 ? '#f59e0b' : '#6b7280'
+                            }}
+                          />
                         </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <span 
-                              className={`font-medium truncate ${!email.isRead ? 'font-bold' : ''}`}
-                              style={{ color: !email.isRead ? 'var(--glass-text)' : 'var(--glass-text-secondary)' }}
-                            >
-                              {email.from}
-                            </span>
-                            <div className="flex items-center gap-1">
-                              {email.isStarred && (
-                                <button onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleStar(email.id);
-                                }}>
-                                  <Star className="h-4 w-4" style={{ color: 'var(--glass-accent)', fill: 'var(--glass-accent)' }} />
-                                </button>
-                              )}
-                              {getPriorityIcon(email.priority)}
-                              <span className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
-                                {email.time}
-                              </span>
-                            </div>
+                      )}
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="font-medium text-white truncate">
+                            {email.from.name}
                           </div>
-                          
-                          <p 
-                            className={`text-sm mb-1 truncate ${!email.isRead ? 'font-medium' : ''}`}
-                            style={{ color: !email.isRead ? 'var(--glass-text)' : 'var(--glass-text-secondary)' }}
-                          >
-                            {email.subject}
-                          </p>
-                          
-                          <p className="text-xs truncate" style={{ color: 'var(--glass-text-muted)' }}>
-                            {email.preview}
-                          </p>
-                          
-                          <div className="flex items-center gap-1 mt-2">
-                            <Badge className={`${getTypeColor(email.type)} text-xs border-0`}>
-                              {email.type}
-                            </Badge>
-                            {email.attachments && email.attachments > 0 && (
-                              <Badge variant="liquid" className="text-xs">
-                                {email.attachments} attachments
-                              </Badge>
+                          <div className="flex items-center gap-1">
+                            {email.hasAISuggestion && (
+                              <Bot className="h-3 w-3 text-purple-400" />
+                            )}
+                            {email.isStarred && (
+                              <Star className="h-3 w-3 text-yellow-400 fill-current" />
+                            )}
+                            {!email.isRead && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full" />
                             )}
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
 
-            {/* Email Detail View */}
-            <div className="xl:w-[58%] xl:flex-shrink-0 glass-card flex flex-col" style={{ 
-              height: '100%', 
-              overflow: 'hidden'
-            }}>
-              {activeEmail ? (
-                <div className="h-full flex flex-col">
-                  {/* Email Header */}
-                  <div className="p-6 border-b" style={{ borderColor: 'var(--glass-border)' }}>
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full glass-card flex items-center justify-center font-medium">
-                          {activeEmail.avatar}
+                        <div className="text-sm font-medium text-white/90 truncate mb-1">
+                          {email.subject}
                         </div>
-                        <div>
-                          <h3 className="font-semibold text-lg" style={{ color: 'var(--glass-text)' }}>
-                            {activeEmail.subject}
-                          </h3>
-                          <p style={{ color: 'var(--glass-text-secondary)' }}>
-                            from {activeEmail.from} • {activeEmail.time}
-                          </p>
+
+                        <div className="text-xs text-white/60 truncate mb-2">
+                          {email.preview}
                         </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Button variant="liquid" size="sm" onClick={() => {
-                          setReplyToEmail({
-                            email: activeEmail.fromEmail,
-                            name: activeEmail.from,
-                            subject: activeEmail.subject,
-                            threadId: activeEmail.id
-                          });
-                          setShowComposeModal(true);
-                        }}>
-                          <Reply className="h-4 w-4 mr-1" />
-                          Reply
-                        </Button>
-                        <Button variant="liquid" size="sm">
-                          <Forward className="h-4 w-4 mr-1" />
-                          Forward
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="liquid" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => toggleStar(activeEmail.id)}>
-                              <Star className="h-4 w-4 mr-2" />
-                              {activeEmail.isStarred ? 'Unstar' : 'Star'}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => archiveEmails([activeEmail.id])}>
-                              <Archive className="h-4 w-4 mr-2" />
-                              Archive
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Tag className="h-4 w-4 mr-2" />
-                              Add Label
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              className="text-red-600"
-                              onClick={() => deleteEmails([activeEmail.id])}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Badge className={`${getTypeColor(activeEmail.type)} text-xs border-0`}>
-                        {activeEmail.type.charAt(0).toUpperCase() + activeEmail.type.slice(1)}
-                      </Badge>
-                      {activeEmail.priority === 'high' && (
-                        <Badge className="bg-red-100 text-red-800 text-xs border-0">
-                          High Priority
-                        </Badge>
-                      )}
-                      {activeEmail.labels.map((label) => (
-                        <Badge key={label} variant="liquid" className="text-xs">
-                          {label}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Email Content */}
-                  <div className="flex-1 p-6 overflow-y-auto min-h-0">
-                    {loadingThread ? (
-                      <div className="flex items-center justify-center h-32">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                      </div>
-                    ) : activeThread ? (
-                      <div className="space-y-6">
-                        {activeThread.messages.map((message: any, index: number) => (
-                          <div key={message.id || index} className="border-b pb-6" style={{ borderColor: 'var(--glass-border)' }}>
-                            <div className="flex items-center justify-between mb-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                                  <span className="text-white text-xs font-medium">
-                                    {message.from?.name?.charAt(0) || message.from?.email?.charAt(0) || 'U'}
-                                  </span>
-                                </div>
-                                <div>
-                                  <div className="font-medium" style={{ color: 'var(--glass-text)' }}>
-                                    {message.from?.name || message.from?.email || 'Unknown Sender'}
-                                  </div>
-                                  <div className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
-                                    {new Date(message.sentAt).toLocaleString()}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
+
+                        {/* AI Category Tag */}
+                        {email.aiAnalysis && (
+                          <div className="flex items-center justify-between">
                             <div 
-                              className="prose max-w-none email-content"
-                              style={{ color: 'var(--glass-text)' }}
+                              className="px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1"
+                              style={{
+                                background: `${categoryConfig[email.aiAnalysis.category]?.color}20`,
+                                color: categoryConfig[email.aiAnalysis.category]?.color,
+                                border: `1px solid ${categoryConfig[email.aiAnalysis.category]?.color}40`
+                              }}
                             >
-                              {message.htmlBody ? (
-                                <div 
-                                  dangerouslySetInnerHTML={{ __html: message.htmlBody }}
-                                  className="email-content"
-                                />
-                              ) : (
-                                <div className="whitespace-pre-wrap">
-                                  {message.textBody || 'No content available'}
-                                </div>
-                              )}
+                              {React.createElement(categoryConfig[email.aiAnalysis.category]?.icon || Mail, { 
+                                className: "h-3 w-3" 
+                              })}
+                              {categoryConfig[email.aiAnalysis.category]?.label}
+                            </div>
+                            
+                            <div className="text-xs text-white/40">
+                              {new Date(email.timestamp).toLocaleTimeString([], { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div 
-                        className="prose max-w-none whitespace-pre-wrap"
-                        style={{ color: 'var(--glass-text)' }}
-                      >
-                        {activeEmail.body}
-                      </div>
-                    )}
-                    
-                    {/* Quick Actions */}
-                    <div className="mt-8 pt-6 border-t" style={{ borderColor: 'var(--glass-border)' }}>
-                      <h4 className="font-medium mb-3" style={{ color: 'var(--glass-text)' }}>
-                        Quick Actions
-                      </h4>
-                      <div className="grid grid-cols-2 gap-3">
-                        <Button variant="liquid" className="justify-start" onClick={() => router.push('/app/calendar')}>
-                          <Calendar className="h-4 w-4 mr-2" />
-                          Schedule Viewing
-                        </Button>
-                        <Button variant="liquid" className="justify-start" onClick={() => window.open(`tel:${activeEmail?.fromEmail}`)}>
-                          <Phone className="h-4 w-4 mr-2" />
-                          Call Client
-                        </Button>
-                        <Button variant="liquid" className="justify-start" onClick={() => router.push('/app/documents')}>
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          Send Property Info
-                        </Button>
-                        <Button variant="liquid" className="justify-start" onClick={() => router.push('/app/contacts')}>
-                          <User className="h-4 w-4 mr-2" />
-                          Add to CRM
-                        </Button>
+                        )}
                       </div>
                     </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="h-full flex items-center justify-center">
-                  <div className="text-center">
-                    <Mail className="h-12 w-12 mx-auto mb-4" style={{ color: 'var(--glass-text-muted)' }} />
-                    <h3 className="font-medium mb-2" style={{ color: 'var(--glass-text)' }}>
-                      Select an email
-                    </h3>
-                    <p style={{ color: 'var(--glass-text-muted)' }}>
-                      Choose an email from the list to view its contents
-                    </p>
-                  </div>
-                </div>
+                  </motion.div>
+                ))
               )}
-            </div>
+            </AnimatePresence>
           </div>
-        </div>
-      </AppShell>
+        </motion.div>
 
-      {/* Compose Email Modal */}
-      <ComposeEmailModal
-        trigger={null}
-        threadId={replyToEmail?.threadId}
-        defaultTo={replyToEmail?.email || ''}
-        defaultSubject={replyToEmail?.subject || ''}
-        onEmailSent={handleEmailSent}
-        open={showComposeModal}
-        onOpenChange={setShowComposeModal}
-      />
+        {/* Email Detail Panel */}
+        <motion.div 
+          className="flex-1 flex flex-col"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          {activeEmail ? (
+            <>
+              {/* Email Header */}
+              <div 
+                className="p-6 border-b border-white/10"
+                style={{
+                  background: 'rgba(0, 0, 0, 0.2)',
+                  backdropFilter: 'blur(20px) saturate(1.3)',
+                  WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
+                }}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h2 className="text-xl font-bold text-white mb-2">
+                      {activeEmail.subject}
+                    </h2>
+                    <div className="flex items-center gap-4 text-sm text-white/60">
+                      <div>From: {activeEmail.from.name} &lt;{activeEmail.from.email}&gt;</div>
+                      <div>{new Date(activeEmail.timestamp).toLocaleString()}</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button variant="liquid" size="sm">
+                      <Reply className="h-4 w-4 mr-1" />
+                      Reply
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Forward className="h-4 w-4 mr-1" />
+                      Forward
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Archive className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* AI Analysis Panel */}
+                {activeEmail.aiAnalysis && (
+                  <motion.div 
+                    className="rounded-xl p-4 mb-4"
+                    style={{
+                      background: 'rgba(139, 92, 246, 0.1)',
+                      backdropFilter: 'blur(20px)',
+                      border: '1px solid rgba(139, 92, 246, 0.2)'
+                    }}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <Sparkles className="h-5 w-5 text-purple-400" />
+                      <span className="font-medium text-purple-300">AI Analysis</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-white">
+                          {activeEmail.aiAnalysis.priorityScore}
+                        </div>
+                        <div className="text-xs text-white/60">Priority Score</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-white">
+                          {activeEmail.aiAnalysis.leadScore}
+                        </div>
+                        <div className="text-xs text-white/60">Lead Score</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-white">
+                          {(activeEmail.aiAnalysis.confidenceScore * 100).toFixed(0)}%
+                        </div>
+                        <div className="text-xs text-white/60">AI Confidence</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-white">
+                          {(activeEmail.aiAnalysis.sentimentScore * 100).toFixed(0)}%
+                        </div>
+                        <div className="text-xs text-white/60">Sentiment</div>
+                      </div>
+                    </div>
+
+                    {/* Key Entities */}
+                    {activeEmail.aiAnalysis.keyEntities && (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {activeEmail.aiAnalysis.keyEntities.addresses && (
+                          <div>
+                            <div className="text-xs text-white/60 mb-1">Properties</div>
+                            {activeEmail.aiAnalysis.keyEntities.addresses.map((addr, i) => (
+                              <div key={i} className="flex items-center gap-1 text-sm text-white">
+                                <MapPin className="h-3 w-3" />
+                                {addr}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {activeEmail.aiAnalysis.keyEntities.priceRange && (
+                          <div>
+                            <div className="text-xs text-white/60 mb-1">Price Range</div>
+                            <div className="flex items-center gap-1 text-sm text-white">
+                              <DollarSign className="h-3 w-3" />
+                              {activeEmail.aiAnalysis.keyEntities.priceRange}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* AI Suggestion Available */}
+                    {activeEmail.hasAISuggestion && (
+                      <div className="mt-4 pt-4 border-t border-white/10">
+                        <Button
+                          variant="liquid"
+                          size="sm"
+                          onClick={() => {
+                            const suggestion = aiSuggestions.find(s => s.emailId === activeEmail.id);
+                            if (suggestion) handleAISuggestionReview(suggestion);
+                          }}
+                          className="w-full"
+                        >
+                          <Zap className="h-4 w-4 mr-2" />
+                          Review AI-Generated Response ({(aiSuggestions.find(s => s.emailId === activeEmail.id)?.confidenceScore || 0) * 100}% confidence)
+                        </Button>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Email Body */}
+              <div className="flex-1 p-6 overflow-y-auto">
+                <motion.div 
+                  className="prose prose-invert max-w-none"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <div className="whitespace-pre-wrap text-white/90 leading-relaxed">
+                    {activeEmail.body}
+                  </div>
+                </motion.div>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <Mail className="h-16 w-16 text-white/40 mx-auto mb-4" />
+                <h3 className="text-xl font-medium text-white/60 mb-2">Select an email</h3>
+                <p className="text-white/40">Choose an email from the list to view its content and AI analysis</p>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </div>
+
+      {/* AI Reply Approval Modal */}
+      <AnimatePresence>
+        {showAIApproval && currentSuggestion && (
+          <motion.div
+            className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="max-w-4xl w-full max-h-[90vh] overflow-hidden rounded-2xl"
+              style={{
+                background: 'rgba(0, 0, 0, 0.95)',
+                backdropFilter: 'blur(25px) saturate(1.4)',
+                WebkitBackdropFilter: 'blur(25px) saturate(1.4)',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+            >
+              <div className="p-6 border-b border-white/10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-purple-500/20 border border-purple-500/30">
+                      <Bot className="h-6 w-6 text-purple-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">AI-Generated Response</h3>
+                      <p className="text-sm text-white/60">
+                        Confidence: {(currentSuggestion.confidenceScore * 100).toFixed(0)}% • 
+                        Category: {currentSuggestion.category}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRejectSuggestion}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="p-6 max-h-96 overflow-y-auto">
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-white/80 mb-2">
+                    Review and edit the AI-generated response:
+                  </label>
+                  <textarea
+                    value={replyContent}
+                    onChange={(e) => setReplyContent(e.target.value)}
+                    className="w-full h-64 p-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                    style={{
+                      backdropFilter: 'blur(20px) saturate(1.3)',
+                      WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-white/10 flex items-center justify-between">
+                <div className="text-sm text-white/60">
+                  This response was generated based on the email content and real estate best practices.
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleRejectSuggestion}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Reject
+                  </Button>
+                  <Button
+                    variant="liquid"
+                    onClick={handleApproveSuggestion}
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Send Response
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -3461,9 +3461,20 @@ header:not(.md\\:hidden),
   }
   
   /* Force all waitlist modal elements to dark theme on mobile */
-  [data-waitlist-modal-open="true"] * {
+  [data-waitlist-modal-open="true"] *:not([data-radix-dialog-content]) {
     background-color: transparent !important;
     color: #ffffff !important;
+  }
+  
+  /* Ensure waitlist modal content has solid background */
+  [data-waitlist-modal-open="true"] [data-radix-dialog-content] {
+    background: rgba(0, 0, 0, 0.98) !important;
+    backdrop-filter: blur(25px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(25px) saturate(1.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 
+      0 30px 60px -12px rgba(0, 0, 0, 0.95),
+      0 0 0 1px rgba(255, 255, 255, 0.2) !important;
   }
   
   /* Force form inputs to be dark on mobile */

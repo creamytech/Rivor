@@ -572,3 +572,139 @@ enum EncryptionStatus {
   failed
 }
 
+// AI Email Models
+enum EmailCategory {
+  hot_lead
+  showing_request
+  price_inquiry
+  seller_lead
+  buyer_lead
+  follow_up
+  contract
+  marketing
+}
+
+enum ProcessingStatus {
+  pending
+  processing
+  completed
+  failed
+}
+
+enum ReplyStatus {
+  pending
+  approved
+  rejected
+  modified
+  sent
+}
+
+enum FeedbackType {
+  positive
+  negative
+  neutral
+}
+
+enum ProcessingType {
+  analysis
+  reply_generation
+  categorization
+}
+
+enum QueueStatus {
+  queued
+  processing
+  completed
+  failed
+  retry
+}
+
+model EmailAIAnalysis {
+  id               String           @id @default(cuid())
+  emailId          String           @unique @db.VarChar(255)
+  threadId         String           @db.VarChar(255)
+  category         EmailCategory
+  priorityScore    Int              @default(0)
+  leadScore        Int              @default(0)
+  confidenceScore  Decimal          @default(0.00) @db.Decimal(3, 2)
+  sentimentScore   Decimal          @default(0.50) @db.Decimal(3, 2)
+  keyEntities      Json?
+  processingStatus ProcessingStatus @default(pending)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([category])
+  @@index([priorityScore])
+  @@index([threadId])
+}
+
+model AISuggestedReply {
+  id                String         @id @default(cuid())
+  emailId           String         @db.VarChar(255)
+  threadId          String         @db.VarChar(255)
+  suggestedContent  String         @db.Text
+  status            ReplyStatus    @default(pending)
+  confidenceScore   Decimal        @default(0.00) @db.Decimal(3, 2)
+  category          String         @db.VarChar(100)
+  userModifications String?        @db.Text
+  sentAt            DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  feedback          AIFeedback[]
+
+  @@index([emailId])
+  @@index([status])
+  @@index([threadId])
+}
+
+model AIFeedback {
+  id                     String      @id @default(cuid())
+  replyId                String
+  feedbackType           FeedbackType
+  userComments           String?     @db.Text
+  responseEffectiveness  Int?        // 1-5 scale
+  createdAt              DateTime    @default(now())
+  reply                  AISuggestedReply @relation(fields: [replyId], references: [id], onDelete: Cascade)
+
+  @@index([replyId])
+  @@index([feedbackType])
+}
+
+model AIEmailTemplate {
+  id              String   @id @default(cuid())
+  name            String   @db.VarChar(255)
+  category        String   @db.VarChar(100)
+  templateContent String   @db.Text
+  variables       Json?    // Placeholder variables like {propertyAddress}, {clientName}
+  isActive        Boolean  @default(true)
+  usageCount      Int      @default(0)
+  successRate     Decimal  @default(0.00) @db.Decimal(3, 2)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([category])
+  @@index([isActive])
+}
+
+model AIProcessingQueue {
+  id             String         @id @default(cuid())
+  emailId        String         @db.VarChar(255)
+  threadId       String         @db.VarChar(255)
+  processingType ProcessingType
+  status         QueueStatus    @default(queued)
+  priority       Int            @default(50) // 1-100, higher is more urgent
+  attempts       Int            @default(0)
+  maxAttempts    Int            @default(3)
+  errorMessage   String?        @db.Text
+  scheduledFor   DateTime?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([status])
+  @@index([priority])
+  @@index([scheduledFor])
+  @@index([emailId])
+}
+
