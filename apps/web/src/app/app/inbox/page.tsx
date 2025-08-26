@@ -73,7 +73,7 @@ export default function InboxPage() {
   // Setup auto-sync with refresh on new content (every 10 minutes)
   const autoSync = useAutoSync({
     interval: 10, // Sync every 10 minutes for inbox
-    enabled: true,
+    enabled: false, // Disable auto-sync - only manual sync
     showToasts: true,
     runOnMount: false, // Don't sync immediately on page load/refresh
     onSyncComplete: (result) => {

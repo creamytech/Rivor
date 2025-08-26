@@ -28,6 +28,8 @@ export async function GET(req: NextRequest) {
     // Note: This only filters the inbox view, it doesn't delete any emails
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    
+    console.log(`📅 90-day filter active: ${ninetyDaysAgo.toISOString()}`);
 
     // Build where clause based on filter
     const whereClause: any = {
@@ -72,14 +74,14 @@ export async function GET(req: NextRequest) {
         MAX(em."sentAt") as latest_message_date,
         COUNT(em.id) as message_count
       FROM "EmailThread" et
-      LEFT JOIN "EmailMessage" em ON et.id = em."threadId"
+      INNER JOIN "EmailMessage" em ON et.id = em."threadId"
       WHERE et."orgId" = $1
-        AND (em."sentAt" >= $4 OR em."sentAt" IS NULL)
+        AND em."sentAt" >= $4
         ${filterCondition}
       GROUP BY et.id, et."orgId", et."accountId", et."subjectEnc", et."participantsEnc", 
                et."createdAt", et."updatedAt", 
                et.labels, et.starred, et.unread
-      HAVING MAX(em."sentAt") >= $4 OR MAX(em."sentAt") IS NULL
+      HAVING MAX(em."sentAt") >= $4
       ORDER BY latest_message_date DESC NULLS LAST
       LIMIT $2 OFFSET $3
     `;
@@ -91,17 +93,19 @@ export async function GET(req: NextRequest) {
       SELECT COUNT(*) as total FROM (
         SELECT DISTINCT et.id
         FROM "EmailThread" et
-        LEFT JOIN "EmailMessage" em ON et.id = em."threadId"
+        INNER JOIN "EmailMessage" em ON et.id = em."threadId"
         WHERE et."orgId" = $1
-          AND (em."sentAt" >= $2 OR em."sentAt" IS NULL)
+          AND em."sentAt" >= $2
           ${filterCondition}
         GROUP BY et.id
-        HAVING MAX(em."sentAt") >= $2 OR MAX(em."sentAt") IS NULL
+        HAVING MAX(em."sentAt") >= $2
       ) subquery
     `;
     
     const totalCountResult = await prisma.$queryRawUnsafe(countQuery, orgId, ninetyDaysAgo);
     const totalCount = Number((totalCountResult as any)[0]?.total || 0);
+    
+    console.log(`📊 Threads found (last 90 days): ${totalCount}`);
 
     // Transform to UI format - process each thread
     const threadsFormatted = await Promise.all((threads as any[]).map(async (thread: any) => {
