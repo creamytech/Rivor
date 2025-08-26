@@ -161,6 +161,14 @@ export class GmailService {
             secureTokens: {
               where: {
                 tokenRef: { not: null }
+              },
+              select: {
+                id: true,
+                tokenRef: true,
+                tokenType: true,
+                encryptedTokenBlob: true,
+                createdAt: true,
+                updatedAt: true
               }
             }
           }
@@ -191,25 +199,50 @@ export class GmailService {
 
     // Try to get tokens from SecureToken first (new encrypted storage)
     if (emailAccount.tokenRef) {
-      const secureToken = emailAccount.org.secureTokens.find(token => 
-        token.tokenRef === emailAccount.tokenRef
+      logger.info('Attempting SecureToken retrieval', {
+        emailAccountId,
+        tokenRef: emailAccount.tokenRef,
+        availableSecureTokens: emailAccount.org.secureTokens.map(t => ({
+          tokenRef: t.tokenRef,
+          tokenType: t.tokenType,
+          hasEncryptedBlob: !!t.encryptedTokenBlob
+        }))
+      });
+
+      // Find both access and refresh tokens
+      const accessTokenSecure = emailAccount.org.secureTokens.find(token => 
+        token.tokenRef === emailAccount.tokenRef && token.tokenType === 'oauth_access'
+      );
+      const refreshTokenSecure = emailAccount.org.secureTokens.find(token => 
+        token.tokenRef.startsWith(emailAccount.tokenRef.split('-1756')[0]) && token.tokenType === 'oauth_refresh'
       );
       
-      if (secureToken && secureToken.encryptedTokenBlob) {
+      if (accessTokenSecure && accessTokenSecure.encryptedTokenBlob) {
         try {
           const { decryptForOrg } = await import('@/server/secure-tokens');
-          const tokenBytes = await decryptForOrg(
+          
+          // Decrypt access token
+          const accessTokenBytes = await decryptForOrg(
             orgId, 
-            secureToken.encryptedTokenBlob, 
+            accessTokenSecure.encryptedTokenBlob, 
             `oauth:google:access`
           );
-          const tokenData = JSON.parse(new TextDecoder().decode(tokenBytes));
-          accessToken = tokenData.access_token;
-          refreshToken = tokenData.refresh_token;
+          accessToken = new TextDecoder().decode(accessTokenBytes);
+
+          // Decrypt refresh token if available
+          if (refreshTokenSecure && refreshTokenSecure.encryptedTokenBlob) {
+            const refreshTokenBytes = await decryptForOrg(
+              orgId, 
+              refreshTokenSecure.encryptedTokenBlob, 
+              `oauth:google:refresh`
+            );
+            refreshToken = new TextDecoder().decode(refreshTokenBytes);
+          }
           
           logger.info('Retrieved tokens from SecureToken storage', {
             emailAccountId,
-            tokenRef: emailAccount.tokenRef
+            tokenRef: emailAccount.tokenRef,
+            hasRefreshToken: !!refreshToken
           });
           
           return new GmailService(accessToken, refreshToken, orgId, emailAccountId);
@@ -220,6 +253,13 @@ export class GmailService {
             error: secureTokenError instanceof Error ? secureTokenError.message : String(secureTokenError)
           });
         }
+      } else {
+        logger.warn('SecureToken found but missing encrypted blob', {
+          emailAccountId,
+          tokenRef: emailAccount.tokenRef,
+          hasAccessToken: !!accessTokenSecure,
+          accessTokenHasBlob: !!(accessTokenSecure && accessTokenSecure.encryptedTokenBlob)
+        });
       }
     }
 
