@@ -151,6 +151,24 @@ const loggingAdapter = {
       logOAuth('error', '❌ PrismaAdapter.getUserByEmail failed', { error: error instanceof Error ? error.message : error });
       throw error;
     }
+  },
+  async getSessionAndUser(sessionToken: string) {
+    try {
+      console.log('🔍 PrismaAdapter.getSessionAndUser called:', sessionToken?.substring(0, 20) + '...');
+      const result = await baseAdapter.getSessionAndUser!(sessionToken);
+      console.log('✅ PrismaAdapter.getSessionAndUser result:', !!result);
+      logOAuth('info', '🔍 PrismaAdapter.getSessionAndUser', { 
+        tokenPreview: sessionToken?.substring(0, 20) + '...',
+        found: !!result,
+        hasUser: !!result?.user,
+        hasSession: !!result?.session
+      });
+      return result;
+    } catch (error) {
+      console.error('❌ PrismaAdapter.getSessionAndUser failed:', error);
+      logOAuth('error', '❌ PrismaAdapter.getSessionAndUser failed', { error: error instanceof Error ? error.message : error });
+      throw error;
+    }
   }
 };
 
@@ -160,7 +178,7 @@ export const authOptions: NextAuthOptions = {
     signIn: "/auth/signin",
     error: "/auth/error",
   },
-  debug: true, // Enable debug mode to troubleshoot OAuth issues
+  debug: false, // Disable debug mode for better session compatibility
   secret: process.env.NEXTAUTH_SECRET,
   providers: finalProviders,
   session: { 
@@ -168,35 +186,18 @@ export const authOptions: NextAuthOptions = {
     maxAge: 7 * 24 * 60 * 60, // 7 days
     updateAge: 24 * 60 * 60,  // 24 hours
   },
-  cookies: {
-    sessionToken: {
-      name: `__Secure-next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production'
-      }
-    },
-    callbackUrl: {
-      name: `__Secure-next-auth.callback-url`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production'
-      }
-    },
-    csrfToken: {
-      name: `__Host-next-auth.csrf-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production'
-      }
-    }
-  },
+  // Remove custom cookies to use NextAuth defaults for better compatibility
+  // cookies: {
+  //   sessionToken: {
+  //     name: `__Secure-next-auth.session-token`,
+  //     options: {
+  //       httpOnly: true,
+  //       sameSite: 'lax',  
+  //       path: '/',
+  //       secure: process.env.NODE_ENV === 'production'
+  //     }
+  //   }
+  // },
   events: {
     async signIn({ user, account, profile }) {
       console.log('🔐 OAuth callback reached', {
