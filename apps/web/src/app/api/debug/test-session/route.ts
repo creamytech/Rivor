@@ -10,15 +10,20 @@ export async function GET(req: NextRequest) {
     // Test server-side session retrieval  
     const session = await auth();
     
+    // Check cookies - get all auth-related cookies
+    const cookieHeader = req.headers.get('cookie') || '';
+    const allCookies = cookieHeader.split(';').map(c => c.trim()).filter(c => c.includes('auth'));
+    
+    const sessionToken = cookieHeader
+      .split(';')
+      .find(cookie => cookie.trim().startsWith('__Secure-next-auth.session-token=') || 
+                     cookie.trim().startsWith('next-auth.session-token=') ||
+                     cookie.trim().startsWith('__Host-next-auth.session-token='))
+      ?.split('=')[1];
+      
     // If we have a cookie but no server session, it means there's a mismatch
     // Check if we can manually retrieve the session from the database
     let manualSessionCheck: any = null;
-    const cookies = req.headers.get('cookie') || '';
-    const sessionToken = cookies
-      .split(';')
-      .find(cookie => cookie.trim().startsWith('__Secure-next-auth.session-token='))
-      ?.split('=')[1];
-      
     if (sessionToken && !session) {
       try {
         manualSessionCheck = await prisma.session.findUnique({
@@ -36,17 +41,6 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
       take: 5
     });
-    
-    // Check cookies - get all auth-related cookies
-    const cookies = req.headers.get('cookie') || '';
-    const allCookies = cookies.split(';').map(c => c.trim()).filter(c => c.includes('auth'));
-    
-    const sessionToken = cookies
-      .split(';')
-      .find(cookie => cookie.trim().startsWith('__Secure-next-auth.session-token=') || 
-                     cookie.trim().startsWith('next-auth.session-token=') ||
-                     cookie.trim().startsWith('__Host-next-auth.session-token='))
-      ?.split('=')[1];
     
     const result = {
       serverSession: {
