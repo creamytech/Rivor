@@ -255,7 +255,9 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
             Subject: {thread.subject} | Participants: {thread.participants?.length || 0} | 
             First Message: {thread.messages?.[0]?.fromEmail || 'N/A'} | 
             Body Text: {thread.messages?.[0]?.bodyText ? 'YES' : 'NO'} | 
-            Body HTML: {thread.messages?.[0]?.bodyHtml ? 'YES' : 'NO'}
+            Body HTML: {thread.messages?.[0]?.bodyHtml ? 'YES' : 'NO'} |
+            Expanded Messages: {Array.from(expandedMessages).join(', ') || 'NONE'} |
+            Latest Message ID: {thread.messages?.[thread.messages.length - 1]?.id || 'N/A'}
           </div>
         )}
       </div>
@@ -409,6 +411,11 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
                   )}
                 </div>
 
+                {/* Debug message expansion */}
+                <div className="bg-blue-500 text-white p-1 text-xs">
+                  Msg {index}: isExpanded={isExpanded.toString()} | isLatest={isLatest.toString()} | shouldShow={(isExpanded || isLatest).toString()}
+                </div>
+                
                 {/* Message Content */}
                 <AnimatePresence>
                   {(isExpanded || isLatest) && (
