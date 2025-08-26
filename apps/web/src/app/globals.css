@@ -3756,8 +3756,6 @@ body:has(.glass-modal[data-state="open"]) * {
   z-index: 999999 !important;
   filter: none !important;
 }
-  z-index: 10001 !important;
-}
 
 /* Force all portal content to stay on top */
 [data-radix-portal] * {
