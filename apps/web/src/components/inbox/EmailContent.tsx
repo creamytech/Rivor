@@ -293,10 +293,10 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
     <div className="flex-1 flex flex-col">
       
       {/* Thread Header */}
-      <div className={`p-6 border-b ${theme === 'black' ? 'border-white/10' : 'border-black/10'}`}>
+      <div className={`p-4 border-b ${theme === 'black' ? 'border-white/10' : 'border-black/10'}`}>
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
-            <h1 className={`text-2xl font-bold ${theme === 'black' ? 'text-white' : 'text-black'} mb-2`}>
+            <h1 className={`text-xl font-bold ${theme === 'black' ? 'text-white' : 'text-black'} mb-2`}>
               {thread.subject}
             </h1>
             <div className="flex items-center gap-4 text-sm">
@@ -360,7 +360,7 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
 
       {/* Messages */}
       <ScrollArea className="flex-1">
-        <div className="p-6 space-y-4">
+        <div className="p-4 space-y-3">
           {thread.messages.map((message, index) => {
             const isExpanded = expandedMessages.has(message.id);
             const isLatest = index === thread.messages.length - 1;
@@ -537,13 +537,14 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
                                     color: 'black',
                                     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                                     lineHeight: '1.8',
-                                    minHeight: '200px',
-                                    padding: '32px',
+                                    minHeight: '400px',
+                                    padding: '40px',
                                     fontSize: '16px',
                                     border: theme === 'black' ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)',
                                     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
                                     width: '100%',
-                                    maxWidth: 'none'
+                                    maxWidth: 'none',
+                                    minWidth: '600px'
                                   }}
                                 />
                               )}

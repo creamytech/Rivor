@@ -854,9 +854,9 @@ export default function InboxPage() {
 
           {/* Main Content */}
           <div className="flex-1 flex overflow-hidden">
-            {/* Thread List Panel */}
+            {/* Thread List Panel - Made narrower */}
             <motion.div 
-              className={`w-96 border-r ${theme === 'black' ? 'border-white/10' : 'border-black/10'} flex flex-col`}
+              className={`w-80 border-r ${theme === 'black' ? 'border-white/10' : 'border-black/10'} flex flex-col`}
               style={{
                 background: theme === 'black' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.2)',
                 backdropFilter: 'blur(20px) saturate(1.3)',
@@ -883,7 +883,7 @@ export default function InboxPage() {
                       return (
                         <motion.div
                           key={thread.id}
-                          className={`p-4 border-b ${theme === 'black' ? 'border-white/5 hover:bg-white/5' : 'border-black/5 hover:bg-black/5'} cursor-pointer transition-all duration-300 ${
+                          className={`p-3 border-b ${theme === 'black' ? 'border-white/5 hover:bg-white/5' : 'border-black/5 hover:bg-black/5'} cursor-pointer transition-all duration-300 ${
                             activeThread?.id === thread.id ? (theme === 'black' ? 'bg-white/10' : 'bg-black/10') : ''
                           } ${analysis?.urgency === 'critical' || (analysis?.leadScore >= 90) ? 'ring-1 ring-red-400/50' : ''}`}
                           onClick={() => handleThreadSelect(thread)}
@@ -909,8 +909,8 @@ export default function InboxPage() {
 
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-1">
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <div className={`font-medium ${theme === 'black' ? 'text-white' : 'text-black'} truncate`}>
+                                <div className="flex items-center gap-1 flex-1 min-w-0">
+                                  <div className={`text-sm font-medium ${theme === 'black' ? 'text-white' : 'text-black'} truncate`}>
                                     {thread.participants[0]?.name || thread.participants[0]?.email || 'Unknown'}
                                   </div>
                                   {analysis && getUrgencyIndicator(analysis.urgency, analysis.leadScore)}
@@ -939,11 +939,11 @@ export default function InboxPage() {
                                 </div>
                               )}
 
-                              <div className={`text-sm font-medium ${theme === 'black' ? 'text-white/90' : 'text-black/90'} truncate mb-1`}>
+                              <div className={`text-xs font-medium ${theme === 'black' ? 'text-white/90' : 'text-black/90'} truncate mb-1`}>
                                 {thread.subject}
                               </div>
 
-                              <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'} truncate mb-2`}>
+                              <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'} truncate mb-1 line-clamp-2`}>
                                 {analysis?.summary || thread.snippet}
                               </div>
 
