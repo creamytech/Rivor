@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from "next-auth/react";
+// Temporarily use minimal auth config
+// import { auth } from '@/server/auth-minimal';
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
 import AppShell from "@/components/app/AppShell";
