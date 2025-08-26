@@ -417,14 +417,8 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
                 </div>
                 
                 {/* Message Content */}
-                <AnimatePresence>
-                  {(isExpanded || isLatest) && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
+                {(isExpanded || isLatest) && (
+                  <div>
                       <Separator className={theme === 'black' ? 'bg-white/10' : 'bg-black/10'} />
                       <div className="p-4">
                         {/* Message Recipients */}
@@ -476,9 +470,8 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
                           )}
                         </div>
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                  </div>
+                )}
               </motion.div>
             );
           })}
