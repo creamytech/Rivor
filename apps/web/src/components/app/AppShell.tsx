@@ -129,9 +129,12 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       setSearchLoading(true);
       try {
         // Search across multiple endpoints
-        const [contactsRes, dealsRes] = await Promise.all([
+        const [contactsRes, dealsRes, tasksRes, eventsRes, emailsRes] = await Promise.all([
           fetch(`/api/contacts?search=${encodeURIComponent(searchQuery)}`),
-          fetch(`/api/pipeline/stages?search=${encodeURIComponent(searchQuery)}`)
+          fetch(`/api/pipeline/stages?search=${encodeURIComponent(searchQuery)}`),
+          fetch(`/api/tasks?search=${encodeURIComponent(searchQuery)}`),
+          fetch(`/api/calendar/events?search=${encodeURIComponent(searchQuery)}`),
+          fetch(`/api/inbox/search?q=${encodeURIComponent(searchQuery)}`)
         ]);
 
         const results = [];
@@ -163,6 +166,51 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               subtitle: `Deal • $${deal.dealValue?.toLocaleString() || '0'}`,
               icon: 'TrendingUp',
               href: `/app/pipeline?deal=${deal.id}`
+            });
+          });
+        }
+
+        if (tasksRes.ok) {
+          const tasksData = await tasksRes.json();
+          const tasks = tasksData.tasks || tasksData || [];
+          tasks.slice(0, 3).forEach((task: any) => {
+            results.push({
+              id: `task-${task.id}`,
+              type: 'task',
+              title: task.title || task.name,
+              subtitle: `Task • ${task.status || 'Pending'}`,
+              icon: 'CheckSquare',
+              href: `/app/tasks?task=${task.id}`
+            });
+          });
+        }
+
+        if (eventsRes.ok) {
+          const eventsData = await eventsRes.json();
+          const events = eventsData.events || eventsData || [];
+          events.slice(0, 3).forEach((event: any) => {
+            results.push({
+              id: `event-${event.id}`,
+              type: 'event',
+              title: event.title || event.summary,
+              subtitle: `Event • ${event.start ? new Date(event.start).toLocaleDateString() : 'No date'}`,
+              icon: 'Calendar',
+              href: `/app/calendar?event=${event.id}`
+            });
+          });
+        }
+
+        if (emailsRes.ok) {
+          const emailsData = await emailsRes.json();
+          const emails = emailsData.threads || emailsData || [];
+          emails.slice(0, 3).forEach((email: any) => {
+            results.push({
+              id: `email-${email.id}`,
+              type: 'email',
+              title: email.subject || 'No subject',
+              subtitle: `Email • From ${email.from || 'Unknown'}`,
+              icon: 'Mail',
+              href: `/app/inbox?thread=${email.id}`
             });
           });
         }
@@ -481,7 +529,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                   <div className="glass-search-pill-enhanced">
                     <input
                       type="text"
-                      placeholder="Search everything"
+                      placeholder="Search everything..."
                       aria-label="Global search"
                       value={searchQuery}
                       onChange={(e) => {
@@ -675,7 +723,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         top: '76px',
         left: '50%',
         transform: 'translateX(-50%)',
-        width: isSidebarCollapsed ? '600px' : '500px',
+        width: '650px',
         maxWidth: '90vw'
       }}>
         <div className="space-y-3">
