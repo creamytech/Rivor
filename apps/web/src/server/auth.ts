@@ -93,100 +93,19 @@ const finalProviders = providers.length > 0 ? providers : [
 
 console.log('🚀 Final providers array length:', finalProviders.length);
 
-// Create a comprehensive logging wrapper around PrismaAdapter to debug what methods are called
-const baseAdapter = PrismaAdapter(prisma);
-const loggingAdapter = {
-  ...baseAdapter,
-  async createUser(user: any) {
-    try {
-      console.log('🔍 PrismaAdapter.createUser called:', user);
-      logOAuth('info', '🔍 PrismaAdapter.createUser called', user);
-      const result = await baseAdapter.createUser!(user);
-      console.log('✅ PrismaAdapter.createUser result:', result);
-      logOAuth('info', '✅ PrismaAdapter.createUser success', { userId: result.id });
-      return result;
-    } catch (error) {
-      console.error('❌ PrismaAdapter.createUser failed:', error);
-      logOAuth('error', '❌ PrismaAdapter.createUser failed', { error: error instanceof Error ? error.message : error });
-      throw error;
-    }
-  },
-  async linkAccount(account: any) {
-    try {
-      console.log('🔍 PrismaAdapter.linkAccount called:', account);
-      logOAuth('info', '🔍 PrismaAdapter.linkAccount called', account);
-      const result = await baseAdapter.linkAccount!(account);
-      console.log('✅ PrismaAdapter.linkAccount result:', result);
-      logOAuth('info', '✅ PrismaAdapter.linkAccount success', { provider: result.provider });
-      return result;
-    } catch (error) {
-      console.error('❌ PrismaAdapter.linkAccount failed:', error);
-      logOAuth('error', '❌ PrismaAdapter.linkAccount failed', { error: error instanceof Error ? error.message : error });
-      throw error;
-    }
-  },
-  async createSession(session: any) {
-    try {
-      console.log('🔍 PrismaAdapter.createSession called:', session);
-      logOAuth('info', '🔍 PrismaAdapter.createSession called', session);
-      const result = await baseAdapter.createSession!(session);
-      console.log('✅ PrismaAdapter.createSession result:', result);
-      logOAuth('info', '✅ PrismaAdapter.createSession success', { sessionId: result.id });
-      return result;
-    } catch (error) {
-      console.error('❌ PrismaAdapter.createSession failed:', error);
-      logOAuth('error', '❌ PrismaAdapter.createSession failed', { error: error instanceof Error ? error.message : error });
-      throw error;
-    }
-  },
-  async getUserByEmail(email: string) {
-    try {
-      console.log('🔍 PrismaAdapter.getUserByEmail called:', email);
-      const result = await baseAdapter.getUserByEmail!(email);
-      console.log('✅ PrismaAdapter.getUserByEmail result:', !!result);
-      logOAuth('info', '🔍 PrismaAdapter.getUserByEmail', { email, found: !!result });
-      return result;
-    } catch (error) {
-      console.error('❌ PrismaAdapter.getUserByEmail failed:', error);
-      logOAuth('error', '❌ PrismaAdapter.getUserByEmail failed', { error: error instanceof Error ? error.message : error });
-      throw error;
-    }
-  },
-  async getSessionAndUser(sessionToken: string) {
-    try {
-      console.log('🔍 PrismaAdapter.getSessionAndUser called:', sessionToken?.substring(0, 20) + '...');
-      const result = await baseAdapter.getSessionAndUser!(sessionToken);
-      console.log('✅ PrismaAdapter.getSessionAndUser result:', !!result);
-      logOAuth('info', '🔍 PrismaAdapter.getSessionAndUser', { 
-        tokenPreview: sessionToken?.substring(0, 20) + '...',
-        found: !!result,
-        hasUser: !!result?.user,
-        hasSession: !!result?.session
-      });
-      return result;
-    } catch (error) {
-      console.error('❌ PrismaAdapter.getSessionAndUser failed:', error);
-      logOAuth('error', '❌ PrismaAdapter.getSessionAndUser failed', { error: error instanceof Error ? error.message : error });
-      throw error;
-    }
-  }
-};
+// Minimal NextAuth configuration for better compatibility
 
 export const authOptions: NextAuthOptions = {
-  adapter: loggingAdapter,
-  pages: {
-    signIn: "/auth/signin",
-    error: "/auth/error",
-  },
-  debug: false, // Disable debug mode for better session compatibility
+  adapter: PrismaAdapter(prisma), // Use standard adapter without logging wrapper
   secret: process.env.NEXTAUTH_SECRET,
   providers: finalProviders,
   session: { 
     strategy: "database",
-    maxAge: 7 * 24 * 60 * 60, // 7 days
-    updateAge: 24 * 60 * 60,  // 24 hours
   },
-  // Let NextAuth handle cookies automatically for better compatibility
+  pages: {
+    signIn: "/auth/signin",
+    error: "/auth/error",
+  },
   events: {
     async signIn({ user, account, profile }) {
       console.log('🔐 OAuth callback reached', {
