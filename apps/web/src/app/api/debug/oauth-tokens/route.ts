@@ -30,14 +30,23 @@ export async function GET(req: NextRequest) {
             providerAccountId: true,
             type: true,
             access_token: true,
-            access_token_enc: true,
             refresh_token: true,
-            refresh_token_enc: true,
             expires_at: true,
             token_type: true,
             scope: true,
             id_token: true,
             session_state: true,
+            createdAt: true,
+            updatedAt: true
+          }
+        },
+        oauthAccounts: {
+          select: {
+            id: true,
+            provider: true,
+            providerId: true,
+            scope: true,
+            expiresAt: true,
             createdAt: true,
             updatedAt: true
           }
@@ -64,7 +73,18 @@ export async function GET(req: NextRequest) {
                     id: true,
                     provider: true,
                     status: true,
-                    externalAccountId: true
+                    externalAccountId: true,
+                    tokenRef: true,
+                    tokenStatus: true
+                  }
+                },
+                secureTokens: {
+                  select: {
+                    id: true,
+                    tokenRef: true,
+                    tokenType: true,
+                    createdAt: true,
+                    updatedAt: true
                   }
                 }
               }
@@ -83,9 +103,13 @@ export async function GET(req: NextRequest) {
       ...account,
       access_token: account.access_token ? `***${account.access_token.slice(-4)}` : null,
       refresh_token: account.refresh_token ? `***${account.refresh_token.slice(-4)}` : null,
-      id_token: account.id_token ? `***${account.id_token.slice(-4)}` : null,
-      access_token_enc: account.access_token_enc ? `[${account.access_token_enc.length} bytes]` : null,
-      refresh_token_enc: account.refresh_token_enc ? `[${account.refresh_token_enc.length} bytes]` : null
+      id_token: account.id_token ? `***${account.id_token.slice(-4)}` : null
+    }));
+
+    const maskedOAuthAccounts = user.oauthAccounts.map(account => ({
+      ...account,
+      accessToken: '[encrypted bytes]',
+      refreshToken: '[encrypted bytes]'
     }));
 
     return NextResponse.json({
@@ -97,8 +121,10 @@ export async function GET(req: NextRequest) {
       },
       orgId,
       accounts: maskedAccounts,
+      oauthAccounts: maskedOAuthAccounts,
       emailAccounts: user.orgMembers[0]?.org?.emailAccounts || [],
       calendarAccounts: user.orgMembers[0]?.org?.calendarAccounts || [],
+      secureTokens: user.orgMembers[0]?.org?.secureTokens || [],
       tokenMapping: {
         explanation: "How email/calendar accounts should map to OAuth accounts",
         emailToOAuth: user.orgMembers[0]?.org?.emailAccounts?.map(email => {
@@ -106,11 +132,22 @@ export async function GET(req: NextRequest) {
             acc.provider === 'google' && 
             acc.providerAccountId === email.externalAccountId
           );
+          const matchingOAuthAccount = user.oauthAccounts.find(acc =>
+            acc.provider === 'google' &&
+            acc.providerId === email.externalAccountId
+          );
+          const secureToken = user.orgMembers[0]?.org?.secureTokens?.find(token => 
+            token.tokenRef === email.tokenRef
+          );
           return {
             emailAccountId: email.id,
             externalAccountId: email.externalAccountId,
-            matchingOAuthAccount: matchingAccount?.id || 'NOT_FOUND',
-            hasEncryptedTokens: !!(matchingAccount?.access_token_enc && matchingAccount?.refresh_token_enc)
+            tokenRef: email.tokenRef,
+            tokenStatus: email.tokenStatus,
+            matchingNextAuthAccount: matchingAccount?.id || 'NOT_FOUND',
+            matchingOAuthAccount: matchingOAuthAccount?.id || 'NOT_FOUND',
+            hasSecureToken: !!secureToken,
+            hasPlainTokens: !!(matchingAccount?.access_token && matchingAccount?.refresh_token)
           };
         }) || [],
         calendarToOAuth: user.orgMembers[0]?.org?.calendarAccounts?.map(calendar => {
@@ -118,11 +155,22 @@ export async function GET(req: NextRequest) {
             acc.provider === 'google' && 
             acc.providerAccountId === calendar.externalAccountId
           );
+          const matchingOAuthAccount = user.oauthAccounts.find(acc =>
+            acc.provider === 'google' &&
+            acc.providerId === calendar.externalAccountId
+          );
+          const secureToken = user.orgMembers[0]?.org?.secureTokens?.find(token => 
+            token.tokenRef === calendar.tokenRef
+          );
           return {
             calendarAccountId: calendar.id,
             externalAccountId: calendar.externalAccountId,
-            matchingOAuthAccount: matchingAccount?.id || 'NOT_FOUND',
-            hasEncryptedTokens: !!(matchingAccount?.access_token_enc && matchingAccount?.refresh_token_enc)
+            tokenRef: calendar.tokenRef,
+            tokenStatus: calendar.tokenStatus,
+            matchingNextAuthAccount: matchingAccount?.id || 'NOT_FOUND',
+            matchingOAuthAccount: matchingOAuthAccount?.id || 'NOT_FOUND',
+            hasSecureToken: !!secureToken,
+            hasPlainTokens: !!(matchingAccount?.access_token && matchingAccount?.refresh_token)
           };
         }) || []
       }

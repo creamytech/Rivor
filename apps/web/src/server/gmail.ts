@@ -152,14 +152,27 @@ export class GmailService {
   }
 
   static async createFromAccount(orgId: string, emailAccountId: string): Promise<GmailService> {
-    // Get OAuth tokens for this account from the Account model
+    // Get OAuth tokens for this account from SecureToken via tokenRef
     const emailAccount = await prisma.emailAccount.findUnique({
       where: { id: emailAccountId },
       include: { 
-        org: true,
+        org: {
+          include: {
+            secureTokens: {
+              where: {
+                tokenRef: { not: null }
+              }
+            }
+          }
+        },
         user: {
           include: {
             accounts: {
+              where: {
+                provider: 'google'
+              }
+            },
+            oauthAccounts: {
               where: {
                 provider: 'google'
               }
@@ -173,40 +186,103 @@ export class GmailService {
       throw new Error(`Email account ${emailAccountId} not found`);
     }
 
-    // Find the Google OAuth account for this user
+    let accessToken: string;
+    let refreshToken: string | undefined;
+
+    // Try to get tokens from SecureToken first (new encrypted storage)
+    if (emailAccount.tokenRef) {
+      const secureToken = emailAccount.org.secureTokens.find(token => 
+        token.tokenRef === emailAccount.tokenRef
+      );
+      
+      if (secureToken && secureToken.encryptedTokenBlob) {
+        try {
+          const { decryptForOrg } = await import('@/server/secure-tokens');
+          const tokenBytes = await decryptForOrg(
+            orgId, 
+            secureToken.encryptedTokenBlob, 
+            `oauth:google:access`
+          );
+          const tokenData = JSON.parse(new TextDecoder().decode(tokenBytes));
+          accessToken = tokenData.access_token;
+          refreshToken = tokenData.refresh_token;
+          
+          logger.info('Retrieved tokens from SecureToken storage', {
+            emailAccountId,
+            tokenRef: emailAccount.tokenRef
+          });
+          
+          return new GmailService(accessToken, refreshToken, orgId, emailAccountId);
+        } catch (secureTokenError) {
+          logger.warn('Failed to decrypt from SecureToken, trying fallback', {
+            emailAccountId,
+            tokenRef: emailAccount.tokenRef,
+            error: secureTokenError instanceof Error ? secureTokenError.message : String(secureTokenError)
+          });
+        }
+      }
+    }
+
+    // Fallback: Try OAuthAccount (encrypted bytes)
+    const oauthAccount = emailAccount.user.oauthAccounts.find(acc =>
+      acc.provider === 'google' && 
+      acc.providerId === emailAccount.externalAccountId
+    );
+
+    if (oauthAccount) {
+      try {
+        const { decryptForOrg } = await import('@/server/secure-tokens');
+        
+        const accessTokenBytes = await decryptForOrg(
+          orgId, 
+          oauthAccount.accessToken, 
+          `oauth:google:access`
+        );
+        accessToken = new TextDecoder().decode(accessTokenBytes);
+
+        const refreshTokenBytes = await decryptForOrg(
+          orgId, 
+          oauthAccount.refreshToken, 
+          `oauth:google:refresh`
+        );
+        refreshToken = new TextDecoder().decode(refreshTokenBytes);
+        
+        logger.info('Retrieved tokens from OAuthAccount storage', {
+          emailAccountId,
+          oauthAccountId: oauthAccount.id
+        });
+        
+        return new GmailService(accessToken, refreshToken, orgId, emailAccountId);
+      } catch (oauthError) {
+        logger.warn('Failed to decrypt from OAuthAccount, trying plain tokens', {
+          emailAccountId,
+          oauthAccountId: oauthAccount.id,
+          error: oauthError instanceof Error ? oauthError.message : String(oauthError)
+        });
+      }
+    }
+
+    // Last fallback: Try plain tokens from Account (NextAuth)
     const googleAccount = emailAccount.user.accounts.find(acc => 
       acc.provider === 'google' && 
       acc.providerAccountId === emailAccount.externalAccountId
     );
 
-    if (!googleAccount) {
-      throw new Error(`No Google OAuth account found for email account ${emailAccountId}`);
-    }
-
-    // Decrypt access token from Account model
-    if (!googleAccount.access_token_enc) {
-      throw new Error(`No encrypted access token found for Google account ${emailAccountId}`);
-    }
-
-    const accessTokenBytes = await decryptForOrg(
-      orgId, 
-      googleAccount.access_token_enc, 
-      `oauth:${googleAccount.provider}:access`
-    );
-    const accessToken = new TextDecoder().decode(accessTokenBytes);
-
-    // Decrypt refresh token (optional)
-    let refreshToken: string | undefined;
-    if (googleAccount.refresh_token_enc) {
-      const refreshTokenBytes = await decryptForOrg(
+    if (googleAccount?.access_token) {
+      logger.info('Using plain tokens from Account storage (NextAuth)', {
+        emailAccountId,
+        accountId: googleAccount.id
+      });
+      
+      return new GmailService(
+        googleAccount.access_token, 
+        googleAccount.refresh_token || undefined, 
         orgId, 
-        googleAccount.refresh_token_enc, 
-        `oauth:${googleAccount.provider}:refresh`
+        emailAccountId
       );
-      refreshToken = new TextDecoder().decode(refreshTokenBytes);
     }
 
-    return new GmailService(accessToken, refreshToken, orgId, emailAccountId);
+    throw new Error(`No valid OAuth tokens found for email account ${emailAccountId}. Checked SecureToken (tokenRef: ${emailAccount.tokenRef}), OAuthAccount, and Account storage.`);
   }
 
   async getGmail() {
