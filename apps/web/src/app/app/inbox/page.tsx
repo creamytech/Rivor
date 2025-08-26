@@ -131,9 +131,24 @@ export default function InboxPage() {
       setThreads(data.threads);
       setPagination(data.pagination);
       
-      // Fetch AI analyses for threads
+      // Fetch AI analyses for threads and auto-analyze if missing
       if (data.threads.length > 0) {
-        fetchAIAnalyses(data.threads.map(t => t.id));
+        await fetchAIAnalyses(data.threads.map(t => t.id));
+        
+        // Auto-analyze threads that don't have analysis yet
+        const threadsWithoutAnalysis = data.threads.filter(t => !threadAnalyses.has(t.id));
+        if (threadsWithoutAnalysis.length > 0) {
+          console.log(`Auto-analyzing ${threadsWithoutAnalysis.length} threads without analysis`);
+          for (const thread of threadsWithoutAnalysis.slice(0, 3)) { // Limit to 3 to avoid rate limits
+            try {
+              await analyzeThread(thread.id);
+              // Small delay to avoid overwhelming the API
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            } catch (error) {
+              console.error(`Failed to auto-analyze thread ${thread.id}:`, error);
+            }
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching threads:', error);
@@ -327,14 +342,21 @@ export default function InboxPage() {
   // Fetch AI analyses for threads
   const fetchAIAnalyses = async (threadIds: string[]) => {
     try {
+      console.log('Fetching AI analyses for threads:', threadIds);
       const response = await fetch(`/api/inbox/ai-analysis?threadIds=${threadIds.join(',')}`);
       if (response.ok) {
         const data = await response.json();
+        console.log('AI analyses response:', data);
         const newAnalyses = new Map(threadAnalyses);
+        const analysisCount = data.analyses?.length || 0;
         data.analyses?.forEach((analysis: any) => {
           newAnalyses.set(analysis.threadId, analysis);
+          console.log(`Analysis for thread ${analysis.threadId}:`, analysis);
         });
         setThreadAnalyses(newAnalyses);
+        console.log(`Loaded ${analysisCount} analyses, total now: ${newAnalyses.size}`);
+      } else {
+        console.error('Failed to fetch AI analyses:', response.status, await response.text());
       }
     } catch (error) {
       console.error('Error fetching AI analyses:', error);
@@ -345,10 +367,45 @@ export default function InboxPage() {
   const analyzeThread = async (threadId: string) => {
     try {
       setAiAnalyzing(threadId);
+      
+      // First get thread details to extract email content
+      const threadResponse = await fetch(`/api/inbox/threads/${threadId}`);
+      if (!threadResponse.ok) {
+        throw new Error('Failed to fetch thread details');
+      }
+      
+      const threadData = await threadResponse.json();
+      if (!threadData.messages || threadData.messages.length === 0) {
+        throw new Error('No messages found in thread');
+      }
+      
+      // Use the latest message for analysis
+      const latestMessage = threadData.messages[threadData.messages.length - 1];
+      
+      // Extract text content from HTML if available
+      const extractTextFromHtml = (html: string) => {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        const styleElements = tempDiv.querySelectorAll('style, script');
+        styleElements.forEach(el => el.remove());
+        return tempDiv.textContent || tempDiv.innerText || '';
+      };
+      
+      const emailContent = latestMessage.htmlBody 
+        ? extractTextFromHtml(latestMessage.htmlBody)
+        : latestMessage.textBody || latestMessage.subject;
+      
       const response = await fetch('/api/inbox/ai-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ threadId, force: true })
+        body: JSON.stringify({ 
+          emailId: latestMessage.id,
+          threadId: threadId,
+          fromName: latestMessage.from?.name || 'Unknown',
+          fromEmail: latestMessage.from?.email || 'unknown@example.com',
+          subject: latestMessage.subject || threadData.subject,
+          body: emailContent
+        })
       });
 
       if (!response.ok) {
@@ -356,14 +413,14 @@ export default function InboxPage() {
       }
 
       const data = await response.json();
-      if (data.success && data.results[0]?.analysis) {
+      if (data.analysis) {
         const newAnalyses = new Map(threadAnalyses);
-        newAnalyses.set(threadId, data.results[0].analysis);
+        newAnalyses.set(threadId, data.analysis);
         setThreadAnalyses(newAnalyses);
 
         toast({
           title: "AI Analysis Complete",
-          description: `Category: ${data.results[0].analysis.category} | Lead Score: ${data.results[0].analysis.leadScore}/100`,
+          description: `Category: ${data.analysis.category} | Lead Score: ${data.analysis.leadScore}/100`,
         });
       }
     } catch (error) {
@@ -383,22 +440,43 @@ export default function InboxPage() {
     try {
       setActionLoading(`ai-reply-${threadId}`);
       
-      // Get thread details for proper context
-      const thread = activeThread || threads.find(t => t.id === threadId);
-      if (!thread) {
-        throw new Error('Thread not found');
+      // First get thread details to extract email content
+      const threadResponse = await fetch(`/api/inbox/threads/${threadId}`);
+      if (!threadResponse.ok) {
+        throw new Error('Failed to fetch thread details');
       }
+      
+      const threadData = await threadResponse.json();
+      if (!threadData.messages || threadData.messages.length === 0) {
+        throw new Error('No messages found in thread');
+      }
+      
+      // Use the latest message for reply generation
+      const latestMessage = threadData.messages[threadData.messages.length - 1];
+      
+      // Extract text content from HTML if available
+      const extractTextFromHtml = (html: string) => {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        const styleElements = tempDiv.querySelectorAll('style, script');
+        styleElements.forEach(el => el.remove());
+        return tempDiv.textContent || tempDiv.innerText || '';
+      };
+      
+      const emailContent = latestMessage.htmlBody 
+        ? extractTextFromHtml(latestMessage.htmlBody)
+        : latestMessage.textBody || latestMessage.subject;
 
       const response = await fetch('/api/inbox/ai-reply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          emailId: threadId,
+          emailId: latestMessage.id,
           threadId,
-          fromName: thread.participants[0]?.name || 'Unknown',
-          fromEmail: thread.participants[0]?.email || 'unknown@example.com',
-          subject: thread.subject,
-          body: thread.snippet || 'No preview available',
+          fromName: latestMessage.from?.name || 'Unknown',
+          fromEmail: latestMessage.from?.email || 'unknown@example.com',
+          subject: latestMessage.subject || threadData.subject,
+          body: emailContent,
           agentName: 'Real Estate Agent',
           brokerage: 'Rivor Realty'
         })
@@ -616,15 +694,23 @@ export default function InboxPage() {
   // Get category badge color
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'hot_lead': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      case 'showing_request': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'price_inquiry': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'seller_lead': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
-      case 'buyer_lead': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
-      case 'follow_up_required': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'contract_legal': return 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30';
-      case 'marketing': return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+      case 'hot-lead': return 'bg-red-600/30 text-red-200 border-red-400/50';
+      case 'showing-request': return 'bg-blue-600/30 text-blue-200 border-blue-400/50';
+      case 'price-inquiry': return 'bg-green-600/30 text-green-200 border-green-400/50';
+      case 'seller-lead': return 'bg-purple-600/30 text-purple-200 border-purple-400/50';
+      case 'buyer-lead': return 'bg-orange-600/30 text-orange-200 border-orange-400/50';
+      case 'follow-up': return 'bg-yellow-600/30 text-yellow-200 border-yellow-400/50';
+      case 'contract': return 'bg-indigo-600/30 text-indigo-200 border-indigo-400/50';
+      case 'marketing': return 'bg-gray-600/30 text-gray-200 border-gray-400/50';
+      // Handle legacy underscore versions
+      case 'hot_lead': return 'bg-red-600/30 text-red-200 border-red-400/50';
+      case 'showing_request': return 'bg-blue-600/30 text-blue-200 border-blue-400/50';
+      case 'price_inquiry': return 'bg-green-600/30 text-green-200 border-green-400/50';
+      case 'seller_lead': return 'bg-purple-600/30 text-purple-200 border-purple-400/50';
+      case 'buyer_lead': return 'bg-orange-600/30 text-orange-200 border-orange-400/50';
+      case 'follow_up_required': return 'bg-yellow-600/30 text-yellow-200 border-yellow-400/50';
+      case 'contract_legal': return 'bg-indigo-600/30 text-indigo-200 border-indigo-400/50';
+      default: return 'bg-gray-600/30 text-gray-200 border-gray-400/50';
     }
   };
 
