@@ -64,7 +64,13 @@ export default function PrivacySection() {
               className="text-center"
             >
               <div className="mb-6 flex justify-center">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-green-500/20 to-green-400/20 flex items-center justify-center border border-green-500/20">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{
+                  background: 'rgba(34, 197, 94, 0.12)',
+                  backdropFilter: 'blur(20px) saturate(1.3)',
+                  WebkitBackdropFilter: 'blur(20px) saturate(1.3)',
+                  border: '1px solid rgba(34, 197, 94, 0.2)',
+                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 4px 20px rgba(34, 197, 94, 0.1)'
+                }}>
                   <feature.icon className="h-6 w-6 text-green-400" />
                 </div>
               </div>

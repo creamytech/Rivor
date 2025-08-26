@@ -626,9 +626,9 @@ export default function InboxPage() {
 
         {/* Main Content */}
         <div className="flex-1 px-4 pb-4 main-content-area">
-          <div className="flex flex-col xl:flex-row gap-4 h-full min-h-[600px]">
+          <div className="flex flex-col xl:flex-row gap-4 h-full min-h-[600px] max-h-[calc(100vh-200px)]">
             {/* Email List */}
-            <div className="xl:w-[42%] xl:flex-shrink-0 glass-card flex flex-col min-h-0">
+            <div className="xl:w-[42%] xl:flex-shrink-0 glass-card flex flex-col min-h-0" style={{ height: 'calc(100vh - 200px)', maxHeight: '800px' }}>
               {/* Selection Controls */}
               {selectedEmails.length > 0 && (
                 <div className="p-4 border-b" style={{ borderColor: 'var(--glass-border)' }}>
@@ -769,7 +769,7 @@ export default function InboxPage() {
             </div>
 
             {/* Email Detail View */}
-            <div className="xl:w-[58%] xl:flex-shrink-0 glass-card flex flex-col min-h-0 overflow-hidden">
+            <div className="xl:w-[58%] xl:flex-shrink-0 glass-card flex flex-col min-h-0 overflow-hidden" style={{ height: 'calc(100vh - 200px)', maxHeight: '800px' }}>
               {activeEmail ? (
                 <div className="h-full flex flex-col">
                   {/* Email Header */}
@@ -856,7 +856,7 @@ export default function InboxPage() {
                   </div>
                   
                   {/* Email Content */}
-                  <div className="flex-1 p-6 overflow-y-auto min-h-0 max-h-full" style={{ height: '400px', flexGrow: 0, flexShrink: 0 }}>
+                  <div className="flex-1 p-6 overflow-y-auto min-h-0">
                     {loadingThread ? (
                       <div className="flex items-center justify-center h-32">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>

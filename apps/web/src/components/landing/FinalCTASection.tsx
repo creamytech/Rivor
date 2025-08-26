@@ -73,7 +73,13 @@ export default function FinalCTASection({ onWaitlistClick }: FinalCTASectionProp
             >
               {stats.map((stat, index) => (
                 <div key={index} className="text-center">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-r from-[#1E5EFF]/20 to-[#16C4D9]/20 border border-white/10 mb-4">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl mb-4" style={{
+                    background: 'rgba(30, 94, 255, 0.15)',
+                    backdropFilter: 'blur(20px) saturate(1.3)',
+                    WebkitBackdropFilter: 'blur(20px) saturate(1.3)',
+                    border: '1px solid rgba(30, 94, 255, 0.2)',
+                    boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 4px 20px rgba(30, 94, 255, 0.15)'
+                  }}>
                     <stat.icon className="h-6 w-6 text-[#16C4D9]" />
                   </div>
                   <div className="text-2xl md:text-3xl font-bold text-[#EAF2FF] mb-2">
@@ -96,8 +102,9 @@ export default function FinalCTASection({ onWaitlistClick }: FinalCTASectionProp
             >
               <Button
                 onClick={onWaitlistClick}
+                variant="liquid"
                 size="lg"
-                className="rounded-xl px-4 sm:px-6 md:px-8 py-3 sm:py-4 font-medium text-slate-900 bg-gradient-to-r from-[#1E5EFF] via-[#16C4D9] to-[#3AF6C3] hover:opacity-95 focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-[#0E1420] transition-all text-sm sm:text-base md:text-lg group whitespace-nowrap"
+                className="text-sm sm:text-base md:text-lg group whitespace-nowrap"
               >
                 Join the Beta Waitlist
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />

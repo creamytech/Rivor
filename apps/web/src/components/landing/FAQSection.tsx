@@ -78,8 +78,13 @@ export default function FAQSection() {
             >
               <button
                 onClick={() => toggleFAQ(index)}
-                className="w-full px-6 py-6 text-left flex items-center justify-between hover:bg-white/5 transition-colors focus:outline-none focus:bg-white/5"
+                className="w-full px-6 py-6 text-left flex items-center justify-between transition-all duration-300 focus:outline-none liquid-glass-hover"
                 aria-expanded={openIndex === index}
+                style={{
+                  background: openIndex === index ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+                  backdropFilter: openIndex === index ? 'blur(20px) saturate(1.3)' : '',
+                  WebkitBackdropFilter: openIndex === index ? 'blur(20px) saturate(1.3)' : ''
+                }}
               >
                 <span className="text-lg font-medium text-[#EAF2FF] pr-4">
                   {faq.question}

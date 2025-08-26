@@ -545,6 +545,64 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                     />
                   </div>
                   
+                  {/* Search Results Dropdown */}
+                  <div className={`glass-search-results ${showSearchResults ? 'visible' : ''}`} style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: '0',
+                    right: '0',
+                    marginTop: '8px',
+                    zIndex: 1000
+                  }}>
+                    <div className="space-y-3">
+                      {searchLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="glass-spinner w-5 h-5"></div>
+                        </div>
+                      ) : searchResults.length > 0 ? (
+                        searchResults.map((result: any) => {
+                          const IconComponent = result.icon === 'User' ? User :
+                                               result.icon === 'TrendingUp' ? TrendingUp :
+                                               result.icon === 'CheckSquare' ? CheckSquare :
+                                               result.icon === 'Calendar' ? Calendar :
+                                               result.icon === 'Mail' ? Mail : Search;
+                          
+                          return (
+                            <Link
+                              key={result.id}
+                              href={result.href}
+                              className="glass-search-result-item group"
+                              onClick={() => {
+                                setShowSearchResults(false);
+                                setSearchQuery('');
+                              }}
+                            >
+                              <div className="flex items-center gap-4">
+                                <div className="glass-icon-container">
+                                  <IconComponent className="h-4 w-4" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-semibold truncate" style={{ color: 'var(--glass-text)' }}>
+                                    {result.title}
+                                  </div>
+                                  <div className="text-sm truncate" style={{ color: 'var(--glass-text-muted)' }}>
+                                    {result.subtitle}
+                                  </div>
+                                </div>
+                              </div>
+                            </Link>
+                          );
+                        })
+                      ) : searchQuery.length > 1 ? (
+                        <div className="text-center py-8">
+                          <div className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                            No results found for "{searchQuery}"
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                  
                 </div>
               </div>
 
@@ -717,54 +775,6 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         </div>
       </div>
 
-      {/* Search Results Dropdown */}
-      <div className={`glass-search-results ${showSearchResults ? 'visible' : ''}`} style={{
-        position: 'fixed',
-        top: '76px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: '650px',
-        maxWidth: '90vw'
-      }}>
-        <div className="space-y-3">
-          {searchLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="glass-spinner w-5 h-5"></div>
-            </div>
-          ) : searchResults.length > 0 ? (
-            searchResults.map((result: any) => {
-              const IconComponent = result.icon === 'User' ? User : 
-                                 result.icon === 'TrendingUp' ? TrendingUp :
-                                 result.icon === 'Building2' ? Building2 : MessageSquare;
-              
-              return (
-                <Link 
-                  key={result.id} 
-                  href={result.href}
-                  className="flex items-center gap-3 p-3 rounded-lg glass-hover-pulse"
-                  onClick={() => setShowSearchResults(false)}
-                >
-                  <IconComponent className="h-4 w-4" style={{ color: 'var(--glass-text-muted)' }} />
-                  <div>
-                    <div className="font-medium text-sm" style={{ color: 'var(--glass-text)' }}>{result.title}</div>
-                    <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>{result.subtitle}</div>
-                  </div>
-                </Link>
-              );
-            })
-          ) : searchQuery.length > 0 ? (
-            <div className="text-center py-8">
-              <Search className="h-8 w-8 mx-auto mb-2 opacity-50" style={{ color: 'var(--glass-text-muted)' }} />
-              <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>No results found</p>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Search className="h-8 w-8 mx-auto mb-2 opacity-50" style={{ color: 'var(--glass-text-muted)' }} />
-              <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>Start typing to search...</p>
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Notification Dropdown */}
       <div className={`glass-notification-preview ${showNotifications ? 'visible' : ''}`} style={{

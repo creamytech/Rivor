@@ -77,13 +77,27 @@ export default function HowItWorksSection() {
 
               <div className="relative z-10 text-center">
                 {/* Step number */}
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-[#1E5EFF] via-[#16C4D9] to-[#3AF6C3] mb-6">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-6" style={{
+                  background: 'rgba(30, 94, 255, 0.2)',
+                  backdropFilter: 'blur(20px) saturate(1.3)',
+                  WebkitBackdropFilter: 'blur(20px) saturate(1.3)',
+                  border: '1px solid rgba(30, 94, 255, 0.3)',
+                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 8px 32px rgba(30, 94, 255, 0.15)'
+                }}>
                   <span className="text-lg font-bold text-white">{step.number}</span>
                 </div>
 
                 {/* Icon */}
                 <div className="mb-4">
-                  <step.icon className="h-8 w-8 text-[#16C4D9] mx-auto" />
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl mx-auto" style={{
+                    background: 'rgba(22, 196, 217, 0.1)',
+                    backdropFilter: 'blur(20px) saturate(1.3)',
+                    WebkitBackdropFilter: 'blur(20px) saturate(1.3)',
+                    border: '1px solid rgba(22, 196, 217, 0.15)',
+                    boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 4px 20px rgba(22, 196, 217, 0.1)'
+                  }}>
+                    <step.icon className="h-6 w-6 text-[#16C4D9]" />
+                  </div>
                 </div>
 
                 {/* Content */}

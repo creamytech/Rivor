@@ -142,13 +142,31 @@ export default function FeaturePanels({ onWaitlistClick }: FeaturePanelsProps) {
               
               {/* Quick actions */}
               <div className="flex gap-2">
-                <button className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-xs rounded hover:opacity-90">
+                <button className="liquid-glass-button px-3 py-1.5 text-white text-xs rounded transition-all duration-300 hover:scale-105" style={{
+                  background: 'rgba(59, 130, 246, 0.2)',
+                  backdropFilter: 'blur(20px) saturate(1.3)',
+                  WebkitBackdropFilter: 'blur(20px) saturate(1.3)',
+                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 4px 20px rgba(59, 130, 246, 0.15)'
+                }}>
                   Send Email
                 </button>
-                <button className="px-3 py-1.5 bg-white/10 text-white/80 text-xs rounded hover:bg-white/20">
+                <button className="liquid-glass-button px-3 py-1.5 text-white/80 text-xs rounded transition-all duration-300 hover:scale-105" style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  backdropFilter: 'blur(20px) saturate(1.3)',
+                  WebkitBackdropFilter: 'blur(20px) saturate(1.3)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 4px 20px rgba(255, 255, 255, 0.05)'
+                }}>
                   Schedule Showing
                 </button>
-                <button className="px-3 py-1.5 bg-white/10 text-white/80 text-xs rounded hover:bg-white/20">
+                <button className="liquid-glass-button px-3 py-1.5 text-white/80 text-xs rounded transition-all duration-300 hover:scale-105" style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  backdropFilter: 'blur(20px) saturate(1.3)',
+                  WebkitBackdropFilter: 'blur(20px) saturate(1.3)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 4px 20px rgba(255, 255, 255, 0.05)'
+                }}>
                   Create Task
                 </button>
               </div>

@@ -57,7 +57,13 @@ export default function WhyRivorSection() {
               <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-8 h-full transition-all duration-300 hover:border-white/20 hover:bg-white/10 hover:shadow-2xl">
                 {/* Icon */}
                 <div className="mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-[#1E5EFF] via-[#16C4D9] to-[#3AF6C3] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300" style={{
+                    background: 'rgba(30, 94, 255, 0.15)',
+                    backdropFilter: 'blur(20px) saturate(1.3)',
+                    WebkitBackdropFilter: 'blur(20px) saturate(1.3)',
+                    border: '1px solid rgba(30, 94, 255, 0.2)',
+                    boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 4px 20px rgba(30, 94, 255, 0.15)'
+                  }}>
                     <feature.icon className="h-6 w-6 text-white" />
                   </div>
                 </div>
