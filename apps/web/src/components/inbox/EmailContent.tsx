@@ -70,7 +70,7 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
-  const [showImages, setShowImages] = useState<boolean>(false);
+  const [showImages, setShowImages] = useState<boolean>(true);
   const [viewMode, setViewMode] = useState<'text' | 'html'>('html');
 
   console.log('EmailContent component mounted/updated with threadId:', threadId);
@@ -505,7 +505,7 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
                                   }`}
                                 >
                                   <span>📷</span>
-                                  {showImages ? 'Images Loaded' : 'Load Images'}
+                                  {showImages ? 'Hide Images' : 'Show Images'}
                                 </button>
                               </div>
                             )}
@@ -540,9 +540,10 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
                                     minHeight: '200px',
                                     padding: '32px',
                                     fontSize: '16px',
-                                    overflow: 'auto',
                                     border: theme === 'black' ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)',
-                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                                    width: '100%',
+                                    maxWidth: 'none'
                                   }}
                                 />
                               )}

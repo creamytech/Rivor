@@ -395,6 +395,16 @@ export default function InboxPage() {
         ? extractTextFromHtml(latestMessage.htmlBody)
         : latestMessage.textBody || latestMessage.subject;
       
+      console.log('📧 AI Analysis - Email data:', {
+        emailId: latestMessage.id,
+        threadId: threadId,
+        fromName: latestMessage.from?.name || 'Unknown',
+        fromEmail: latestMessage.from?.email || 'unknown@example.com',
+        subject: latestMessage.subject || threadData.subject,
+        bodyLength: emailContent?.length || 0,
+        bodyPreview: emailContent?.substring(0, 100) || 'No content'
+      });
+      
       const response = await fetch('/api/inbox/ai-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -408,11 +418,16 @@ export default function InboxPage() {
         })
       });
 
+      console.log('📊 AI Analysis response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to analyze thread');
+        const errorText = await response.text();
+        console.error('❌ AI Analysis failed:', response.status, errorText);
+        throw new Error(`Failed to analyze thread: ${response.status} ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('✅ AI Analysis result:', data);
       if (data.analysis) {
         const newAnalyses = new Map(threadAnalyses);
         newAnalyses.set(threadId, data.analysis);
@@ -467,6 +482,16 @@ export default function InboxPage() {
         ? extractTextFromHtml(latestMessage.htmlBody)
         : latestMessage.textBody || latestMessage.subject;
 
+      console.log('🤖 AI Reply - Email data:', {
+        emailId: latestMessage.id,
+        threadId: threadId,
+        fromName: latestMessage.from?.name || 'Unknown',
+        fromEmail: latestMessage.from?.email || 'unknown@example.com',
+        subject: latestMessage.subject || threadData.subject,
+        bodyLength: emailContent?.length || 0,
+        bodyPreview: emailContent?.substring(0, 100) || 'No content'
+      });
+
       const response = await fetch('/api/inbox/ai-reply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -482,11 +507,16 @@ export default function InboxPage() {
         })
       });
 
+      console.log('🔄 AI Reply response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to generate AI reply');
+        const errorText = await response.text();
+        console.error('❌ AI Reply failed:', response.status, errorText);
+        throw new Error(`Failed to generate AI reply: ${response.status} ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('✅ AI Reply result:', data);
       setAiReply(data.reply);
       setShowAiReplyModal(true);
 
