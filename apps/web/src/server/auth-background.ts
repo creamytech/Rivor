@@ -16,8 +16,20 @@ class AuthJobQueue {
   private queue: AuthBackgroundJob[] = [];
   private processing = false;
   private processingTimeout: NodeJS.Timeout | null = null;
+  private userJobCounts = new Map<string, number>(); // Track jobs per user
 
   enqueue(job: Omit<AuthBackgroundJob, 'id' | 'createdAt'>) {
+    // Check if user already has too many pending jobs (prevent queue flooding)
+    const currentCount = this.userJobCounts.get(job.userId) || 0;
+    if (currentCount > 3) {
+      logger.warn('Auth job rejected - too many pending jobs for user', { 
+        userId: job.userId, 
+        type: job.type,
+        currentCount 
+      });
+      return;
+    }
+
     const newJob: AuthBackgroundJob = {
       ...job,
       id: `${Date.now()}-${Math.random().toString(36).substring(7)}`,
@@ -27,9 +39,13 @@ class AuthJobQueue {
     this.queue.push(newJob);
     this.queue.sort((a, b) => b.priority - a.priority);
     
+    // Update user job count
+    this.userJobCounts.set(job.userId, currentCount + 1);
+    
     logger.info('Auth job enqueued', { 
       jobId: newJob.id, 
       type: newJob.type, 
+      userId: job.userId,
       queueSize: this.queue.length 
     });
     
@@ -71,16 +87,26 @@ class AuthJobQueue {
   }
 
   private async processJob(job: AuthBackgroundJob) {
-    switch (job.type) {
-      case 'token_encryption':
-        await this.processTokenEncryption(job.data);
-        break;
-      case 'onboarding':
-        await this.processOnboarding(job.data);
-        break;
-      case 'org_setup':
-        await this.processOrgSetup(job.data);
-        break;
+    try {
+      switch (job.type) {
+        case 'token_encryption':
+          await this.processTokenEncryption(job.data);
+          break;
+        case 'onboarding':
+          await this.processOnboarding(job.data);
+          break;
+        case 'org_setup':
+          await this.processOrgSetup(job.data);
+          break;
+      }
+    } finally {
+      // Always decrement user job count when job completes (success or failure)
+      const currentCount = this.userJobCounts.get(job.userId) || 0;
+      if (currentCount > 1) {
+        this.userJobCounts.set(job.userId, currentCount - 1);
+      } else {
+        this.userJobCounts.delete(job.userId);
+      }
     }
   }
 
@@ -94,7 +120,23 @@ class AuthJobQueue {
     
     try {
       const dbUser = await prisma.user.findUnique({ where: { email: userId } });
-      if (!dbUser) return;
+      if (!dbUser) {
+        logger.warn('User not found during token encryption, skipping', { userId });
+        return;
+      }
+
+      // Check if user still has active sessions (user might have signed out)
+      const activeSessions = await prisma.session.count({
+        where: { 
+          userId: dbUser.id,
+          expires: { gt: new Date() }
+        }
+      });
+      
+      if (activeSessions === 0) {
+        logger.info('No active sessions for user, skipping token encryption', { userId });
+        return;
+      }
 
       // Encrypt OAuth tokens using KMS
       const accessTokenEnc = account.access_token ? 
@@ -146,6 +188,25 @@ class AuthJobQueue {
 
   private async processOnboarding(data: OAuthCallbackData) {
     try {
+      // Check if user still has active sessions before processing
+      const dbUser = await prisma.user.findUnique({ where: { email: data.userId } });
+      if (!dbUser) {
+        logger.warn('User not found during onboarding, skipping', { userId: data.userId });
+        return;
+      }
+
+      const activeSessions = await prisma.session.count({
+        where: { 
+          userId: dbUser.id,
+          expires: { gt: new Date() }
+        }
+      });
+      
+      if (activeSessions === 0) {
+        logger.info('No active sessions for user, skipping onboarding', { userId: data.userId });
+        return;
+      }
+
       const isDuplicate = await isDuplicateCallback(
         data.userId,
         data.provider,
@@ -250,6 +311,23 @@ class AuthJobQueue {
 }
 
 export const authJobQueue = new AuthJobQueue();
+
+// Cleanup function for user sign-out
+export function cleanupUserJobs(userId: string) {
+  // Remove all pending jobs for this user
+  const initialQueueSize = authJobQueue['queue'].length;
+  authJobQueue['queue'] = authJobQueue['queue'].filter(job => job.userId !== userId);
+  const removedJobs = initialQueueSize - authJobQueue['queue'].length;
+  
+  // Clear user job count
+  authJobQueue['userJobCounts'].delete(userId);
+  
+  logger.info('Cleaned up background jobs for user', { 
+    userId, 
+    removedJobs, 
+    remainingQueueSize: authJobQueue['queue'].length 
+  });
+}
 
 // Helper functions to enqueue jobs
 export function enqueueTokenEncryption(userId: string, orgId: string, account: any, externalAccountId: string) {

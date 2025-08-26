@@ -151,6 +151,15 @@ export const authOptions: NextAuthOptions = {
         logger.authEvent('signin', user.email, account.provider, true);
       }
       
+      // Clean up any expired sessions first
+      try {
+        const { cleanupExpiredSessions } = await import("./session-sync");
+        await cleanupExpiredSessions();
+        console.log('✅ Expired sessions cleaned up during sign-in');
+      } catch (error) {
+        logger.error('Failed to cleanup expired sessions', { error: error?.message || error });
+      }
+      
       // Trigger cross-device session sync for same Google account
       if (user.email) {
         try {
@@ -171,6 +180,51 @@ export const authOptions: NextAuthOptions = {
             error: error?.message || error 
           });
         }
+      }
+    },
+    
+    async signOut({ token, session }) {
+      console.log('🚪 User signing out', {
+        userEmail: session?.user?.email || token?.email,
+        timestamp: new Date().toISOString()
+      });
+
+      // Clean up background jobs and sessions
+      try {
+        if (session?.user?.email || token?.email) {
+          const userEmail = session?.user?.email || token?.email;
+          const dbUser = await prisma.user.findUnique({ where: { email: userEmail } });
+          
+          if (dbUser) {
+            // Clean up background jobs for this user
+            const { cleanupUserJobs } = await import("./auth-background");
+            cleanupUserJobs(userEmail); // Use email as userId for jobs
+            console.log('✅ Background jobs cleaned up during sign-out');
+            
+            // Clean up user's sessions to prevent conflicts on re-login
+            await prisma.session.deleteMany({
+              where: { 
+                userId: dbUser.id,
+                expires: { lt: new Date(Date.now() + 5 * 60 * 1000) } // Clean sessions expiring in next 5 minutes
+              }
+            });
+            console.log('✅ User sessions cleaned up during sign-out');
+          }
+        }
+
+        // Clean up any expired sessions globally
+        const { cleanupExpiredSessions } = await import("./session-sync");
+        await cleanupExpiredSessions();
+        console.log('✅ Expired sessions cleaned up during sign-out');
+      } catch (error) {
+        logger.error('Failed to cleanup sessions during sign-out', { 
+          error: error?.message || error 
+        });
+      }
+
+      // Log successful sign out
+      if (session?.user?.email || token?.email) {
+        logger.authEvent('signout', session?.user?.email || token?.email || 'unknown', 'system', true);
       }
     },
     
@@ -321,28 +375,31 @@ export const authOptions: NextAuthOptions = {
             providerId: externalAccountId,
           };
 
-          // 4. Queue heavy operations in background (non-blocking)
+          // 4. Queue heavy operations in background (non-blocking) - with duplicate protection
           if (user.email) {
-            // Queue token encryption for background processing
-            enqueueTokenEncryption(user.email, 'default', account, externalAccountId);
-            
-            // Queue org setup for background processing
-            enqueueOrgSetup(user.email, user.email);
-            
-            // Queue onboarding for background processing
-            const onboardingData: OAuthCallbackData = {
-              userId: user.email,
-              userEmail: user.email,
-              userName: user.name || profile?.name || '',
-              userImage: user.image || (profile as unknown)?.picture || '',
-              provider: account.provider,
-              externalAccountId,
-              account,
-              profile,
-            };
-            enqueueOnboarding(onboardingData);
-            
-            console.log('✅ Heavy operations queued for background processing');
+            // Add a slight delay to prevent duplicate job queuing for rapid sign-in/out cycles
+            setTimeout(() => {
+              // Queue token encryption for background processing
+              enqueueTokenEncryption(user.email!, 'default', account, externalAccountId);
+              
+              // Queue org setup for background processing
+              enqueueOrgSetup(user.email!, user.email!);
+              
+              // Queue onboarding for background processing
+              const onboardingData: OAuthCallbackData = {
+                userId: user.email!,
+                userEmail: user.email!,
+                userName: user.name || profile?.name || '',
+                userImage: user.image || (profile as unknown)?.picture || '',
+                provider: account.provider,
+                externalAccountId,
+                account,
+                profile,
+              };
+              enqueueOnboarding(onboardingData);
+              
+              console.log('✅ Heavy operations queued for background processing');
+            }, 500); // 500ms delay to ensure auth completes first
           }
 
         } catch (error: unknown) {
