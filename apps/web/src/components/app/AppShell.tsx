@@ -77,6 +77,22 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
   const [showCreateListingModal, setShowCreateListingModal] = useState(false);
   const [showScheduleMeetingModal, setShowScheduleMeetingModal] = useState(false);
   const [notifications, setNotifications] = useState([]);
+
+  // Apply dashboard modal blur effects when any modal is open
+  useEffect(() => {
+    const isDashboardModalOpen = showCreateContactModal || showCreateListingModal || showScheduleMeetingModal || showComposeModal;
+    
+    if (isDashboardModalOpen) {
+      document.body.classList.add('dashboard-modal-open');
+    } else {
+      document.body.classList.remove('dashboard-modal-open');
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('dashboard-modal-open');
+    };
+  }, [showCreateContactModal, showCreateListingModal, showScheduleMeetingModal, showComposeModal]);
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Fetch notifications

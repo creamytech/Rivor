@@ -23,10 +23,6 @@ model User {
   sessions      Session[]
   chatThreads   ChatThread[]
   notifications Notification[]
-  smsMessages   SMSMessage[]
-  smsThreads    SMSThread[]
-  smsTemplates  SMSTemplate[]
-  smsCampaigns  SMSCampaign[]
 }
 
 model Account {
@@ -101,7 +97,6 @@ model Org {
   documents           Document[]
   documentTemplates   DocumentTemplate[]
   documentFolders     DocumentFolder[]
-  smsTemplates        SMSTemplate[]
 }
 
 model OrgMember {
@@ -286,9 +281,6 @@ model Contact {
   leads        Lead[]
   documents    Document[] @relation("DocumentContacts")
   folders      DocumentFolder[] @relation("FolderContacts")
-  smsMessages  SMSMessage[]
-  smsThreads   SMSThread[]
-  smsCampaignRecipients SMSCampaignRecipient[]
 }
 
 model Lead {
@@ -580,150 +572,3 @@ enum EncryptionStatus {
   failed
 }
 
-enum SMSDirection {
-  INBOUND
-  OUTBOUND
-}
-
-enum SMSStatus {
-  SENDING
-  SENT
-  DELIVERED
-  READ
-  FAILED
-  SCHEDULED
-  RECEIVED
-}
-
-model SMSMessage {
-  id                  String      @id @default(cuid())
-  userId              String      @map("user_id")
-  contactId           String?     @map("contact_id")
-  phoneNumber         String      @map("phone_number")
-  content             String
-  mediaUrl            String?     @map("media_url")
-  direction           SMSDirection
-  status              SMSStatus   @default(SENT)
-  sendBlueMessageId   String?     @map("send_blue_message_id")
-  scheduledAt         DateTime?   @map("scheduled_at")
-  sentAt              DateTime?   @map("sent_at")
-  deliveredAt         DateTime?   @map("delivered_at")
-  readAt              DateTime?   @map("read_at")
-  failedAt            DateTime?   @map("failed_at")
-  createdAt           DateTime    @default(now()) @map("created_at")
-  updatedAt           DateTime    @updatedAt @map("updated_at")
-  metadata            Json?
-
-  // Relations
-  user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  contact             Contact?    @relation(fields: [contactId], references: [id], onDelete: SetNull)
-
-  @@index([userId])
-  @@index([contactId])
-  @@index([phoneNumber])
-  @@index([direction])
-  @@index([status])
-  @@index([createdAt])
-  @@index([sendBlueMessageId])
-  @@map("sms_messages")
-}
-
-model SMSThread {
-  id              String    @id @default(cuid())
-  userId          String    @map("user_id")
-  contactId       String?   @map("contact_id")
-  phoneNumber     String    @map("phone_number")
-  lastMessageAt   DateTime  @map("last_message_at")
-  unreadCount     Int       @default(0) @map("unread_count")
-  isArchived      Boolean   @default(false) @map("is_archived")
-  isMuted         Boolean   @default(false) @map("is_muted")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  metadata        Json?
-
-  // Relations
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  contact         Contact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
-
-  @@unique([userId, contactId])
-  @@unique([userId, phoneNumber])
-  @@index([userId])
-  @@index([contactId])
-  @@index([phoneNumber])
-  @@index([lastMessageAt])
-  @@map("sms_threads")
-}
-
-model SMSTemplate {
-  id              String    @id @default(cuid())
-  userId          String?   @map("user_id")
-  organizationId  String?   @map("organization_id")
-  name            String
-  category        String
-  content         String
-  variables       String[]  @default([])
-  usageCount      Int       @default(0) @map("usage_count")
-  isSystem        Boolean   @default(false) @map("is_system")
-  isActive        Boolean   @default(true) @map("is_active")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-
-  // Relations
-  user            User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization    Org? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([organizationId])
-  @@index([category])
-  @@index([isSystem])
-  @@map("sms_templates")
-}
-
-model SMSCampaign {
-  id              String    @id @default(cuid())
-  userId          String    @map("user_id")
-  name            String
-  content         String
-  scheduledAt     DateTime? @map("scheduled_at")
-  status          String    @default("draft")
-  totalRecipients Int       @default(0) @map("total_recipients")
-  sentCount       Int       @default(0) @map("sent_count")
-  deliveredCount  Int       @default(0) @map("delivered_count")
-  failedCount     Int       @default(0) @map("failed_count")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  metadata        Json?
-
-  // Relations
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  recipients      SMSCampaignRecipient[]
-
-  @@index([userId])
-  @@index([status])
-  @@index([scheduledAt])
-  @@map("sms_campaigns")
-}
-
-model SMSCampaignRecipient {
-  id            String      @id @default(cuid())
-  campaignId    String      @map("campaign_id")
-  contactId     String?     @map("contact_id")
-  phoneNumber   String      @map("phone_number")
-  status        String      @default("pending")
-  messageId     String?     @map("message_id")
-  sentAt        DateTime?   @map("sent_at")
-  deliveredAt   DateTime?   @map("delivered_at")
-  failedAt      DateTime?   @map("failed_at")
-  errorMessage  String?     @map("error_message")
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
-
-  // Relations
-  campaign      SMSCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  contact       Contact?    @relation(fields: [contactId], references: [id], onDelete: SetNull)
-
-  @@index([campaignId])
-  @@index([contactId])
-  @@index([status])
-  @@map("sms_campaign_recipients")
-}

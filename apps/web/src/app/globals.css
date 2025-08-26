@@ -3433,7 +3433,7 @@ header:not(.md\\:hidden),
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9) !important;
 }
 
-/* Mobile specific waitlist modal - force solid background */
+/* Mobile specific waitlist modal - enhanced blur effects */
 @media (max-width: 768px) {
   .waitlist-modal-content {
     background: rgba(0, 0, 0, 1) !important;
@@ -3441,9 +3441,17 @@ header:not(.md\\:hidden),
     -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
   }
   
-  /* Force dark theme on mobile for dialog overlay */
+  /* Enhanced background blur for mobile waitlist modal */
+  body.modal-open[data-waitlist-modal-open="true"] > div:not([data-radix-portal]) {
+    filter: blur(6px) saturate(0.8) brightness(0.8) !important;
+    transition: filter 0.3s ease !important;
+  }
+  
+  /* Force dark theme on mobile for dialog overlay with enhanced blur */
   [data-radix-dialog-overlay] {
     background: rgba(0, 0, 0, 0.95) !important;
+    backdrop-filter: blur(25px) saturate(1.3) brightness(0.7) !important;
+    -webkit-backdrop-filter: blur(25px) saturate(1.3) brightness(0.7) !important;
   }
   
   /* Ensure modal content is properly styled on mobile */
@@ -3689,14 +3697,97 @@ header:not(.md\\:hidden),
   filter: none !important;
 }
 
-/* Waitlist modal blur - DISABLED */
+/* Waitlist modal blur - ENABLED for better desktop UX */
 body.modal-open[data-waitlist-modal-open="true"] > div:not([data-radix-portal]) {
-  filter: none !important;
+  filter: blur(8px) saturate(0.8) brightness(0.7) !important;
   transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Desktop-specific enhancements for waitlist modal blur */
+@media (min-width: 769px) {
+  body.modal-open[data-waitlist-modal-open="true"] > div:not([data-radix-portal]) {
+    filter: blur(12px) saturate(0.7) brightness(0.6) contrast(1.1) !important;
+    transition: filter 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+  
+  /* Enhanced backdrop blur for desktop waitlist modal overlay */
+  [data-waitlist-modal-open="true"] [data-radix-dialog-overlay] {
+    background: rgba(0, 0, 0, 0.8) !important;
+    backdrop-filter: blur(20px) saturate(1.2) brightness(0.8) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(1.2) brightness(0.8) !important;
+  }
 }
 
 /* Exclude waitlist modal content from blur */
 body.modal-open[data-waitlist-modal-open="true"] [data-radix-portal] {
+  filter: none !important;
+}
+
+/* ========================================
+   DASHBOARD MODALS BLUR SYSTEM
+   Same high-quality effects as waitlist modal
+   ======================================== */
+
+/* Dashboard modals blur - applies to all glass-modal components */
+body:has(.glass-modal[data-state="open"]) > div:not([data-radix-portal]) {
+  filter: blur(8px) saturate(0.8) brightness(0.7) !important;
+  transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Desktop-specific enhancements for dashboard modals */
+@media (min-width: 769px) {
+  body:has(.glass-modal[data-state="open"]) > div:not([data-radix-portal]) {
+    filter: blur(12px) saturate(0.7) brightness(0.6) contrast(1.1) !important;
+    transition: filter 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+  
+  /* Enhanced backdrop blur for desktop dashboard modal overlays */
+  body:has(.glass-modal[data-state="open"]) [data-radix-dialog-overlay] {
+    background: rgba(0, 0, 0, 0.75) !important;
+    backdrop-filter: blur(20px) saturate(1.2) brightness(0.8) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(1.2) brightness(0.8) !important;
+  }
+}
+
+/* Mobile-specific enhancements for dashboard modals */
+@media (max-width: 768px) {
+  body:has(.glass-modal[data-state="open"]) > div:not([data-radix-portal]) {
+    filter: blur(6px) saturate(0.8) brightness(0.8) !important;
+    transition: filter 0.3s ease !important;
+  }
+  
+  /* Enhanced backdrop blur for mobile dashboard modal overlays */
+  body:has(.glass-modal[data-state="open"]) [data-radix-dialog-overlay] {
+    background: rgba(0, 0, 0, 0.9) !important;
+    backdrop-filter: blur(25px) saturate(1.3) brightness(0.7) !important;
+    -webkit-backdrop-filter: blur(25px) saturate(1.3) brightness(0.7) !important;
+  }
+}
+
+/* Exclude dashboard modal content from blur */
+body:has(.glass-modal[data-state="open"]) [data-radix-portal] {
+  filter: none !important;
+}
+
+/* Alternative approach for browsers that don't support :has() */
+.dashboard-modal-open > div:not([data-radix-portal]) {
+  filter: blur(8px) saturate(0.8) brightness(0.7) !important;
+  transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+@media (min-width: 769px) {
+  .dashboard-modal-open > div:not([data-radix-portal]) {
+    filter: blur(12px) saturate(0.7) brightness(0.6) contrast(1.1) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-modal-open > div:not([data-radix-portal]) {
+    filter: blur(6px) saturate(0.8) brightness(0.8) !important;
+  }
+}
+
+.dashboard-modal-open [data-radix-portal] {
   filter: none !important;
 }
 

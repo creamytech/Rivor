@@ -125,6 +125,20 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [integrationStatus, setIntegrationStatus] = useState<any>(null);
+
+  // Apply dashboard modal blur effects when modal is open
+  useEffect(() => {
+    if (showResetModal) {
+      document.body.classList.add('dashboard-modal-open');
+    } else {
+      document.body.classList.remove('dashboard-modal-open');
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('dashboard-modal-open');
+    };
+  }, [showResetModal]);
   const [integrationsLoading, setIntegrationsLoading] = useState(true);
 
   const sections: SettingsSection[] = [

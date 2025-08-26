@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,20 @@ export function useQuickActionCallbacks() {
   const router = useRouter();
   const [chatOpen, setChatOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
+
+  // Apply dashboard modal blur effects when modal is open
+  useEffect(() => {
+    if (noteOpen) {
+      document.body.classList.add('dashboard-modal-open');
+    } else {
+      document.body.classList.remove('dashboard-modal-open');
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('dashboard-modal-open');
+    };
+  }, [noteOpen]);
 
   const composeEmail = useCallback(() => {
     router.push('/app/inbox/compose');

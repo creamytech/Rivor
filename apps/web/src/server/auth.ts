@@ -99,13 +99,13 @@ export const authOptions: NextAuthOptions = {
     signIn: "/auth/signin",
     error: "/auth/error",
   },
-  debug: true, // Enable debug mode temporarily
+  debug: false, // Disable debug mode for better performance
   secret: process.env.NEXTAUTH_SECRET,
   providers: finalProviders,
   session: { 
     strategy: "database",
-    maxAge: 24 * 60 * 60, // 24 hours
-    updateAge: 5 * 60,    // 5 minutes - faster session sync
+    maxAge: 7 * 24 * 60 * 60, // 7 days - more stable sessions
+    updateAge: 24 * 60 * 60,  // 24 hours - less frequent updates
   },
   cookies: {
     sessionToken: {
@@ -201,14 +201,14 @@ export const authOptions: NextAuthOptions = {
             cleanupUserJobs(userEmail); // Use email as userId for jobs
             console.log('✅ Background jobs cleaned up during sign-out');
             
-            // Clean up user's sessions to prevent conflicts on re-login
+            // Only clean up expired sessions, not active ones
             await prisma.session.deleteMany({
               where: { 
                 userId: dbUser.id,
-                expires: { lt: new Date(Date.now() + 5 * 60 * 1000) } // Clean sessions expiring in next 5 minutes
+                expires: { lt: new Date() } // Only delete actually expired sessions
               }
             });
-            console.log('✅ User sessions cleaned up during sign-out');
+            console.log('✅ Expired sessions cleaned up during sign-out');
           }
         }
 
@@ -375,17 +375,12 @@ export const authOptions: NextAuthOptions = {
             providerId: externalAccountId,
           };
 
-          // 4. Queue heavy operations in background (non-blocking) - with duplicate protection
-          if (user.email) {
-            // Add a slight delay to prevent duplicate job queuing for rapid sign-in/out cycles
-            setTimeout(() => {
-              // Queue token encryption for background processing
+          // 4. Skip background operations if DISABLE_QUEUES is set (for development)
+          if (user.email && !process.env.DISABLE_QUEUES) {
+            // Queue operations without delay for faster auth
+            try {
               enqueueTokenEncryption(user.email!, 'default', account, externalAccountId);
-              
-              // Queue org setup for background processing
               enqueueOrgSetup(user.email!, user.email!);
-              
-              // Queue onboarding for background processing
               const onboardingData: OAuthCallbackData = {
                 userId: user.email!,
                 userEmail: user.email!,
@@ -397,9 +392,12 @@ export const authOptions: NextAuthOptions = {
                 profile,
               };
               enqueueOnboarding(onboardingData);
-              
-              console.log('✅ Heavy operations queued for background processing');
-            }, 500); // 500ms delay to ensure auth completes first
+              console.log('✅ Background operations queued');
+            } catch (error) {
+              console.warn('⚠️ Failed to queue background operations, continuing auth:', error?.message);
+            }
+          } else if (process.env.DISABLE_QUEUES) {
+            console.log('🚫 Background queues disabled in development mode');
           }
 
         } catch (error: unknown) {
@@ -436,7 +434,7 @@ export const auth = async () => {
   try {
     // Use our working custom adapter instead of broken getServerSession
     const { cookies } = await import('next/headers');
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const sessionToken = cookieStore.get('__Secure-next-auth.session-token')?.value || 
                         cookieStore.get('next-auth.session-token')?.value;
 

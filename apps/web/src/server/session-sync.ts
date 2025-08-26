@@ -35,33 +35,18 @@ export async function syncUserSessions(userId: string, triggerSessionToken?: str
       };
     }
 
-    // Update the expires time of other sessions to force refresh on other devices
-    const now = new Date();
-    const fastSyncExpiration = new Date(now.getTime() + (2 * 60 * 1000)); // 2 minutes from now
-
-    // Update all sessions except the triggering one to force refresh
-    const sessionsToUpdate = userSessions
-      .filter(session => session.sessionToken !== triggerSessionToken)
-      .map(session => session.sessionToken);
-
+    // Instead of forcefully shortening sessions, just log the sync event
+    // This prevents breaking active sessions on other devices
     let updatedCount = 0;
-    if (sessionsToUpdate.length > 0) {
-      // Use updateMany for efficiency
-      const updateResult = await prisma.session.updateMany({
-        where: {
-          sessionToken: { in: sessionsToUpdate },
-          expires: { gt: now } // Only update non-expired sessions
-        },
-        data: {
-          // Reduce expires time to force faster refresh on other devices
-          expires: fastSyncExpiration
-        }
-      });
-      
-      updatedCount = updateResult.count;
-    }
+    
+    // For monitoring purposes only - don't actually modify session expiration
+    logger.info('Cross-device session sync triggered', {
+      userId,
+      totalActiveSessions: userSessions.length,
+      triggerSession: triggerSessionToken?.substring(0, 10) + '...'
+    });
 
-    logger.info('Session sync completed', {
+    logger.info('Session sync completed (non-disruptive)', {
       userId,
       totalSessions: userSessions.length,
       updatedSessions: updatedCount,

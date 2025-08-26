@@ -96,6 +96,22 @@ export default function DocumentsPage() {
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [showPreview, setShowPreview] = useState(false);
 
+  // Apply dashboard modal blur effects when any modal is open
+  useEffect(() => {
+    const isModalOpen = showCreateModal || showPreview;
+    
+    if (isModalOpen) {
+      document.body.classList.add('dashboard-modal-open');
+    } else {
+      document.body.classList.remove('dashboard-modal-open');
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('dashboard-modal-open');
+    };
+  }, [showCreateModal, showPreview]);
+
   const fetchDocuments = useCallback(async () => {
     setLoading(true);
     try {

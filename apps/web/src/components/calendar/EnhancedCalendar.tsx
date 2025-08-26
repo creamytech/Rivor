@@ -96,7 +96,7 @@ interface CalendarEvent {
   isRecurring: boolean;
   recurrenceRule?: string;
   reminders: {
-    type: 'email' | 'popup' | 'sms';
+    type: 'email' | 'popup';
     minutes: number;
   }[];
 }

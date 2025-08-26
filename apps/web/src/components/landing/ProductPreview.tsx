@@ -35,7 +35,6 @@ export default function ProductPreview() {
                 { icon: Mail, label: 'Inbox', active: false, badge: '12' },
                 { icon: Phone, label: 'Contacts', active: false },
                 { icon: Calendar, label: 'Calendar', active: false },
-                { icon: MessageSquare, label: 'SMS', active: false, badge: '3' },
               ].map((item, index) => (
                 <motion.div
                   key={item.label}

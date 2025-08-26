@@ -29,7 +29,6 @@ import {
   Clock,
   Phone,
   Mail,
-  MessageSquare,
   Eye,
   User,
   Plus,
@@ -44,7 +43,6 @@ import {
   Star,
   MapPin
 } from "lucide-react";
-import SMSWidget from "@/components/sms/SMSWidget";
 
 export interface Deal {
   id: string;
@@ -436,20 +434,6 @@ function DealCard({ deal, onDealClick, isDragging }: DealCardProps) {
                       className="flex-1 h-8 text-xs glass-button-secondary"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Convert deal to contact format for SMS widget
-                        setSelectedDealForSMS(deal);
-                        setShowSMSWidget(true);
-                      }}
-                    >
-                      <MessageSquare className="h-3 w-3 mr-1" />
-                      SMS
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 h-8 text-xs glass-button-secondary"
-                      onClick={(e) => {
-                        e.stopPropagation();
                         window.open(`mailto:${deal.clientEmail || ''}`);
                       }}
                     >
@@ -488,8 +472,6 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
-  const [showSMSWidget, setShowSMSWidget] = useState(false);
-  const [selectedDealForSMS, setSelectedDealForSMS] = useState<Deal | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -987,15 +969,6 @@ export default function PipelineKanbanView({ searchQuery, quickFilters, advanced
         selectedStage={selectedStage}
       />
 
-      {/* SMS Widget */}
-      <SMSWidget
-        isOpen={showSMSWidget}
-        onClose={() => {
-          setShowSMSWidget(false);
-          setSelectedDealForSMS(null);
-        }}
-        initialContactId={selectedDealForSMS?.clientName ? `deal_${selectedDealForSMS.id}` : undefined}
-      />
     </div>
   );
 }

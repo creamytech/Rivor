@@ -8,8 +8,8 @@ export async function GET(req: NextRequest) {
   try {
     logOAuth('info', '🔧 Custom session endpoint called');
     
-    // Get session token from cookies
-    const cookieStore = cookies();
+    // Get session token from cookies (await for Next.js 15)
+    const cookieStore = await cookies();
     const sessionToken = cookieStore.get('__Secure-next-auth.session-token')?.value || 
                         cookieStore.get('next-auth.session-token')?.value;
 
