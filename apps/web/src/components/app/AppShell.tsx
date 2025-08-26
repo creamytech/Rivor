@@ -547,14 +547,11 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                   
                   {/* Search Results Dropdown - positioned relative to search container */}
                   <div className={`glass-search-results ${showSearchResults ? 'visible' : ''}`} style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
                     width: '600px',
                     maxWidth: '90vw',
-                    zIndex: 10000,
-                    marginTop: '4px'
+                    left: '50%',
+                    right: 'auto',
+                    transform: 'translateX(-50%)'
                   }}>
                     <div className="space-y-3">
                       {searchLoading ? (

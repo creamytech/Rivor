@@ -24,9 +24,28 @@ export async function GET(
       return NextResponse.json({ error: "Thread ID is required" }, { status: 400 });
     }
 
+    // Get user's org membership to check access
+    const user = await db.user.findUnique({
+      where: { email: session.user.email! },
+      include: {
+        orgMembers: {
+          include: { org: true }
+        }
+      }
+    });
+
+    if (!user || user.orgMembers.length === 0) {
+      return NextResponse.json({ error: "User not associated with any organization" }, { status: 403 });
+    }
+
+    const orgId = user.orgMembers[0].orgId;
+
     // Get thread with all messages
     const thread = await db.emailThread.findUnique({
-      where: { id: threadId },
+      where: { 
+        id: threadId,
+        orgId: orgId // Ensure user can only access threads from their org
+      },
       include: {
         messages: {
           select: {
@@ -61,8 +80,11 @@ export async function GET(
     });
 
     if (!thread) {
+      console.warn(`Thread not found: ${threadId} for org: ${orgId}`);
       return NextResponse.json({ error: "Thread not found" }, { status: 404 });
     }
+
+    console.log(`Found thread: ${threadId} with ${thread.messages.length} messages`);
 
     // Decrypt message content if available
     const messagesWithContent = await Promise.all(
@@ -139,6 +161,21 @@ export async function GET(
 
   } catch (error) {
     console.error('Get thread error:', error);
+    
+    // More specific error handling
+    if (error instanceof Error) {
+      // Check for specific database errors
+      if (error.message.includes('Record to update not found')) {
+        return NextResponse.json({ error: "Thread not found" }, { status: 404 });
+      }
+      if (error.message.includes('Unique constraint failed')) {
+        return NextResponse.json({ error: "Database constraint error" }, { status: 400 });
+      }
+      if (error.message.includes('Foreign key constraint failed')) {
+        return NextResponse.json({ error: "Invalid thread reference" }, { status: 400 });
+      }
+    }
+    
     return NextResponse.json({
       error: "Failed to get thread details",
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -166,6 +203,22 @@ export async function PATCH(
       return NextResponse.json({ error: "Thread ID is required" }, { status: 400 });
     }
 
+    // Get user's org membership to check access
+    const user = await db.user.findUnique({
+      where: { email: session.user.email! },
+      include: {
+        orgMembers: {
+          include: { org: true }
+        }
+      }
+    });
+
+    if (!user || user.orgMembers.length === 0) {
+      return NextResponse.json({ error: "User not associated with any organization" }, { status: 403 });
+    }
+
+    const orgId = user.orgMembers[0].orgId;
+
     const updateData: any = {};
     
     if (typeof isRead === 'boolean') {
@@ -186,7 +239,10 @@ export async function PATCH(
 
     // Update thread
     const updatedThread = await db.emailThread.update({
-      where: { id: threadId },
+      where: { 
+        id: threadId,
+        orgId: orgId // Ensure user can only update threads from their org
+      },
       data: {
         ...updateData,
         updatedAt: new Date()
