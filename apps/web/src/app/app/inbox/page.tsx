@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import AppShell from "@/components/app/AppShell";
+import { useTheme } from "@/contexts/ThemeContext";
 import { 
   Mail, 
   Star, 
@@ -128,6 +130,7 @@ const categoryConfig = {
 };
 
 export default function AIInboxPage() {
+  const { theme } = useTheme();
   const [emails, setEmails] = useState<Email[]>([]);
   const [activeEmail, setActiveEmail] = useState<Email | null>(null);
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
@@ -378,7 +381,9 @@ Best regards,
   };
 
   return (
-    <div className="h-full flex flex-col glass-theme-black overflow-hidden">
+    <div className={`${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'}`}>
+      <AppShell>
+        <div className="h-full flex flex-col overflow-hidden main-content-area">
       {/* AI-Powered Header */}
       <motion.div 
         className="p-6 border-b border-white/10"
@@ -823,6 +828,8 @@ Best regards,
           </motion.div>
         )}
       </AnimatePresence>
+        </div>
+      </AppShell>
     </div>
   );
 }
