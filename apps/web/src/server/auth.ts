@@ -60,6 +60,39 @@ export const authOptions: NextAuthOptions = {
         }
       }
     },
+    async signIn({ user, account, profile }) {
+      console.log('🔑 signIn event - checking onboarding for:', user.email);
+      
+      // Only run for OAuth providers, not credentials
+      if (account?.provider === 'google' && user.email) {
+        try {
+          const { handleOAuthCallback } = await import("./onboarding");
+          
+          const onboardingResult = await handleOAuthCallback({
+            userId: user.id || '',
+            userEmail: user.email,
+            userName: user.name || undefined,
+            userImage: user.image || undefined,
+            provider: account.provider,
+            externalAccountId: account.providerAccountId,
+            account,
+            profile
+          });
+          
+          console.log('✅ SignIn onboarding completed:', {
+            success: onboardingResult.success,
+            orgId: onboardingResult.orgId,
+            hasEmailAccount: !!onboardingResult.emailAccountId,
+            hasCalendarAccount: !!onboardingResult.calendarAccountId
+          });
+          
+        } catch (error) {
+          console.error('❌ SignIn onboarding failed:', error);
+        }
+      }
+      
+      return true;
+    },
   },
 };
 

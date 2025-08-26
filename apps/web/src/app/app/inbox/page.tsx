@@ -383,12 +383,12 @@ Best regards,
   return (
     <div className={`${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'}`}>
       <AppShell>
-        <div className="h-full flex flex-col overflow-hidden main-content-area">
+        <div className="h-full flex flex-col overflow-hidden">
       {/* AI-Powered Header */}
       <motion.div 
-        className="p-6 border-b border-white/10"
+        className={`p-6 border-b ${theme === 'black' ? 'border-white/10' : 'border-black/10'}`}
         style={{
-          background: 'rgba(0, 0, 0, 0.4)',
+          background: theme === 'black' ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.4)',
           backdropFilter: 'blur(20px) saturate(1.3)',
           WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
         }}
@@ -405,8 +405,8 @@ Best regards,
               <Bot className="h-6 w-6 text-purple-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">AI-Powered Inbox</h1>
-              <p className="text-sm text-white/60">Smart real estate email management</p>
+              <h1 className={`text-2xl font-bold ${theme === 'black' ? 'text-white' : 'text-black'}`}>AI-Powered Inbox</h1>
+              <p className={`text-sm ${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>Smart real estate email management</p>
             </div>
           </div>
           
@@ -425,13 +425,13 @@ Best regards,
         {/* Search and Filters */}
         <div className="flex items-center gap-4">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/40" />
+            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${theme === 'black' ? 'text-white/40' : 'text-black/40'}`} />
             <input
               type="text"
               placeholder="Search emails..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className={`w-full pl-10 pr-4 py-2 rounded-xl ${theme === 'black' ? 'bg-white/10 border-white/20 text-white placeholder-white/40' : 'bg-black/10 border-black/20 text-black placeholder-black/40'} focus:outline-none focus:ring-2 focus:ring-purple-500`}
               style={{
                 backdropFilter: 'blur(20px) saturate(1.3)',
                 WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
@@ -466,17 +466,17 @@ Best regards,
       <div className="flex-1 flex overflow-hidden">
         {/* Email List Panel */}
         <motion.div 
-          className="w-96 border-r border-white/10 flex flex-col"
+          className={`w-96 border-r ${theme === 'black' ? 'border-white/10' : 'border-black/10'} flex flex-col`}
           style={{
-            background: 'rgba(0, 0, 0, 0.2)',
+            background: theme === 'black' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.2)',
             backdropFilter: 'blur(20px) saturate(1.3)',
             WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
           }}
           initial={{ x: -100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
         >
-          <div className="p-4 border-b border-white/10">
-            <div className="text-sm text-white/60">
+          <div className={`p-4 border-b ${theme === 'black' ? 'border-white/10' : 'border-black/10'}`}>
+            <div className={`text-sm ${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>
               {filteredEmails.length} emails • {filteredEmails.filter(e => !e.isRead).length} unread
             </div>
           </div>
@@ -486,19 +486,19 @@ Best regards,
               {loading ? (
                 <div className="p-8 text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
-                  <p className="text-white/60">Analyzing emails with AI...</p>
+                  <p className={`${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>Analyzing emails with AI...</p>
                 </div>
               ) : filteredEmails.length === 0 ? (
                 <div className="p-8 text-center">
-                  <Mail className="h-12 w-12 text-white/40 mx-auto mb-4" />
-                  <p className="text-white/60">No emails found</p>
+                  <Mail className={`h-12 w-12 ${theme === 'black' ? 'text-white/40' : 'text-black/40'} mx-auto mb-4`} />
+                  <p className={`${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>No emails found</p>
                 </div>
               ) : (
                 filteredEmails.map((email, index) => (
                   <motion.div
                     key={email.id}
-                    className={`p-4 border-b border-white/5 cursor-pointer transition-all duration-300 hover:bg-white/5 ${
-                      activeEmail?.id === email.id ? 'bg-white/10' : ''
+                    className={`p-4 border-b ${theme === 'black' ? 'border-white/5 hover:bg-white/5' : 'border-black/5 hover:bg-black/5'} cursor-pointer transition-all duration-300 ${
+                      activeEmail?.id === email.id ? (theme === 'black' ? 'bg-white/10' : 'bg-black/10') : ''
                     }`}
                     onClick={() => handleEmailSelect(email)}
                     initial={{ opacity: 0, y: 20 }}
@@ -524,7 +524,7 @@ Best regards,
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <div className="font-medium text-white truncate">
+                          <div className={`font-medium ${theme === 'black' ? 'text-white' : 'text-black'} truncate`}>
                             {email.from.name}
                           </div>
                           <div className="flex items-center gap-1">
@@ -540,11 +540,11 @@ Best regards,
                           </div>
                         </div>
 
-                        <div className="text-sm font-medium text-white/90 truncate mb-1">
+                        <div className={`text-sm font-medium ${theme === 'black' ? 'text-white/90' : 'text-black/90'} truncate mb-1`}>
                           {email.subject}
                         </div>
 
-                        <div className="text-xs text-white/60 truncate mb-2">
+                        <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'} truncate mb-2`}>
                           {email.preview}
                         </div>
 
@@ -565,7 +565,7 @@ Best regards,
                               {categoryConfig[email.aiAnalysis.category]?.label}
                             </div>
                             
-                            <div className="text-xs text-white/40">
+                            <div className={`text-xs ${theme === 'black' ? 'text-white/40' : 'text-black/40'}`}>
                               {new Date(email.timestamp).toLocaleTimeString([], { 
                                 hour: '2-digit', 
                                 minute: '2-digit' 
@@ -592,19 +592,19 @@ Best regards,
             <>
               {/* Email Header */}
               <div 
-                className="p-6 border-b border-white/10"
+                className={`p-6 border-b ${theme === 'black' ? 'border-white/10' : 'border-black/10'}`}
                 style={{
-                  background: 'rgba(0, 0, 0, 0.2)',
+                  background: theme === 'black' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.2)',
                   backdropFilter: 'blur(20px) saturate(1.3)',
                   WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
                 }}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h2 className="text-xl font-bold text-white mb-2">
+                    <h2 className={`text-xl font-bold ${theme === 'black' ? 'text-white' : 'text-black'} mb-2`}>
                       {activeEmail.subject}
                     </h2>
-                    <div className="flex items-center gap-4 text-sm text-white/60">
+                    <div className={`flex items-center gap-4 text-sm ${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>
                       <div>From: {activeEmail.from.name} &lt;{activeEmail.from.email}&gt;</div>
                       <div>{new Date(activeEmail.timestamp).toLocaleString()}</div>
                     </div>
@@ -644,28 +644,28 @@ Best regards,
 
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-white">
+                        <div className={`text-2xl font-bold ${theme === 'black' ? 'text-white' : 'text-black'}`}>
                           {activeEmail.aiAnalysis.priorityScore}
                         </div>
-                        <div className="text-xs text-white/60">Priority Score</div>
+                        <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>Priority Score</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-white">
+                        <div className={`text-2xl font-bold ${theme === 'black' ? 'text-white' : 'text-black'}`}>
                           {activeEmail.aiAnalysis.leadScore}
                         </div>
-                        <div className="text-xs text-white/60">Lead Score</div>
+                        <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>Lead Score</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-white">
+                        <div className={`text-2xl font-bold ${theme === 'black' ? 'text-white' : 'text-black'}`}>
                           {(activeEmail.aiAnalysis.confidenceScore * 100).toFixed(0)}%
                         </div>
-                        <div className="text-xs text-white/60">AI Confidence</div>
+                        <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>AI Confidence</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-white">
+                        <div className={`text-2xl font-bold ${theme === 'black' ? 'text-white' : 'text-black'}`}>
                           {(activeEmail.aiAnalysis.sentimentScore * 100).toFixed(0)}%
                         </div>
-                        <div className="text-xs text-white/60">Sentiment</div>
+                        <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>Sentiment</div>
                       </div>
                     </div>
 
@@ -674,9 +674,9 @@ Best regards,
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         {activeEmail.aiAnalysis.keyEntities.addresses && (
                           <div>
-                            <div className="text-xs text-white/60 mb-1">Properties</div>
+                            <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'} mb-1`}>Properties</div>
                             {activeEmail.aiAnalysis.keyEntities.addresses.map((addr, i) => (
-                              <div key={i} className="flex items-center gap-1 text-sm text-white">
+                              <div key={i} className={`flex items-center gap-1 text-sm ${theme === 'black' ? 'text-white' : 'text-black'}`}>
                                 <MapPin className="h-3 w-3" />
                                 {addr}
                               </div>
@@ -685,8 +685,8 @@ Best regards,
                         )}
                         {activeEmail.aiAnalysis.keyEntities.priceRange && (
                           <div>
-                            <div className="text-xs text-white/60 mb-1">Price Range</div>
-                            <div className="flex items-center gap-1 text-sm text-white">
+                            <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'} mb-1`}>Price Range</div>
+                            <div className={`flex items-center gap-1 text-sm ${theme === 'black' ? 'text-white' : 'text-black'}`}>
                               <DollarSign className="h-3 w-3" />
                               {activeEmail.aiAnalysis.keyEntities.priceRange}
                             </div>
@@ -723,7 +723,7 @@ Best regards,
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <div className="whitespace-pre-wrap text-white/90 leading-relaxed">
+                  <div className={`whitespace-pre-wrap ${theme === 'black' ? 'text-white/90' : 'text-black/90'} leading-relaxed`}>
                     {activeEmail.body}
                   </div>
                 </motion.div>
@@ -732,9 +732,9 @@ Best regards,
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
-                <Mail className="h-16 w-16 text-white/40 mx-auto mb-4" />
-                <h3 className="text-xl font-medium text-white/60 mb-2">Select an email</h3>
-                <p className="text-white/40">Choose an email from the list to view its content and AI analysis</p>
+                <Mail className={`h-16 w-16 ${theme === 'black' ? 'text-white/40' : 'text-black/40'} mx-auto mb-4`} />
+                <h3 className={`text-xl font-medium ${theme === 'black' ? 'text-white/60' : 'text-black/60'} mb-2`}>Select an email</h3>
+                <p className={`${theme === 'black' ? 'text-white/40' : 'text-black/40'}`}>Choose an email from the list to view its content and AI analysis</p>
               </div>
             </div>
           )}
@@ -753,24 +753,24 @@ Best regards,
             <motion.div
               className="max-w-4xl w-full max-h-[90vh] overflow-hidden rounded-2xl"
               style={{
-                background: 'rgba(0, 0, 0, 0.95)',
+                background: theme === 'black' ? 'rgba(0, 0, 0, 0.95)' : 'rgba(255, 255, 255, 0.95)',
                 backdropFilter: 'blur(25px) saturate(1.4)',
                 WebkitBackdropFilter: 'blur(25px) saturate(1.4)',
-                border: '1px solid rgba(255, 255, 255, 0.2)'
+                border: theme === 'black' ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid rgba(0, 0, 0, 0.2)'
               }}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
             >
-              <div className="p-6 border-b border-white/10">
+              <div className={`p-6 border-b ${theme === 'black' ? 'border-white/10' : 'border-black/10'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-xl bg-purple-500/20 border border-purple-500/30">
                       <Bot className="h-6 w-6 text-purple-400" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-white">AI-Generated Response</h3>
-                      <p className="text-sm text-white/60">
+                      <h3 className={`text-xl font-bold ${theme === 'black' ? 'text-white' : 'text-black'}`}>AI-Generated Response</h3>
+                      <p className={`text-sm ${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>
                         Confidence: {(currentSuggestion.confidenceScore * 100).toFixed(0)}% • 
                         Category: {currentSuggestion.category}
                       </p>
@@ -788,13 +788,13 @@ Best regards,
 
               <div className="p-6 max-h-96 overflow-y-auto">
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-white/80 mb-2">
+                  <label className={`block text-sm font-medium ${theme === 'black' ? 'text-white/80' : 'text-black/80'} mb-2`}>
                     Review and edit the AI-generated response:
                   </label>
                   <textarea
                     value={replyContent}
                     onChange={(e) => setReplyContent(e.target.value)}
-                    className="w-full h-64 p-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                    className={`w-full h-64 p-4 rounded-xl ${theme === 'black' ? 'bg-white/10 border-white/20 text-white placeholder-white/40' : 'bg-black/10 border-black/20 text-black placeholder-black/40'} focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none`}
                     style={{
                       backdropFilter: 'blur(20px) saturate(1.3)',
                       WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
@@ -803,8 +803,8 @@ Best regards,
                 </div>
               </div>
 
-              <div className="p-6 border-t border-white/10 flex items-center justify-between">
-                <div className="text-sm text-white/60">
+              <div className={`p-6 border-t ${theme === 'black' ? 'border-white/10' : 'border-black/10'} flex items-center justify-between`}>
+                <div className={`text-sm ${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>
                   This response was generated based on the email content and real estate best practices.
                 </div>
                 <div className="flex items-center gap-3">
