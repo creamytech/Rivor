@@ -428,7 +428,22 @@ export const authOptions: NextAuthOptions = {
   },
 };
 
-// Use standard getServerSession since we're using PrismaAdapter now
-export const auth = () => getServerSession(authOptions);
+// Enhanced auth function with logging to debug session retrieval
+export const auth = async () => {
+  try {
+    console.log('🔍 auth() called - attempting to get server session');
+    const session = await getServerSession(authOptions);
+    console.log('🔍 getServerSession result:', !!session ? 'found' : 'not found');
+    if (session) {
+      console.log('✅ Session retrieved successfully:', session.user?.email);
+    } else {
+      console.log('❌ No session found by getServerSession');
+    }
+    return session;
+  } catch (error) {
+    console.error('❌ auth() failed:', error);
+    return null;
+  }
+};
 
 
