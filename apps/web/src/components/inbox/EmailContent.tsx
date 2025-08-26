@@ -442,6 +442,12 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
                           )}
                         </div>
                         
+                        {/* Debug content info */}
+                        <div className="bg-green-500 text-white p-1 text-xs mb-2">
+                          Content Debug - HTML: {message.bodyHtml ? `${message.bodyHtml.substring(0, 100)}...` : 'NONE'} | 
+                          Text: {message.bodyText ? `${message.bodyText.substring(0, 100)}...` : 'NONE'}
+                        </div>
+                        
                         {/* Message Body */}
                         <div className={`prose max-w-none ${
                           theme === 'black' 
