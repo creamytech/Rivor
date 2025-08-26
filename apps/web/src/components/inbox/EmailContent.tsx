@@ -234,6 +234,11 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
 
   return (
     <div className="flex-1 flex flex-col">
+      {/* Debug indicator */}
+      <div className="bg-red-500 text-white p-2 text-center font-bold">
+        🚨 EMAIL CONTENT COMPONENT RENDERED 🚨 Thread ID: {threadId}
+      </div>
+      
       {/* Thread Header */}
       <div className={`p-6 border-b ${theme === 'black' ? 'border-white/10' : 'border-black/10'}`}>
         <div className="flex items-start justify-between mb-4">
