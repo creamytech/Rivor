@@ -11,7 +11,7 @@ import { handleOAuthCallback, isDuplicateCallback, type OAuthCallbackData } from
 import { enqueueTokenEncryption, enqueueOnboarding, enqueueOrgSetup } from "./auth-background";
 import { syncUserSessions } from "./session-sync";
 import { validateAndLogStartupConfig } from "./env";
-import { createCustomPrismaAdapter } from "./auth-adapter";
+// import { createCustomPrismaAdapter } from "./auth-adapter";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { logOAuth } from "@/lib/oauth-logger";
 
@@ -94,7 +94,7 @@ const finalProviders = providers.length > 0 ? providers : [
 console.log('🚀 Final providers array length:', finalProviders.length);
 
 export const authOptions: NextAuthOptions = {
-  adapter: createCustomPrismaAdapter(), // Proper KMS encryption
+  adapter: PrismaAdapter(prisma), // Temporary: Use standard adapter to fix auth issues
   pages: {
     signIn: "/auth/signin",
     error: "/auth/error",
