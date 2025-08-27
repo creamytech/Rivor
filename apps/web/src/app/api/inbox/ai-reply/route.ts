@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get existing AI analysis
-    const analysis = await prisma.emailAIAnalysis.findUnique({
+    const analysis = await prisma.EmailAIAnalysis.findUnique({
       where: { emailId }
     });
 
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if reply already exists
-    const existingReply = await prisma.aISuggestedReply.findFirst({
+    const existingReply = await prisma.AISuggestedReply.findFirst({
       where: { 
         emailId,
         status: { in: ['pending', 'approved'] }
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       .replace('{agentEmail}', agentEmail);
 
     // Get appropriate template for this category
-    const template = await prisma.aIEmailTemplate.findFirst({
+    const template = await prisma.AIEmailTemplate.findFirst({
       where: {
         category: analysis.category,
         isActive: true
@@ -147,7 +147,7 @@ ${template ? `Use this template as inspiration but customize for the specific si
     confidenceScore = Math.min(1, confidenceScore);
 
     // Save the suggested reply
-    const reply = await prisma.aISuggestedReply.create({
+    const reply = await prisma.AISuggestedReply.create({
       data: {
         emailId,
         threadId: threadId || emailId,
@@ -160,14 +160,14 @@ ${template ? `Use this template as inspiration but customize for the specific si
 
     // Update template usage if one was used
     if (template) {
-      await prisma.aIEmailTemplate.update({
+      await prisma.AIEmailTemplate.update({
         where: { id: template.id },
         data: { usageCount: { increment: 1 } }
       });
     }
 
     // Update processing queue status
-    await prisma.aIProcessingQueue.updateMany({
+    await prisma.AIProcessingQueue.updateMany({
       where: {
         emailId,
         processingType: 'reply_generation',
@@ -183,9 +183,11 @@ ${template ? `Use this template as inspiration but customize for the specific si
 
   } catch (error) {
     console.error('AI reply generation error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json({
       error: "Failed to generate reply",
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace'
     }, { status: 500 });
   }
 }
@@ -203,7 +205,7 @@ export async function GET(request: NextRequest) {
 
     if (emailId) {
       // Get reply for specific email
-      const reply = await prisma.aISuggestedReply.findFirst({
+      const reply = await prisma.AISuggestedReply.findFirst({
         where: { 
           emailId,
           ...(status && { status: status as any })
@@ -213,7 +215,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ reply });
     } else {
       // Get pending replies
-      const replies = await prisma.aISuggestedReply.findMany({
+      const replies = await prisma.AISuggestedReply.findMany({
         where: {
           status: status as any || 'pending'
         },
@@ -243,7 +245,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Update reply status
-    const reply = await prisma.aISuggestedReply.update({
+    const reply = await prisma.AISuggestedReply.update({
       where: { id: replyId },
       data: {
         status,
@@ -254,7 +256,7 @@ export async function PATCH(request: NextRequest) {
 
     // Record feedback if provided
     if (feedbackType) {
-      await prisma.aIFeedback.create({
+      await prisma.AIFeedback.create({
         data: {
           replyId,
           feedbackType,
@@ -264,7 +266,7 @@ export async function PATCH(request: NextRequest) {
 
       // Update template success rate if reply was approved/sent
       if (status === 'approved' || status === 'sent') {
-        const template = await prisma.aIEmailTemplate.findFirst({
+        const template = await prisma.AIEmailTemplate.findFirst({
           where: {
             category: reply.category.replace('-response', '')
           }
@@ -274,7 +276,7 @@ export async function PATCH(request: NextRequest) {
           const feedbackWeight = feedbackType === 'positive' ? 0.1 : feedbackType === 'negative' ? -0.05 : 0;
           const newSuccessRate = Math.min(1, Math.max(0, template.successRate + feedbackWeight));
           
-          await prisma.aIEmailTemplate.update({
+          await prisma.AIEmailTemplate.update({
             where: { id: template.id },
             data: { successRate: newSuccessRate }
           });

@@ -1015,11 +1015,30 @@ export default function InboxPage() {
                           <Bot className="h-4 w-4 mr-1" />
                           AI Reply
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            toast({
+                              title: "Reply",
+                              description: "Manual reply functionality - opening AI reply for now",
+                            });
+                            generateAIReply(activeThread.id);
+                          }}
+                        >
                           <Reply className="h-4 w-4 mr-1" />
                           Reply
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            toast({
+                              title: "Forward",
+                              description: "Forward functionality coming soon",
+                            });
+                          }}
+                        >
                           <Forward className="h-4 w-4 mr-1" />
                           Forward
                         </Button>

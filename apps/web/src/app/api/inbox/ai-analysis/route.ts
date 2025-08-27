@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if analysis already exists
-    const existingAnalysis = await prisma.emailAIAnalysis.findUnique({
+    const existingAnalysis = await prisma.EmailAIAnalysis.findUnique({
       where: { emailId }
     });
 
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate and save analysis to database
-    const analysis = await prisma.emailAIAnalysis.create({
+    const analysis = await prisma.EmailAIAnalysis.create({
       data: {
         emailId,
         threadId: threadId || emailId,
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
 
     // If high-priority email, queue for auto-reply generation
     if (analysis.priorityScore >= 80 || analysis.category === 'hot-lead') {
-      await prisma.aIProcessingQueue.create({
+      await prisma.AIProcessingQueue.create({
         data: {
           emailId,
           threadId: threadId || emailId,
@@ -134,9 +134,11 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('AI analysis error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json({ 
       error: "Failed to analyze email",
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace'
     }, { status: 500 });
   }
 }
@@ -154,14 +156,14 @@ export async function GET(request: NextRequest) {
 
     if (emailId) {
       // Get specific analysis
-      const analysis = await prisma.emailAIAnalysis.findUnique({
+      const analysis = await prisma.EmailAIAnalysis.findUnique({
         where: { emailId }
       });
       return NextResponse.json({ analysis });
     } else if (threadIds) {
       // Get analyses for specific threads
       const threadIdArray = threadIds.split(',').filter(id => id.trim());
-      const analyses = await prisma.emailAIAnalysis.findMany({
+      const analyses = await prisma.EmailAIAnalysis.findMany({
         where: { 
           threadId: { in: threadIdArray }
         },
@@ -170,7 +172,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ analyses });
     } else {
       // Get recent analyses
-      const analyses = await prisma.emailAIAnalysis.findMany({
+      const analyses = await prisma.EmailAIAnalysis.findMany({
         orderBy: { createdAt: 'desc' },
         take: 100
       });
