@@ -97,13 +97,16 @@ export function useAutoSync(options: UseAutoSyncOptions = {}) {
       const data = await response.json();
       const result: SyncResult = data.result;
 
+      const nextSyncTime = enabled ? new Date(Date.now() + interval * 60 * 1000) : null;
+      console.log(`🕜 Sync completed. Next sync scheduled for: ${nextSyncTime?.toLocaleTimeString() || 'disabled'}`);
+      
       setState(prev => ({
         ...prev,
         isRunning: false,
         lastSync: new Date(),
         lastResult: result,
         error: null,
-        nextSync: enabled ? new Date(Date.now() + interval * 60 * 1000) : null
+        nextSync: nextSyncTime
       }));
 
       // Show notifications for new content
@@ -176,9 +179,14 @@ export function useAutoSync(options: UseAutoSyncOptions = {}) {
     }
 
     // Setup recurring sync
+    console.log(`🕑 Setting up auto-sync interval: ${interval} minutes (${interval * 60 * 1000}ms)`);
     intervalRef.current = setInterval(() => {
+      console.log(`🔄 Auto-sync interval triggered! isVisible: ${isVisible}`);
       if (isVisible) { // Only sync when tab is visible
+        console.log('✅ Tab is visible, starting auto-sync...');
         performSync();
+      } else {
+        console.log('🚷 Tab not visible, skipping auto-sync');
       }
     }, interval * 60 * 1000);
 
