@@ -54,6 +54,17 @@ interface EmailThread {
   labels: string[];
   lastMessageAt: string;
   updatedAt: string;
+  // AI Analysis data from API
+  aiAnalysis?: {
+    category: string;
+    priorityScore: number;
+    leadScore: number;
+    confidenceScore: number;
+    sentimentScore: number;
+    keyEntities: any;
+    processingStatus: string;
+    analyzedAt: string;
+  };
 }
 
 interface ThreadsResponse {
@@ -93,7 +104,6 @@ export default function InboxPage() {
   const [aiAnalyzing, setAiAnalyzing] = useState<string | null>(null);
   const [showAiReplyModal, setShowAiReplyModal] = useState(false);
   const [aiReply, setAiReply] = useState<any>(null);
-  const [threadAnalyses, setThreadAnalyses] = useState<Map<string, any>>(new Map());
   const [showComposeModal, setShowComposeModal] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -133,12 +143,9 @@ export default function InboxPage() {
       setThreads(data.threads);
       setPagination(data.pagination);
       
-      // Fetch AI analyses for threads and auto-analyze if missing
+      // Auto-analyze threads without existing analysis (only if they haven't been analyzed before)
       if (data.threads.length > 0) {
-        await fetchAIAnalyses(data.threads.map(t => t.id));
-        
-        // Auto-analyze threads that don't have analysis yet
-        const threadsWithoutAnalysis = data.threads.filter(t => !threadAnalyses.has(t.id));
+        const threadsWithoutAnalysis = data.threads.filter(t => !t.aiAnalysis);
         if (threadsWithoutAnalysis.length > 0) {
           console.log(`Auto-analyzing ${threadsWithoutAnalysis.length} threads without analysis`);
           for (const thread of threadsWithoutAnalysis.slice(0, 3)) { // Limit to 3 to avoid rate limits
@@ -341,29 +348,6 @@ export default function InboxPage() {
     }
   };
 
-  // Fetch AI analyses for threads
-  const fetchAIAnalyses = async (threadIds: string[]) => {
-    try {
-      console.log('Fetching AI analyses for threads:', threadIds);
-      const response = await fetch(`/api/inbox/ai-analysis?threadIds=${threadIds.join(',')}`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log('AI analyses response:', data);
-        const newAnalyses = new Map(threadAnalyses);
-        const analysisCount = data.analyses?.length || 0;
-        data.analyses?.forEach((analysis: any) => {
-          newAnalyses.set(analysis.threadId, analysis);
-          console.log(`Analysis for thread ${analysis.threadId}:`, analysis);
-        });
-        setThreadAnalyses(newAnalyses);
-        console.log(`Loaded ${analysisCount} analyses, total now: ${newAnalyses.size}`);
-      } else {
-        console.error('Failed to fetch AI analyses:', response.status, await response.text());
-      }
-    } catch (error) {
-      console.error('Error fetching AI analyses:', error);
-    }
-  };
 
   // Trigger AI analysis for a thread
   const analyzeThread = async (threadId: string) => {
@@ -559,7 +543,7 @@ export default function InboxPage() {
 
       // Refresh thread data to show sent status
       if (activeThread) {
-        fetchThreadDetails(activeThread.id);
+        await fetchThreads(pagination.page, activeFilter, searchQuery);
       }
 
     } catch (error) {
@@ -747,12 +731,12 @@ export default function InboxPage() {
   };
 
   // Get urgency indicator
-  const getUrgencyIndicator = (urgency: string, leadScore: number) => {
-    if (urgency === 'critical' || leadScore >= 90) {
+  const getUrgencyIndicator = (urgency: string | undefined, leadScore: number | undefined) => {
+    if (urgency === 'critical' || (leadScore && leadScore >= 90)) {
       return <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />;
-    } else if (urgency === 'high' || leadScore >= 70) {
+    } else if (urgency === 'high' || (leadScore && leadScore >= 70)) {
       return <div className="w-2 h-2 bg-orange-500 rounded-full" />;
-    } else if (urgency === 'medium' || leadScore >= 50) {
+    } else if (urgency === 'medium' || (leadScore && leadScore >= 50)) {
       return <div className="w-2 h-2 bg-yellow-500 rounded-full" />;
     }
     return null;
@@ -1076,7 +1060,7 @@ export default function InboxPage() {
                   </div>
 
                   {/* AI Analysis Panel */}
-                  {threadAnalyses.get(activeThread.id) && (
+                  {activeThread.aiAnalysis && (
                     <motion.div 
                       className={`p-4 border-b ${theme === 'black' ? 'border-white/10' : 'border-black/10'}`}
                       style={{
@@ -1095,7 +1079,7 @@ export default function InboxPage() {
                       </div>
                       
                       {(() => {
-                        const analysis = threadAnalyses.get(activeThread.id);
+                        const analysis = activeThread.aiAnalysis;
                         return (
                           <div className="grid grid-cols-4 gap-4 mb-3">
                             <div className="text-center">
@@ -1106,26 +1090,27 @@ export default function InboxPage() {
                             </div>
                             <div className="text-center">
                               <div className={`text-sm font-bold ${
-                                analysis.urgency === 'critical' ? 'text-red-400' :
-                                analysis.urgency === 'high' ? 'text-orange-400' :
-                                analysis.urgency === 'medium' ? 'text-yellow-400' : 'text-green-400'
+                                analysis.keyEntities?.urgency === 'critical' ? 'text-red-400' :
+                                analysis.keyEntities?.urgency === 'high' ? 'text-orange-400' :
+                                analysis.keyEntities?.urgency === 'medium' ? 'text-yellow-400' : 'text-green-400'
                               }`}>
-                                {analysis.urgency?.toUpperCase()}
+                                {analysis.keyEntities?.urgency?.toUpperCase() || 'LOW'}
                               </div>
                               <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>Urgency</div>
                             </div>
                             <div className="text-center">
                               <div className={`text-sm font-bold ${theme === 'black' ? 'text-white' : 'text-black'}`}>
-                                {analysis.contactIntent?.replace('_', ' ')}
+                                {analysis.keyEntities?.contactIntent?.replace('_', ' ') || 'Unknown'}
                               </div>
                               <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>Intent</div>
                             </div>
                             <div className="text-center">
                               <div className={`text-sm font-bold ${
-                                analysis.sentiment === 'positive' ? 'text-green-400' :
-                                analysis.sentiment === 'negative' ? 'text-red-400' : 'text-blue-400'
+                                analysis.sentimentScore > 0.6 ? 'text-green-400' :
+                                analysis.sentimentScore < 0.4 ? 'text-red-400' : 'text-blue-400'
                               }`}>
-                                {analysis.sentiment?.toUpperCase()}
+                                {analysis.sentimentScore > 0.6 ? 'POSITIVE' :
+                                 analysis.sentimentScore < 0.4 ? 'NEGATIVE' : 'NEUTRAL'}
                               </div>
                               <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>Sentiment</div>
                             </div>
@@ -1134,22 +1119,22 @@ export default function InboxPage() {
                       })()}
 
                       <div className="mb-3">
-                        <span className={`text-xs px-2 py-1 rounded-full border ${getCategoryColor(threadAnalyses.get(activeThread.id).category)}`}>
-                          {threadAnalyses.get(activeThread.id).category?.replace('_', ' ').toUpperCase()}
+                        <span className={`text-xs px-2 py-1 rounded-full border ${getCategoryColor(activeThread.aiAnalysis.category)}`}>
+                          {activeThread.aiAnalysis.category?.replace('_', ' ').toUpperCase()}
                         </span>
                       </div>
 
                       <div className={`text-sm ${theme === 'black' ? 'text-white/80' : 'text-black/80'} mb-2`}>
-                        {threadAnalyses.get(activeThread.id).summary}
+                        {activeThread.aiAnalysis.keyEntities?.summary || 'No summary available'}
                       </div>
 
-                      {threadAnalyses.get(activeThread.id).keyPoints && (
+                      {activeThread.aiAnalysis.keyEntities?.keyPoints && (
                         <div>
                           <div className={`text-xs font-semibold ${theme === 'black' ? 'text-white/60' : 'text-black/60'} mb-1`}>
                             Key Points:
                           </div>
                           <div className="flex flex-wrap gap-1">
-                            {threadAnalyses.get(activeThread.id).keyPoints.map((point: string, i: number) => (
+                            {activeThread.aiAnalysis.keyEntities.keyPoints.map((point: string, i: number) => (
                               <span key={i} className={`text-xs px-2 py-0.5 rounded ${theme === 'black' ? 'bg-white/10 text-white/70' : 'bg-black/10 text-black/70'}`}>
                                 {point}
                               </span>
@@ -1158,25 +1143,25 @@ export default function InboxPage() {
                         </div>
                       )}
 
-                      {threadAnalyses.get(activeThread.id).propertyDetails && (
+                      {activeThread.aiAnalysis.keyEntities?.propertyDetails && (
                         <div className="mt-3 pt-3 border-t border-white/10">
                           <div className={`text-xs font-semibold ${theme === 'black' ? 'text-white/60' : 'text-black/60'} mb-2`}>
                             Property Information:
                           </div>
                           <div className="grid grid-cols-2 gap-2 text-xs">
-                            {threadAnalyses.get(activeThread.id).propertyDetails.address && (
+                            {activeThread.aiAnalysis.keyEntities.propertyDetails.address && (
                               <div>
-                                <span className="font-medium">Address:</span> {threadAnalyses.get(activeThread.id).propertyDetails.address}
+                                <span className="font-medium">Address:</span> {activeThread.aiAnalysis.keyEntities.propertyDetails.address}
                               </div>
                             )}
-                            {threadAnalyses.get(activeThread.id).propertyDetails.priceRange && (
+                            {activeThread.aiAnalysis.keyEntities.propertyDetails.priceRange && (
                               <div>
-                                <span className="font-medium">Price:</span> {threadAnalyses.get(activeThread.id).propertyDetails.priceRange}
+                                <span className="font-medium">Price:</span> {activeThread.aiAnalysis.keyEntities.propertyDetails.priceRange}
                               </div>
                             )}
-                            {threadAnalyses.get(activeThread.id).propertyDetails.propertyType && (
+                            {activeThread.aiAnalysis.keyEntities.propertyDetails.propertyType && (
                               <div>
-                                <span className="font-medium">Type:</span> {threadAnalyses.get(activeThread.id).propertyDetails.propertyType}
+                                <span className="font-medium">Type:</span> {activeThread.aiAnalysis.keyEntities.propertyDetails.propertyType}
                               </div>
                             )}
                           </div>
@@ -1213,7 +1198,7 @@ export default function InboxPage() {
           setAiReply(null);
         }}
         reply={aiReply}
-        analysis={activeThread ? threadAnalyses[activeThread.id] : null}
+        analysis={activeThread ? activeThread.aiAnalysis : null}
         originalEmail={activeThread ? {
           subject: activeThread.subject,
           fromName: activeThread.participants[0]?.name || 'Unknown',
