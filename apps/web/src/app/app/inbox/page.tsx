@@ -41,6 +41,7 @@ import { AIReplyModal } from '@/components/inbox/AIReplyModal';
 import { ContextMenu } from '@/components/inbox/ContextMenu';
 import { EmailContent } from '@/components/inbox/EmailContent';
 import { CategoryModal } from '@/components/inbox/CategoryModal';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { internalFetch } from '@/lib/internal-url';
 
 // Types for real email data
@@ -2059,16 +2060,44 @@ export default function InboxPage() {
 
       {/* Category Modal */}
       {selectedThreadForCategory && showCategoryModal && selectedThreadForCategory.id && (
-        <CategoryModal
-          isOpen={showCategoryModal}
-          onClose={() => {
+        <ErrorBoundary
+          onError={(error, errorInfo) => {
+            console.error('CategoryModal error:', error, errorInfo);
+            // Reset modal state on error
             setShowCategoryModal(false);
             setSelectedThreadForCategory(null);
           }}
-          currentCategory={selectedThreadForCategory.aiAnalysis?.category || 'follow_up'}
-          threadId={selectedThreadForCategory.id}
-          onCategoryChange={handleCategoryChange}
-        />
+          fallback={
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+              <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-sm mx-4">
+                <h3 className="text-lg font-semibold mb-2">Modal Error</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  There was an error with the category modal. Please try again.
+                </p>
+                <button
+                  onClick={() => {
+                    setShowCategoryModal(false);
+                    setSelectedThreadForCategory(null);
+                  }}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          }
+        >
+          <CategoryModal
+            isOpen={showCategoryModal}
+            onClose={() => {
+              setShowCategoryModal(false);
+              setSelectedThreadForCategory(null);
+            }}
+            currentCategory={selectedThreadForCategory.aiAnalysis?.category || 'follow_up'}
+            threadId={selectedThreadForCategory.id}
+            onCategoryChange={handleCategoryChange}
+          />
+        </ErrorBoundary>
       )}
 
       {/* Add to Pipeline Modal */}
