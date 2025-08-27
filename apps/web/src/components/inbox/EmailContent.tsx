@@ -290,10 +290,10 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col" style={{ minHeight: '600px' }}>
 
       {/* Messages */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1" style={{ minHeight: '500px' }}>
         <div className="p-4 space-y-3" style={{ minWidth: '900px' }}>
           {thread.messages.map((message, index) => {
             const isExpanded = expandedMessages.has(message.id);
@@ -475,8 +475,9 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
                                     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
                                     minWidth: '800px',
                                     width: '100%',
+                                    minHeight: '400px',
+                                    height: 'auto',
                                     overflow: 'auto',
-                                    maxHeight: '70vh',
                                     zoom: '0.8'
                                   }}
                                 />
