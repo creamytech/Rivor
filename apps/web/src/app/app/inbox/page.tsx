@@ -40,6 +40,7 @@ import { SyncStatusIndicator } from '@/components/sync/SyncStatusIndicator';
 import { AIReplyModal } from '@/components/inbox/AIReplyModal';
 import { ContextMenu } from '@/components/inbox/ContextMenu';
 import { EmailContent } from '@/components/inbox/EmailContent';
+import { CategoryModal } from '@/components/inbox/CategoryModal';
 
 // Types for real email data
 interface EmailThread {
@@ -105,6 +106,10 @@ export default function InboxPage() {
   const [showAiReplyModal, setShowAiReplyModal] = useState(false);
   const [aiReply, setAiReply] = useState<any>(null);
   const [showComposeModal, setShowComposeModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [selectedThreadForCategory, setSelectedThreadForCategory] = useState<EmailThread | null>(null);
+  const [showPipelineModal, setShowPipelineModal] = useState(false);
+  const [selectedThreadForPipeline, setSelectedThreadForPipeline] = useState<EmailThread | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 50,
@@ -632,6 +637,87 @@ export default function InboxPage() {
     });
   };
 
+  // Handle category badge click to open modal
+  const handleCategoryBadgeClick = (thread: EmailThread, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setSelectedThreadForCategory(thread);
+    setShowCategoryModal(true);
+  };
+
+  // Handle category change
+  const handleCategoryChange = async (threadId: string, newCategory: string) => {
+    try {
+      // Update local state optimistically
+      setThreads(prev => prev.map(t => 
+        t.id === threadId 
+          ? { ...t, aiAnalysis: { ...t.aiAnalysis, category: newCategory } }
+          : t
+      ));
+
+      if (activeThread?.id === threadId) {
+        setActiveThread(prev => prev 
+          ? { ...prev, aiAnalysis: { ...prev.aiAnalysis, category: newCategory } }
+          : null
+        );
+      }
+
+      toast({
+        title: "Category Updated",
+        description: `Email category changed to ${newCategory.replace('_', ' ')}`,
+      });
+    } catch (error) {
+      console.error('Error updating category:', error);
+      // Refresh threads to get correct state
+      await fetchThreads(pagination.page, activeFilter, searchQuery, true);
+      toast({
+        title: "Error",
+        description: "Failed to update category",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle add to pipeline
+  const handleAddToPipeline = (thread: EmailThread, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setSelectedThreadForPipeline(thread);
+    setShowPipelineModal(true);
+  };
+
+  // Handle pipeline form submission
+  const handlePipelineSubmit = async (pipelineData: any) => {
+    try {
+      const response = await fetch(`/api/inbox/threads/${selectedThreadForPipeline?.id}/actions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'add_to_pipeline',
+          data: pipelineData
+        })
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Added to Pipeline",
+          description: "Contact has been added to your sales pipeline",
+        });
+        setShowPipelineModal(false);
+        // Refresh to show pipeline status
+        await fetchThreads(pagination.page, activeFilter, searchQuery, true);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add to pipeline');
+      }
+    } catch (error) {
+      console.error('Error adding to pipeline:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to add to pipeline",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleContextMenuAction = async (action: string, threadId: string) => {
     try {
       switch (action) {
@@ -756,6 +842,136 @@ export default function InboxPage() {
       return <div className="w-2 h-2 bg-yellow-500 rounded-full" />;
     }
     return null;
+  };
+
+  // Pipeline Form Component
+  const PipelineForm = ({ thread, onSubmit, onCancel, theme }: {
+    thread: EmailThread;
+    onSubmit: (data: any) => void;
+    onCancel: () => void;
+    theme: string;
+  }) => {
+    const [formData, setFormData] = useState({
+      contactName: thread.participants[0]?.name || '',
+      contactEmail: thread.participants[0]?.email || '',
+      contactPhone: '',
+      propertyAddress: '',
+      propertyType: 'Single Family Home',
+      budget: '',
+      timeline: '3 months',
+      notes: `Created from email: ${thread.subject}`,
+      stage: 'new_lead'
+    });
+
+    const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      onSubmit(formData);
+    };
+
+    return (
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={`block text-sm font-medium mb-2 ${theme === 'black' ? 'text-white/80' : 'text-black/80'}`}>
+              Contact Name *
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.contactName}
+              onChange={(e) => setFormData(prev => ({ ...prev, contactName: e.target.value }))}
+              className={`w-full px-3 py-2 rounded border ${theme === 'black' ? 'bg-white/5 border-white/20 text-white' : 'bg-black/5 border-black/20 text-black'}`}
+            />
+          </div>
+          <div>
+            <label className={`block text-sm font-medium mb-2 ${theme === 'black' ? 'text-white/80' : 'text-black/80'}`}>
+              Email *
+            </label>
+            <input
+              type="email"
+              required
+              value={formData.contactEmail}
+              onChange={(e) => setFormData(prev => ({ ...prev, contactEmail: e.target.value }))}
+              className={`w-full px-3 py-2 rounded border ${theme === 'black' ? 'bg-white/5 border-white/20 text-white' : 'bg-black/5 border-black/20 text-black'}`}
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={`block text-sm font-medium mb-2 ${theme === 'black' ? 'text-white/80' : 'text-black/80'}`}>
+              Phone
+            </label>
+            <input
+              type="tel"
+              value={formData.contactPhone}
+              onChange={(e) => setFormData(prev => ({ ...prev, contactPhone: e.target.value }))}
+              className={`w-full px-3 py-2 rounded border ${theme === 'black' ? 'bg-white/5 border-white/20 text-white' : 'bg-black/5 border-black/20 text-black'}`}
+            />
+          </div>
+          <div>
+            <label className={`block text-sm font-medium mb-2 ${theme === 'black' ? 'text-white/80' : 'text-black/80'}`}>
+              Property Address
+            </label>
+            <input
+              type="text"
+              value={formData.propertyAddress}
+              onChange={(e) => setFormData(prev => ({ ...prev, propertyAddress: e.target.value }))}
+              className={`w-full px-3 py-2 rounded border ${theme === 'black' ? 'bg-white/5 border-white/20 text-white' : 'bg-black/5 border-black/20 text-black'}`}
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={`block text-sm font-medium mb-2 ${theme === 'black' ? 'text-white/80' : 'text-black/80'}`}>
+              Budget
+            </label>
+            <input
+              type="text"
+              value={formData.budget}
+              onChange={(e) => setFormData(prev => ({ ...prev, budget: e.target.value }))}
+              placeholder="$400,000"
+              className={`w-full px-3 py-2 rounded border ${theme === 'black' ? 'bg-white/5 border-white/20 text-white' : 'bg-black/5 border-black/20 text-black'}`}
+            />
+          </div>
+          <div>
+            <label className={`block text-sm font-medium mb-2 ${theme === 'black' ? 'text-white/80' : 'text-black/80'}`}>
+              Timeline
+            </label>
+            <select
+              value={formData.timeline}
+              onChange={(e) => setFormData(prev => ({ ...prev, timeline: e.target.value }))}
+              className={`w-full px-3 py-2 rounded border ${theme === 'black' ? 'bg-white/5 border-white/20 text-white' : 'bg-black/5 border-black/20 text-black'}`}
+            >
+              <option value="Immediate">Immediate</option>
+              <option value="1 month">1 month</option>
+              <option value="3 months">3 months</option>
+              <option value="6 months">6 months</option>
+              <option value="1+ years">1+ years</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className={`block text-sm font-medium mb-2 ${theme === 'black' ? 'text-white/80' : 'text-black/80'}`}>
+            Notes
+          </label>
+          <textarea
+            rows={3}
+            value={formData.notes}
+            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+            className={`w-full px-3 py-2 rounded border ${theme === 'black' ? 'bg-white/5 border-white/20 text-white' : 'bg-black/5 border-black/20 text-black'}`}
+          />
+        </div>
+        <div className="flex justify-end gap-3 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="liquid">
+            <Users className="h-4 w-4 mr-2" />
+            Add to Pipeline
+          </Button>
+        </div>
+      </form>
+    );
   };
 
   return (
@@ -936,12 +1152,22 @@ export default function InboxPage() {
                                 </div>
                               </div>
 
-                              {/* AI Category Badge */}
+                              {/* AI Category Badge - Clickable */}
                               {analysis?.category && (
-                                <div className="mb-1">
-                                  <span className={`text-xs px-2 py-0.5 rounded-full border ${getCategoryColor(analysis.category)}`}>
+                                <div className="mb-1 flex items-center gap-2">
+                                  <button
+                                    onClick={(e) => handleCategoryBadgeClick(thread, e)}
+                                    className={`text-xs px-2 py-0.5 rounded-full border ${getCategoryColor(analysis.category)} hover:opacity-80 transition-opacity cursor-pointer`}
+                                  >
                                     {analysis.category.replace('_', ' ').toUpperCase()}
-                                  </span>
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleAddToPipeline(thread, e)}
+                                    className="text-xs px-2 py-0.5 rounded-full border border-green-400/50 bg-green-600/20 text-green-200 hover:opacity-80 transition-opacity cursor-pointer"
+                                    title="Add to Pipeline"
+                                  >
+                                    + PIPELINE
+                                  </button>
                                 </div>
                               )}
 
@@ -1055,6 +1281,26 @@ export default function InboxPage() {
                         >
                           <Sparkles className={`h-4 w-4 ${aiAnalyzing === activeThread.id ? 'animate-spin' : ''}`} />
                         </Button>
+                        {activeThread.aiAnalysis && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleCategoryBadgeClick(activeThread, {} as React.MouseEvent)}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Category
+                          </Button>
+                        )}
+                        {activeThread.aiAnalysis && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleAddToPipeline(activeThread, {} as React.MouseEvent)}
+                          >
+                            <Users className="h-4 w-4 mr-1" />
+                            Pipeline
+                          </Button>
+                        )}
                         <Button 
                           variant="outline" 
                           size="sm"
@@ -1334,6 +1580,49 @@ export default function InboxPage() {
         onClose={handleContextMenuClose}
         onAction={handleContextMenuAction}
       />
+
+      {/* Category Modal */}
+      <CategoryModal
+        isOpen={showCategoryModal}
+        onClose={() => {
+          setShowCategoryModal(false);
+          setSelectedThreadForCategory(null);
+        }}
+        currentCategory={selectedThreadForCategory?.aiAnalysis?.category || 'follow_up'}
+        threadId={selectedThreadForCategory?.id || ''}
+        onCategoryChange={handleCategoryChange}
+      />
+
+      {/* Add to Pipeline Modal */}
+      {showPipelineModal && selectedThreadForPipeline && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <motion.div
+            className={`w-full max-w-2xl mx-4 rounded-lg shadow-2xl ${
+              theme === 'black' ? 'bg-black/90 border-white/10' : 'bg-white border-black/10'
+            } border`}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+          >
+            <div className={`p-6 border-b ${theme === 'black' ? 'border-white/10' : 'border-black/10'}`}>
+              <h2 className={`text-xl font-semibold ${theme === 'black' ? 'text-white' : 'text-black'}`}>
+                Add to Sales Pipeline
+              </h2>
+              <p className={`text-sm ${theme === 'black' ? 'text-white/60' : 'text-black/60'} mt-1`}>
+                Create a lead from this email thread
+              </p>
+            </div>
+            <div className="p-6">
+              <PipelineForm
+                thread={selectedThreadForPipeline}
+                onSubmit={handlePipelineSubmit}
+                onCancel={() => setShowPipelineModal(false)}
+                theme={theme}
+              />
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
