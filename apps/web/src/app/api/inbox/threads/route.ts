@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
     const timeFilter = since ? new Date(since) : ninetyDaysAgo;
     
     console.log(`📅 Time filter active: ${timeFilter.toISOString()} ${since ? '(since parameter)' : '(90-day default)'}`);
+    console.log(`🔍 Search mode: ${search ? 'ACTIVE' : 'INACTIVE'} - Query: "${search}"`);
 
     // Build where clause based on filter
     const whereClause: any = {
@@ -279,11 +280,13 @@ export async function GET(req: NextRequest) {
       console.log(`🔍 Total threads to search through: ${threadsFormatted.length}`);
       
       // Log a few sample threads for debugging
-      threadsFormatted.slice(0, 3).forEach((thread, index) => {
+      threadsFormatted.slice(0, 5).forEach((thread, index) => {
         console.log(`🔍 Sample thread ${index + 1}:`, {
           id: thread.id?.substring(0, 8),
           subject: thread.subject?.substring(0, 50),
           category: thread.aiAnalysis?.category,
+          lastMessageAt: thread.lastMessageAt,
+          isToday: new Date(thread.lastMessageAt).toDateString() === new Date().toDateString(),
           participants: thread.participants?.slice(0, 2).map(p => p.name || p.email)
         });
       });

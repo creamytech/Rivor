@@ -157,7 +157,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
       if (activeCategory === 'all' || activeCategory === 'emails') {
         searchPromises.push(
-          internalFetch(`/api/inbox/threads?search=${encodeURIComponent(query)}&limit=10`)
+          internalFetch(`/api/inbox/threads?search=${encodeURIComponent(query)}&limit=50`)
             .then(res => {
               console.log('🔍 Email search API response status:', res.status);
               return res.ok ? res.json() : { threads: [] };

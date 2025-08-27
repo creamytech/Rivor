@@ -958,6 +958,18 @@ export default function InboxPage() {
   // Handle category badge click to open modal
   const handleCategoryBadgeClick = (thread: EmailThread, event?: React.MouseEvent) => {
     event?.stopPropagation?.();
+    
+    // Validate that the thread has AI analysis before opening modal
+    if (!thread || !thread.aiAnalysis || !thread.aiAnalysis.category) {
+      console.warn('Attempted to open category modal for thread without AI analysis:', thread?.id);
+      toast({
+        title: "Category Update Unavailable",
+        description: "This email hasn't been analyzed yet. Please wait for AI analysis to complete.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setSelectedThreadForCategory(thread);
     setShowCategoryModal(true);
   };
@@ -998,6 +1010,18 @@ export default function InboxPage() {
   // Handle add to pipeline
   const handleAddToPipeline = (thread: EmailThread, event?: React.MouseEvent) => {
     event?.stopPropagation?.();
+    
+    // Validate that the thread exists and has participants
+    if (!thread || !thread.participants || thread.participants.length === 0) {
+      console.warn('Attempted to add thread to pipeline without valid thread data:', thread?.id);
+      toast({
+        title: "Add to Pipeline Unavailable",
+        description: "Unable to add this email to pipeline. Thread data is incomplete.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setSelectedThreadForPipeline(thread);
     setShowPipelineModal(true);
   };
