@@ -2,6 +2,7 @@ import { Client } from '@microsoft/microsoft-graph-client';
 import { prisma } from './db';
 import { decryptForOrg, encryptForOrg } from './crypto';
 import { indexThread } from './indexer';
+import { linkEmailToPipelineContacts } from './pipeline-email-service';
 
 export interface OutlookMessage {
   id: string;
@@ -187,6 +188,16 @@ export class MicrosoftGraphService {
 
       // Update thread indexing
       await indexThread(thread.id);
+
+      // Automatically link this thread to pipeline contacts if any participants match
+      try {
+        const pipelineLinkResult = await linkEmailToPipelineContacts(orgId, thread.id);
+        if (pipelineLinkResult.linked) {
+          console.log(`Auto-linked Outlook thread ${thread.id} to ${pipelineLinkResult.matchingLeads} pipeline lead(s)`);
+        }
+      } catch (error) {
+        console.error(`Failed to auto-link Outlook thread ${thread.id} to pipeline:`, error);
+      }
 
     } catch (error) {
       console.error(`Error processing Outlook message ${message.id}:`, error);

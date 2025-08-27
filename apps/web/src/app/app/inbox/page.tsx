@@ -959,9 +959,28 @@ export default function InboxPage() {
   const handleCategoryBadgeClick = (thread: EmailThread, event?: React.MouseEvent) => {
     event?.stopPropagation?.();
     
+    console.log('CategoryBadgeClick called with:', {
+      threadId: thread?.id,
+      hasThread: !!thread,
+      hasAiAnalysis: !!thread?.aiAnalysis,
+      category: thread?.aiAnalysis?.category,
+      threadObject: thread
+    });
+    
+    // Validate that the thread exists and has required properties
+    if (!thread || !thread.id) {
+      console.error('CategoryBadgeClick: Invalid thread object', thread);
+      toast({
+        title: "Error",
+        description: "Invalid email thread. Please refresh the page and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Validate that the thread has AI analysis before opening modal
-    if (!thread || !thread.aiAnalysis || !thread.aiAnalysis.category) {
-      console.warn('Attempted to open category modal for thread without AI analysis:', thread?.id);
+    if (!thread.aiAnalysis || !thread.aiAnalysis.category) {
+      console.warn('Attempted to open category modal for thread without AI analysis:', thread.id);
       toast({
         title: "Category Update Unavailable",
         description: "This email hasn't been analyzed yet. Please wait for AI analysis to complete.",
@@ -970,8 +989,18 @@ export default function InboxPage() {
       return;
     }
     
-    setSelectedThreadForCategory(thread);
-    setShowCategoryModal(true);
+    try {
+      console.log('Setting selectedThreadForCategory and showing modal');
+      setSelectedThreadForCategory(thread);
+      setShowCategoryModal(true);
+    } catch (error) {
+      console.error('Error in handleCategoryBadgeClick:', error);
+      toast({
+        title: "Error",
+        description: "Failed to open category modal. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Handle category change
@@ -2029,7 +2058,7 @@ export default function InboxPage() {
       />
 
       {/* Category Modal */}
-      {selectedThreadForCategory && (
+      {selectedThreadForCategory && showCategoryModal && selectedThreadForCategory.id && (
         <CategoryModal
           isOpen={showCategoryModal}
           onClose={() => {

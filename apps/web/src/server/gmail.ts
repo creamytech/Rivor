@@ -2,6 +2,7 @@ import { getGoogleApisLazy } from '@/lib/dynamic-imports';
 import { prisma } from './db';
 import { decryptForOrg, encryptForOrg } from './crypto';
 import { indexThread } from './indexer';
+import { linkEmailToPipelineContacts } from './pipeline-email-service';
 import { logger } from '@/lib/logger';
 
 export interface GmailMessage {
@@ -486,6 +487,28 @@ export class GmailService {
           where: { id: thread.id },
           data: { updatedAt: new Date() }
         });
+
+        // Automatically link this thread to pipeline contacts if any participants match
+        try {
+          const pipelineLinkResult = await linkEmailToPipelineContacts(orgId, thread.id);
+          if (pipelineLinkResult.linked) {
+            logger.info('Auto-linked email thread to pipeline', {
+              orgId,
+              threadId: thread.id,
+              gmailThreadId,
+              linkedLeads: pipelineLinkResult.matchingLeads,
+              action: 'pipeline_auto_link'
+            });
+          }
+        } catch (error) {
+          logger.error('Failed to auto-link thread to pipeline', {
+            orgId,
+            threadId: thread.id,
+            gmailThreadId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            action: 'pipeline_auto_link_failed'
+          });
+        }
       }
 
     } catch (error) {

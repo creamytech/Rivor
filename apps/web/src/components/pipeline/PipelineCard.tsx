@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useState, useEffect } from 'react';
 import { 
   Building2, 
   User, 
@@ -12,7 +13,12 @@ import {
   MoreHorizontal,
   TrendingUp,
   AlertCircle,
-  Zap
+  Zap,
+  ChevronDown,
+  ChevronUp,
+  MessageSquare,
+  ExternalLink,
+  Clock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Lead } from './PipelineBoard';
@@ -25,12 +31,44 @@ import {
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 
+interface EmailThread {
+  id: string;
+  subject: string;
+  participants: Array<{ name: string; email: string }>;
+  lastMessageAt: string;
+  messageCount: number;
+  unread: boolean;
+  starred: boolean;
+  aiAnalysis?: {
+    category: string;
+    urgency: string;
+    keyEntities: any;
+  } | null;
+}
+
+interface LeadThreadsResponse {
+  threads: EmailThread[];
+  contactInfo: {
+    email: string | null;
+    name: string | null;
+  };
+  totalThreads: number;
+}
+
 interface PipelineCardProps {
   lead: Lead;
   isDragging?: boolean;
 }
 
 export default function PipelineCard({ lead, isDragging = false }: PipelineCardProps) {
+  const [emailThreads, setEmailThreads] = useState<EmailThread[]>([]);
+  const [threadsExpanded, setThreadsExpanded] = useState(false);
+  const [loadingThreads, setLoadingThreads] = useState(false);
+  const [contactInfo, setContactInfo] = useState<{ email: string | null; name: string | null }>({ 
+    email: null, 
+    name: null 
+  });
+
   const {
     attributes,
     listeners,
@@ -46,6 +84,31 @@ export default function PipelineCard({ lead, isDragging = false }: PipelineCardP
   };
 
   const isBeingDragged = isDragging || isSortableDragging;
+
+  // Fetch email threads for this lead
+  useEffect(() => {
+    const fetchEmailThreads = async () => {
+      if (!lead.id) return;
+      
+      setLoadingThreads(true);
+      try {
+        const response = await fetch(`/api/pipeline/leads/${lead.id}/threads`);
+        if (response.ok) {
+          const data: LeadThreadsResponse = await response.json();
+          setEmailThreads(data.threads);
+          setContactInfo(data.contactInfo);
+        } else {
+          console.error('Failed to fetch email threads for lead:', lead.id);
+        }
+      } catch (error) {
+        console.error('Error fetching email threads:', error);
+      } finally {
+        setLoadingThreads(false);
+      }
+    };
+
+    fetchEmailThreads();
+  }, [lead.id]);
 
   const priorityColors = {
     low: 'text-slate-500',
@@ -206,6 +269,77 @@ export default function PipelineCard({ lead, isDragging = false }: PipelineCardP
               <span className="text-xs text-slate-500">
                 +{lead.tags.length - 2}
               </span>
+            )}
+          </div>
+        )}
+
+        {/* Email Threads */}
+        {emailThreads.length > 0 && (
+          <div className="border-t border-slate-200 dark:border-slate-700 pt-3 mb-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-3 w-3 text-slate-500" />
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                  Email Threads ({emailThreads.length})
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm" 
+                className="h-5 w-5 p-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setThreadsExpanded(!threadsExpanded);
+                }}
+              >
+                {threadsExpanded ? (
+                  <ChevronUp className="h-3 w-3" />
+                ) : (
+                  <ChevronDown className="h-3 w-3" />
+                )}
+              </Button>
+            </div>
+            
+            {threadsExpanded && (
+              <div className="space-y-2 max-h-32 overflow-y-auto">
+                {emailThreads.slice(0, 3).map((thread) => (
+                  <div
+                    key={thread.id}
+                    className="group flex items-start gap-2 p-2 rounded-md bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(`/app/inbox?thread=${thread.id}`, '_blank');
+                    }}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1 mb-1">
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">
+                          {thread.subject || 'No Subject'}
+                        </span>
+                        {thread.unread && (
+                          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" />
+                        )}
+                        {thread.aiAnalysis?.category && (
+                          <span className="text-xs px-1.5 py-0.5 bg-teal-100 dark:bg-teal-900 text-teal-700 dark:text-teal-300 rounded flex-shrink-0">
+                            {thread.aiAnalysis.category.replace('_', ' ')}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-slate-500">
+                        <Clock className="h-2.5 w-2.5" />
+                        <span>{getTimeAgo(thread.lastMessageAt)}</span>
+                        <span>• {thread.messageCount} msg{thread.messageCount !== 1 ? 's' : ''}</span>
+                      </div>
+                    </div>
+                    <ExternalLink className="h-3 w-3 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                  </div>
+                ))}
+                {emailThreads.length > 3 && (
+                  <div className="text-xs text-slate-500 text-center py-1">
+                    +{emailThreads.length - 3} more threads
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}

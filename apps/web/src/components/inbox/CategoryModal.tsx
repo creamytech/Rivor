@@ -91,20 +91,38 @@ const categories = [
   }
 ];
 
-export function CategoryModal({ 
+function CategoryModalComponent({ 
   isOpen, 
   onClose, 
   currentCategory, 
   threadId, 
   onCategoryChange 
 }: CategoryModalProps) {
-  const [selectedCategory, setSelectedCategory] = useState(currentCategory || 'follow_up');
+  const [selectedCategory, setSelectedCategory] = useState(() => currentCategory || 'follow_up');
   const [loading, setLoading] = useState(false);
+
+  // Validate props to prevent render errors
+  if (!threadId) {
+    console.error('CategoryModal: threadId is required');
+    return null;
+  }
+
+  if (!onClose || typeof onClose !== 'function') {
+    console.error('CategoryModal: onClose must be a function');
+    return null;
+  }
+
+  if (!onCategoryChange || typeof onCategoryChange !== 'function') {
+    console.error('CategoryModal: onCategoryChange must be a function');
+    return null;
+  }
 
   // Update selectedCategory when currentCategory changes
   useEffect(() => {
-    setSelectedCategory(currentCategory || 'follow_up');
-  }, [currentCategory]);
+    if (currentCategory && currentCategory !== selectedCategory) {
+      setSelectedCategory(currentCategory);
+    }
+  }, [currentCategory, selectedCategory]);
 
   const handleSave = async () => {
     if (selectedCategory === currentCategory) {
@@ -145,9 +163,9 @@ export function CategoryModal({
   };
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div key="category-modal" className="fixed inset-0 z-50 flex items-center justify-center">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -279,3 +297,7 @@ export function CategoryModal({
     </AnimatePresence>
   );
 }
+
+// Export both named and default to ensure compatibility
+export const CategoryModal = CategoryModalComponent;
+export default CategoryModalComponent;
