@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db-pool';
 import { scheduledSyncService } from '@/server/scheduled-sync-service';
 import { emailWorkflowService } from '@/server/email-workflow';
 import { logger } from '@/lib/logger';
+import { internalFetch } from '@/lib/internal-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
 
       if (testMessage) {
         // Test AI analysis on real message
-        const analysisResult = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/inbox/ai-analysis`, {
+        const analysisResult = await internalFetch('/api/inbox/ai-analysis', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -134,7 +135,7 @@ export async function POST(request: NextRequest) {
     // Test 3: Check Auto-Sync Service
     console.log('🧪 Testing Auto-Sync Service...');
     try {
-      const autoSyncResult = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/sync/auto`, {
+      const autoSyncResult = await internalFetch('/api/sync/auto', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

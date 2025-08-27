@@ -3,6 +3,7 @@ import { auth } from '@/server/auth';
 import { prisma } from '@/lib/db-pool';
 import { analyzeEmailWithAI } from '@/server/ai-analysis-service';
 import { logger } from '@/lib/logger';
+import { internalFetch } from '@/lib/internal-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
 
       case 'check_threads_api':
         // Test threads API to see if AI analysis data is included
-        const threadsResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/inbox/threads?limit=5`, {
+        const threadsResponse = await internalFetch('/api/inbox/threads?limit=5', {
           headers: {
             'Cookie': request.headers.get('Cookie') || ''
           }
@@ -107,7 +108,7 @@ export async function POST(request: NextRequest) {
 
         if (testThread) {
           // Test priority update
-          const priorityResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/inbox/threads/${testThread.id}/actions`, {
+          const priorityResponse = await internalFetch(`/api/inbox/threads/${testThread.id}/actions`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest) {
           const priorityResult = priorityResponse.ok ? await priorityResponse.json() : { error: await priorityResponse.text() };
 
           // Test category update
-          const categoryResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/inbox/threads/${testThread.id}/actions`, {
+          const categoryResponse = await internalFetch(`/api/inbox/threads/${testThread.id}/actions`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -173,7 +174,7 @@ export async function POST(request: NextRequest) {
         });
 
         if (pipelineThread) {
-          const pipelineResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/inbox/threads/${pipelineThread.id}/actions`, {
+          const pipelineResponse = await internalFetch(`/api/inbox/threads/${pipelineThread.id}/actions`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

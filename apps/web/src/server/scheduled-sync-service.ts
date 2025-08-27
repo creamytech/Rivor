@@ -1,4 +1,5 @@
 import { logger } from '@/lib/logger';
+import { internalFetch } from '@/lib/internal-url';
 import { prisma } from '@/lib/db-pool';
 
 interface SyncScheduleConfig {
@@ -178,9 +179,8 @@ export class ScheduledSyncService {
         return;
       }
 
-      // Call the auto-sync endpoint internally
-      const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-      const syncResponse = await fetch(`${baseUrl}/api/sync/auto`, {
+      // Call the auto-sync endpoint internally with proper URL handling
+      const syncResponse = await internalFetch('/api/sync/auto', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
