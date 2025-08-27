@@ -233,6 +233,12 @@ ${JSON.stringify(result.data, null, 2)}
           description: "Run all AI system tests",
           endpoint: "/api/debug/test-ai?test=all",
           method: "GET"
+        },
+        {
+          name: "Find Real Email for Testing",
+          description: "Find a real email message ID for AI testing",
+          endpoint: "/api/debug/test-ai?test=analysis",
+          method: "GET"
         }
       ]
     },

@@ -75,13 +75,23 @@ export async function GET(req: NextRequest) {
           }))?.orgMembers?.[0]?.orgId;
 
         if (orgId) {
-          // Get recent threads
+          // Get recent threads and their message counts
           const threads = await prisma.emailThread.findMany({
             where: { orgId },
             include: {
+              _count: {
+                select: { messages: true }
+              },
               messages: {
                 take: 1,
-                orderBy: { sentAt: 'desc' }
+                orderBy: { sentAt: 'desc' },
+                select: {
+                  id: true,
+                  sentAt: true,
+                  subjectEnc: true,
+                  bodyRefEnc: true,
+                  fromEnc: true
+                }
               }
             },
             orderBy: { updatedAt: 'desc' },
@@ -93,9 +103,14 @@ export async function GET(req: NextRequest) {
             threadCount: threads.length,
             threads: threads.map(t => ({
               id: t.id,
-              messageCount: t.messages.length,
-              hasMessages: t.messages.length > 0,
-              latestMessageId: t.messages[0]?.id
+              messageCount: t._count.messages,
+              hasMessages: t._count.messages > 0,
+              latestMessageId: t.messages[0]?.id,
+              hasEncryptedData: {
+                subject: !!t.messages[0]?.subjectEnc,
+                body: !!t.messages[0]?.bodyRefEnc,
+                from: !!t.messages[0]?.fromEnc
+              }
             }))
           };
 
@@ -166,10 +181,50 @@ export async function GET(req: NextRequest) {
     }
 
     // Test 5: Full AI analysis test
-    if (test === 'analysis') {
+    if (test === 'analysis' || test === 'all') {
       const emailId = url.searchParams.get('emailId');
       if (!emailId) {
-        results.analysis = { error: 'No emailId provided' };
+        // Try to find a real message ID from the threads
+        try {
+          const orgId = (session as any)?.orgId || 
+            (await prisma.user.findUnique({
+              where: { email: session.user.email },
+              include: { orgMembers: true }
+            }))?.orgMembers?.[0]?.orgId;
+
+          if (orgId) {
+            const messageWithContent = await prisma.emailMessage.findFirst({
+              where: { 
+                orgId,
+                AND: [
+                  { subjectEnc: { not: null } },
+                  { bodyRefEnc: { not: null } }
+                ]
+              },
+              orderBy: { sentAt: 'desc' },
+              take: 1
+            });
+
+            if (messageWithContent) {
+              results.analysis = {
+                foundTestMessage: true,
+                messageId: messageWithContent.id,
+                note: 'Found a real message to test with. Add ?emailId=' + messageWithContent.id + ' to test AI analysis'
+              };
+            } else {
+              results.analysis = { 
+                foundTestMessage: false,
+                error: 'No messages found with encrypted subject/body content' 
+              };
+            }
+          } else {
+            results.analysis = { error: 'No orgId found for analysis test' };
+          }
+        } catch (error) {
+          results.analysis = {
+            error: error instanceof Error ? error.message : 'Unknown error'
+          };
+        }
       } else {
         try {
           // Call our own AI analysis endpoint internally
