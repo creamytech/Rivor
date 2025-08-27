@@ -443,6 +443,20 @@ ${JSON.stringify(result.data, null, 2)}
                 <Bot className="h-4 w-4 mr-2" />
                 Test AI System
               </Button>
+              <Button
+                onClick={async () => {
+                  // First find a message ID, then test analysis with it
+                  executeDebug("/api/debug/test-ai?test=analysis", "GET", "Find test message");
+                  // Add a small delay, then test with a known message ID
+                  setTimeout(() => {
+                    executeDebug("/api/debug/test-ai?test=analysis&emailId=cmeu17j3y0s5rxkfkcvlbk1q9", "GET", "Test AI analysis with real email");
+                  }, 1000);
+                }}
+                variant="outline"
+              >
+                <Brain className="h-4 w-4 mr-2" />
+                Test AI Analysis
+              </Button>
             </div>
           </CardContent>
         </Card>
