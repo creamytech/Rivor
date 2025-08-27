@@ -132,26 +132,42 @@ export async function analyzeEmailWithAI(
       action: 'ai_analysis_start'
     });
 
-    // Check if analysis already exists
+    // Check if analysis already exists or is in progress
     const existingAnalysis = await prisma.emailAIAnalysis.findUnique({
       where: { emailId }
     });
 
     if (existingAnalysis) {
-      logger.info('Found existing AI analysis', {
-        orgId,
-        emailId,
-        category: existingAnalysis.category,
-        action: 'ai_analysis_exists'
-      });
-      return {
-        category: existingAnalysis.category,
-        priorityScore: existingAnalysis.priorityScore,
-        leadScore: existingAnalysis.leadScore,
-        confidenceScore: existingAnalysis.confidenceScore,
-        sentimentScore: existingAnalysis.sentimentScore,
-        keyEntities: existingAnalysis.keyEntities
-      };
+      // If analysis failed previously, allow retry after 30 minutes
+      if (existingAnalysis.processingStatus === 'failed' && 
+          existingAnalysis.updatedAt && 
+          Date.now() - existingAnalysis.updatedAt.getTime() < 30 * 60 * 1000) {
+        logger.info('AI analysis failed recently, skipping retry', {
+          orgId,
+          emailId,
+          lastAttempt: existingAnalysis.updatedAt,
+          action: 'ai_analysis_retry_skip'
+        });
+        return null;
+      }
+      
+      // Return existing successful analysis
+      if (existingAnalysis.processingStatus === 'completed') {
+        logger.info('Found existing AI analysis', {
+          orgId,
+          emailId,
+          category: existingAnalysis.category,
+          action: 'ai_analysis_exists'
+        });
+        return {
+          category: existingAnalysis.category,
+          priorityScore: existingAnalysis.priorityScore,
+          leadScore: existingAnalysis.leadScore,
+          confidenceScore: existingAnalysis.confidenceScore,
+          sentimentScore: existingAnalysis.sentimentScore,
+          keyEntities: existingAnalysis.keyEntities
+        };
+      }
     }
 
     // Find the thread if not provided
@@ -426,6 +442,42 @@ Do not include any text outside the JSON. Focus on the key information and ignor
       error: error instanceof Error ? error.message : String(error),
       action: 'ai_analysis_failed'
     });
+
+    // Save failed analysis attempt to prevent immediate retries
+    try {
+      const actualThreadId = threadId || (await prisma.emailMessage.findFirst({
+        where: { id: emailId, orgId },
+        select: { threadId: true }
+      }))?.threadId;
+
+      if (actualThreadId) {
+        await prisma.emailAIAnalysis.upsert({
+          where: { emailId },
+          update: {
+            processingStatus: 'failed',
+            updatedAt: new Date()
+          },
+          create: {
+            emailId,
+            threadId: actualThreadId,
+            category: 'follow_up',
+            priorityScore: 50,
+            leadScore: 50,
+            confidenceScore: 0,
+            sentimentScore: 0.5,
+            keyEntities: { error: 'Analysis failed' },
+            processingStatus: 'failed'
+          }
+        });
+      }
+    } catch (saveError) {
+      logger.error('Failed to save error state for AI analysis', {
+        orgId,
+        emailId,
+        saveError: saveError instanceof Error ? saveError.message : String(saveError)
+      });
+    }
+
     return null;
   }
 }

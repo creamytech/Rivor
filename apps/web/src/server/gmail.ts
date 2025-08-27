@@ -3,6 +3,7 @@ import { prisma } from './db';
 import { decryptForOrg, encryptForOrg } from './crypto';
 import { indexThread } from './indexer';
 import { linkEmailToPipelineContacts } from './pipeline-email-service';
+import { emailWorkflowService } from './email-workflow';
 import { logger } from '@/lib/logger';
 
 export interface GmailMessage {
@@ -1021,6 +1022,39 @@ export class GmailService {
         where: { id: emailAccountId },
         data: { historyId }
       });
+
+      // Trigger AI analysis workflow for newly added threads
+      try {
+        const recentThreads = await prisma.emailThread.findMany({
+          where: {
+            orgId,
+            accountId: emailAccountId,
+            createdAt: {
+              gte: new Date(Date.now() - 5 * 60 * 1000) // Last 5 minutes for push notifications
+            }
+          },
+          select: { id: true },
+          take: 3 // Limit to 3 most recent threads
+        });
+
+        if (recentThreads.length > 0) {
+          console.log(`[gmail-push] Found ${recentThreads.length} recent threads to analyze`);
+          
+          // Process threads for AI analysis asynchronously
+          for (const thread of recentThreads) {
+            try {
+              // Don't await here to prevent blocking the webhook response
+              emailWorkflowService.processEmailThread(orgId, thread.id).catch(error => {
+                console.error(`[gmail-push] Failed to process thread ${thread.id}:`, error);
+              });
+            } catch (workflowError) {
+              console.error(`[gmail-push] Error starting workflow for thread ${thread.id}:`, workflowError);
+            }
+          }
+        }
+      } catch (analysisError) {
+        console.error(`[gmail-push] Failed to trigger AI analysis:`, analysisError);
+      }
 
     } catch (error) {
       console.error('Gmail push notification error:', error);

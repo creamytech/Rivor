@@ -102,6 +102,11 @@ export default function DashboardPage() {
   });
   const [dashboardLayout, setDashboardLayout] = useState('default');
   const [metricColumns, setMetricColumns] = useState('auto');
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [lastSync, setLastSync] = useState<Date | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Detect mobile
   useEffect(() => {
@@ -125,6 +130,51 @@ export default function DashboardPage() {
       console.error('Failed to load dashboard preferences:', error);
     }
   }, []);
+
+  // Fetch suggestions
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      setLoadingSuggestions(true);
+      try {
+        const response = await fetch('/api/integration/suggestions?context=dashboard');
+        if (response.ok) {
+          const data = await response.json();
+          setSuggestions(data.suggestions || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch suggestions:', error);
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    };
+
+    fetchSuggestions();
+  }, []);
+
+  // Online/offline detection and auto-refresh
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Auto-refresh dashboard data every 5 minutes
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      if (isOnline) {
+        window.location.reload();
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(refreshInterval);
+  }, [isOnline]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -347,6 +397,7 @@ export default function DashboardPage() {
           setMetrics(realMetrics);
           setRecentActivities(data.recentActivities || []);
           setUpcomingTasks(data.upcomingTasks || []);
+          setLastSync(new Date());
         } else {
           console.error('Failed to fetch dashboard data');
           // Set empty arrays if API fails
@@ -516,17 +567,43 @@ export default function DashboardPage() {
                   <h1 className="text-2xl font-bold" style={{ color: 'var(--glass-text)' }}>
                     Dashboard
                   </h1>
-                  <p style={{ color: 'var(--glass-text-secondary)' }}>
-                    Welcome back! Here's what's happening today.
-                  </p>
+                  <div className="flex items-center gap-3">
+                    <p style={{ color: 'var(--glass-text-secondary)' }}>
+                      Welcome back! Here's what's happening today.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                      <span className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
+                        {isOnline ? 'Online' : 'Offline'}
+                      </span>
+                      {lastSync && (
+                        <>
+                          <span className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>•</span>
+                          <span className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
+                            Last sync: {lastSync.toLocaleTimeString()}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
             
             <div className="flex items-center gap-2">
-              <Button variant="liquid" size="sm" onClick={() => window.location.reload()}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
+              <Button 
+                variant="liquid" 
+                size="sm" 
+                onClick={async () => {
+                  setRefreshing(true);
+                  setTimeout(() => {
+                    window.location.reload();
+                  }, 500);
+                }}
+                disabled={refreshing}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'Refreshing...' : 'Refresh'}
               </Button>
               <Button variant="liquid" size="sm" onClick={() => setShowCustomizeModal(true)}>
                 <Filter className="h-4 w-4 mr-2" />
@@ -603,6 +680,112 @@ export default function DashboardPage() {
                 </div>
               ))
             )}
+          </div>
+          )}
+
+          {/* Smart Suggestions Widget */}
+          {suggestions.length > 0 && (
+          <div className="glass-card">
+            <div className="p-6 border-b" style={{ borderColor: 'var(--glass-border)' }}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-r from-yellow-500 to-orange-500 text-white">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg" style={{ color: 'var(--glass-text)' }}>
+                      Smart Suggestions
+                    </h3>
+                    <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                      AI-powered recommendations from your data
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="liquid" className="text-xs">
+                  {suggestions.length} suggestions
+                </Badge>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              {loadingSuggestions ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="flex items-start space-x-4">
+                        <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                          <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {suggestions.slice(0, 6).map((suggestion, index) => {
+                    const getIcon = (category: string) => {
+                      switch (category) {
+                        case 'email_follow_up': return <Mail className="h-4 w-4" />;
+                        case 'showing_request': return <Calendar className="h-4 w-4" />;
+                        case 'contact_outreach': return <Users className="h-4 w-4" />;
+                        case 'task_management': return <CheckCircle className="h-4 w-4" />;
+                        default: return <Target className="h-4 w-4" />;
+                      }
+                    };
+                    
+                    const getUrgencyColor = (urgency: string) => {
+                      switch (urgency) {
+                        case 'high': return 'bg-red-100 text-red-800 border-red-200';
+                        case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                        case 'low': return 'bg-green-100 text-green-800 border-green-200';
+                        default: return 'bg-gray-100 text-gray-800 border-gray-200';
+                      }
+                    };
+                    
+                    return (
+                      <div 
+                        key={index} 
+                        className="glass-card p-4 border-l-4 border-l-blue-500 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+                        onClick={() => {
+                          if (suggestion.action === 'create_task_from_email') {
+                            router.push('/app/tasks');
+                          } else if (suggestion.action === 'create_calendar_event') {
+                            router.push('/app/calendar');
+                          } else if (suggestion.action === 'create_task_for_contact') {
+                            router.push('/app/tasks');
+                          }
+                        }}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                            {getIcon(suggestion.category)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-medium text-sm truncate" style={{ color: 'var(--glass-text)' }}>
+                                {suggestion.title}
+                              </h4>
+                              <Badge className={`text-xs ${getUrgencyColor(suggestion.urgency)} border`}>
+                                {suggestion.urgency}
+                              </Badge>
+                            </div>
+                            <p className="text-xs mb-3" style={{ color: 'var(--glass-text-muted)' }}>
+                              {suggestion.description}
+                            </p>
+                            <Button variant="outline" size="sm" className="h-6 text-xs">
+                              Take Action
+                              <ArrowUpRight className="h-3 w-3 ml-1" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
           )}
 

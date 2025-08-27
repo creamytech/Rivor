@@ -354,7 +354,7 @@ export default function CalendarPage() {
           </div>
         </motion.div>
 
-        {/* Smart Suggestions Glass Panel */}
+        {/* Quick Actions Panel */}
         <motion.div 
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -370,71 +370,86 @@ export default function CalendarPage() {
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="glass-icon-container-small">
-                    <Sparkles className="h-4 w-4" style={{ color: 'var(--glass-accent)' }} />
+                    <Calendar className="h-4 w-4" style={{ color: 'var(--glass-accent)' }} />
                   </div>
                   <span className="text-sm font-semibold glass-text-gradient">
-                    Smart Suggestions
+                    Quick Actions
                   </span>
                 </div>
                 
-                <div className="grid grid-cols-1 gap-2 text-sm">
-                  <div className="glass-suggestion-pill">
-                    <Clock className="h-4 w-4 text-green-500" />
-                    <span>3 free slots tomorrow</span>
-                  </div>
-                  <div className="glass-suggestion-pill">
-                    <Target className="h-4 w-4 text-orange-500" />
-                    <span>TechCorp demo prep needed</span>
-                  </div>
-                  <div className="glass-suggestion-pill">
-                    <Zap className="h-4 w-4 text-purple-500" />
-                    <span>Auto-schedule follow-ups</span>
-                  </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setShowCreateModal(true)}
+                    className="glass-hover-glow justify-start"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Event
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setCalendarView('week')}
+                    className="glass-hover-glow justify-start"
+                  >
+                    <Clock className="h-4 w-4 mr-2" />
+                    Week View
+                  </Button>
                 </div>
                 
                 <Button 
-                  variant="liquid" 
+                  variant="outline"
                   size="sm"
+                  onClick={handleSync}
+                  disabled={isSyncing}
                   className="glass-hover-pulse w-full"
                 >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Find Time
+                  <Download className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                  {isSyncing ? 'Syncing...' : 'Sync Calendar'}
                 </Button>
               </div>
             ) : (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="glass-icon-container-small">
-                    <Sparkles className="h-4 w-4" style={{ color: 'var(--glass-accent)' }} />
+                    <Calendar className="h-4 w-4" style={{ color: 'var(--glass-accent)' }} />
                   </div>
                   <span className="text-sm font-semibold glass-text-gradient">
-                    Smart Suggestions
+                    Quick Actions
                   </span>
                 </div>
                 
-                <div className="flex items-center gap-4 text-sm">
-                  <div className="glass-suggestion-pill">
-                    <Clock className="h-4 w-4 text-green-500" />
-                    <span>3 free slots tomorrow</span>
-                  </div>
-                  <div className="glass-suggestion-pill">
-                    <Target className="h-4 w-4 text-orange-500" />
-                    <span>TechCorp demo prep needed</span>
-                  </div>
-                  <div className="glass-suggestion-pill">
-                    <Zap className="h-4 w-4 text-purple-500" />
-                    <span>Auto-schedule follow-ups</span>
-                  </div>
+                <div className="flex items-center gap-3">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setShowCreateModal(true)}
+                    className="glass-hover-glow"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Event
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setCalendarView('week')}
+                    className="glass-hover-glow"
+                  >
+                    <Clock className="h-4 w-4 mr-2" />
+                    Week View
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSync}
+                    disabled={isSyncing}
+                    className="glass-hover-pulse"
+                  >
+                    <Download className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                    {isSyncing ? 'Syncing...' : 'Sync'}
+                  </Button>
                 </div>
-                
-                <Button 
-                  variant="liquid" 
-                  size="sm"
-                  className="glass-hover-pulse"
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Find Time
-                </Button>
               </div>
             )}
           </div>

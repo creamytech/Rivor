@@ -44,6 +44,7 @@ import {
   Calendar,
   User,
   CheckCircle,
+  CheckSquare,
   Clock,
   Target,
   Tag
@@ -76,6 +77,8 @@ export default function ContactsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedContactForDetails, setSelectedContactForDetails] = useState<Contact | null>(null);
+  const [contactRelations, setContactRelations] = useState<any>(null);
+  const [loadingRelations, setLoadingRelations] = useState(false);
 
   // Apply dashboard modal blur effects when any modal is open
   useEffect(() => {
@@ -234,6 +237,57 @@ export default function ContactsPage() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
+  };
+
+  const fetchContactRelations = async (contactId: string, contactEmail: string) => {
+    setLoadingRelations(true);
+    try {
+      const response = await fetch(`/api/integration/contact-relations?contactId=${contactId}&email=${encodeURIComponent(contactEmail)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setContactRelations(data);
+      } else {
+        console.error('Failed to fetch contact relations');
+        setContactRelations(null);
+      }
+    } catch (error) {
+      console.error('Error fetching contact relations:', error);
+      setContactRelations(null);
+    } finally {
+      setLoadingRelations(false);
+    }
+  };
+
+  const handleViewContactDetails = (contact: Contact) => {
+    setSelectedContactForDetails(contact);
+    setShowDetailsModal(true);
+    // Fetch related data
+    fetchContactRelations(contact.id, contact.email);
+  };
+
+  const createTaskForContact = async (contact: Contact) => {
+    try {
+      const response = await fetch('/api/integration/task-actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `Follow up with ${contact.name}`,
+          description: `Follow up with ${contact.name} from ${contact.company || 'Unknown Company'}`,
+          priority: 'medium',
+          linkedContactId: contact.id
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(`Task created successfully: ${result.task.title}`);
+      } else {
+        alert('Failed to create task');
+      }
+    } catch (error) {
+      console.error('Failed to create task:', error);
+      alert('Failed to create task');
+    }
   };
 
   return (
@@ -407,6 +461,19 @@ export default function ContactsPage() {
                       <Tag className="h-4 w-4 mr-2" />
                       Add Tags
                     </Button>
+                    <Button variant="liquid" size="sm" className={isMobile ? 'w-full' : ''} onClick={() => {
+                      // Create tasks for all selected contacts
+                      Promise.all(selectedContacts.map(contactId => {
+                        const contact = contacts.find(c => c.id === contactId);
+                        return contact ? createTaskForContact(contact) : null;
+                      })).then(() => {
+                        alert(`Created tasks for ${selectedContacts.length} contacts`);
+                        setSelectedContacts([]);
+                      });
+                    }}>
+                      <CheckSquare className="h-4 w-4 mr-2" />
+                      Create Tasks
+                    </Button>
                     <Button variant="liquid" size="sm" className={isMobile ? 'w-full' : ''} onClick={() => setSelectedContacts([])}>
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete
@@ -510,10 +577,7 @@ export default function ContactsPage() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => {
-                                  setSelectedContactForDetails(contact);
-                                  setShowDetailsModal(true);
-                                }}>
+                                <DropdownMenuItem onClick={() => handleViewContactDetails(contact)}>
                                   <Eye className="h-4 w-4 mr-2" />
                                   View Details
                                 </DropdownMenuItem>
@@ -661,10 +725,7 @@ export default function ContactsPage() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => {
-                                  setSelectedContactForDetails(contact);
-                                  setShowDetailsModal(true);
-                                }}>
+                                <DropdownMenuItem onClick={() => handleViewContactDetails(contact)}>
                                   <Eye className="h-4 w-4 mr-2" />
                                   View Details
                                 </DropdownMenuItem>
@@ -835,13 +896,181 @@ export default function ContactsPage() {
                   </div>
                 </div>
 
-                {/* Activity History Placeholder */}
+                {/* Related Tasks */}
                 <div>
-                  <h3 className="font-semibold mb-3" style={{ color: 'var(--glass-text)' }}>Recent Activity</h3>
-                  <div className="glass-card p-4">
-                    <p style={{ color: 'var(--glass-text-muted)' }} className="text-sm">
-                      Activity tracking will be available once integrated with the CRM system.
-                    </p>
+                  <h3 className="font-semibold mb-3" style={{ color: 'var(--glass-text)' }}>
+                    Related Tasks 
+                    {contactRelations?.tasks && (
+                      <Badge variant="outline" className="ml-2">
+                        {contactRelations.tasks.length}
+                      </Badge>
+                    )}
+                  </h3>
+                  <div className="space-y-2">
+                    {loadingRelations ? (
+                      <div className="glass-card p-4">
+                        <div className="animate-pulse flex space-x-4">
+                          <div className="rounded-full bg-slate-200 h-4 w-4"></div>
+                          <div className="flex-1 space-y-2">
+                            <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : contactRelations?.tasks?.length > 0 ? (
+                      contactRelations.tasks.map((task: any) => (
+                        <div key={task.id} className="glass-card p-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-sm">{task.title}</p>
+                              <p className="text-xs text-gray-500">
+                                {task.status} • {task.priority} priority
+                                {task.dueAt && ` • Due ${new Date(task.dueAt).toLocaleDateString()}`}
+                              </p>
+                            </div>
+                            <Badge className={
+                              task.status === 'completed' ? 'bg-green-100 text-green-800' :
+                              task.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                              'bg-gray-100 text-gray-800'
+                            }>
+                              {task.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="glass-card p-4">
+                        <div className="flex items-center justify-between">
+                          <p style={{ color: 'var(--glass-text-muted)' }} className="text-sm">
+                            No related tasks found
+                          </p>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => selectedContactForDetails && createTaskForContact(selectedContactForDetails)}
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Create Task
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Related Email Threads */}
+                <div>
+                  <h3 className="font-semibold mb-3" style={{ color: 'var(--glass-text)' }}>
+                    Email Threads 
+                    {contactRelations?.emailThreads && (
+                      <Badge variant="outline" className="ml-2">
+                        {contactRelations.emailThreads.length}
+                      </Badge>
+                    )}
+                  </h3>
+                  <div className="space-y-2">
+                    {loadingRelations ? (
+                      <div className="glass-card p-4">
+                        <div className="animate-pulse flex space-x-4">
+                          <div className="rounded-full bg-slate-200 h-4 w-4"></div>
+                          <div className="flex-1 space-y-2">
+                            <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : contactRelations?.emailThreads?.length > 0 ? (
+                      contactRelations.emailThreads.map((thread: any) => (
+                        <div key={thread.id} className="glass-card p-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-sm">{thread.subject}</p>
+                              <p className="text-xs text-gray-500">
+                                {thread.messageCount} messages • {new Date(thread.updatedAt).toLocaleDateString()}
+                                {thread.category && (
+                                  <span className="ml-2">
+                                    <Badge variant="outline" className="text-xs">
+                                      {thread.category.replace('_', ' ')}
+                                    </Badge>
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => router.push(`/app/inbox?thread=${thread.id}`)}
+                            >
+                              <Mail className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="glass-card p-4">
+                        <p style={{ color: 'var(--glass-text-muted)' }} className="text-sm">
+                          No email correspondence found
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Related Calendar Events */}
+                <div>
+                  <h3 className="font-semibold mb-3" style={{ color: 'var(--glass-text)' }}>
+                    Calendar Events 
+                    {contactRelations?.calendarEvents && (
+                      <Badge variant="outline" className="ml-2">
+                        {contactRelations.calendarEvents.length}
+                      </Badge>
+                    )}
+                  </h3>
+                  <div className="space-y-2">
+                    {loadingRelations ? (
+                      <div className="glass-card p-4">
+                        <div className="animate-pulse flex space-x-4">
+                          <div className="rounded-full bg-slate-200 h-4 w-4"></div>
+                          <div className="flex-1 space-y-2">
+                            <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : contactRelations?.calendarEvents?.length > 0 ? (
+                      contactRelations.calendarEvents.map((event: any) => (
+                        <div key={event.id} className="glass-card p-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-sm">{event.title}</p>
+                              <p className="text-xs text-gray-500">
+                                {new Date(event.start).toLocaleString()} - {new Date(event.end).toLocaleString()}
+                              </p>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => router.push('/app/calendar')}
+                            >
+                              <Calendar className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="glass-card p-4">
+                        <div className="flex items-center justify-between">
+                          <p style={{ color: 'var(--glass-text-muted)' }} className="text-sm">
+                            No calendar events found
+                          </p>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => router.push('/app/calendar')}
+                          >
+                            <Calendar className="h-3 w-3 mr-1" />
+                            Schedule Meeting
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

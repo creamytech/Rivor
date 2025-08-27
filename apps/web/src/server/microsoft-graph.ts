@@ -3,6 +3,7 @@ import { prisma } from './db';
 import { decryptForOrg, encryptForOrg } from './crypto';
 import { indexThread } from './indexer';
 import { linkEmailToPipelineContacts } from './pipeline-email-service';
+import { emailWorkflowService } from './email-workflow';
 
 export interface OutlookMessage {
   id: string;
@@ -239,6 +240,24 @@ export class MicrosoftGraphService {
           // Fetch the specific message
           const message = await this.client.api(`/me/messages/${messageId}`).get();
           await this.processMessage(orgId, emailAccountId, message);
+          
+          // Trigger AI analysis workflow for the new message's thread
+          try {
+            const emailMessage = await prisma.emailMessage.findFirst({
+              where: { messageId, orgId }
+            });
+            
+            if (emailMessage?.threadId) {
+              console.log(`[outlook-push] Triggering AI analysis for thread ${emailMessage.threadId}`);
+              
+              // Don't await here to prevent blocking the webhook response
+              emailWorkflowService.processEmailThread(orgId, emailMessage.threadId).catch(error => {
+                console.error(`[outlook-push] Failed to process thread ${emailMessage.threadId}:`, error);
+              });
+            }
+          } catch (analysisError) {
+            console.error(`[outlook-push] Failed to trigger AI analysis for message ${messageId}:`, analysisError);
+          }
         }
       }
 

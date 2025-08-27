@@ -318,20 +318,234 @@ export async function GET(_req: NextRequest) {
       }
     }
 
-    // Return data with real information
+    // Fetch contacts data
+    let totalContacts = 0;
+    let recentContacts: any[] = [];
+    
+    if (orgId) {
+      try {
+        totalContacts = await prisma.contact.count({
+          where: { orgId }
+        });
+        
+        const contacts = await prisma.contact.findMany({
+          where: { orgId },
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          select: { id: true, nameEnc: true, emailEnc: true, createdAt: true }
+        });
+        
+        recentContacts = await Promise.all(contacts.map(async (contact) => {
+          try {
+            let name = 'Contact';
+            let email = '';
+            
+            if (contact.nameEnc) {
+              const nameBytes = await decryptForOrg(orgId, contact.nameEnc, 'contact:name');
+              name = new TextDecoder().decode(nameBytes);
+            }
+            
+            if (contact.emailEnc) {
+              const emailBytes = await decryptForOrg(orgId, contact.emailEnc, 'contact:email');
+              email = new TextDecoder().decode(emailBytes);
+            }
+            
+            return {
+              id: contact.id,
+              name,
+              email,
+              createdAt: contact.createdAt
+            };
+          } catch (error) {
+            console.error('Failed to decrypt contact data:', error);
+            return {
+              id: contact.id,
+              name: 'Contact',
+              email: '',
+              createdAt: contact.createdAt
+            };
+          }
+        }));
+      } catch (error) {
+        console.error('Failed to fetch contacts:', error);
+      }
+    }
+
+    // Fetch tasks data
+    let totalTasks = 0;
+    let pendingTasks = 0;
+    let overdueTasks = 0;
+    let upcomingTasks: any[] = [];
+    let recentActivities: any[] = [];
+    
+    if (orgId) {
+      try {
+        totalTasks = await prisma.task.count({
+          where: { orgId }
+        });
+        
+        pendingTasks = await prisma.task.count({
+          where: { orgId, status: 'pending' }
+        });
+        
+        overdueTasks = await prisma.task.count({
+          where: { 
+            orgId, 
+            status: { in: ['pending', 'in_progress'] },
+            dueAt: { lt: new Date() }
+          }
+        });
+        
+        // Get upcoming tasks for today and next 7 days
+        const tasks = await prisma.task.findMany({
+          where: {
+            orgId,
+            status: { in: ['pending', 'in_progress'] },
+            OR: [
+              { dueAt: { gte: new Date(), lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) } },
+              { dueAt: null } // Include tasks without due date
+            ]
+          },
+          orderBy: [
+            { dueAt: 'asc' },
+            { createdAt: 'desc' }
+          ],
+          take: 10,
+          include: {
+            lead: {
+              select: { id: true, title: true }
+            }
+          }
+        });
+        
+        upcomingTasks = tasks.map(task => ({
+          id: task.id,
+          title: task.title,
+          description: task.description,
+          dueDate: task.dueAt ? new Date(task.dueAt).toLocaleString() : 'No due date',
+          priority: task.priority as 'high' | 'medium' | 'low',
+          type: 'follow-up', // Default type
+          contact: task.lead?.title,
+          completed: task.status === 'completed'
+        }));
+        
+        // Create recent activities from various sources
+        const recentTasks = await prisma.task.findMany({
+          where: { orgId },
+          orderBy: { updatedAt: 'desc' },
+          take: 3
+        });
+        
+        recentActivities = [
+          ...recentTasks.map(task => ({
+            id: task.id,
+            type: 'task' as const,
+            title: task.title,
+            description: task.description || 'Task updated',
+            time: getTimeAgo(task.updatedAt),
+            status: task.status === 'completed' ? 'completed' as const : 'pending' as const,
+            contact: undefined,
+            value: undefined
+          })),
+          ...recentThreads.slice(0, 2).map(thread => ({
+            id: thread.id,
+            type: 'email' as const,
+            title: thread.subject,
+            description: `New email from ${thread.participants}`,
+            time: getTimeAgo(thread.lastMessageAt),
+            status: 'pending' as const,
+            contact: thread.participants,
+            value: undefined
+          })),
+          ...upcomingEvents.slice(0, 2).map(event => ({
+            id: event.id,
+            type: 'meeting' as const,
+            title: event.title,
+            description: event.location ? `Meeting at ${event.location}` : 'Scheduled meeting',
+            time: getTimeAgo(event.start),
+            status: new Date(event.start) < new Date() ? 'completed' as const : 'pending' as const,
+            contact: undefined,
+            value: undefined
+          }))
+        ].slice(0, 5);
+        
+      } catch (error) {
+        console.error('Failed to fetch tasks:', error);
+      }
+    }
+
+    // Fetch pipeline data
+    let activeLeads = 0;
+    let totalLeads = 0;
+    
+    if (orgId) {
+      try {
+        totalLeads = await prisma.lead.count({
+          where: { orgId }
+        });
+        
+        activeLeads = await prisma.lead.count({
+          where: { 
+            orgId,
+            status: { not: 'closed' }
+          }
+        });
+      } catch (error) {
+        console.error('Failed to fetch pipeline data:', error);
+      }
+    }
+
+    // Return comprehensive dashboard data
     return Response.json({
       userName,
       showOnboarding: !hasEmailAccounts && !hasCalendarAccounts,
       hasEmailIntegration: hasEmailAccounts,
       hasCalendarIntegration: hasCalendarAccounts,
-      unreadCount,
+      
+      // Metrics for dashboard cards
+      activeLeads,
+      leadsChange: 0, // Could calculate from historical data
+      totalContacts,
+      contactsChange: 0, // Could calculate from historical data  
+      unreadEmails: unreadCount,
+      upcomingTasks: pendingTasks,
+      
+      // Activity data
+      recentActivities,
+      upcomingTasks: upcomingTasks.slice(0, 5),
+      
+      // Calendar data
       recentThreads,
       upcomingEvents,
       calendarStats,
+      
+      // Additional stats
+      totalTasks,
+      pendingTasks,
+      overdueTasks,
+      recentContacts,
+      
+      // Legacy fields
       pipelineStats: [],
-      totalActiveLeads: 0,
+      totalActiveLeads: activeLeads,
       tokenHealth: []
     });
+    
+    function getTimeAgo(date: Date): string {
+      const now = new Date();
+      const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+      
+      if (diffInHours < 1) return 'Just now';
+      if (diffInHours < 24) return `${diffInHours} hours ago`;
+      
+      const diffInDays = Math.floor(diffInHours / 24);
+      if (diffInDays === 1) return '1 day ago';
+      if (diffInDays < 7) return `${diffInDays} days ago`;
+      
+      const diffInWeeks = Math.floor(diffInDays / 7);
+      if (diffInWeeks === 1) return '1 week ago';
+      return `${diffInWeeks} weeks ago`;
+    }
 
   } catch (error) {
     console.error('Dashboard API error:', error);
@@ -342,10 +556,31 @@ export async function GET(_req: NextRequest) {
       showOnboarding: true,
       hasEmailIntegration: false,
       hasCalendarIntegration: false,
-      unreadCount: 0,
+      
+      // Metrics for dashboard cards
+      activeLeads: 0,
+      leadsChange: 0,
+      totalContacts: 0,
+      contactsChange: 0,
+      unreadEmails: 0,
+      upcomingTasks: 0,
+      
+      // Activity data
+      recentActivities: [],
+      upcomingTasks: [],
+      
+      // Calendar data
       recentThreads: [],
       upcomingEvents: [],
       calendarStats: { todayCount: 0, upcomingCount: 0 },
+      
+      // Additional stats
+      totalTasks: 0,
+      pendingTasks: 0,
+      overdueTasks: 0,
+      recentContacts: [],
+      
+      // Legacy fields
       pipelineStats: [],
       totalActiveLeads: 0,
       tokenHealth: []

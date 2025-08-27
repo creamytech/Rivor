@@ -19,8 +19,23 @@ import {
   Video,
   Save,
   X,
-  Plus
+  Plus,
+  Phone,
+  Monitor,
+  ExternalLink
 } from 'lucide-react';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { 
+  Switch 
+} from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 interface CreateEventModalProps {
@@ -48,7 +63,11 @@ export default function CreateEventModal({
     location: '',
     attendees: [] as string[],
     isVideoCall: false,
-    isAllDay: false
+    videoUrl: '',
+    videoType: 'google-meet' as 'google-meet' | 'zoom' | 'teams' | 'other',
+    isAllDay: false,
+    priority: 'medium' as 'low' | 'medium' | 'high',
+    type: 'meeting' as 'meeting' | 'call' | 'demo' | 'follow-up' | 'other'
   });
   
   const [attendeeInput, setAttendeeInput] = useState('');
@@ -68,6 +87,12 @@ export default function CreateEventModal({
       const [endHour, endMinute] = formData.endTime.split(':').map(Number);
       endDateTime.setHours(endHour, endMinute, 0, 0);
 
+      // Auto-generate Google Meet link if selected
+      let finalVideoUrl = formData.videoUrl;
+      if (formData.isVideoCall && formData.videoType === 'google-meet' && !formData.videoUrl) {
+        // Google Calendar will auto-generate Meet link if we include conferenceData
+      }
+
       const eventData = {
         title: formData.title,
         description: formData.description,
@@ -76,7 +101,12 @@ export default function CreateEventModal({
         location: formData.location,
         attendees: formData.attendees,
         isVideoCall: formData.isVideoCall,
-        isAllDay: formData.isAllDay
+        videoUrl: finalVideoUrl,
+        videoType: formData.videoType,
+        isAllDay: formData.isAllDay,
+        priority: formData.priority,
+        type: formData.type,
+        addGoogleMeet: formData.isVideoCall && formData.videoType === 'google-meet'
       };
 
       const response = await fetch('/api/calendar/events', {
@@ -112,7 +142,11 @@ export default function CreateEventModal({
       location: '',
       attendees: [],
       isVideoCall: false,
-      isAllDay: false
+      videoUrl: '',
+      videoType: 'google-meet',
+      isAllDay: false,
+      priority: 'medium',
+      type: 'meeting'
     });
     setAttendeeInput('');
   };
@@ -273,21 +307,130 @@ export default function CreateEventModal({
             </div>
           </div>
 
+          {/* Event Type and Priority */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block" style={{ color: 'var(--glass-text)' }}>
+                Event Type
+              </label>
+              <Select
+                value={formData.type}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as any }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="meeting">Meeting</SelectItem>
+                  <SelectItem value="call">Call</SelectItem>
+                  <SelectItem value="demo">Demo</SelectItem>
+                  <SelectItem value="follow-up">Follow-up</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium mb-2 block" style={{ color: 'var(--glass-text)' }}>
+                Priority
+              </label>
+              <Select
+                value={formData.priority}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value as any }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           {/* Video Call Option */}
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              checked={formData.isVideoCall}
-              onChange={(e) => setFormData(prev => ({ 
-                ...prev, 
-                isVideoCall: e.target.checked 
-              }))}
-              className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
-            />
-            <Video className="h-4 w-4" style={{ color: 'var(--glass-text-subtle)' }} />
-            <span className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
-              Add video call link
-            </span>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={formData.isVideoCall}
+                onChange={(e) => setFormData(prev => ({ 
+                  ...prev, 
+                  isVideoCall: e.target.checked 
+                }))}
+                className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+              />
+              <Video className="h-4 w-4" style={{ color: 'var(--glass-text-subtle)' }} />
+              <span className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                Add video call
+              </span>
+            </div>
+
+            {formData.isVideoCall && (
+              <div className="space-y-3 pl-6">
+                <div>
+                  <label className="text-sm font-medium mb-2 block" style={{ color: 'var(--glass-text)' }}>
+                    Video Platform
+                  </label>
+                  <Select
+                    value={formData.videoType}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, videoType: value as any }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select platform" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="google-meet">
+                        <div className="flex items-center gap-2">
+                          <Monitor className="h-4 w-4" />
+                          Google Meet (Auto-generated)
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="zoom">
+                        <div className="flex items-center gap-2">
+                          <Video className="h-4 w-4" />
+                          Zoom
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="teams">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          Microsoft Teams
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="other">
+                        <div className="flex items-center gap-2">
+                          <ExternalLink className="h-4 w-4" />
+                          Other
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.videoType !== 'google-meet' && (
+                  <div>
+                    <label className="text-sm font-medium mb-2 block" style={{ color: 'var(--glass-text)' }}>
+                      Video Call URL
+                    </label>
+                    <Input
+                      value={formData.videoUrl}
+                      onChange={(e) => setFormData(prev => ({ ...prev, videoUrl: e.target.value }))}
+                      placeholder="Enter video call URL..."
+                      type="url"
+                    />
+                  </div>
+                )}
+
+                {formData.videoType === 'google-meet' && (
+                  <div className="text-xs text-green-600 bg-green-50 dark:bg-green-900/20 p-2 rounded">
+                    Google Meet link will be automatically generated when the event is created.
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Attendees */}

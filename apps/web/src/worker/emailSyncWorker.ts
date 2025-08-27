@@ -2,6 +2,7 @@
 import { prisma } from "../server/db";
 import { GmailService } from "../server/gmail";
 import { MicrosoftGraphService } from "../server/microsoft-graph";
+import { emailWorkflowService } from "../server/email-workflow";
 
 function getConnection() {
   const url = process.env.REDIS_URL;
@@ -54,6 +55,36 @@ async function processJob(job: Job) {
         updatedAt: new Date()
       }
     });
+
+    // Trigger AI analysis for recently synced threads
+    try {
+      const recentThreads = await prisma.emailThread.findMany({
+        where: {
+          orgId,
+          accountId: emailAccountId,
+          createdAt: {
+            gte: new Date(Date.now() - 10 * 60 * 1000) // Last 10 minutes
+          }
+        },
+        select: { id: true }
+      });
+
+      if (recentThreads.length > 0) {
+        console.log(`[worker] Found ${recentThreads.length} recent threads to analyze`);
+        
+        // Process threads for AI analysis asynchronously
+        for (const thread of recentThreads.slice(0, 5)) { // Limit to 5 recent threads
+          try {
+            await emailWorkflowService.processEmailThread(orgId, thread.id);
+            console.log(`[worker] Processed thread ${thread.id} for AI analysis`);
+          } catch (workflowError) {
+            console.error(`[worker] Failed to process thread ${thread.id}:`, workflowError);
+          }
+        }
+      }
+    } catch (analysisError) {
+      console.error(`[worker] Failed to trigger AI analysis for ${emailAccountId}:`, analysisError);
+    }
 
     console.log(`[worker] Successfully synced ${emailAccount.provider} account ${emailAccountId}`);
 
