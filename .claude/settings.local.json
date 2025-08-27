@@ -26,7 +26,11 @@
       "Bash(curl:*)",
       "Bash(node:*)",
       "Bash(npx tsx:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(if [ -z \"$OPENAI_API_KEY\" ])",
+      "Bash(then echo \"OPENAI_API_KEY not found in environment\")",
+      "Bash(else echo \"OPENAI_API_KEY is set\")",
+      "Bash(fi)"
     ],
     "deny": [],
     "ask": [],

@@ -7,6 +7,11 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Check if OpenAI API key is configured
+if (!process.env.OPENAI_API_KEY) {
+  console.error('❌ OPENAI_API_KEY is not configured in environment variables');
+}
+
 // AI reply generation prompt
 const REPLY_GENERATION_PROMPT = `You are an AI assistant helping real estate agents craft professional email responses.
 
@@ -47,10 +52,14 @@ Keep the tone professional but warm, and ensure all real estate compliance consi
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🚀 AI Reply POST request started');
+    
     const session = await auth();
     if (!session?.user?.email) {
+      console.log('❌ Unauthorized - no session or email');
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    console.log('✅ User authenticated:', session.user.email);
 
     const { 
       emailId, 
@@ -64,9 +73,18 @@ export async function POST(request: NextRequest) {
       agentPhone = '',
       agentEmail = session.user.email || ''
     } = await request.json();
+    
+    console.log('📦 Request data:', { emailId, threadId, fromName, fromEmail, subject: subject?.substring(0, 50), bodyLength: body?.length });
 
     if (!emailId || !subject || !body) {
+      console.log('❌ Missing required fields:', { emailId: !!emailId, subject: !!subject, body: !!body });
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    // Check for OpenAI API key
+    if (!process.env.OPENAI_API_KEY) {
+      console.log('❌ OPENAI_API_KEY not configured');
+      return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 });
     }
 
     // Get existing AI analysis
@@ -115,12 +133,17 @@ export async function POST(request: NextRequest) {
     });
 
     // Call OpenAI for reply generation
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4-turbo-preview",
-      messages: [
-        {
-          role: "system",
-          content: `You are a professional real estate agent assistant. Generate email responses that are:
+    console.log('🤖 Calling OpenAI API for reply generation...');
+    
+    let completion;
+    try {
+      // Try gpt-4-turbo-preview first
+      completion = await openai.chat.completions.create({
+        model: "gpt-4-turbo-preview",
+        messages: [
+          {
+            role: "system",
+            content: `You are a professional real estate agent assistant. Generate email responses that are:
 - Professional and friendly
 - Specific to real estate scenarios
 - Include relevant next steps
@@ -128,15 +151,43 @@ export async function POST(request: NextRequest) {
 - Personalized to the client's needs
 
 ${template ? `Use this template as inspiration but customize for the specific situation:\n${template.templateContent}` : ''}`
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 1500,
-    });
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1500,
+      });
+      console.log('✅ OpenAI reply response received (gpt-4-turbo-preview)');
+    } catch (openaiError) {
+      console.log('⚠️ GPT-4 failed for reply, trying GPT-3.5-turbo...');
+      // Fallback to gpt-3.5-turbo if gpt-4 fails
+      completion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: `You are a professional real estate agent assistant. Generate email responses that are:
+- Professional and friendly
+- Specific to real estate scenarios
+- Include relevant next steps
+- Compliant with real estate regulations
+- Personalized to the client's needs
+
+${template ? `Use this template as inspiration but customize for the specific situation:\n${template.templateContent}` : ''}`
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1500,
+      });
+      console.log('✅ OpenAI reply response received (gpt-3.5-turbo fallback)');
+    }
 
     const suggestedContent = completion.choices[0].message.content || '';
 

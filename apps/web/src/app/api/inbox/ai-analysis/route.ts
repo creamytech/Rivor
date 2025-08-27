@@ -7,6 +7,11 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Check if OpenAI API key is configured
+if (!process.env.OPENAI_API_KEY) {
+  console.error('❌ OPENAI_API_KEY is not configured in environment variables');
+}
+
 // AI analysis prompt for real estate emails
 const ANALYSIS_PROMPT = `You are an AI assistant specialized in analyzing real estate emails for agents. 
 
@@ -50,25 +55,40 @@ BODY: {body}`;
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🚀 AI Analysis POST request started');
+    
     const session = await auth();
     if (!session?.user?.email) {
+      console.log('❌ Unauthorized - no session or email');
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    console.log('✅ User authenticated:', session.user.email);
 
     const { emailId, threadId, fromName, fromEmail, subject, body } = await request.json();
+    console.log('📦 Request data:', { emailId, threadId, fromName, fromEmail, subject: subject?.substring(0, 50), bodyLength: body?.length });
 
     if (!emailId || !subject || !body) {
+      console.log('❌ Missing required fields:', { emailId: !!emailId, subject: !!subject, body: !!body });
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    // Check for OpenAI API key
+    if (!process.env.OPENAI_API_KEY) {
+      console.log('❌ OPENAI_API_KEY not configured');
+      return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 });
+    }
+
     // Check if analysis already exists
+    console.log('🔍 Checking for existing analysis...');
     const existingAnalysis = await prisma.EmailAIAnalysis.findUnique({
       where: { emailId }
     });
 
     if (existingAnalysis) {
+      console.log('✅ Found existing analysis:', existingAnalysis.id);
       return NextResponse.json({ analysis: existingAnalysis });
     }
+    console.log('💫 No existing analysis found, creating new one...');
 
     // Create analysis prompt
     const prompt = ANALYSIS_PROMPT
@@ -78,21 +98,48 @@ export async function POST(request: NextRequest) {
       .replace('{body}', body);
 
     // Call OpenAI for analysis
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4-turbo-preview",
-      messages: [
-        {
-          role: "system",
-          content: "You are a real estate email analysis expert. Always respond with valid JSON only."
-        },
-        {
-          role: "user", 
-          content: prompt
-        }
-      ],
-      temperature: 0.3,
-      max_tokens: 1000,
-    });
+    console.log('🤖 Calling OpenAI API...');
+    console.log('📝 Prompt length:', prompt.length);
+    
+    let completion;
+    try {
+      // Try gpt-4-turbo-preview first
+      completion = await openai.chat.completions.create({
+        model: "gpt-4-turbo-preview",
+        messages: [
+          {
+            role: "system",
+            content: "You are a real estate email analysis expert. Always respond with valid JSON only."
+          },
+          {
+            role: "user", 
+            content: prompt
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 1000,
+      });
+      console.log('✅ OpenAI response received (gpt-4-turbo-preview)');
+    } catch (openaiError) {
+      console.log('⚠️ GPT-4 failed, trying GPT-3.5-turbo...');
+      // Fallback to gpt-3.5-turbo if gpt-4 fails
+      completion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: "You are a real estate email analysis expert. Always respond with valid JSON only."
+          },
+          {
+            role: "user", 
+            content: prompt
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 1000,
+      });
+      console.log('✅ OpenAI response received (gpt-3.5-turbo fallback)');
+    }
 
     let analysisResult;
     try {

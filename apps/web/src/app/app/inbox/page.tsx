@@ -94,6 +94,7 @@ export default function InboxPage() {
   const [showAiReplyModal, setShowAiReplyModal] = useState(false);
   const [aiReply, setAiReply] = useState<any>(null);
   const [threadAnalyses, setThreadAnalyses] = useState<Map<string, any>>(new Map());
+  const [showComposeModal, setShowComposeModal] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 50,
@@ -808,7 +809,11 @@ export default function InboxPage() {
                   <RefreshCw className={`h-4 w-4 mr-2 ${loading || autoSync.isRunning ? 'animate-spin' : ''}`} />
                   Refresh
                 </Button>
-                <Button variant="liquid" size="sm">
+                <Button 
+                  variant="liquid" 
+                  size="sm"
+                  onClick={() => setShowComposeModal(true)}
+                >
                   <Send className="h-4 w-4 mr-2" />
                   Compose
                 </Button>
@@ -1219,6 +1224,106 @@ export default function InboxPage() {
         onReject={handleRejectReply}
         onRegenerate={handleRegenerateReply}
       />
+
+      {/* Compose Modal */}
+      {showComposeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <motion.div
+            className={`w-full max-w-4xl mx-4 rounded-lg shadow-2xl ${
+              theme === 'black' ? 'bg-black/90 border-white/10' : 'bg-white border-black/10'
+            } border`}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+          >
+            <div className={`p-6 border-b ${theme === 'black' ? 'border-white/10' : 'border-black/10'}`}>
+              <h2 className={`text-xl font-semibold ${theme === 'black' ? 'text-white' : 'text-black'}`}>
+                Compose Email
+              </h2>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${theme === 'black' ? 'text-white/80' : 'text-black/80'}`}>
+                    To:
+                  </label>
+                  <input
+                    type="email"
+                    className={`w-full px-3 py-2 rounded border ${
+                      theme === 'black' 
+                        ? 'bg-white/5 border-white/20 text-white placeholder-white/40' 
+                        : 'bg-black/5 border-black/20 text-black placeholder-black/40'
+                    }`}
+                    placeholder="recipient@example.com"
+                  />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${theme === 'black' ? 'text-white/80' : 'text-black/80'}`}>
+                    Subject:
+                  </label>
+                  <input
+                    type="text"
+                    className={`w-full px-3 py-2 rounded border ${
+                      theme === 'black' 
+                        ? 'bg-white/5 border-white/20 text-white placeholder-white/40' 
+                        : 'bg-black/5 border-black/20 text-black placeholder-black/40'
+                    }`}
+                    placeholder="Email subject"
+                  />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${theme === 'black' ? 'text-white/80' : 'text-black/80'}`}>
+                    Message:
+                  </label>
+                  <textarea
+                    rows={12}
+                    className={`w-full px-3 py-2 rounded border ${
+                      theme === 'black' 
+                        ? 'bg-white/5 border-white/20 text-white placeholder-white/40' 
+                        : 'bg-black/5 border-black/20 text-black placeholder-black/40'
+                    }`}
+                    placeholder="Write your message here..."
+                  />
+                </div>
+              </div>
+            </div>
+            <div className={`p-6 border-t ${theme === 'black' ? 'border-white/10' : 'border-black/10'} flex justify-between`}>
+              <Button
+                variant="outline"
+                onClick={() => setShowComposeModal(false)}
+              >
+                Cancel
+              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    toast({
+                      title: "Draft Saved",
+                      description: "Email draft saved to drafts folder",
+                    });
+                  }}
+                >
+                  Save Draft
+                </Button>
+                <Button
+                  variant="liquid"
+                  onClick={() => {
+                    toast({
+                      title: "Email Sent",
+                      description: "Your email has been sent successfully",
+                    });
+                    setShowComposeModal(false);
+                  }}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Send
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Context Menu */}
       <ContextMenu
