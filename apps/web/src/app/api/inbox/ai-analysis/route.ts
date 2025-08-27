@@ -253,7 +253,25 @@ export async function POST(request: NextRequest) {
         messages: [
           {
             role: "system",
-            content: "You are a real estate email analysis expert. Always respond with valid JSON only. Focus on the key information and ignore formatting/styling content."
+            content: `You are a real estate email analysis expert. You must respond with ONLY valid JSON in this exact format:
+
+{
+  "category": "hot_lead|showing_request|price_inquiry|seller_lead|buyer_lead|follow_up|contract|marketing",
+  "priorityScore": 1-100,
+  "leadScore": 1-100, 
+  "confidenceScore": 0.0-1.0,
+  "sentimentScore": 0.0-1.0,
+  "keyEntities": {
+    "addresses": ["address1", "address2"],
+    "priceRange": "price mentioned",
+    "contacts": ["phone numbers"],
+    "propertyType": "property type",
+    "timeframes": ["dates mentioned"],
+    "urgencyIndicators": ["urgent words"]
+  }
+}
+
+Do not include any text outside the JSON. Focus on the key information and ignore HTML formatting.`
           },
           {
             role: "user", 
@@ -272,7 +290,25 @@ export async function POST(request: NextRequest) {
         messages: [
           {
             role: "system",
-            content: "You are a real estate email analysis expert. Always respond with valid JSON only. Focus on the key information and ignore formatting/styling content."
+            content: `You are a real estate email analysis expert. You must respond with ONLY valid JSON in this exact format:
+
+{
+  "category": "hot_lead|showing_request|price_inquiry|seller_lead|buyer_lead|follow_up|contract|marketing",
+  "priorityScore": 1-100,
+  "leadScore": 1-100, 
+  "confidenceScore": 0.0-1.0,
+  "sentimentScore": 0.0-1.0,
+  "keyEntities": {
+    "addresses": ["address1", "address2"],
+    "priceRange": "price mentioned",
+    "contacts": ["phone numbers"],
+    "propertyType": "property type",
+    "timeframes": ["dates mentioned"],
+    "urgencyIndicators": ["urgent words"]
+  }
+}
+
+Do not include any text outside the JSON. Focus on the key information and ignore HTML formatting.`
           },
           {
             role: "user", 
@@ -287,10 +323,41 @@ export async function POST(request: NextRequest) {
 
     let analysisResult;
     try {
-      analysisResult = JSON.parse(completion.choices[0].message.content || '{}');
+      const rawResponse = completion.choices[0]?.message?.content || '';
+      console.log('🤖 Raw OpenAI response:', rawResponse.substring(0, 500) + '...');
+      
+      // Try to extract JSON from the response (sometimes it's wrapped in markdown)
+      let jsonStr = rawResponse;
+      
+      // Look for JSON between ```json and ``` or just { and }
+      const jsonMatch = rawResponse.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/) || 
+                       rawResponse.match(/(\{[\s\S]*\})/);
+      
+      if (jsonMatch) {
+        jsonStr = jsonMatch[1];
+      }
+      
+      console.log('🔍 Extracted JSON string:', jsonStr.substring(0, 200) + '...');
+      
+      analysisResult = JSON.parse(jsonStr);
+      console.log('✅ Successfully parsed JSON:', analysisResult);
+      
     } catch (parseError) {
-      console.error('Failed to parse OpenAI response:', parseError);
-      return NextResponse.json({ error: "Failed to parse AI analysis" }, { status: 500 });
+      console.error('❌ Failed to parse OpenAI response:', parseError);
+      console.error('❌ Raw response was:', completion.choices[0]?.message?.content);
+      
+      // Fallback: create a basic analysis from the raw response
+      analysisResult = {
+        category: 'follow_up',
+        priorityScore: 50,
+        leadScore: 50,
+        confidenceScore: 0.5,
+        sentimentScore: 0.5,
+        keyEntities: {
+          summary: 'AI response could not be parsed as JSON. Raw response: ' + (completion.choices[0]?.message?.content || '').substring(0, 200)
+        }
+      };
+      console.log('🔄 Using fallback analysis result');
     }
 
     // Validate and save analysis to database
