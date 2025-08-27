@@ -51,11 +51,46 @@ Response should include:
 
 Keep the tone professional but warm, and ensure all real estate compliance considerations are met.`;
 
+// Helper function to get orgId for user (same as in analysis endpoint)
+async function getOrgIdForUser(session: any): Promise<string | null> {
+  // First try session
+  const sessionOrgId = (session as { orgId?: string }).orgId;
+  if (sessionOrgId) {
+    return sessionOrgId;
+  }
+
+  // Fallback: get from database
+  console.log('❌ No orgId in session, fetching from database...');
+  const userWithOrg = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    include: {
+      orgMembers: {
+        include: { org: true }
+      }
+    }
+  });
+  
+  if (userWithOrg?.orgMembers?.[0]) {
+    console.log('✅ Found orgId from database:', userWithOrg.orgMembers[0].orgId);
+    return userWithOrg.orgMembers[0].orgId;
+  }
+  
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     console.log('🚀 AI Reply POST request started');
     
     const session = await auth();
+    console.log('🔍 Session details:', {
+      hasSession: !!session,
+      hasUser: !!session?.user,
+      hasEmail: !!session?.user?.email,
+      email: session?.user?.email,
+      orgId: (session as any)?.orgId
+    });
+    
     if (!session?.user?.email) {
       console.log('❌ Unauthorized - no session or email');
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -78,15 +113,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required field: emailId" }, { status: 400 });
     }
 
-    // Get the organization ID from session
-    const orgId = (session as { orgId?: string }).orgId;
+    // Get the organization ID
+    const orgId = await getOrgIdForUser(session);
     if (!orgId) {
+      console.log('❌ No organization found for user');
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
 
     // Get thread with decrypted messages
+    console.log('🔍 Fetching thread data for orgId:', orgId, 'threadId:', threadId || emailId);
     const threadData = await getThreadWithMessages(orgId, threadId || emailId);
     if (!threadData.thread || threadData.messages.length === 0) {
+      console.log('❌ Thread or message not found:', { threadId: threadId || emailId });
       return NextResponse.json({ error: "Thread or message not found" }, { status: 404 });
     }
 
@@ -95,6 +133,12 @@ export async function POST(request: NextRequest) {
     const { subject, body, from } = message;
 
     console.log('📦 Decrypted email data:', { subject: subject?.substring(0, 50), bodyLength: body?.length, from });
+
+    // Validate email data
+    if (!subject && !body) {
+      console.log('❌ No email content found');
+      return NextResponse.json({ error: "No email content found to analyze" }, { status: 400 });
+    }
 
     // Check for OpenAI API key
     if (!process.env.OPENAI_API_KEY) {

@@ -19,7 +19,9 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  Brain,
+  Bot
 } from 'lucide-react';
 
 interface DebugResult {
@@ -195,6 +197,42 @@ ${JSON.stringify(result.data, null, 2)}
           endpoint: "/api/sync/auto",
           method: "POST",
           requiresAuth: true
+        }
+      ]
+    },
+    {
+      category: "AI & Email Analysis", 
+      icon: Brain,
+      endpoints: [
+        {
+          name: "AI Configuration Test",
+          description: "Check OpenAI API key and configuration",
+          endpoint: "/api/debug/test-ai?test=config",
+          method: "GET"
+        },
+        {
+          name: "AI Database Test",
+          description: "Check database access and user organization",
+          endpoint: "/api/debug/test-ai?test=database", 
+          method: "GET"
+        },
+        {
+          name: "AI Email Data Test",
+          description: "Check email threads and decryption",
+          endpoint: "/api/debug/test-ai?test=emails",
+          method: "GET"
+        },
+        {
+          name: "OpenAI API Test",
+          description: "Direct test of OpenAI API integration",
+          endpoint: "/api/debug/test-ai?test=openai",
+          method: "GET"
+        },
+        {
+          name: "Full AI Test Suite",
+          description: "Run all AI system tests",
+          endpoint: "/api/debug/test-ai?test=all",
+          method: "GET"
         }
       ]
     },
@@ -387,6 +425,17 @@ ${JSON.stringify(result.data, null, 2)}
                 variant="outline"
               >
                 Test & Verify Org
+              </Button>
+              <Button
+                onClick={() => {
+                  executeDebug("/api/debug/test-ai?test=config", "GET", "Check AI config");
+                  setTimeout(() => executeDebug("/api/debug/test-ai?test=emails", "GET", "Check emails"), 1000);
+                  setTimeout(() => executeDebug("/api/debug/test-ai?test=openai", "GET", "Test OpenAI"), 2000);
+                }}
+                variant="outline"
+              >
+                <Bot className="h-4 w-4 mr-2" />
+                Test AI System
               </Button>
             </div>
           </CardContent>
