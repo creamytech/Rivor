@@ -41,6 +41,7 @@ import { AIReplyModal } from '@/components/inbox/AIReplyModal';
 import { ContextMenu } from '@/components/inbox/ContextMenu';
 import { EmailContent } from '@/components/inbox/EmailContent';
 import { CategoryModal } from '@/components/inbox/CategoryModal';
+import { internalFetch } from '@/lib/internal-url';
 
 // Types for real email data
 interface EmailThread {
@@ -150,7 +151,7 @@ export default function InboxPage() {
         since: newestThreadTime // Only get threads newer than our newest
       });
       
-      const response = await fetch(`/api/inbox/threads?${params}`);
+      const response = await internalFetch(`/api/inbox/threads?${params}`);
       console.log(`📡 New threads API response status: ${response.status}`);
       
       if (!response.ok) {
@@ -160,7 +161,17 @@ export default function InboxPage() {
       }
       
       const data: ThreadsResponse = await response.json();
-      const newThreads = data.threads.filter(newThread => 
+      
+      // Validate and filter new threads
+      const validThreads = data.threads.filter(thread => {
+        const isValid = thread.id && typeof thread.id === 'string' && !thread.id.includes('http') && !thread.id.includes('://') && thread.id.length < 100;
+        if (!isValid) {
+          console.error('❌ Invalid new thread data detected and filtered:', { id: thread.id, subject: thread.subject?.substring(0, 50) });
+        }
+        return isValid;
+      });
+      
+      const newThreads = validThreads.filter(newThread => 
         !threads.some(existingThread => existingThread.id === newThread.id)
       );
       
@@ -207,7 +218,7 @@ export default function InboxPage() {
         analysisOnly: 'true'
       });
       
-      const response = await fetch(`/api/inbox/ai-analysis?${params}`);
+      const response = await internalFetch(`/api/inbox/ai-analysis?${params}`);
       if (response.ok) {
         const data = await response.json();
         const analyses = data.analyses || [];
@@ -254,7 +265,7 @@ export default function InboxPage() {
         ...(search && { search })
       });
       
-      const response = await fetch(`/api/inbox/threads?${params}`);
+      const response = await internalFetch(`/api/inbox/threads?${params}`);
       console.log(`📡 API response status: ${response.status}`);
       if (!response.ok) {
         const errorText = await response.text();
@@ -266,12 +277,25 @@ export default function InboxPage() {
       console.log(`📧 Fetched ${data.threads.length} threads`);
       
       // Log threads with/without AI analysis for debugging
-      const threadsWithAI = data.threads.filter(t => t.aiAnalysis);
-      const threadsWithoutAI = data.threads.filter(t => !t.aiAnalysis);
-      console.log(`🤖 Threads with AI analysis: ${threadsWithAI.length}/${data.threads.length}`);
+      // Validate all thread IDs before processing
+      const validThreads = data.threads.filter(thread => {
+        const isValid = thread.id && typeof thread.id === 'string' && !thread.id.includes('http') && !thread.id.includes('://') && thread.id.length < 100;
+        if (!isValid) {
+          console.error('❌ Invalid thread data detected and filtered:', { id: thread.id, subject: thread.subject?.substring(0, 50) });
+        }
+        return isValid;
+      });
+      
+      if (validThreads.length !== data.threads.length) {
+        console.warn(`⚠️ Filtered out ${data.threads.length - validThreads.length} invalid threads`);
+      }
+      
+      const threadsWithAI = validThreads.filter(t => t.aiAnalysis);
+      const threadsWithoutAI = validThreads.filter(t => !t.aiAnalysis);
+      console.log(`🤖 Threads with AI analysis: ${threadsWithAI.length}/${validThreads.length}`);
       console.log(`❌ Threads without AI analysis: ${threadsWithoutAI.length}`);
       
-      setThreads(data.threads);
+      setThreads(validThreads);
       setPagination(data.pagination);
       
       // Auto-analyze threads without existing analysis (only on initial load, not on refresh)
@@ -343,6 +367,18 @@ export default function InboxPage() {
 
   // Handle thread selection
   const handleThreadSelect = async (thread: EmailThread) => {
+    // Validate thread ID to prevent external URL injection
+    if (!thread.id || typeof thread.id !== 'string' || thread.id.includes('http') || thread.id.includes('://')) {
+      console.error('❌ Invalid thread ID detected:', thread.id);
+      toast({
+        title: "Error", 
+        description: "Invalid thread selected",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    console.log('✅ Selecting thread with valid ID:', thread.id);
     setActiveThread(thread);
     
     // Mark as read if unread
@@ -351,11 +387,27 @@ export default function InboxPage() {
     }
   };
 
+  // Validate thread ID helper
+  const validateThreadId = (threadId: string, functionName: string): boolean => {
+    if (!threadId || typeof threadId !== 'string' || threadId.includes('http') || threadId.includes('://') || threadId.length > 50) {
+      console.error(`❌ Invalid thread ID in ${functionName}:`, threadId);
+      toast({
+        title: "Error",
+        description: `Invalid thread ID detected in ${functionName}`,
+        variant: "destructive"
+      });
+      return false;
+    }
+    return true;
+  };
+
   // Toggle star status
   const toggleStarStatus = async (threadId: string, currentStarred: boolean) => {
+    if (!validateThreadId(threadId, 'toggleStarStatus')) return;
+    
     try {
       setActionLoading(`star-${threadId}`);
-      const response = await fetch(`/api/inbox/threads/${threadId}/star`, {
+      const response = await internalFetch(`/api/inbox/threads/${threadId}/star`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ starred: !currentStarred })
@@ -392,9 +444,11 @@ export default function InboxPage() {
 
   // Toggle read status
   const toggleReadStatus = async (threadId: string, currentUnread: boolean) => {
+    if (!validateThreadId(threadId, 'toggleReadStatus')) return;
+    
     try {
       setActionLoading(`read-${threadId}`);
-      const response = await fetch(`/api/inbox/threads/${threadId}/read`, {
+      const response = await internalFetch(`/api/inbox/threads/${threadId}/read`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ unread: !currentUnread })
@@ -426,9 +480,11 @@ export default function InboxPage() {
 
   // Archive thread
   const archiveThread = async (threadId: string) => {
+    if (!validateThreadId(threadId, 'archiveThread')) return;
+    
     try {
       setActionLoading(`archive-${threadId}`);
-      const response = await fetch(`/api/inbox/threads/${threadId}/archive`, {
+      const response = await internalFetch(`/api/inbox/threads/${threadId}/archive`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ archived: true })
@@ -463,13 +519,15 @@ export default function InboxPage() {
 
   // Delete thread
   const deleteThread = async (threadId: string) => {
+    if (!validateThreadId(threadId, 'deleteThread')) return;
+    
     if (!confirm('Are you sure you want to delete this thread?')) {
       return;
     }
 
     try {
       setActionLoading(`delete-${threadId}`);
-      const response = await fetch(`/api/inbox/threads/${threadId}/delete`, {
+      const response = await internalFetch(`/api/inbox/threads/${threadId}/delete`, {
         method: 'DELETE'
       });
 
@@ -510,12 +568,14 @@ export default function InboxPage() {
 
   // Trigger AI analysis for a thread (without refresh to prevent loops)
   const analyzeThreadWithoutRefresh = async (threadId: string) => {
+    if (!validateThreadId(threadId, 'analyzeThreadWithoutRefresh')) return null;
+    
     try {
       console.log(`🤖 Starting AI analysis for thread: ${threadId}`);
       setAiAnalyzing(threadId);
       
       // First get thread details to extract email content
-      const threadResponse = await fetch(`/api/inbox/threads/${threadId}`);
+      const threadResponse = await internalFetch(`/api/inbox/threads/${threadId}`);
       if (!threadResponse.ok) {
         throw new Error('Failed to fetch thread details');
       }
@@ -551,7 +611,7 @@ export default function InboxPage() {
         bodyPreview: emailContent?.substring(0, 100) || 'No content'
       });
       
-      const response = await fetch('/api/inbox/ai-analysis', {
+      const response = await internalFetch('/api/inbox/ai-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -636,11 +696,13 @@ export default function InboxPage() {
 
   // Generate AI reply
   const generateAIReply = async (threadId: string) => {
+    if (!validateThreadId(threadId, 'generateAIReply')) return;
+    
     try {
       setActionLoading(`ai-reply-${threadId}`);
       
       // First get thread details to extract email content
-      const threadResponse = await fetch(`/api/inbox/threads/${threadId}`);
+      const threadResponse = await internalFetch(`/api/inbox/threads/${threadId}`);
       if (!threadResponse.ok) {
         throw new Error('Failed to fetch thread details');
       }
@@ -676,7 +738,7 @@ export default function InboxPage() {
         bodyPreview: emailContent?.substring(0, 100) || 'No content'
       });
 
-      const response = await fetch('/api/inbox/ai-reply', {
+      const response = await internalFetch('/api/inbox/ai-reply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -719,7 +781,7 @@ export default function InboxPage() {
   // AI Reply approval workflow functions
   const handleApproveReply = async (replyId: string, modifiedContent?: string) => {
     try {
-      const response = await fetch('/api/inbox/ai-reply', {
+      const response = await internalFetch('/api/inbox/ai-reply', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -756,7 +818,7 @@ export default function InboxPage() {
 
   const handleRejectReply = async (replyId: string, reason?: string) => {
     try {
-      const response = await fetch('/api/inbox/ai-reply', {
+      const response = await internalFetch('/api/inbox/ai-reply', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -911,7 +973,7 @@ export default function InboxPage() {
   // Handle pipeline form submission
   const handlePipelineSubmit = async (pipelineData: any) => {
     try {
-      const response = await fetch(`/api/inbox/threads/${selectedThreadForPipeline?.id}/actions`, {
+      const response = await internalFetch(`/api/inbox/threads/${selectedThreadForPipeline?.id}/actions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -995,7 +1057,7 @@ export default function InboxPage() {
 
   const updateThread = async (threadId: string, updates: { isRead?: boolean; starred?: boolean; labels?: string[] }) => {
     try {
-      const response = await fetch(`/api/inbox/thread/${threadId}`, {
+      const response = await internalFetch(`/api/inbox/thread/${threadId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
@@ -1353,7 +1415,7 @@ export default function InboxPage() {
                       <p className={`${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>No emails found</p>
                     </div>
                   ) : (
-                    threads.map((thread, index) => {
+                    threads.filter(thread => thread.id && !thread.id.includes('http')).map((thread, index) => {
                       const analysis = thread.aiAnalysis;
                       return (
                         <motion.div
