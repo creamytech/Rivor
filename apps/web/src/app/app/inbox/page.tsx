@@ -1222,7 +1222,7 @@ export default function InboxPage() {
   };
 
   return (
-    <div className={`${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'}`}>
+    <div className={`${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'}`} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       <AppShell>
         <div className="h-full flex flex-col overflow-hidden">
           {/* Header */}
@@ -1249,8 +1249,10 @@ export default function InboxPage() {
                   <h1 className={`text-2xl font-bold ${theme === 'black' ? 'text-white' : 'text-black'}`}>
                     Inbox
                   </h1>
-                  <p className={`text-sm ${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>
-                    {pagination.total} threads • {threads.filter(t => t.unread).length} unread
+                  <p className={`text-sm ${theme === 'black' ? 'text-white/60' : 'text-black/60'} min-h-[20px] flex items-center`}>
+                    <span className="min-w-[120px]">
+                      {pagination.total} threads • {threads.filter(t => t.unread).length} unread
+                    </span>
                   </p>
                 </div>
               </div>
@@ -1265,14 +1267,16 @@ export default function InboxPage() {
                   size="sm"
                   onClick={handleManualSync}
                   disabled={loading || autoSync?.isRunning || (lastManualSync && Date.now() - lastManualSync.getTime() < 2 * 60 * 1000)}
-                  className="relative"
+                  className="relative min-w-[140px]"
                 >
                   <RefreshCw className={`h-4 w-4 mr-2 ${loading || autoSync.isRunning ? 'animate-spin' : ''}`} />
-                  {autoSync?.isRunning ? 'Syncing...' : 
-                   lastManualSync && Date.now() - lastManualSync.getTime() < 2 * 60 * 1000 ? 
-                   `Wait ${Math.ceil((2 * 60 * 1000 - (Date.now() - lastManualSync.getTime())) / 1000)}s` :
-                   syncCountdown > 0 ? `Next sync: ${Math.floor(syncCountdown / 60)}:${(syncCountdown % 60).toString().padStart(2, '0')}` :
-                   'Sync'}
+                  <span className="text-xs font-medium">
+                    {autoSync?.isRunning ? 'Syncing...' : 
+                     lastManualSync && Date.now() - lastManualSync.getTime() < 2 * 60 * 1000 ? 
+                     `Wait ${Math.ceil((2 * 60 * 1000 - (Date.now() - lastManualSync.getTime())) / 1000)}s` :
+                     syncCountdown > 0 ? `Next: ${Math.floor(syncCountdown / 60)}:${(syncCountdown % 60).toString().padStart(2, '0')}` :
+                     'Sync'}
+                  </span>
                 </Button>
                 <Button 
                   variant="liquid" 
@@ -1382,7 +1386,7 @@ export default function InboxPage() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-1">
                                 <div className="flex items-center gap-1 flex-1 min-w-0">
-                                  <div className={`text-sm font-medium ${theme === 'black' ? 'text-white' : 'text-black'} truncate`}>
+                                  <div className={`text-sm font-medium ${theme === 'black' ? 'text-white' : 'text-black'} truncate min-w-0`}>
                                     {thread.participants[0]?.name || thread.participants[0]?.email || 'Unknown'}
                                   </div>
                                   <div className="w-2 h-2 flex items-center justify-center min-w-[8px]">
@@ -1432,8 +1436,8 @@ export default function InboxPage() {
                                 )}
                               </div>
 
-                              <div className={`text-xs font-medium ${theme === 'black' ? 'text-white/90' : 'text-black/90'} truncate mb-1`}>
-                                {thread.subject}
+                              <div className={`text-xs font-medium ${theme === 'black' ? 'text-white/90' : 'text-black/90'} truncate mb-1 min-h-[16px] leading-4`}>
+                                {thread.subject || 'No Subject'}
                               </div>
 
                               <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'} mb-1 min-h-[32px] leading-4`}>
@@ -1488,16 +1492,20 @@ export default function InboxPage() {
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
-                        <h2 className={`text-xl font-bold ${theme === 'black' ? 'text-white' : 'text-black'} mb-2`}>
+                        <h2 className={`text-xl font-bold ${theme === 'black' ? 'text-white' : 'text-black'} mb-2 line-clamp-2 min-h-[56px]`}>
                           {activeThread.subject}
                         </h2>
-                        <div className={`flex items-center gap-4 text-sm ${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>
-                          <div>From: {activeThread.participants[0]?.name} &lt;{activeThread.participants[0]?.email}&gt;</div>
-                          <div>{new Date(activeThread.lastMessageAt).toLocaleString()}</div>
+                        <div className={`flex items-center gap-4 text-sm ${theme === 'black' ? 'text-white/60' : 'text-black/60'} min-h-[20px]`}>
+                          <div className="truncate flex-1">
+                            From: {activeThread.participants[0]?.name} &lt;{activeThread.participants[0]?.email}&gt;
+                          </div>
+                          <div className="flex-shrink-0">
+                            {new Date(activeThread.lastMessageAt).toLocaleString()}
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-shrink-0 min-w-[400px]">
                         <Button 
                           variant="liquid" 
                           size="sm"
