@@ -809,6 +809,29 @@ export default function InboxPage() {
     }
   };
 
+  // Get category emoji
+  const getCategoryEmoji = (category: string) => {
+    switch (category) {
+      case 'hot_lead': 
+      case 'hot-lead': return '🔥';
+      case 'showing_request':
+      case 'showing-request': return '🏠';
+      case 'buyer_lead':
+      case 'buyer-lead': return '🛒';
+      case 'seller_lead':
+      case 'seller-lead': return '💰';
+      case 'price_inquiry':
+      case 'price-inquiry': return '🧮';
+      case 'follow_up':
+      case 'follow-up':
+      case 'follow_up_required': return '⏰';
+      case 'contract':
+      case 'contract_legal': return '📄';
+      case 'marketing': return '🧊';
+      default: return '📧';
+    }
+  };
+
   // Get category badge color
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -1157,8 +1180,9 @@ export default function InboxPage() {
                                 <div className="mb-1 flex items-center gap-2">
                                   <button
                                     onClick={(e) => handleCategoryBadgeClick(thread, e)}
-                                    className={`text-xs px-2 py-0.5 rounded-full border ${getCategoryColor(analysis.category)} hover:opacity-80 transition-opacity cursor-pointer`}
+                                    className={`text-xs px-2 py-0.5 rounded-full border ${getCategoryColor(analysis.category)} hover:opacity-80 transition-opacity cursor-pointer flex items-center gap-1`}
                                   >
+                                    <span>{getCategoryEmoji(analysis.category)}</span>
                                     {analysis.category.replace('_', ' ').toUpperCase()}
                                   </button>
                                   <button
@@ -1381,7 +1405,8 @@ export default function InboxPage() {
                       })()}
 
                       <div className="mb-3">
-                        <span className={`text-xs px-2 py-1 rounded-full border ${getCategoryColor(activeThread.aiAnalysis.category)}`}>
+                        <span className={`text-xs px-2 py-1 rounded-full border ${getCategoryColor(activeThread.aiAnalysis.category)} flex items-center gap-1 w-fit`}>
+                          <span>{getCategoryEmoji(activeThread.aiAnalysis.category)}</span>
                           {activeThread.aiAnalysis.category?.replace('_', ' ').toUpperCase()}
                         </span>
                       </div>

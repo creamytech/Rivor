@@ -19,6 +19,7 @@ const categories = [
   {
     id: 'hot_lead',
     label: 'Hot Lead',
+    emoji: '🔥',
     description: 'Immediate buying/selling intent, urgent response needed',
     icon: Fire,
     color: 'bg-red-100 text-red-800 border-red-300',
@@ -27,6 +28,7 @@ const categories = [
   {
     id: 'showing_request',
     label: 'Showing Request',
+    emoji: '🏠',
     description: 'Client wants to see properties, schedule tours',
     icon: Home,
     color: 'bg-blue-100 text-blue-800 border-blue-300',
@@ -35,6 +37,7 @@ const categories = [
   {
     id: 'buyer_lead',
     label: 'Buyer Lead',
+    emoji: '🛒',
     description: 'Looking to purchase property',
     icon: ShoppingCart,
     color: 'bg-green-100 text-green-800 border-green-300',
@@ -43,6 +46,7 @@ const categories = [
   {
     id: 'seller_lead',
     label: 'Seller Lead',
+    emoji: '💰',
     description: 'Want to sell their property',
     icon: DollarSign,
     color: 'bg-purple-100 text-purple-800 border-purple-300',
@@ -51,6 +55,7 @@ const categories = [
   {
     id: 'price_inquiry',
     label: 'Price Inquiry',
+    emoji: '🧮',
     description: 'Asking about pricing, negotiating offers',
     icon: Calculator,
     color: 'bg-yellow-100 text-yellow-800 border-yellow-300',
@@ -59,6 +64,7 @@ const categories = [
   {
     id: 'follow_up',
     label: 'Follow Up',
+    emoji: '⏰',
     description: 'Requires agent response or follow-up action',
     icon: Clock,
     color: 'bg-gray-100 text-gray-800 border-gray-300',
@@ -67,6 +73,7 @@ const categories = [
   {
     id: 'contract',
     label: 'Contract',
+    emoji: '📄',
     description: 'Legal documents, closing-related',
     icon: FileText,
     color: 'bg-indigo-100 text-indigo-800 border-indigo-300',
@@ -75,6 +82,7 @@ const categories = [
   {
     id: 'marketing',
     label: 'Marketing',
+    emoji: '🧊',
     description: 'Newsletters, promotional content',
     icon: Zap,
     color: 'bg-pink-100 text-pink-800 border-pink-300',
@@ -195,7 +203,8 @@ export function CategoryModal({
                       
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-medium text-gray-900 dark:text-white">
+                          <h3 className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                            <span className="text-lg">{category.emoji}</span>
                             {category.label}
                           </h3>
                           <Badge 
