@@ -168,9 +168,9 @@ Make the email contextually appropriate, ${tone} in tone, and suitable for a rea
     sentiment: 'positive' | 'neutral' | 'negative';
   }> {
     try {
-      // Get thread messages
+      // Get thread messages with decrypted content
       const thread = await prisma.emailThread.findUnique({
-        where: { id: threadId },
+        where: { id: threadId, orgId },
         include: {
           messages: {
             orderBy: { sentAt: 'asc' },
@@ -183,29 +183,124 @@ Make the email contextually appropriate, ${tone} in tone, and suitable for a rea
         throw new Error('Thread not found');
       }
 
-      // For now, return a placeholder summary since we need to implement decryption
-      // In production, you would decrypt the messages and analyze them
-      return {
-        summary: `Email thread analysis for thread ${threadId}. This thread contains ${thread.messages.length} messages.`,
-        keyPoints: [
-          'Email thread identified',
-          `${thread.messages.length} messages in conversation`,
-          'Requires message decryption for detailed analysis'
+      if (thread.messages.length === 0) {
+        return {
+          summary: 'No messages found in this thread',
+          keyPoints: [],
+          suggestedActions: [],
+          sentiment: 'neutral'
+        };
+      }
+
+      // Decrypt and collect message content
+      let conversationText = '';
+      const messageContents: string[] = [];
+
+      for (const message of thread.messages) {
+        try {
+          const subject = message.subjectEnc 
+            ? new TextDecoder().decode(await decryptForOrg(orgId, message.subjectEnc as unknown as Buffer, 'email:subject'))
+            : '';
+          
+          const from = message.fromEnc 
+            ? new TextDecoder().decode(await decryptForOrg(orgId, message.fromEnc as unknown as Buffer, 'email:from'))
+            : '';
+          
+          let body = '';
+          if (message.bodyRefEnc) {
+            const bodyData = new TextDecoder().decode(await decryptForOrg(orgId, message.bodyRefEnc as unknown as Buffer, 'email:body'));
+            
+            // Try to parse structured body content
+            try {
+              const parsedBody = JSON.parse(bodyData);
+              body = parsedBody.content || bodyData;
+            } catch {
+              body = bodyData;
+            }
+          }
+
+          const messageContent = `From: ${from}\nSubject: ${subject}\nContent: ${body}\n---`;
+          messageContents.push(messageContent);
+          conversationText += messageContent + '\n';
+        } catch (decryptError) {
+          console.error('Failed to decrypt message:', decryptError);
+          messageContents.push(`[Message from ${message.sentAt} - decryption failed]`);
+        }
+      }
+
+      if (conversationText.trim().length === 0) {
+        return {
+          summary: 'Unable to decrypt message content for analysis',
+          keyPoints: ['Messages could not be decrypted'],
+          suggestedActions: ['Review encryption setup', 'Check message format'],
+          sentiment: 'neutral'
+        };
+      }
+
+      // Use OpenAI to analyze the conversation
+      const prompt = `Analyze this email thread conversation and provide a JSON response with the following structure:
+{
+  "summary": "Brief 2-3 sentence summary of the conversation",
+  "keyPoints": ["key point 1", "key point 2", "key point 3"],
+  "suggestedActions": ["action 1", "action 2", "action 3"],
+  "sentiment": "positive" | "neutral" | "negative"
+}
+
+Email thread conversation:
+${conversationText}
+
+Focus on:
+- Main topics discussed
+- Key decisions or outcomes
+- Important dates, names, or details
+- Overall tone and sentiment
+- What actions might be needed next`;
+
+      const completion = await getOpenAI().chat.completions.create({
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert email analyzer for real estate professionals. Provide concise, actionable insights.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
         ],
-        suggestedActions: [
-          'Review message content',
-          'Follow up with participants',
-          'Set reminder for next action'
-        ],
-        sentiment: 'neutral'
-      };
+        max_tokens: 800,
+        temperature: 0.3,
+      });
+
+      const response = completion.choices[0]?.message?.content;
+      if (!response) {
+        throw new Error('No response from AI');
+      }
+
+      try {
+        const analysis = JSON.parse(response);
+        return {
+          summary: analysis.summary || `Email thread with ${thread.messages.length} messages`,
+          keyPoints: Array.isArray(analysis.keyPoints) ? analysis.keyPoints : [`${thread.messages.length} messages analyzed`],
+          suggestedActions: Array.isArray(analysis.suggestedActions) ? analysis.suggestedActions : ['Follow up with participants'],
+          sentiment: ['positive', 'neutral', 'negative'].includes(analysis.sentiment) ? analysis.sentiment : 'neutral'
+        };
+      } catch (parseError) {
+        // Fallback if JSON parsing fails
+        return {
+          summary: response.slice(0, 200) + (response.length > 200 ? '...' : ''),
+          keyPoints: [`${thread.messages.length} messages in conversation`],
+          suggestedActions: ['Review conversation details', 'Follow up as needed'],
+          sentiment: 'neutral'
+        };
+      }
 
     } catch (error) {
       console.error('Thread summarization error:', error);
       return {
-        summary: 'Unable to generate thread summary',
-        keyPoints: [],
-        suggestedActions: [],
+        summary: 'Unable to generate thread summary due to error',
+        keyPoints: ['Analysis failed'],
+        suggestedActions: ['Try again later', 'Check system configuration'],
         sentiment: 'neutral'
       };
     }

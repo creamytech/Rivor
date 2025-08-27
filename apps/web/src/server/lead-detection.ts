@@ -1,5 +1,3 @@
-import { aiService } from './ai/ai-service';
-import { GmailService } from './gmail';
 import { prisma } from './db';
 import { decryptForOrg, encryptForOrg } from './crypto';
 import { logger } from '@/lib/logger';
@@ -32,6 +30,18 @@ export interface NotificationPayload {
   actionUrl?: string;
 }
 
+let openaiInstance: any = null;
+
+async function getOpenAI() {
+  if (!openaiInstance && process.env.OPENAI_API_KEY) {
+    const OpenAI = (await import('openai')).default;
+    openaiInstance = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openaiInstance;
+}
+
 export class LeadDetectionService {
   
   /**
@@ -57,15 +67,54 @@ export class LeadDetectionService {
         message.to
       );
 
-      // Use AI service to analyze the message
-      const aiResponse = await aiService.sendMessage(
-        analysisPrompt,
-        undefined,
-        { type: 'thread', id: threadId }
-      );
+      // Use OpenAI for lead analysis
+      const openai = await getOpenAI();
+      if (!openai) {
+        logger.warn('OpenAI not configured, falling back to keyword detection', {
+          orgId,
+          messageId,
+          threadId
+        });
+        
+        // Fallback to keyword-based analysis
+        const keywordResult = this.fallbackLeadDetection(message.subject + ' ' + message.body);
+        return keywordResult;
+      }
+
+      let aiResponse = '';
+      
+      try {
+        const completion = await openai.chat.completions.create({
+          model: 'gpt-4',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an expert real estate lead detection system. Analyze emails to identify potential leads and extract relevant information.'
+            },
+            {
+              role: 'user',
+              content: analysisPrompt
+            }
+          ],
+          max_tokens: 1000,
+          temperature: 0.3,
+        });
+
+        aiResponse = completion.choices[0]?.message?.content || '';
+      } catch (openaiError) {
+        logger.warn('OpenAI API call failed, falling back to keyword detection', {
+          orgId,
+          messageId,
+          threadId,
+          error: openaiError instanceof Error ? openaiError.message : String(openaiError)
+        });
+        
+        // Fallback to keyword-based analysis
+        return this.fallbackLeadDetection(message.subject + ' ' + message.body);
+      }
 
       // Parse AI response to extract lead detection result
-      const result = this.parseAILeadResponse(aiResponse.content);
+      const result = this.parseAILeadResponse(aiResponse);
 
       logger.info('Lead analysis completed', {
         orgId,
@@ -396,17 +445,30 @@ export class LeadDetectionService {
     if (!message) return null;
 
     try {
-      const [subject, body, from, to] = await Promise.all([
-        message.subjectEnc ? decryptForOrg(orgId, message.subjectEnc, 'email:subject') : Buffer.from(''),
-        message.bodyRefEnc ? decryptForOrg(orgId, message.bodyRefEnc, 'email:body') : Buffer.from(''),
-        message.fromEnc ? decryptForOrg(orgId, message.fromEnc, 'email:from') : Buffer.from(''),
-        message.toEnc ? decryptForOrg(orgId, message.toEnc, 'email:to') : Buffer.from('')
+      const [subject, bodyData, from, to] = await Promise.all([
+        message.subjectEnc ? decryptForOrg(orgId, message.subjectEnc as unknown as Buffer, 'email:subject') : Buffer.from(''),
+        message.bodyRefEnc ? decryptForOrg(orgId, message.bodyRefEnc as unknown as Buffer, 'email:body') : Buffer.from(''),
+        message.fromEnc ? decryptForOrg(orgId, message.fromEnc as unknown as Buffer, 'email:from') : Buffer.from(''),
+        message.toEnc ? decryptForOrg(orgId, message.toEnc as unknown as Buffer, 'email:to') : Buffer.from('')
       ]);
+
+      // Parse body content - it might be JSON structured
+      let body = new TextDecoder().decode(bodyData);
+      try {
+        const parsedBody = JSON.parse(body);
+        if (parsedBody.content) {
+          body = parsedBody.content;
+        } else if (parsedBody.type && parsedBody.content !== undefined) {
+          body = parsedBody.content;
+        }
+      } catch {
+        // If JSON parsing fails, use raw body content
+      }
 
       return {
         id: message.id,
         subject: new TextDecoder().decode(subject),
-        body: new TextDecoder().decode(body),
+        body: body,
         from: new TextDecoder().decode(from),
         to: new TextDecoder().decode(to)
       };
