@@ -90,7 +90,7 @@ export default function InboxPage() {
     onSyncComplete: (result) => {
       // Refresh inbox if new messages/threads were found
       if (result.email.newMessages || result.email.newThreads) {
-        fetchThreads(pagination.page, activeFilter, searchQuery);
+        fetchThreads(pagination.page, activeFilter, searchQuery, true);
       }
     }
   });
@@ -124,8 +124,9 @@ export default function InboxPage() {
   });
 
   // Fetch threads from API
-  const fetchThreads = async (page = 1, filter = activeFilter, search = searchQuery) => {
+  const fetchThreads = async (page = 1, filter = activeFilter, search = searchQuery, skipAutoAnalysis = false) => {
     try {
+      console.log(`🔄 fetchThreads called: page=${page}, filter=${filter}, skipAutoAnalysis=${skipAutoAnalysis}`);
       setLoading(true);
       const params = new URLSearchParams({
         page: page.toString(),
@@ -135,27 +136,34 @@ export default function InboxPage() {
       });
       
       const response = await fetch(`/api/inbox/threads?${params}`);
+      console.log(`📡 API response status: ${response.status}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch threads');
+        const errorText = await response.text();
+        console.error(`❌ API error: ${response.status} - ${errorText}`);
+        throw new Error(`Failed to fetch threads: ${response.status} - ${errorText}`);
       }
       
       const data: ThreadsResponse = await response.json();
       setThreads(data.threads);
       setPagination(data.pagination);
       
-      // Auto-analyze threads without existing analysis (only if they haven't been analyzed before)
-      if (data.threads.length > 0) {
+      // Auto-analyze threads without existing analysis (only on initial load, not on refresh)
+      if (data.threads.length > 0 && !skipAutoAnalysis) {
         const threadsWithoutAnalysis = data.threads.filter(t => !t.aiAnalysis);
         if (threadsWithoutAnalysis.length > 0) {
           console.log(`Auto-analyzing ${threadsWithoutAnalysis.length} threads without analysis`);
           for (const thread of threadsWithoutAnalysis.slice(0, 3)) { // Limit to 3 to avoid rate limits
             try {
-              await analyzeThread(thread.id);
+              await analyzeThreadWithoutRefresh(thread.id);
               // Small delay to avoid overwhelming the API
               await new Promise(resolve => setTimeout(resolve, 1000));
             } catch (error) {
               console.error(`Failed to auto-analyze thread ${thread.id}:`, error);
             }
+          }
+          // Single refresh after all analyses are complete
+          if (threadsWithoutAnalysis.length > 0) {
+            await fetchThreads(page, filter, search, true); // Skip auto-analysis on refresh
           }
         }
       }
@@ -349,8 +357,18 @@ export default function InboxPage() {
   };
 
 
-  // Trigger AI analysis for a thread
+  // Trigger AI analysis for a thread (with refresh)
   const analyzeThread = async (threadId: string) => {
+    const result = await analyzeThreadWithoutRefresh(threadId);
+    if (result) {
+      // Refresh threads to get updated AI analysis data (skip auto-analysis to prevent loop)
+      await fetchThreads(pagination.page, activeFilter, searchQuery, true);
+    }
+    return result;
+  };
+
+  // Trigger AI analysis for a thread (without refresh to prevent loops)
+  const analyzeThreadWithoutRefresh = async (threadId: string) => {
     try {
       setAiAnalyzing(threadId);
       
@@ -415,13 +433,11 @@ export default function InboxPage() {
       const data = await response.json();
       console.log('✅ AI Analysis result:', data);
       if (data.analysis) {
-        // Refresh threads to get updated AI analysis data
-        await fetchThreads(pagination.page, activeFilter, searchQuery);
-
         toast({
           title: "AI Analysis Complete",
           description: `Category: ${data.analysis.category} | Lead Score: ${data.analysis.leadScore}/100`,
         });
+        return data.analysis;
       }
     } catch (error) {
       console.error('Error analyzing thread:', error);
@@ -433,6 +449,7 @@ export default function InboxPage() {
     } finally {
       setAiAnalyzing(null);
     }
+    return null;
   };
 
   // Generate AI reply
@@ -542,7 +559,7 @@ export default function InboxPage() {
 
       // Refresh thread data to show sent status
       if (activeThread) {
-        await fetchThreads(pagination.page, activeFilter, searchQuery);
+        await fetchThreads(pagination.page, activeFilter, searchQuery, true);
       }
 
     } catch (error) {
@@ -784,7 +801,7 @@ export default function InboxPage() {
                   variant="liquid" 
                   size="sm"
                   onClick={() => {
-                    fetchThreads(pagination.page, activeFilter, searchQuery);
+                    fetchThreads(pagination.page, activeFilter, searchQuery, false); // Allow auto-analysis on manual refresh
                     autoSync.triggerSync();
                   }}
                   disabled={loading || autoSync.isRunning}
