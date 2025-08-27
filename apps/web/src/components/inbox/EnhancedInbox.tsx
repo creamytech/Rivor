@@ -132,32 +132,90 @@ export default function EnhancedInbox({ activeTab = 'all', searchQuery = '', sel
   const [sortBy, setSortBy] = useState<'date' | 'priority' | 'leadScore' | 'sender'>('date');
   const [showSmartSuggestions, setShowSmartSuggestions] = useState(true);
   const [aiInsights, setAiInsights] = useState<any>(null);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+  const [syncStatus, setSyncStatus] = useState<any>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    const fetchThreads = async () => {
-      try {
-        const params = new URLSearchParams();
-        if (activeTab !== 'all') params.append('filter', activeTab);
-        if (searchQuery) params.append('search', searchQuery);
-        if (selectedFilter) params.append('filter', selectedFilter);
-        
-        const response = await fetch(`/api/inbox/threads?${params.toString()}`);
-        if (response.ok) {
-          const data = await response.json();
-          setThreads(data.threads || []);
-        } else {
-          setThreads([]);
-        }
-      } catch (error) {
-        console.error('Failed to fetch email threads:', error);
+  const fetchThreads = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (activeTab !== 'all') params.append('filter', activeTab);
+      if (searchQuery) params.append('search', searchQuery);
+      if (selectedFilter) params.append('filter', selectedFilter);
+      
+      const response = await fetch(`/api/inbox/threads?${params.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        setThreads(data.threads || []);
+      } else {
         setThreads([]);
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error) {
+      console.error('Failed to fetch email threads:', error);
+      setThreads([]);
+    } finally {
+      setIsLoading(false);
+      setRefreshing(false);
+    }
+  };
 
+  const checkSyncStatus = async () => {
+    try {
+      const response = await fetch('/api/sync/auto');
+      if (response.ok) {
+        const data = await response.json();
+        setSyncStatus(data);
+        
+        // Check if there's new sync data
+        const emailLastSync = data.email?.lastSyncAny;
+        if (emailLastSync) {
+          const newSyncTime = new Date(emailLastSync);
+          if (!lastSyncTime || newSyncTime > lastSyncTime) {
+            setLastSyncTime(newSyncTime);
+            
+            // Auto-refresh threads if enabled and there's new data
+            if (autoRefreshEnabled && lastSyncTime && newSyncTime > lastSyncTime) {
+              setRefreshing(true);
+              await fetchThreads();
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to check sync status:', error);
+    }
+  };
+
+  const manualRefresh = async () => {
+    setRefreshing(true);
+    setIsLoading(true);
+    await fetchThreads();
+  };
+
+  // Initial threads fetch
+  useEffect(() => {
     fetchThreads();
   }, [activeTab, searchQuery, selectedFilter]);
+
+  // Auto-refresh polling
+  useEffect(() => {
+    let syncInterval: NodeJS.Timeout;
+    
+    if (autoRefreshEnabled) {
+      // Check sync status every 30 seconds
+      syncInterval = setInterval(checkSyncStatus, 30000);
+      
+      // Initial sync status check
+      checkSyncStatus();
+    }
+
+    return () => {
+      if (syncInterval) {
+        clearInterval(syncInterval);
+      }
+    };
+  }, [autoRefreshEnabled, lastSyncTime]);
 
   useEffect(() => {
     // Fetch contact data when a thread is selected
@@ -397,7 +455,52 @@ export default function EnhancedInbox({ activeTab = 'all', searchQuery = '', sel
         "flex flex-col border-r border-slate-200 dark:border-slate-700",
         viewMode === 'split' ? "w-1/3" : "w-full"
       )}>
-
+        {/* Auto-Refresh Controls */}
+        <div className="flex items-center justify-between p-3 border-b border-slate-200 dark:border-slate-700">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={manualRefresh}
+              disabled={refreshing}
+              className="h-8"
+            >
+              <RefreshCw className={cn("h-4 w-4 mr-2", refreshing && "animate-spin")} />
+              {refreshing ? 'Refreshing...' : 'Refresh'}
+            </Button>
+            
+            <Button
+              variant={autoRefreshEnabled ? "default" : "outline"}
+              size="sm"
+              onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
+              className="h-8"
+            >
+              <Bell className="h-4 w-4 mr-2" />
+              Auto-refresh {autoRefreshEnabled ? 'On' : 'Off'}
+            </Button>
+          </div>
+          
+          {lastSyncTime && (
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              Last sync: {new Date(lastSyncTime).toLocaleTimeString()}
+            </div>
+          )}
+          
+          {syncStatus && (
+            <div className="flex items-center gap-1 text-xs">
+              {syncStatus.overallHealth === 'healthy' ? (
+                <CheckCircle className="h-3 w-3 text-green-500" />
+              ) : (
+                <AlertTriangle className="h-3 w-3 text-yellow-500" />
+              )}
+              <span className={cn(
+                syncStatus.overallHealth === 'healthy' ? 'text-green-600' : 'text-yellow-600'
+              )}>
+                {syncStatus.overallHealth === 'healthy' ? 'Synced' : 'Attention needed'}
+              </span>
+            </div>
+          )}
+        </div>
 
         {/* Thread List */}
         <div className="flex-1 overflow-y-auto">

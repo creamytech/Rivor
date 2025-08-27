@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db-pool';
 import { GmailService } from '@/server/gmail';
 import { GoogleCalendarService } from '@/server/calendar';
 import { MicrosoftGraphService } from '@/server/microsoft-graph';
+import { emailWorkflowService } from '@/server/email-workflow';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +16,9 @@ interface SyncResult {
     synced: boolean;
     newMessages?: number;
     newThreads?: number;
+    aiAnalyzedThreads?: number;
+    leadsDetected?: number;
+    notifications?: number;
     error?: string;
   };
   calendar: {
@@ -32,22 +36,45 @@ export async function POST(req: NextRequest) {
   const correlationId = `auto-sync-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   
   try {
-    const session = await auth();
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Check if this is an internal call from scheduled service
+    const isInternalCall = req.headers.get('X-Internal-Sync') === 'true';
+    const internalOrgId = req.headers.get('X-Org-Id');
 
-    const orgId = (session as any).orgId;
-    if (!orgId) {
-      return NextResponse.json({ 
-        error: 'No organization found - please complete onboarding first' 
-      }, { status: 400 });
+    let orgId: string;
+    let userEmail: string;
+
+    if (isInternalCall && internalOrgId) {
+      // Internal call from scheduled sync service
+      orgId = internalOrgId;
+      userEmail = 'system:scheduled-sync';
+      
+      logger.info('Internal scheduled sync call', {
+        correlationId,
+        orgId,
+        source: 'scheduled-sync-service'
+      });
+    } else {
+      // Regular user call
+      const session = await auth();
+      if (!session?.user?.email) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+
+      orgId = (session as any).orgId;
+      userEmail = session.user.email;
+
+      if (!orgId) {
+        return NextResponse.json({ 
+          error: 'No organization found - please complete onboarding first' 
+        }, { status: 400 });
+      }
     }
 
     logger.info('Auto-sync initiated', {
       correlationId,
       orgId,
-      userEmail: session.user.email
+      userEmail,
+      isInternalCall
     });
 
     const result: SyncResult = {
@@ -157,10 +184,111 @@ export async function POST(req: NextRequest) {
           }
         }
 
+        // 3. AUTOMATIC AI ANALYSIS AND WORKFLOW PROCESSING
+        let aiAnalyzedThreads = 0;
+        let leadsDetected = 0;
+        let notifications = 0;
+        
+        if (totalNewMessages > 0) {
+          try {
+            logger.info('Starting AI workflow processing for new emails', {
+              correlationId,
+              orgId,
+              newMessages: totalNewMessages,
+              newThreads: totalNewThreads
+            });
+
+            // Get recently updated threads that haven't been processed yet
+            const recentThreads = await prisma.emailThread.findMany({
+              where: {
+                orgId,
+                updatedAt: {
+                  gte: new Date(Date.now() - 15 * 60 * 1000) // Last 15 minutes
+                },
+                OR: [
+                  { status: { not: 'processed' } }, // Not processed yet
+                  { status: null } // No status set
+                ]
+              },
+              orderBy: { updatedAt: 'desc' },
+              take: 20 // Limit to avoid overwhelming the system
+            });
+
+            logger.info('Found threads for AI processing', {
+              correlationId,
+              orgId,
+              threadCount: recentThreads.length
+            });
+
+            // Process each thread through the AI workflow
+            for (const thread of recentThreads) {
+              try {
+                const workflowResult = await emailWorkflowService.processEmailThread(
+                  orgId,
+                  thread.id
+                );
+
+                if (workflowResult.processed) {
+                  aiAnalyzedThreads++;
+                  
+                  if (workflowResult.leadDetected) {
+                    leadsDetected++;
+                  }
+                  
+                  // Count AI analysis with high priority as potential notification trigger
+                  if (workflowResult.aiAnalysis && (
+                    workflowResult.aiAnalysis.priorityScore >= 80 ||
+                    ['hot_lead', 'showing_request', 'seller_lead', 'buyer_lead'].includes(workflowResult.aiAnalysis.category)
+                  )) {
+                    notifications++;
+                  }
+
+                  logger.info('Thread AI workflow completed', {
+                    correlationId,
+                    orgId,
+                    threadId: thread.id,
+                    leadDetected: workflowResult.leadDetected,
+                    aiCategory: workflowResult.aiAnalysis?.category,
+                    priorityScore: workflowResult.aiAnalysis?.priorityScore
+                  });
+                }
+              } catch (threadError) {
+                logger.error('Thread AI workflow failed', {
+                  correlationId,
+                  orgId,
+                  threadId: thread.id,
+                  error: threadError instanceof Error ? threadError.message : String(threadError)
+                });
+              }
+
+              // Small delay to prevent overwhelming the system
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            logger.info('AI workflow processing completed', {
+              correlationId,
+              orgId,
+              aiAnalyzedThreads,
+              leadsDetected,
+              notifications
+            });
+
+          } catch (aiWorkflowError) {
+            logger.error('AI workflow processing failed', {
+              correlationId,
+              orgId,
+              error: aiWorkflowError instanceof Error ? aiWorkflowError.message : String(aiWorkflowError)
+            });
+          }
+        }
+
         result.email = {
           synced: true,
           newMessages: totalNewMessages,
-          newThreads: totalNewThreads
+          newThreads: totalNewThreads,
+          aiAnalyzedThreads,
+          leadsDetected,
+          notifications
         };
       } else {
         result.email = {

@@ -239,6 +239,18 @@ ${JSON.stringify(result.data, null, 2)}
           description: "Find a real email message ID for AI testing",
           endpoint: "/api/debug/test-ai?test=analysis",
           method: "GET"
+        },
+        {
+          name: "Test Complete Workflow",
+          description: "Test the entire automated email AI workflow end-to-end",
+          endpoint: "/api/debug/test-workflow",
+          method: "POST"
+        },
+        {
+          name: "Workflow Health Check",
+          description: "Quick health check of all workflow services",
+          endpoint: "/api/debug/test-workflow",
+          method: "GET"
         }
       ]
     },
@@ -456,6 +468,25 @@ ${JSON.stringify(result.data, null, 2)}
               >
                 <Brain className="h-4 w-4 mr-2" />
                 Test AI Analysis
+              </Button>
+              <Button
+                onClick={() => {
+                  executeDebug("/api/debug/test-workflow", "POST", "Test complete automated workflow");
+                }}
+                variant="outline"
+                className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:from-green-600 hover:to-blue-600"
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                Test Complete Workflow
+              </Button>
+              <Button
+                onClick={() => {
+                  executeDebug("/api/debug/test-workflow", "GET", "Workflow health check");
+                }}
+                variant="outline"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Health Check
               </Button>
             </div>
           </CardContent>

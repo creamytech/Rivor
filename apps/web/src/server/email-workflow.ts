@@ -3,6 +3,7 @@ import { leadDetectionService } from './lead-detection';
 import { notificationService } from './notification-service';
 import { prisma } from './db';
 import { logger } from '@/lib/logger';
+import { analyzeEmailWithAI } from './ai-analysis-service';
 
 export interface EmailProcessingResult {
   threadId: string;
@@ -11,6 +12,12 @@ export interface EmailProcessingResult {
   leadDetected: boolean;
   leadId?: string;
   confidence?: number;
+  aiAnalysis?: {
+    category: string;
+    priorityScore: number;
+    leadScore: number;
+    confidenceScore: number;
+  };
   error?: string;
 }
 
@@ -116,6 +123,39 @@ export class EmailWorkflowService {
       let leadId: string | undefined;
       let confidence: number | undefined;
 
+      // Run AI analysis first
+      let aiAnalysis: any = null;
+      try {
+        aiAnalysis = await analyzeEmailWithAI(orgId, latestMessage.id, threadId);
+        
+        if (aiAnalysis) {
+          logger.info('AI analysis completed in workflow', {
+            orgId,
+            threadId,
+            messageId: latestMessage.id,
+            category: aiAnalysis.category,
+            priorityScore: aiAnalysis.priorityScore,
+            leadScore: aiAnalysis.leadScore,
+            action: 'workflow_ai_analysis'
+          });
+        } else {
+          logger.warn('AI analysis returned null result', {
+            orgId,
+            threadId,
+            messageId: latestMessage.id,
+            action: 'workflow_ai_analysis_null'
+          });
+        }
+      } catch (aiError) {
+        logger.error('AI analysis error in workflow', {
+          orgId,
+          threadId,
+          messageId: latestMessage.id,
+          error: aiError instanceof Error ? aiError.message : String(aiError),
+          action: 'workflow_ai_analysis_error'
+        });
+      }
+
       // Run lead detection if enabled
       if (workflowConfig.leadDetectionEnabled) {
         const leadResult = await leadDetectionService.analyzeMessageForLead(
@@ -126,8 +166,15 @@ export class EmailWorkflowService {
 
         confidence = leadResult.confidence;
         
-        // Create lead if confidence is high enough
-        if (leadResult.isLead && leadResult.confidence > 0.6) {
+        // Also consider AI analysis results for lead creation
+        const shouldCreateLead = leadResult.isLead && leadResult.confidence > 0.6;
+        const isHighPriorityAI = aiAnalysis && (
+          aiAnalysis.priorityScore >= 80 || 
+          aiAnalysis.leadScore >= 75 ||
+          ['hot_lead', 'showing_request', 'seller_lead', 'buyer_lead'].includes(aiAnalysis.category)
+        );
+        
+        if (shouldCreateLead || isHighPriorityAI) {
           leadId = await leadDetectionService.createLeadFromEmail(
             orgId,
             threadId,
@@ -141,14 +188,24 @@ export class EmailWorkflowService {
             threadId,
             leadId,
             confidence: leadResult.confidence,
+            aiCategory: aiAnalysis?.category,
+            aiPriorityScore: aiAnalysis?.priorityScore,
             action: 'workflow_lead_created'
           });
         }
       }
 
-      // Send notifications if enabled
-      if (workflowConfig.notificationsEnabled && leadDetected && leadId) {
-        await notificationService.processEmailForNotifications(orgId, threadId);
+      // Send notifications if enabled (for leads or high-priority AI analysis)
+      const shouldNotify = workflowConfig.notificationsEnabled && (
+        (leadDetected && leadId) ||
+        (aiAnalysis && (
+          aiAnalysis.priorityScore >= 80 ||
+          ['hot_lead', 'showing_request', 'seller_lead', 'buyer_lead'].includes(aiAnalysis.category)
+        ))
+      );
+      
+      if (shouldNotify) {
+        await notificationService.processEmailForNotifications(orgId, threadId, aiAnalysis);
       }
 
       // Mark thread as processed
@@ -160,7 +217,13 @@ export class EmailWorkflowService {
         processed: true,
         leadDetected,
         leadId,
-        confidence
+        confidence,
+        aiAnalysis: aiAnalysis ? {
+          category: aiAnalysis.category,
+          priorityScore: aiAnalysis.priorityScore,
+          leadScore: aiAnalysis.leadScore,
+          confidenceScore: aiAnalysis.confidenceScore
+        } : undefined
       };
 
       logger.info('Email thread processing completed', {

@@ -18,7 +18,7 @@ export interface NotificationConfig {
 }
 
 export interface NotificationTemplate {
-  type: 'lead_detected' | 'follow_up_needed' | 'hot_lead' | 'deal_closed';
+  type: 'lead_detected' | 'follow_up_needed' | 'hot_lead' | 'deal_closed' | 'showing_request' | 'seller_lead' | 'buyer_lead' | 'price_inquiry';
   title: string;
   emailTemplate?: string;
   pushTemplate?: string;
@@ -92,6 +92,63 @@ export class NotificationService {
       `,
       pushTemplate: '🎉 Deal closed: {{dealTitle}} - {{dealValue}}',
       slackTemplate: `🎉 *Deal Closed!* 🎉\n*Deal:* {{dealTitle}}\n*Value:* {{dealValue}}\n*Contact:* {{contactInfo}}\n<{{actionUrl}}|View Deal>`
+    },
+    showing_request: {
+      type: 'showing_request',
+      title: 'Property Showing Request',
+      emailTemplate: `
+        <h2>🏠 Property Showing Request</h2>
+        <p>A client has requested to see a property - immediate response recommended!</p>
+        <p><strong>AI Analysis:</strong> Priority {{priorityScore}}% | Lead Score {{leadScore}}%</p>
+        <p><strong>Property Details:</strong> {{propertyType}}</p>
+        <p><strong>Client:</strong> {{contactInfo}}</p>
+        <a href="{{actionUrl}}" style="background: #0066cc; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Respond to Request</a>
+      `,
+      pushTemplate: '🏠 Showing request from {{contactInfo}} - respond quickly!',
+      slackTemplate: `🏠 *Property Showing Request*\n*Priority:* {{priorityScore}}% | *Lead Score:* {{leadScore}}%\n*Property:* {{propertyType}}\n*Client:* {{contactInfo}}\n<{{actionUrl}}|Respond Now>`
+    },
+    seller_lead: {
+      type: 'seller_lead',
+      title: 'New Seller Lead',
+      emailTemplate: `
+        <h2>💰 New Seller Lead</h2>
+        <p>Someone is looking to sell their property!</p>
+        <p><strong>AI Analysis:</strong> Priority {{priorityScore}}% | Lead Score {{leadScore}}%</p>
+        <p><strong>Property:</strong> {{propertyType}}</p>
+        <p><strong>Contact:</strong> {{contactInfo}}</p>
+        <a href="{{actionUrl}}" style="background: #00aa44; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Contact Seller</a>
+      `,
+      pushTemplate: '💰 New seller lead detected - {{leadScore}}% confidence',
+      slackTemplate: `💰 *New Seller Lead*\n*Priority:* {{priorityScore}}% | *Lead Score:* {{leadScore}}%\n*Property:* {{propertyType}}\n*Contact:* {{contactInfo}}\n<{{actionUrl}}|Contact Seller>`
+    },
+    buyer_lead: {
+      type: 'buyer_lead',
+      title: 'New Buyer Lead',
+      emailTemplate: `
+        <h2>🏡 New Buyer Lead</h2>
+        <p>Potential buyer identified looking for property!</p>
+        <p><strong>AI Analysis:</strong> Priority {{priorityScore}}% | Lead Score {{leadScore}}%</p>
+        <p><strong>Looking For:</strong> {{propertyType}}</p>
+        <p><strong>Budget:</strong> {{priceRange}}</p>
+        <p><strong>Contact:</strong> {{contactInfo}}</p>
+        <a href="{{actionUrl}}" style="background: #0066cc; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Contact Buyer</a>
+      `,
+      pushTemplate: '🏡 New buyer lead - {{priceRange}} budget detected',
+      slackTemplate: `🏡 *New Buyer Lead*\n*Priority:* {{priorityScore}}% | *Lead Score:* {{leadScore}}%\n*Looking For:* {{propertyType}}\n*Budget:* {{priceRange}}\n*Contact:* {{contactInfo}}\n<{{actionUrl}}|Contact Buyer>`
+    },
+    price_inquiry: {
+      type: 'price_inquiry',
+      title: 'Price Inquiry',
+      emailTemplate: `
+        <h2>💲 Price Inquiry</h2>
+        <p>Client is asking about property pricing - they might be ready to make an offer!</p>
+        <p><strong>AI Analysis:</strong> Priority {{priorityScore}}% | Lead Score {{leadScore}}%</p>
+        <p><strong>Property:</strong> {{propertyType}}</p>
+        <p><strong>Contact:</strong> {{contactInfo}}</p>
+        <a href="{{actionUrl}}" style="background: #ff8800; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Respond to Inquiry</a>
+      `,
+      pushTemplate: '💲 Price inquiry from {{contactInfo}} - potential offer coming',
+      slackTemplate: `💲 *Price Inquiry*\n*Priority:* {{priorityScore}}% | *Lead Score:* {{leadScore}}%\n*Property:* {{propertyType}}\n*Contact:* {{contactInfo}}\n<{{actionUrl}}|Respond to Inquiry>`
     }
   };
 
@@ -371,7 +428,8 @@ export class NotificationService {
    */
   async processEmailForNotifications(
     orgId: string,
-    threadId: string
+    threadId: string,
+    aiAnalysis?: any
   ): Promise<void> {
     try {
       const config = await this.getNotificationConfig(orgId);
@@ -412,58 +470,146 @@ export class NotificationService {
         return;
       }
 
-      // Use lead detection service to analyze
-      const leadResult = await leadDetectionService.analyzeMessageForLead(
-        orgId,
-        latestMessage.id,
-        threadId
-      );
-
-      // Determine notification priority based on confidence
+      // Determine notification based on AI analysis if provided, otherwise fall back to lead detection
       let shouldNotify = false;
       let priority: 'low' | 'medium' | 'high' = 'low';
-      let notificationType: 'lead_detected' | 'hot_lead' = 'lead_detected';
+      let notificationType: string = 'lead_detected';
+      let message = 'New lead detected';
+      let confidence = 0;
 
-      if (leadResult.confidence >= config.leadThresholds.highPriorityConfidence) {
-        shouldNotify = true;
-        priority = 'high';
-        notificationType = 'hot_lead';
-      } else if (leadResult.confidence >= config.leadThresholds.mediumPriorityConfidence) {
-        shouldNotify = true;
-        priority = 'medium';
-        notificationType = 'lead_detected';
+      if (aiAnalysis) {
+        // Use AI analysis for more specific notifications
+        const isHighPriority = aiAnalysis.priorityScore >= 80;
+        const isGoodLead = aiAnalysis.leadScore >= 70;
+        
+        if (isHighPriority || isGoodLead) {
+          shouldNotify = true;
+          confidence = aiAnalysis.leadScore / 100;
+          
+          // Determine notification type based on AI category
+          switch (aiAnalysis.category) {
+            case 'hot_lead':
+              notificationType = 'hot_lead';
+              priority = 'high';
+              message = `Hot lead detected with ${aiAnalysis.priorityScore}% priority score`;
+              break;
+            case 'showing_request':
+              notificationType = 'showing_request';
+              priority = 'high';
+              message = `Property showing request detected`;
+              break;
+            case 'seller_lead':
+              notificationType = 'seller_lead';
+              priority = isHighPriority ? 'high' : 'medium';
+              message = `Seller lead detected with ${aiAnalysis.leadScore}% lead score`;
+              break;
+            case 'buyer_lead':
+              notificationType = 'buyer_lead';
+              priority = isHighPriority ? 'high' : 'medium';
+              message = `Buyer lead detected with ${aiAnalysis.leadScore}% lead score`;
+              break;
+            case 'price_inquiry':
+              notificationType = 'price_inquiry';
+              priority = isHighPriority ? 'high' : 'medium';
+              message = `Price inquiry detected - potential offer incoming`;
+              break;
+            default:
+              if (isHighPriority) {
+                notificationType = 'hot_lead';
+                priority = 'high';
+                message = `High priority email detected (${aiAnalysis.priorityScore}% priority)`;
+              } else {
+                notificationType = 'lead_detected';
+                priority = 'medium';
+                message = `Lead detected with ${aiAnalysis.leadScore}% confidence`;
+              }
+          }
+        }
+      } else {
+        // Fall back to traditional lead detection
+        const leadResult = await leadDetectionService.analyzeMessageForLead(
+          orgId,
+          latestMessage.id,
+          threadId
+        );
+
+        confidence = leadResult.confidence;
+        message = leadResult.reason;
+
+        if (leadResult.confidence >= config.leadThresholds.highPriorityConfidence) {
+          shouldNotify = true;
+          priority = 'high';
+          notificationType = 'hot_lead';
+        } else if (leadResult.confidence >= config.leadThresholds.mediumPriorityConfidence) {
+          shouldNotify = true;
+          priority = 'medium';
+          notificationType = 'lead_detected';
+        }
       }
 
-      if (shouldNotify && leadResult.isLead) {
-        // Auto-create lead if configured
+      if (shouldNotify) {
+        // Auto-create lead if configured and confidence is high enough
         let leadId: string | undefined;
-        if (config.leadThresholds.autoCreateLeads) {
-          leadId = await leadDetectionService.createLeadFromEmail(
-            orgId,
-            threadId,
-            latestMessage.id,
-            leadResult
-          );
+        if (config.leadThresholds.autoCreateLeads && confidence >= 0.6) {
+          // Use lead detection service to create the lead
+          const leadResult = aiAnalysis ? 
+            // Create a lead result compatible structure from AI analysis
+            {
+              isLead: true,
+              confidence: aiAnalysis.leadScore / 100,
+              reason: message,
+              extractedInfo: {
+                contactInfo: aiAnalysis.keyEntities?.contacts?.[0] || 'Unknown',
+                propertyInfo: aiAnalysis.keyEntities?.propertyType || 'Property',
+                timeline: aiAnalysis.keyEntities?.timeframes?.[0] || 'No timeline specified',
+                budget: aiAnalysis.keyEntities?.priceRange || 'Budget not specified'
+              }
+            } :
+            await leadDetectionService.analyzeMessageForLead(orgId, latestMessage.id, threadId);
+
+          if (leadResult.isLead) {
+            leadId = await leadDetectionService.createLeadFromEmail(
+              orgId,
+              threadId,
+              latestMessage.id,
+              leadResult
+            );
+          }
         }
 
-        // Send notification
-        await this.sendNotification(orgId, {
-          type: notificationType,
+        // Prepare notification payload with AI analysis data
+        const payload = {
+          type: notificationType as any,
           leadId,
           threadId,
-          title: notificationType === 'hot_lead' ? 'Hot Lead Alert!' : 'New Lead Detected',
-          message: leadResult.reason,
+          title: this.notificationTemplates[notificationType]?.title || 'New Lead Detected',
+          message,
           priority,
-          actionUrl: leadId ? `/leads/${leadId}` : `/inbox/thread/${threadId}`
-        });
+          actionUrl: leadId ? `/leads/${leadId}` : `/inbox/thread/${threadId}`,
+          // Include AI analysis data for template rendering
+          ...(aiAnalysis && {
+            priorityScore: aiAnalysis.priorityScore,
+            leadScore: aiAnalysis.leadScore,
+            propertyType: aiAnalysis.keyEntities?.propertyType || 'Property',
+            priceRange: aiAnalysis.keyEntities?.priceRange || 'Price range not specified',
+            contactInfo: aiAnalysis.keyEntities?.contacts?.[0] || 'Contact info not available',
+            confidence: Math.round(aiAnalysis.confidenceScore * 100)
+          })
+        };
 
-        logger.info('Lead notification triggered', {
+        // Send notification
+        await this.sendNotification(orgId, payload);
+
+        logger.info('AI-powered notification triggered', {
           orgId,
           threadId,
           leadId,
-          confidence: leadResult.confidence,
+          confidence: confidence,
           type: notificationType,
-          action: 'lead_notification_triggered'
+          priority: priority,
+          aiCategory: aiAnalysis?.category,
+          aiPriorityScore: aiAnalysis?.priorityScore,
+          action: 'ai_notification_triggered'
         });
       }
 
