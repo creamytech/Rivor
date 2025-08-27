@@ -294,7 +294,7 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
 
       {/* Messages */}
       <ScrollArea className="flex-1">
-        <div className="p-4 space-y-3">
+        <div className="p-4 space-y-3" style={{ minWidth: '900px' }}>
           {thread.messages.map((message, index) => {
             const isExpanded = expandedMessages.has(message.id);
             const isLatest = index === thread.messages.length - 1;
@@ -473,9 +473,11 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
                                     padding: '20px',
                                     border: theme === 'black' ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)',
                                     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                                    minWidth: '800px',
                                     width: '100%',
                                     overflow: 'auto',
-                                    maxHeight: '70vh'
+                                    maxHeight: '70vh',
+                                    zoom: '0.8'
                                   }}
                                 />
                               )}
@@ -502,11 +504,22 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
       <style jsx global>{`
         .email-content {
           /* Minimal styling - let email's natural styles show through */
+          font-size: 14px !important;
         }
         
         .email-content img {
           max-width: 100% !important;
           height: auto !important;
+        }
+        
+        .email-content table {
+          width: auto !important;
+          max-width: 100% !important;
+        }
+        
+        .email-content td, .email-content th {
+          white-space: nowrap;
+          padding: 8px 12px !important;
         }
         
         .line-clamp-2 {
