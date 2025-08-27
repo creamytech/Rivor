@@ -120,11 +120,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
 
+    // If we only have emailId, find the thread it belongs to
+    let actualThreadId = threadId;
+    if (!actualThreadId && emailId) {
+      console.log('🔍 Finding thread for emailId:', emailId);
+      const message = await prisma.emailMessage.findFirst({
+        where: { id: emailId, orgId },
+        select: { threadId: true }
+      });
+      
+      if (message?.threadId) {
+        actualThreadId = message.threadId;
+        console.log('✅ Found threadId from message:', actualThreadId);
+      } else {
+        console.log('❌ Message not found or no threadId');
+        return NextResponse.json({ error: "Message not found" }, { status: 404 });
+      }
+    }
+
     // Get thread with decrypted messages
-    console.log('🔍 Fetching thread data for orgId:', orgId, 'threadId:', threadId || emailId);
-    const threadData = await getThreadWithMessages(orgId, threadId || emailId);
+    console.log('🔍 Fetching thread data for orgId:', orgId, 'threadId:', actualThreadId);
+    const threadData = await getThreadWithMessages(orgId, actualThreadId);
     if (!threadData.thread || threadData.messages.length === 0) {
-      console.log('❌ Thread or message not found:', { threadId: threadId || emailId });
+      console.log('❌ Thread or message not found:', { threadId: actualThreadId });
       return NextResponse.json({ error: "Thread or message not found" }, { status: 404 });
     }
 
@@ -265,7 +283,7 @@ ${template ? `Use this template as inspiration but customize for the specific si
     const reply = await prisma.aISuggestedReply.create({
       data: {
         emailId,
-        threadId: threadId || emailId,
+        threadId: actualThreadId,
         suggestedContent,
         confidenceScore,
         category: `${analysis.category}-response`,
