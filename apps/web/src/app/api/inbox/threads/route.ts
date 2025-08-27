@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '50'); // Increased default limit
     const filter = url.searchParams.get('filter') || 'all';
+    const since = url.searchParams.get('since'); // Get threads newer than this timestamp
     const offset = (page - 1) * limit;
 
     // Calculate 90 days ago date for inbox display filtering
@@ -29,7 +30,10 @@ export async function GET(req: NextRequest) {
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
     
-    console.log(`📅 90-day filter active: ${ninetyDaysAgo.toISOString()}`);
+    // If 'since' parameter provided, use it to get only newer threads
+    const timeFilter = since ? new Date(since) : ninetyDaysAgo;
+    
+    console.log(`📅 Time filter active: ${timeFilter.toISOString()} ${since ? '(since parameter)' : '(90-day default)'}`);
 
     // Build where clause based on filter
     const whereClause: any = {
@@ -86,7 +90,7 @@ export async function GET(req: NextRequest) {
       LIMIT $2 OFFSET $3
     `;
     
-    const threads = await prisma.$queryRawUnsafe(threadsQuery, orgId, limit, offset, ninetyDaysAgo);
+    const threads = await prisma.$queryRawUnsafe(threadsQuery, orgId, limit, offset, timeFilter);
 
     // Get total count for pagination (also filtered by last 90 days)
     const countQuery = `
@@ -102,7 +106,7 @@ export async function GET(req: NextRequest) {
       ) subquery
     `;
     
-    const totalCountResult = await prisma.$queryRawUnsafe(countQuery, orgId, ninetyDaysAgo);
+    const totalCountResult = await prisma.$queryRawUnsafe(countQuery, orgId, timeFilter);
     const totalCount = Number((totalCountResult as any)[0]?.total || 0);
     
     console.log(`📊 Threads found (last 90 days): ${totalCount}`);

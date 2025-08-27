@@ -90,13 +90,11 @@ export default function InboxPage() {
     runOnMount: true, // Run initial sync on page load
     onSyncComplete: (result) => {
       console.log('🔄 Auto-sync completed:', result);
-      // Refresh inbox if new messages/threads were found
+      // Only refresh if new content was found
       if (result.email.newMessages || result.email.newThreads) {
-        console.log(`📧 Found ${result.email.newMessages} new messages, ${result.email.newThreads} new threads - refreshing inbox`);
-        // Use a slight delay to ensure data is fully synced
-        setTimeout(() => {
-          fetchThreads(pagination.page, activeFilter, searchQuery, false); // Allow auto-analysis for new emails
-        }, 1000);
+        console.log(`📧 Found ${result.email.newMessages} new messages, ${result.email.newThreads} new threads - adding to list`);
+        // Fetch only new threads and prepend them to the existing list
+        fetchNewThreadsOnly();
       }
     }
   });
@@ -115,6 +113,8 @@ export default function InboxPage() {
   const [selectedThreadForCategory, setSelectedThreadForCategory] = useState<EmailThread | null>(null);
   const [showPipelineModal, setShowPipelineModal] = useState(false);
   const [selectedThreadForPipeline, setSelectedThreadForPipeline] = useState<EmailThread | null>(null);
+  const [lastManualSync, setLastManualSync] = useState<Date | null>(null);
+  const [syncCountdown, setSyncCountdown] = useState<number>(0);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 50,
@@ -133,7 +133,116 @@ export default function InboxPage() {
     thread: null
   });
 
-  // Fetch threads from API
+  // Fetch only new threads and prepend to existing list (no full refresh)
+  const fetchNewThreadsOnly = async () => {
+    try {
+      console.log('🖆 Fetching new threads only...');
+      
+      // Get the timestamp of the most recent thread we have
+      const newestThreadTime = threads.length > 0 
+        ? new Date(threads[0].lastMessageAt).toISOString()
+        : new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(); // Last 24 hours if no threads
+      
+      const params = new URLSearchParams({
+        page: '1',
+        limit: '20', // Get recent threads
+        filter: 'all',
+        since: newestThreadTime // Only get threads newer than our newest
+      });
+      
+      const response = await fetch(`/api/inbox/threads?${params}`);
+      console.log(`📡 New threads API response status: ${response.status}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ New threads API error: ${response.status} - ${errorText}`);
+        return;
+      }
+      
+      const data: ThreadsResponse = await response.json();
+      const newThreads = data.threads.filter(newThread => 
+        !threads.some(existingThread => existingThread.id === newThread.id)
+      );
+      
+      if (newThreads.length > 0) {
+        console.log(`✨ Adding ${newThreads.length} new threads to the top of the list`);
+        setThreads(prev => [...newThreads, ...prev]);
+        
+        // Auto-analyze new threads
+        for (const thread of newThreads.filter(t => !t.aiAnalysis).slice(0, 3)) {
+          setTimeout(async () => {
+            try {
+              await analyzeThreadWithoutRefresh(thread.id);
+            } catch (error) {
+              console.error(`Failed to analyze new thread ${thread.id}:`, error);
+            }
+          }, 500);
+        }
+        
+        // Update analysis for new threads after a delay
+        setTimeout(() => {
+          updateExistingThreadsAnalysis();
+        }, 3000);
+        
+        toast({
+          title: "New Emails",
+          description: `${newThreads.length} new email${newThreads.length !== 1 ? 's' : ''} received`,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching new threads:', error);
+    }
+  };
+
+  // Update AI analysis for existing threads without full refresh
+  const updateExistingThreadsAnalysis = async () => {
+    if (threads.length === 0) return;
+    
+    try {
+      console.log('🤖 Updating AI analysis for existing threads...');
+      
+      const threadIds = threads.slice(0, 20).map(t => t.id); // Update first 20 threads
+      const params = new URLSearchParams({
+        threadIds: threadIds.join(','),
+        analysisOnly: 'true'
+      });
+      
+      const response = await fetch(`/api/inbox/ai-analysis?${params}`);
+      if (response.ok) {
+        const data = await response.json();
+        const analyses = data.analyses || [];
+        
+        if (analyses.length > 0) {
+          console.log(`📊 Updated analysis for ${analyses.length} threads`);
+          
+          // Update threads with new analysis data
+          setThreads(prev => prev.map(thread => {
+            const analysis = analyses.find((a: any) => a.threadId === thread.id);
+            if (analysis) {
+              return {
+                ...thread,
+                aiAnalysis: {
+                  category: analysis.category,
+                  priorityScore: analysis.priorityScore,
+                  leadScore: analysis.leadScore,
+                  confidenceScore: analysis.confidenceScore,
+                  sentimentScore: analysis.sentimentScore,
+                  keyEntities: analysis.keyEntities,
+                  processingStatus: analysis.processingStatus,
+                  analyzedAt: analysis.createdAt
+                }
+              };
+            }
+            return thread;
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error updating thread analysis:', error);
+    }
+  };
+
+  // Fetch threads from API (full refresh)
   const fetchThreads = async (page = 1, filter = activeFilter, search = searchQuery, skipAutoAnalysis = false) => {
     try {
       console.log(`🔄 fetchThreads called: page=${page}, filter=${filter}, skipAutoAnalysis=${skipAutoAnalysis}`);
@@ -213,15 +322,15 @@ export default function InboxPage() {
     fetchThreads(1, activeFilter, searchQuery);
   }, [activeFilter]);
 
-  // Polling mechanism to check for updated AI analysis every 30 seconds
+  // Polling mechanism to check for updated AI analysis every 30 seconds (without full refresh)
   useEffect(() => {
     const pollForUpdates = setInterval(() => {
       console.log('🔍 Polling for AI analysis updates...');
-      fetchThreads(pagination.page, activeFilter, searchQuery, true); // Skip auto-analysis, just refresh data
+      updateExistingThreadsAnalysis();
     }, 30000); // Poll every 30 seconds
 
     return () => clearInterval(pollForUpdates);
-  }, [pagination.page, activeFilter, searchQuery]);
+  }, []);
 
   // Handle search with debounce
   useEffect(() => {
@@ -722,6 +831,39 @@ export default function InboxPage() {
     setShowPipelineModal(true);
   };
 
+  // Handle manual sync with rate limiting
+  const handleManualSync = async () => {
+    const now = Date.now();
+    if (lastManualSync && now - lastManualSync.getTime() < 2 * 60 * 1000) {
+      const remainingTime = Math.ceil((2 * 60 * 1000 - (now - lastManualSync.getTime())) / 1000);
+      toast({
+        title: "Sync Rate Limited",
+        description: `Please wait ${remainingTime} seconds before syncing again`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLastManualSync(new Date());
+    await autoSync.triggerSync();
+  };
+
+  // Sync countdown timer
+  useEffect(() => {
+    const updateCountdown = () => {
+      if (autoSync.state.nextSync) {
+        const timeUntilSync = Math.max(0, Math.floor((autoSync.state.nextSync.getTime() - Date.now()) / 1000));
+        setSyncCountdown(timeUntilSync);
+      } else {
+        setSyncCountdown(0);
+      }
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [autoSync.state.nextSync]);
+
   // Handle pipeline form submission
   const handlePipelineSubmit = async (pipelineData: any) => {
     try {
@@ -1077,14 +1219,16 @@ export default function InboxPage() {
                 <Button 
                   variant="liquid" 
                   size="sm"
-                  onClick={() => {
-                    fetchThreads(pagination.page, activeFilter, searchQuery, false); // Allow auto-analysis on manual refresh
-                    autoSync.triggerSync();
-                  }}
-                  disabled={loading || autoSync.isRunning}
+                  onClick={handleManualSync}
+                  disabled={loading || autoSync.isRunning || (lastManualSync && Date.now() - lastManualSync.getTime() < 2 * 60 * 1000)}
+                  className="relative"
                 >
                   <RefreshCw className={`h-4 w-4 mr-2 ${loading || autoSync.isRunning ? 'animate-spin' : ''}`} />
-                  Refresh
+                  {autoSync.isRunning ? 'Syncing...' : 
+                   lastManualSync && Date.now() - lastManualSync.getTime() < 2 * 60 * 1000 ? 
+                   `Wait ${Math.ceil((2 * 60 * 1000 - (Date.now() - lastManualSync.getTime())) / 1000)}s` :
+                   syncCountdown > 0 ? `Next sync: ${Math.floor(syncCountdown / 60)}:${(syncCountdown % 60).toString().padStart(2, '0')}` :
+                   'Sync'}
                 </Button>
                 <Button 
                   variant="liquid" 
