@@ -295,13 +295,9 @@ export default function InboxPage() {
             })
           );
           
-          // Wait for all analyses to complete, then refresh
+          // Wait for all analyses to complete (no refresh needed since state updates immediately)
           Promise.all(analysisPromises).then(() => {
-            console.log(`🔄 All analyses complete, refreshing threads to show badges...`);
-            // Delay to ensure database writes are complete
-            setTimeout(() => {
-              fetchThreads(page, filter, search, true); // Skip auto-analysis on refresh
-            }, 1500);
+            console.log(`🔄 All ${analysisPromises.length} analyses completed and badges updated!`);
           });
         }
       }
@@ -508,10 +504,7 @@ export default function InboxPage() {
   // Trigger AI analysis for a thread (with refresh)
   const analyzeThread = async (threadId: string) => {
     const result = await analyzeThreadWithoutRefresh(threadId);
-    if (result) {
-      // Refresh threads to get updated AI analysis data (skip auto-analysis to prevent loop)
-      await fetchThreads(pagination.page, activeFilter, searchQuery, true);
-    }
+    // No need to refresh since analyzeThreadWithoutRefresh updates state immediately
     return result;
   };
 
@@ -583,6 +576,43 @@ export default function InboxPage() {
       console.log('✅ AI Analysis result:', data);
       if (data.analysis) {
         console.log(`🏷️ Analysis saved for thread ${threadId}: ${data.analysis.category} (${data.analysis.leadScore}/100)`);
+        
+        // Update the thread in local state immediately
+        setThreads(prev => prev.map(thread => 
+          thread.id === threadId 
+            ? { 
+                ...thread, 
+                aiAnalysis: {
+                  category: data.analysis.category,
+                  priorityScore: data.analysis.priorityScore,
+                  leadScore: data.analysis.leadScore,
+                  confidenceScore: data.analysis.confidenceScore,
+                  sentimentScore: data.analysis.sentimentScore,
+                  keyEntities: data.analysis.keyEntities,
+                  processingStatus: data.analysis.processingStatus,
+                  analyzedAt: new Date().toISOString()
+                }
+              }
+            : thread
+        ));
+        
+        // Update activeThread if it's the one being analyzed
+        if (activeThread?.id === threadId) {
+          setActiveThread(prev => prev ? {
+            ...prev,
+            aiAnalysis: {
+              category: data.analysis.category,
+              priorityScore: data.analysis.priorityScore,
+              leadScore: data.analysis.leadScore,
+              confidenceScore: data.analysis.confidenceScore,
+              sentimentScore: data.analysis.sentimentScore,
+              keyEntities: data.analysis.keyEntities,
+              processingStatus: data.analysis.processingStatus,
+              analyzedAt: new Date().toISOString()
+            }
+          } : null);
+        }
+        
         toast({
           title: "AI Analysis Complete",
           description: `Category: ${data.analysis.category} | Lead Score: ${data.analysis.leadScore}/100`,
