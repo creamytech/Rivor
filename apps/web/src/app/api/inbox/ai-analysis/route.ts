@@ -4,6 +4,50 @@ import { prisma } from '@/lib/db-pool';
 import { getThreadWithMessages } from '@/server/email';
 import OpenAI from 'openai';
 
+// Helper function to strip HTML tags and clean text
+function stripHtml(html: string): string {
+  if (!html) return '';
+  
+  // Remove HTML tags
+  let text = html.replace(/<[^>]*>/g, ' ');
+  
+  // Decode common HTML entities
+  text = text
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'");
+  
+  // Clean up whitespace
+  text = text
+    .replace(/\s+/g, ' ')
+    .trim();
+    
+  return text;
+}
+
+// Helper function to truncate text to stay within token limits
+function truncateContent(text: string, maxLength: number = 8000): string {
+  if (!text) return '';
+  
+  if (text.length <= maxLength) {
+    return text;
+  }
+  
+  // Truncate at word boundary
+  const truncated = text.substring(0, maxLength);
+  const lastSpace = truncated.lastIndexOf(' ');
+  
+  if (lastSpace > maxLength * 0.8) {
+    return truncated.substring(0, lastSpace) + '...';
+  }
+  
+  return truncated + '...';
+}
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -146,9 +190,21 @@ export async function POST(request: NextRequest) {
 
     console.log('📦 Decrypted email data:', { subject: subject?.substring(0, 50), bodyLength: body?.length, from });
 
+    // Clean and truncate the email content to fit within token limits
+    const cleanBody = stripHtml(body || '');
+    const truncatedBody = truncateContent(cleanBody, 6000); // Leave room for prompt and other content
+    const truncatedSubject = truncateContent(subject || '', 200);
+    
+    console.log('🧹 Cleaned email data:', { 
+      originalBodyLength: body?.length || 0, 
+      cleanBodyLength: cleanBody.length, 
+      truncatedBodyLength: truncatedBody.length,
+      truncatedSubject: truncatedSubject?.substring(0, 50)
+    });
+
     // Validate email data
-    if (!subject && !body) {
-      console.log('❌ No email content found');
+    if (!truncatedSubject && !truncatedBody) {
+      console.log('❌ No email content found after cleaning');
       return NextResponse.json({ error: "No email content found to analyze" }, { status: 400 });
     }
 
@@ -178,22 +234,26 @@ export async function POST(request: NextRequest) {
     const prompt = ANALYSIS_PROMPT
       .replace('{fromName}', fromName || 'Unknown')
       .replace('{fromEmail}', fromEmail || 'Unknown') 
-      .replace('{subject}', subject)
-      .replace('{body}', body || '');
+      .replace('{subject}', truncatedSubject)
+      .replace('{body}', truncatedBody);
 
     // Call OpenAI for analysis
     console.log('🤖 Calling OpenAI API...');
     console.log('📝 Prompt length:', prompt.length);
     
     let completion;
+    // Calculate approximate token count (rough estimate: 4 chars = 1 token)
+    const estimatedTokens = Math.ceil((prompt.length) / 4);
+    console.log('📊 Estimated token count:', estimatedTokens);
+
     try {
-      // Try gpt-4-turbo-preview first
+      // Use gpt-4o-mini for better cost efficiency and token handling
       completion = await openai.chat.completions.create({
-        model: "gpt-4-turbo-preview",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
-            content: "You are a real estate email analysis expert. Always respond with valid JSON only."
+            content: "You are a real estate email analysis expert. Always respond with valid JSON only. Focus on the key information and ignore formatting/styling content."
           },
           {
             role: "user", 
@@ -203,16 +263,16 @@ export async function POST(request: NextRequest) {
         temperature: 0.3,
         max_tokens: 1000,
       });
-      console.log('✅ OpenAI response received (gpt-4-turbo-preview)');
+      console.log('✅ OpenAI response received (gpt-4o-mini)');
     } catch (openaiError) {
-      console.log('⚠️ GPT-4 failed, trying GPT-3.5-turbo...');
-      // Fallback to gpt-3.5-turbo if gpt-4 fails
+      console.log('⚠️ GPT-4o-mini failed, trying GPT-3.5-turbo...');
+      // Fallback to gpt-3.5-turbo if gpt-4o-mini fails
       completion = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: [
           {
             role: "system",
-            content: "You are a real estate email analysis expert. Always respond with valid JSON only."
+            content: "You are a real estate email analysis expert. Always respond with valid JSON only. Focus on the key information and ignore formatting/styling content."
           },
           {
             role: "user", 
