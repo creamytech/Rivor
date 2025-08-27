@@ -85,13 +85,18 @@ export default function InboxPage() {
   // Setup auto-sync with refresh on new content (every 10 minutes)
   const autoSync = useAutoSync({
     interval: 10, // Sync every 10 minutes for inbox
-    enabled: false, // Disable auto-sync - only manual sync
+    enabled: true, // Enable auto-sync
     showToasts: true,
-    runOnMount: false, // Don't sync immediately on page load/refresh
+    runOnMount: true, // Run initial sync on page load
     onSyncComplete: (result) => {
+      console.log('🔄 Auto-sync completed:', result);
       // Refresh inbox if new messages/threads were found
       if (result.email.newMessages || result.email.newThreads) {
-        fetchThreads(pagination.page, activeFilter, searchQuery, true);
+        console.log(`📧 Found ${result.email.newMessages} new messages, ${result.email.newThreads} new threads - refreshing inbox`);
+        // Use a slight delay to ensure data is fully synced
+        setTimeout(() => {
+          fetchThreads(pagination.page, activeFilter, searchQuery, false); // Allow auto-analysis for new emails
+        }, 1000);
       }
     }
   });
@@ -149,6 +154,14 @@ export default function InboxPage() {
       }
       
       const data: ThreadsResponse = await response.json();
+      console.log(`📧 Fetched ${data.threads.length} threads`);
+      
+      // Log threads with/without AI analysis for debugging
+      const threadsWithAI = data.threads.filter(t => t.aiAnalysis);
+      const threadsWithoutAI = data.threads.filter(t => !t.aiAnalysis);
+      console.log(`🤖 Threads with AI analysis: ${threadsWithAI.length}/${data.threads.length}`);
+      console.log(`❌ Threads without AI analysis: ${threadsWithoutAI.length}`);
+      
       setThreads(data.threads);
       setPagination(data.pagination);
       
@@ -157,19 +170,30 @@ export default function InboxPage() {
         const threadsWithoutAnalysis = data.threads.filter(t => !t.aiAnalysis);
         if (threadsWithoutAnalysis.length > 0) {
           console.log(`Auto-analyzing ${threadsWithoutAnalysis.length} threads without analysis`);
-          for (const thread of threadsWithoutAnalysis.slice(0, 3)) { // Limit to 3 to avoid rate limits
-            try {
-              await analyzeThreadWithoutRefresh(thread.id);
-              // Small delay to avoid overwhelming the API
-              await new Promise(resolve => setTimeout(resolve, 1000));
-            } catch (error) {
-              console.error(`Failed to auto-analyze thread ${thread.id}:`, error);
-            }
-          }
-          // Single refresh after all analyses are complete
-          if (threadsWithoutAnalysis.length > 0) {
-            await fetchThreads(page, filter, search, true); // Skip auto-analysis on refresh
-          }
+          
+          // Process analyses in parallel but with staggered timing to avoid rate limits
+          const analysisPromises = threadsWithoutAnalysis.slice(0, 3).map((thread, index) => 
+            new Promise(resolve => {
+              setTimeout(async () => {
+                try {
+                  const result = await analyzeThreadWithoutRefresh(thread.id);
+                  resolve(result);
+                } catch (error) {
+                  console.error(`Failed to auto-analyze thread ${thread.id}:`, error);
+                  resolve(null);
+                }
+              }, index * 1000); // Stagger by 1 second each
+            })
+          );
+          
+          // Wait for all analyses to complete, then refresh
+          Promise.all(analysisPromises).then(() => {
+            console.log(`🔄 All analyses complete, refreshing threads to show badges...`);
+            // Delay to ensure database writes are complete
+            setTimeout(() => {
+              fetchThreads(page, filter, search, true); // Skip auto-analysis on refresh
+            }, 1500);
+          });
         }
       }
     } catch (error) {
@@ -188,6 +212,16 @@ export default function InboxPage() {
   useEffect(() => {
     fetchThreads(1, activeFilter, searchQuery);
   }, [activeFilter]);
+
+  // Polling mechanism to check for updated AI analysis every 30 seconds
+  useEffect(() => {
+    const pollForUpdates = setInterval(() => {
+      console.log('🔍 Polling for AI analysis updates...');
+      fetchThreads(pagination.page, activeFilter, searchQuery, true); // Skip auto-analysis, just refresh data
+    }, 30000); // Poll every 30 seconds
+
+    return () => clearInterval(pollForUpdates);
+  }, [pagination.page, activeFilter, searchQuery]);
 
   // Handle search with debounce
   useEffect(() => {
@@ -375,6 +409,7 @@ export default function InboxPage() {
   // Trigger AI analysis for a thread (without refresh to prevent loops)
   const analyzeThreadWithoutRefresh = async (threadId: string) => {
     try {
+      console.log(`🤖 Starting AI analysis for thread: ${threadId}`);
       setAiAnalyzing(threadId);
       
       // First get thread details to extract email content
@@ -438,11 +473,14 @@ export default function InboxPage() {
       const data = await response.json();
       console.log('✅ AI Analysis result:', data);
       if (data.analysis) {
+        console.log(`🏷️ Analysis saved for thread ${threadId}: ${data.analysis.category} (${data.analysis.leadScore}/100)`);
         toast({
           title: "AI Analysis Complete",
           description: `Category: ${data.analysis.category} | Lead Score: ${data.analysis.leadScore}/100`,
         });
         return data.analysis;
+      } else {
+        console.warn(`⚠️ No analysis data returned for thread ${threadId}`);
       }
     } catch (error) {
       console.error('Error analyzing thread:', error);
