@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/server/auth";
-import { db } from "@/server/db";
+import { auth } from '@/server/auth';
+import { prisma } from '@/lib/db-pool';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
@@ -51,8 +50,8 @@ BODY: {body}`;
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const session = await auth();
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -63,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if analysis already exists
-    const existingAnalysis = await db.emailAIAnalysis.findUnique({
+    const existingAnalysis = await prisma.emailAIAnalysis.findUnique({
       where: { emailId }
     });
 
@@ -104,7 +103,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate and save analysis to database
-    const analysis = await db.emailAIAnalysis.create({
+    const analysis = await prisma.emailAIAnalysis.create({
       data: {
         emailId,
         threadId: threadId || emailId,
@@ -120,7 +119,7 @@ export async function POST(request: NextRequest) {
 
     // If high-priority email, queue for auto-reply generation
     if (analysis.priorityScore >= 80 || analysis.category === 'hot-lead') {
-      await db.aIProcessingQueue.create({
+      await prisma.aIProcessingQueue.create({
         data: {
           emailId,
           threadId: threadId || emailId,
@@ -144,8 +143,8 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const session = await auth();
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -155,14 +154,14 @@ export async function GET(request: NextRequest) {
 
     if (emailId) {
       // Get specific analysis
-      const analysis = await db.emailAIAnalysis.findUnique({
+      const analysis = await prisma.emailAIAnalysis.findUnique({
         where: { emailId }
       });
       return NextResponse.json({ analysis });
     } else if (threadIds) {
       // Get analyses for specific threads
       const threadIdArray = threadIds.split(',').filter(id => id.trim());
-      const analyses = await db.emailAIAnalysis.findMany({
+      const analyses = await prisma.emailAIAnalysis.findMany({
         where: { 
           threadId: { in: threadIdArray }
         },
@@ -171,7 +170,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ analyses });
     } else {
       // Get recent analyses
-      const analyses = await db.emailAIAnalysis.findMany({
+      const analyses = await prisma.emailAIAnalysis.findMany({
         orderBy: { createdAt: 'desc' },
         take: 100
       });

@@ -461,26 +461,28 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
                                   </div>
                                 </div>
                               ) : (
-                                <div 
-                                  dangerouslySetInnerHTML={{ 
-                                    __html: sanitizeHtml(message.bodyHtml, showImages)
-                                  }}
-                                  className="email-content rounded-lg"
-                                  style={{
-                                    background: 'white',
-                                    color: 'black',
-                                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                                    padding: '20px',
-                                    border: theme === 'black' ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)',
-                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                                    minWidth: '800px',
-                                    width: '100%',
-                                    minHeight: '400px',
-                                    height: 'auto',
-                                    overflow: 'auto',
-                                    zoom: '0.8'
-                                  }}
-                                />
+                                <div className="flex justify-center w-full">
+                                  <div 
+                                    dangerouslySetInnerHTML={{ 
+                                      __html: sanitizeHtml(message.bodyHtml, showImages)
+                                    }}
+                                    className="email-content rounded-lg"
+                                    style={{
+                                      background: 'white',
+                                      color: 'black',
+                                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                      padding: '20px',
+                                      border: theme === 'black' ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)',
+                                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                                      maxWidth: '700px',
+                                      width: '100%',
+                                      minHeight: '70vh',
+                                      height: 'auto',
+                                      overflow: 'auto',
+                                      zoom: '0.9'
+                                    }}
+                                  />
+                                </div>
                               )}
                             </>
                           ) : message.bodyText ? (

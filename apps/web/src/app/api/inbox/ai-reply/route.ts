@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/server/auth";
-import { db } from "@/server/db";
+import { auth } from '@/server/auth';
+import { prisma } from '@/lib/db-pool';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
@@ -48,8 +47,8 @@ Keep the tone professional but warm, and ensure all real estate compliance consi
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const session = await auth();
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -71,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get existing AI analysis
-    const analysis = await db.emailAIAnalysis.findUnique({
+    const analysis = await prisma.emailAIAnalysis.findUnique({
       where: { emailId }
     });
 
@@ -80,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if reply already exists
-    const existingReply = await db.aISuggestedReply.findFirst({
+    const existingReply = await prisma.aISuggestedReply.findFirst({
       where: { 
         emailId,
         status: { in: ['pending', 'approved'] }
@@ -107,7 +106,7 @@ export async function POST(request: NextRequest) {
       .replace('{agentEmail}', agentEmail);
 
     // Get appropriate template for this category
-    const template = await db.aIEmailTemplate.findFirst({
+    const template = await prisma.aIEmailTemplate.findFirst({
       where: {
         category: analysis.category,
         isActive: true
@@ -148,7 +147,7 @@ ${template ? `Use this template as inspiration but customize for the specific si
     confidenceScore = Math.min(1, confidenceScore);
 
     // Save the suggested reply
-    const reply = await db.aISuggestedReply.create({
+    const reply = await prisma.aISuggestedReply.create({
       data: {
         emailId,
         threadId: threadId || emailId,
@@ -161,14 +160,14 @@ ${template ? `Use this template as inspiration but customize for the specific si
 
     // Update template usage if one was used
     if (template) {
-      await db.aIEmailTemplate.update({
+      await prisma.aIEmailTemplate.update({
         where: { id: template.id },
         data: { usageCount: { increment: 1 } }
       });
     }
 
     // Update processing queue status
-    await db.aIProcessingQueue.updateMany({
+    await prisma.aIProcessingQueue.updateMany({
       where: {
         emailId,
         processingType: 'reply_generation',
@@ -193,8 +192,8 @@ ${template ? `Use this template as inspiration but customize for the specific si
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const session = await auth();
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -204,7 +203,7 @@ export async function GET(request: NextRequest) {
 
     if (emailId) {
       // Get reply for specific email
-      const reply = await db.aISuggestedReply.findFirst({
+      const reply = await prisma.aISuggestedReply.findFirst({
         where: { 
           emailId,
           ...(status && { status: status as any })
@@ -214,7 +213,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ reply });
     } else {
       // Get pending replies
-      const replies = await db.aISuggestedReply.findMany({
+      const replies = await prisma.aISuggestedReply.findMany({
         where: {
           status: status as any || 'pending'
         },
@@ -232,8 +231,8 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const session = await auth();
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -244,7 +243,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Update reply status
-    const reply = await db.aISuggestedReply.update({
+    const reply = await prisma.aISuggestedReply.update({
       where: { id: replyId },
       data: {
         status,
@@ -255,7 +254,7 @@ export async function PATCH(request: NextRequest) {
 
     // Record feedback if provided
     if (feedbackType) {
-      await db.aIFeedback.create({
+      await prisma.aIFeedback.create({
         data: {
           replyId,
           feedbackType,
@@ -265,7 +264,7 @@ export async function PATCH(request: NextRequest) {
 
       // Update template success rate if reply was approved/sent
       if (status === 'approved' || status === 'sent') {
-        const template = await db.aIEmailTemplate.findFirst({
+        const template = await prisma.aIEmailTemplate.findFirst({
           where: {
             category: reply.category.replace('-response', '')
           }
@@ -275,7 +274,7 @@ export async function PATCH(request: NextRequest) {
           const feedbackWeight = feedbackType === 'positive' ? 0.1 : feedbackType === 'negative' ? -0.05 : 0;
           const newSuccessRate = Math.min(1, Math.max(0, template.successRate + feedbackWeight));
           
-          await db.aIEmailTemplate.update({
+          await prisma.aIEmailTemplate.update({
             where: { id: template.id },
             data: { successRate: newSuccessRate }
           });
