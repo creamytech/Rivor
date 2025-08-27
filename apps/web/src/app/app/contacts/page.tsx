@@ -50,6 +50,7 @@ import {
   Tag
 } from 'lucide-react';
 import CreateContactModal from "@/components/contacts/CreateContactModal";
+import { LeadScoreWidget } from "@/components/intelligence/LeadScoreWidget";
 
 interface Contact {
   id: string;
@@ -848,6 +849,16 @@ export default function ContactsPage() {
                       </Badge>
                     ))}
                   </div>
+                </div>
+
+                {/* Lead Intelligence */}
+                <div>
+                  <h3 className="font-semibold mb-3" style={{ color: 'var(--glass-text)' }}>Lead Intelligence</h3>
+                  <LeadScoreWidget 
+                    contactId={selectedContactForDetails.id}
+                    autoRefresh={true}
+                    className="mb-4"
+                  />
                 </div>
 
                 {/* Quick Actions */}

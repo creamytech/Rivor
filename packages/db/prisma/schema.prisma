@@ -84,6 +84,7 @@ model Org {
   messages             EmailMessage[]
   threads              EmailThread[]
   leads                Lead[]
+  leadIntelligence     LeadIntelligence[] @relation("OrgLeadIntelligence")
   members              OrgMember[]
   pipelineStages       PipelineStage[]
   pushNotificationLogs PushNotificationLog[]
@@ -97,6 +98,15 @@ model Org {
   documents           Document[]
   documentTemplates   DocumentTemplate[]
   documentFolders     DocumentFolder[]
+  leadInsights        LeadInsight[] @relation("OrgLeadInsights")
+  leadPredictions     LeadPrediction[] @relation("OrgLeadPredictions") 
+  communicationOptimizations CommunicationOptimization[] @relation("OrgCommunicationOptimization")
+  automatedAppointments AutomatedAppointment[] @relation("OrgAppointments")
+  followUpSequences FollowUpSequence[] @relation("OrgFollowUpSequences")
+  followUpExecutions FollowUpExecution[] @relation("OrgFollowUpExecutions")
+  aiGeneratedContent AIGeneratedContent[] @relation("OrgAIContent")
+  automationRules AutomationRule[] @relation("OrgAutomationRules")
+  showingTemplates PropertyShowingTemplate[] @relation("OrgShowingTemplates")
 }
 
 model OrgMember {
@@ -281,6 +291,9 @@ model Contact {
   leads        Lead[]
   documents    Document[] @relation("DocumentContacts")
   folders      DocumentFolder[] @relation("FolderContacts")
+  intelligence LeadIntelligence[] @relation("ContactIntelligence")
+  appointments AutomatedAppointment[] @relation("ContactAppointments")
+  followUps    FollowUpExecution[] @relation("ContactFollowUps")
 }
 
 model Lead {
@@ -313,6 +326,9 @@ model Lead {
   tasks              Task[]         @relation("LeadTasks")
   documents          Document[]     @relation("DocumentDeals")
   folders            DocumentFolder[] @relation("FolderDeals")
+  intelligence       LeadIntelligence[] @relation("LeadIntelligence")
+  appointments       AutomatedAppointment[] @relation("LeadAppointments")
+  followUps          FollowUpExecution[] @relation("LeadFollowUps")
 }
 
 model Task {
@@ -706,5 +722,280 @@ model AIProcessingQueue {
   @@index([priority])
   @@index([scheduledFor])
   @@index([emailId])
+}
+
+// Smart Lead Intelligence Models
+model LeadIntelligence {
+  id                    String   @id @default(cuid())
+  orgId                 String
+  leadId                String?  // Optional - can analyze non-lead contacts too
+  contactId             String?
+  emailThreadId         String?
+  overallScore          Int      @default(0) // 0-100 composite lead score
+  conversionProbability Float    @default(0.0) // 0.0-1.0 probability of conversion
+  engagementScore       Int      @default(0) // 0-100 how engaged they are
+  urgencyScore          Int      @default(0) // 0-100 how urgent/time-sensitive
+  valueScore            Int      @default(0) // 0-100 estimated deal value potential
+  responsePatterns      Json?    // Analysis of their communication patterns
+  behaviorMetrics       Json?    // Website visits, email opens, response times
+  predictedActions      Json?    // Next likely actions they'll take
+  recommendedActions    Json?    // Suggested actions for the agent
+  optimalContactTime    String?  // Best time to contact (morning/afternoon/evening)
+  communicationStyle    String?  // formal/casual/direct/relationship-focused
+  decisionTimeframe     String?  // immediate/short_term/long_term
+  painPoints           Json?     // Identified pain points/motivations
+  competitorMentions   Json?     // Mentions of competitors
+  priceSignals         Json?     // Price sensitivity indicators
+  lastAnalyzedAt       DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  org                  Org      @relation("OrgLeadIntelligence", fields: [orgId], references: [id], onDelete: Cascade)
+  lead                 Lead?    @relation("LeadIntelligence", fields: [leadId], references: [id], onDelete: Cascade)
+  contact              Contact? @relation("ContactIntelligence", fields: [contactId], references: [id], onDelete: Cascade)
+  insights             LeadInsight[] @relation("IntelligenceInsights")
+  predictions          LeadPrediction[] @relation("IntelligencePredictions")
+  optimization         CommunicationOptimization? @relation("IntelligenceOptimization")
+
+  @@unique([orgId, leadId])
+  @@unique([orgId, contactId])
+  @@index([overallScore])
+  @@index([conversionProbability])
+  @@index([urgencyScore])
+  @@index([lastAnalyzedAt])
+}
+
+model LeadInsight {
+  id                String   @id @default(cuid())
+  orgId             String
+  leadIntelligenceId String
+  type              String   // behavior_change, engagement_spike, urgency_increase, competitor_mention, etc.
+  category          String   // positive, negative, neutral, urgent
+  title             String
+  description       String
+  confidence        Float    @default(0.0) // 0.0-1.0 confidence in this insight
+  impact            String   // high, medium, low
+  actionRequired    Boolean  @default(false)
+  suggestedActions  Json?    // Array of suggested responses
+  dataPoints        Json?    // Supporting data for this insight
+  isRead            Boolean  @default(false)
+  dismissedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  org               Org      @relation("OrgLeadInsights", fields: [orgId], references: [id], onDelete: Cascade)
+  leadIntelligence  LeadIntelligence @relation("IntelligenceInsights", fields: [leadIntelligenceId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([category])
+  @@index([impact])
+  @@index([actionRequired])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+model LeadPrediction {
+  id                 String   @id @default(cuid())
+  orgId              String
+  leadIntelligenceId String
+  predictionType     String   // conversion, timeline, value, next_action
+  prediction         String   // The actual prediction text
+  probability        Float    @default(0.0) // Confidence in prediction
+  timeframe          String?  // When this prediction applies
+  factors            Json?    // Contributing factors
+  modelVersion       String   @default("1.0")
+  accuracy           Float?   // Actual vs predicted (updated over time)
+  validatedAt        DateTime?
+  expiresAt          DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  org                Org      @relation("OrgLeadPredictions", fields: [orgId], references: [id], onDelete: Cascade)
+  leadIntelligence   LeadIntelligence @relation("IntelligencePredictions", fields: [leadIntelligenceId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([predictionType])
+  @@index([probability])
+  @@index([expiresAt])
+}
+
+model CommunicationOptimization {
+  id                 String   @id @default(cuid())
+  orgId              String
+  leadIntelligenceId String
+  channelPreference  Json?    // email, phone, text - with preference scores
+  bestContactTimes   Json?    // day_of_week and time preferences
+  responsePatterns   Json?    // typical response times and patterns
+  contentPreferences Json?    // formal/casual, brief/detailed, etc.
+  engagementTriggers Json?    // What typically gets responses
+  avoidancePatterns  Json?    // What to avoid
+  lastOptimizedAt    DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  org                Org      @relation("OrgCommunicationOptimization", fields: [orgId], references: [id], onDelete: Cascade)
+  leadIntelligence   LeadIntelligence @relation("IntelligenceOptimization", fields: [leadIntelligenceId], references: [id], onDelete: Cascade)
+
+  @@unique([leadIntelligenceId])
+  @@index([orgId])
+}
+
+// AI Assistant Replacement System Models
+
+model AutomatedAppointment {
+  id                String   @id @default(cuid())
+  orgId             String
+  contactId         String?
+  leadId            String?
+  emailThreadId     String?
+  appointmentType   String   // showing, consultation, meeting, call
+  status            String   @default("pending") // pending, confirmed, rescheduled, completed, cancelled
+  scheduledAt       DateTime
+  duration          Int      @default(60) // minutes
+  location          String?
+  propertyAddress   String?
+  lockboxCode       String?
+  showingInstructions String?
+  attendeeEmails    Json?    // Array of email addresses
+  remindersSent     Json?    // Track what reminders were sent
+  confirmationToken String?  @unique
+  rescheduleToken   String?  @unique
+  aiNotes           String?  // AI-generated notes about the appointment
+  requirements      Json?    // Special requirements or requests
+  followUpSequence  String?  // Which follow-up sequence to trigger
+  createdBy         String?  // User who created (or "system" for AI)
+  completedAt       DateTime?
+  cancelledAt       DateTime?
+  cancelReason      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  org               Org      @relation("OrgAppointments", fields: [orgId], references: [id], onDelete: Cascade)
+  contact           Contact? @relation("ContactAppointments", fields: [contactId], references: [id], onDelete: SetNull)
+  lead              Lead?    @relation("LeadAppointments", fields: [leadId], references: [id], onDelete: SetNull)
+
+  @@index([orgId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([appointmentType])
+}
+
+model FollowUpSequence {
+  id             String   @id @default(cuid())
+  orgId          String
+  name           String
+  description    String?
+  sequenceType   String   // new_lead, showing_followup, contract_followup, etc.
+  triggerEvent   String   // email_received, appointment_completed, lead_created, etc.
+  isActive       Boolean  @default(true)
+  steps          Json     // Array of sequence steps with timing and content
+  conditions     Json?    // Conditions for when this sequence should trigger
+  stats          Json?    // Performance statistics
+  createdBy      String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  org            Org      @relation("OrgFollowUpSequences", fields: [orgId], references: [id], onDelete: Cascade)
+  executions     FollowUpExecution[]
+
+  @@index([orgId])
+  @@index([sequenceType])
+  @@index([isActive])
+}
+
+model FollowUpExecution {
+  id               String   @id @default(cuid())
+  orgId            String
+  sequenceId       String
+  contactId        String?
+  leadId           String?
+  emailThreadId    String?
+  currentStep      Int      @default(0)
+  status           String   @default("active") // active, paused, completed, cancelled
+  nextActionAt     DateTime?
+  completedSteps   Json?    // Array of completed step details
+  pausedAt         DateTime?
+  pausedReason     String?
+  completedAt      DateTime?
+  performance      Json?    // Open rates, click rates, responses, etc.
+  customizations   Json?    // Any custom variables or overrides
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  org              Org      @relation("OrgFollowUpExecutions", fields: [orgId], references: [id], onDelete: Cascade)
+  sequence         FollowUpSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  contact          Contact? @relation("ContactFollowUps", fields: [contactId], references: [id], onDelete: SetNull)
+  lead             Lead?    @relation("LeadFollowUps", fields: [leadId], references: [id], onDelete: SetNull)
+
+  @@index([orgId])
+  @@index([status])
+  @@index([nextActionAt])
+  @@index([sequenceId])
+}
+
+model AIGeneratedContent {
+  id             String   @id @default(cuid())
+  orgId          String
+  contentType    String   // email, sms, social_post, listing_description, etc.
+  contentPurpose String   // follow_up, appointment_reminder, listing_update, etc.
+  template       String?  // Template name or ID used
+  prompt         String?  // AI prompt that generated this content
+  generatedText  String   // The AI-generated content
+  customizations Json?    // Any user customizations made
+  performance    Json?    // Metrics like open rates, click rates, etc.
+  isActive       Boolean  @default(true)
+  usageCount     Int      @default(0)
+  lastUsedAt     DateTime?
+  createdBy      String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  org            Org      @relation("OrgAIContent", fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([contentType])
+  @@index([contentPurpose])
+  @@index([isActive])
+}
+
+model AutomationRule {
+  id          String   @id @default(cuid())
+  orgId       String
+  name        String
+  description String?
+  ruleType    String   // trigger_based, schedule_based, condition_based
+  triggers    Json     // What events trigger this rule
+  conditions  Json?    // Conditions that must be met
+  actions     Json     // What actions to take
+  isActive    Boolean  @default(true)
+  priority    Int      @default(50) // 1-100, higher priority runs first
+  stats       Json?    // Execution statistics
+  lastRunAt   DateTime?
+  nextRunAt   DateTime?
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  org         Org      @relation("OrgAutomationRules", fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([isActive])
+  @@index([ruleType])
+  @@index([priority])
+  @@index([nextRunAt])
+}
+
+model PropertyShowingTemplate {
+  id                  String   @id @default(cuid())
+  orgId               String
+  name                String
+  propertyType        String?  // residential, commercial, land, etc.
+  defaultDuration     Int      @default(30) // minutes
+  bufferTime          Int      @default(15) // minutes between showings
+  instructions        String?  // Default showing instructions
+  requiresApproval    Boolean  @default(false)
+  availableTimeSlots  Json?    // Available time slots configuration
+  confirmationMessage String?  // Custom confirmation message template
+  reminderSchedule    Json?    // When to send reminders
+  isActive            Boolean  @default(true)
+  createdBy           String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  org                 Org      @relation("OrgShowingTemplates", fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([propertyType])
+  @@index([isActive])
 }
 

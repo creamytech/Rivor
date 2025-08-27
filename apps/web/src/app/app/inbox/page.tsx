@@ -43,6 +43,7 @@ import { EmailContent } from '@/components/inbox/EmailContent';
 import { CategoryModal } from '@/components/inbox/CategoryModal';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { internalFetch } from '@/lib/internal-url';
+import { LeadScoreWidget } from '@/components/intelligence/LeadScoreWidget';
 
 // Types for real email data
 interface EmailThread {
@@ -1796,6 +1797,17 @@ export default function InboxPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Lead Intelligence Panel - New Smart Feature */}
+                  {activeThread.participants && activeThread.participants.length > 0 && (
+                    <div className={`p-4 border-b ${theme === 'black' ? 'border-white/10' : 'border-black/10'}`}>
+                      <LeadScoreWidget 
+                        contactId={undefined} // Will search by email
+                        autoRefresh={true}
+                        className="mb-4"
+                      />
+                    </div>
+                  )}
 
                   {/* AI Analysis Panel */}
                   {activeThread.aiAnalysis && (

@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { IntelligenceDashboard } from "@/components/intelligence/IntelligenceDashboard";
+import { AssistantDashboard } from "@/components/assistant/AssistantDashboard";
 import {
   BarChart3,
   TrendingUp,
@@ -98,7 +100,9 @@ export default function DashboardPage() {
     metrics: true,
     recentActivity: true,
     upcomingTasks: true,
-    quickActions: true
+    quickActions: true,
+    intelligence: true,
+    assistant: true
   });
   const [dashboardLayout, setDashboardLayout] = useState('default');
   const [metricColumns, setMetricColumns] = useState('auto');
@@ -455,7 +459,9 @@ export default function DashboardPage() {
       metrics: true,
       recentActivity: true,
       upcomingTasks: true,
-      quickActions: true
+      quickActions: true,
+      intelligence: true,
+      assistant: true
     };
     savePreferences(defaultPrefs);
     setShowCustomizeModal(false);
@@ -789,6 +795,66 @@ export default function DashboardPage() {
           </div>
           )}
 
+          {/* AI Assistant Hub */}
+          {visibleWidgets.assistant && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 text-white">
+                    <Bot className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg" style={{ color: 'var(--glass-text)' }}>
+                      AI Assistant Hub
+                    </h3>
+                    <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                      Your AI-powered real estate assistant
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  variant="liquid" 
+                  size="sm" 
+                  onClick={() => router.push('/app/assistant')}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Details
+                </Button>
+              </div>
+              <AssistantDashboard />
+            </div>
+          )}
+
+          {/* Smart Lead Intelligence Dashboard */}
+          {visibleWidgets.intelligence && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg" style={{ color: 'var(--glass-text)' }}>
+                      Smart Lead Intelligence
+                    </h3>
+                    <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
+                      AI-powered insights and lead scoring
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  variant="liquid" 
+                  size="sm" 
+                  onClick={() => router.push('/app/intelligence')}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Details
+                </Button>
+              </div>
+              <IntelligenceDashboard />
+            </div>
+          )}
+
           {/* Main Dashboard Grid */}
           {(visibleWidgets.recentActivity || visibleWidgets.upcomingTasks) && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -1053,9 +1119,11 @@ export default function DashboardPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {[
                             { id: 'metrics', label: 'Metrics Cards', description: 'Key performance indicators and stats', icon: <BarChart3 className="h-5 w-5" />, color: 'from-blue-500 to-cyan-500' },
+                            { id: 'assistant', label: 'AI Assistant Hub', description: 'Your AI-powered real estate assistant', icon: <Bot className="h-5 w-5" />, color: 'from-blue-500 to-purple-500' },
+                            { id: 'intelligence', label: 'Smart Intelligence', description: 'AI-powered lead scoring and insights', icon: <Sparkles className="h-5 w-5" />, color: 'from-purple-500 to-pink-500' },
                             { id: 'recentActivity', label: 'Recent Activity', description: 'Latest actions and updates', icon: <Activity className="h-5 w-5" />, color: 'from-green-500 to-emerald-500' },
                             { id: 'upcomingTasks', label: 'Today\'s Tasks', description: 'Upcoming tasks and reminders', icon: <CheckCircle className="h-5 w-5" />, color: 'from-orange-500 to-red-500' },
-                            { id: 'quickActions', label: 'Quick Actions', description: 'Shortcuts to common actions', icon: <Zap className="h-5 w-5" />, color: 'from-purple-500 to-pink-500' }
+                            { id: 'quickActions', label: 'Quick Actions', description: 'Shortcuts to common actions', icon: <Zap className="h-5 w-5" />, color: 'from-teal-500 to-green-500' }
                           ].map((widget) => (
                             <div
                               key={widget.id}
