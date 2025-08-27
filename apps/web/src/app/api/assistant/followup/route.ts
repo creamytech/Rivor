@@ -346,8 +346,17 @@ async function generatePersonalizedContent(
   customizations: any
 ) {
   try {
+    // Get agent personality for personalized content generation
+    const personality = await prisma.agentPersonality.findUnique({
+      where: { orgId: execution.orgId }
+    });
+
     // Get context about the contact/lead
-    let context = '';
+    let context: any = {
+      reason: 'follow_up_sequence',
+      urgency: sequence.urgency || 'medium'
+    };
+    let recipient: any = {};
     
     if (execution.contactId) {
       const contact = await prisma.contact.findFirst({
@@ -364,7 +373,8 @@ async function generatePersonalizedContent(
             console.warn('Failed to decrypt contact name for personalization');
           }
         }
-        context = `Contact Name: ${contactName}`;
+        recipient.name = contactName;
+        context.contactInfo = `Contact Name: ${contactName}`;
       }
     }
 
@@ -374,24 +384,64 @@ async function generatePersonalizedContent(
       });
       
       if (lead) {
-        context += `\nLead: ${lead.title}\nStage: ${lead.stage}\nValue: $${lead.propertyValue?.toLocaleString()}`;
+        context.property = lead.title;
+        context.stage = lead.stage;
+        context.value = lead.propertyValue;
+        recipient.leadInfo = `Lead: ${lead.title} (${lead.stage})`;
       }
     }
 
-    // Generate personalized versions of sequence steps
+    // Generate personalized versions of sequence steps using agent personality
     const steps = sequence.steps as any[];
-    const personalizedSteps = steps.map(step => {
-      if (step.aiPersonalization) {
-        // In a real implementation, this would call an AI service to personalize content
-        const personalizedContent = personalizeContent(step.content, context, customizations);
-        return {
-          ...step,
-          originalContent: step.content,
-          personalizedContent
-        };
+    const personalizedSteps = await Promise.all(steps.map(async step => {
+      if (step.aiPersonalization && personality?.onboardingCompleted) {
+        try {
+          // Use the personality-based content generation
+          const personalizedContent = await generatePersonalizedFollowUp({
+            type: 'follow_up_email',
+            context: { 
+              ...context,
+              stepNumber: step.order,
+              originalContent: step.content,
+              customizations
+            },
+            recipient,
+            personality
+          });
+          
+          // Save the generated content
+          await prisma.aIGeneratedContent.create({
+            data: {
+              orgId: execution.orgId,
+              contentType: 'follow_up_email',
+              generatedContent: personalizedContent,
+              context: JSON.stringify({ 
+                sequenceId: sequence.id, 
+                stepId: step.id,
+                executionId: execution.id 
+              }),
+              personalityVersion: personality.updatedAt.toISOString(),
+              isApproved: false
+            }
+          });
+          
+          return {
+            ...step,
+            originalContent: step.content,
+            personalizedContent
+          };
+        } catch (error) {
+          console.error('Error generating personalized content for step:', error);
+          // Fallback to basic personalization
+          return {
+            ...step,
+            originalContent: step.content,
+            personalizedContent: personalizeContent(step.content, context, customizations)
+          };
+        }
       }
       return step;
-    });
+    }));
 
     // Update the execution with personalized content
     await prisma.followUpExecution.update({
@@ -400,7 +450,8 @@ async function generatePersonalizedContent(
         customizations: {
           ...customizations,
           personalizedSteps,
-          generatedAt: new Date().toISOString()
+          generatedAt: new Date().toISOString(),
+          personalityUsed: personality ? true : false
         }
       }
     });
@@ -410,12 +461,76 @@ async function generatePersonalizedContent(
   }
 }
 
-function personalizeContent(content: string, context: string, customizations: any): string {
+async function generatePersonalizedFollowUp({ type, context, recipient, personality }: any) {
+  const style = personality.communicationStyle || 'professional';
+  const tonePrefs = personality.tonePreferences || {};
+  const vocab = personality.vocabularyPreferences || [];
+  const patterns = personality.writingPatterns || {};
+  const responses = personality.responseStyle || {};
+
+  // Use the same generation logic from the personality API
+  return generateFollowUpEmail(context, recipient, style, tonePrefs, vocab, patterns);
+}
+
+function generateFollowUpEmail(context: any, recipient: any, style: string, tonePrefs: any, vocab: string[], patterns: any) {
+  const warmth = tonePrefs?.warmth || 1;
+  const urgency = context?.urgency || 'medium';
+  
+  let subject = '';
+  let body = '';
+
+  // Generate subject line based on context
+  if (context.stepNumber === 1) {
+    subject = style === 'casual' ? 
+      `Following up on ${context?.property || 'your inquiry'} 🏠` :
+      `Following up on your ${context?.property || 'property interest'}`;
+  } else {
+    subject = `Checking in - ${context?.property || 'your search'}`;
+  }
+
+  // Generate body based on style and warmth
+  if (warmth > 2) {
+    body = `Hi ${recipient?.name || 'there'}!\n\nI hope you're having a wonderful day! `;
+  } else {
+    body = `Hello ${recipient?.name || 'there'},\n\n`;
+  }
+
+  // Add main message based on step number
+  if (context.stepNumber === 1) {
+    body += `I wanted to follow up on ${context?.property || 'the property you were interested in'}. `;
+    if (style === 'friendly') {
+      body += `I'm excited to help you with your real estate journey! `;
+    } else {
+      body += `I'm available to answer any questions you might have. `;
+    }
+  } else {
+    body += `I hope you're still interested in ${context?.property || 'finding the perfect property'}. `;
+    if (urgency === 'high') {
+      body += `The market has been quite active lately, and I wanted to make sure you don't miss out on great opportunities. `;
+    }
+  }
+
+  // Add any original content if provided
+  if (context.originalContent) {
+    body += `\n\n${context.originalContent}`;
+  }
+
+  // Add signature based on patterns
+  if (patterns?.usesExclamation && style !== 'professional') {
+    body += `\n\nLooking forward to hearing from you!`;
+  } else {
+    body += `\n\nI look forward to your response.`;
+  }
+
+  return { subject, body };
+}
+
+function personalizeContent(content: string, context: any, customizations: any): string {
   let personalized = content;
   
   // Basic personalization - would be enhanced with AI in production
-  if (context.includes('Contact Name:')) {
-    const name = context.match(/Contact Name: (.+)/)?.[1];
+  if (context.contactInfo?.includes('Contact Name:')) {
+    const name = context.contactInfo.match(/Contact Name: (.+)/)?.[1];
     if (name && name !== 'Valued Client') {
       personalized = personalized.replace(/\b(Hi|Hello|Dear),?\s*/gi, `Hi ${name.split(' ')[0]}, `);
     }

@@ -107,6 +107,10 @@ model Org {
   aiGeneratedContent AIGeneratedContent[] @relation("OrgAIContent")
   automationRules AutomationRule[] @relation("OrgAutomationRules")
   showingTemplates PropertyShowingTemplate[] @relation("OrgShowingTemplates")
+  agentPersonality AgentPersonality? @relation("OrgAgentPersonality")
+  onboardingSessions OnboardingSession[] @relation("OrgOnboardingSessions")
+  personalityTraining AIPersonalityTraining[] @relation("OrgPersonalityTraining")
+  communicationTemplates CommunicationTemplate[] @relation("OrgCommunicationTemplates")
 }
 
 model OrgMember {
@@ -996,6 +1000,103 @@ model PropertyShowingTemplate {
 
   @@index([orgId])
   @@index([propertyType])
+  @@index([isActive])
+}
+
+// AI Personality & Communication Style Learning System
+model AgentPersonality {
+  id                    String   @id @default(cuid())
+  orgId                 String   @unique
+  userId                String   // The agent's user ID
+  onboardingCompleted   Boolean  @default(false)
+  communicationStyle    String?  // formal, casual, friendly, professional, enthusiastic, etc.
+  tonePreferences       Json?    // warmth, professionalism, urgency levels
+  vocabularyPreferences Json?    // preferred words, phrases, industry terms
+  signatureStyle        String?  // email signature style and content
+  writingPatterns       Json?    // sentence length, paragraph structure, emoji usage
+  responseStyle         Json?    // how they typically respond to different scenarios
+  personalBrand         Json?    // unique value propositions, specialties, personality traits
+  sampleCommunications  Json?    // analyzed samples of their actual communications
+  learningProgress      Json?    // progress through onboarding steps
+  refinementHistory     Json?    // history of manual corrections and improvements
+  lastUpdated           DateTime @default(now())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  org                   Org      @relation("OrgAgentPersonality", fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model OnboardingSession {
+  id                    String   @id @default(cuid())
+  orgId                 String
+  userId                String
+  sessionType           String   // personality_discovery, writing_sample, scenario_practice, refinement
+  status                String   @default("in_progress") // in_progress, completed, paused
+  currentStep           Int      @default(1)
+  totalSteps            Int      @default(10)
+  conversationHistory   Json?    // full conversation log with AI
+  extractedInsights     Json?    // AI-analyzed insights from the conversation
+  styleScores          Json?    // scored dimensions of communication style
+  scenarioResponses     Json?    // responses to different real estate scenarios
+  completedAt           DateTime?
+  timeSpentMinutes      Int?     // total time spent in session
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  org                   Org      @relation("OrgOnboardingSessions", fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([userId])
+  @@index([status])
+}
+
+model AIPersonalityTraining {
+  id                   String   @id @default(cuid())
+  orgId                String
+  personalityId        String   // References AgentPersonality
+  trainingType         String   // email_samples, conversation_samples, scenario_responses
+  originalContent      String   // original agent-written content
+  aiGeneratedContent   String?  // AI's attempt to mimic the style  
+  humanFeedback        String?  // agent's feedback on AI generation
+  accuracyScore        Float?   // 0.0-1.0 how well AI matched agent style
+  improvementNotes     Json?    // specific areas for improvement
+  approved             Boolean  @default(false)
+  usedForTraining      Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  org                  Org      @relation("OrgPersonalityTraining", fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([personalityId])
+  @@index([trainingType])
+  @@index([approved])
+}
+
+model CommunicationTemplate {
+  id                   String   @id @default(cuid())
+  orgId                String
+  personalityId        String   // References AgentPersonality
+  templateType         String   // welcome_email, followup_email, appointment_confirmation, etc.
+  scenario             String   // new_lead, hot_lead, cold_lead, appointment_reminder, etc.
+  subjectLine          String?  // for email templates
+  content              String   // the template content with personality applied
+  variables            Json?    // available template variables like {first_name}, {property_address}
+  usageCount           Int      @default(0)
+  successRate          Float?   // response rate or conversion rate
+  lastUsed             DateTime?
+  isActive             Boolean  @default(true)
+  version              Int      @default(1)
+  parentTemplateId     String?  // for versioning
+  generatedByAI        Boolean  @default(true)
+  humanApproved        Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  org                  Org      @relation("OrgCommunicationTemplates", fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([personalityId])
+  @@index([templateType])
+  @@index([scenario])
   @@index([isActive])
 }
 

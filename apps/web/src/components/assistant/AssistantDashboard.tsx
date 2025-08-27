@@ -26,6 +26,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PersonalityOnboarding } from './PersonalityOnboarding';
 
 interface AssistantStats {
   appointments: {
@@ -65,10 +66,26 @@ export function AssistantDashboard({ className }: AssistantDashboardProps) {
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     fetchAssistantData();
+    checkOnboardingStatus();
   }, []);
+
+  const checkOnboardingStatus = async () => {
+    try {
+      const response = await fetch('/api/assistant/personality/onboarding');
+      if (response.ok) {
+        const data = await response.json();
+        setHasCompletedOnboarding(data.hasCompletedOnboarding);
+      }
+    } catch (error) {
+      console.error('Error checking onboarding status:', error);
+      setHasCompletedOnboarding(false);
+    }
+  };
 
   const fetchAssistantData = async () => {
     try {
@@ -161,7 +178,22 @@ export function AssistantDashboard({ className }: AssistantDashboardProps) {
     }
   };
 
-  if (loading) {
+  // Show onboarding if not completed
+  if (hasCompletedOnboarding === false || showOnboarding) {
+    return (
+      <div className={cn("space-y-6", className)}>
+        <PersonalityOnboarding 
+          onComplete={() => {
+            setShowOnboarding(false);
+            setHasCompletedOnboarding(true);
+            fetchAssistantData();
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (loading || hasCompletedOnboarding === null) {
     return (
       <div className={cn("space-y-6", className)}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -494,6 +526,18 @@ export function AssistantDashboard({ className }: AssistantDashboardProps) {
                   Generate
                 </Button>
               </div>
+              
+              {hasCompletedOnboarding && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="w-full mt-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                  onClick={() => setShowOnboarding(true)}
+                >
+                  <Bot className="h-3 w-3 mr-2" />
+                  Retrain AI Voice
+                </Button>
+              )}
             </CardContent>
           </Card>
         </div>
