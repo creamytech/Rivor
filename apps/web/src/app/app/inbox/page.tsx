@@ -415,9 +415,8 @@ export default function InboxPage() {
       const data = await response.json();
       console.log('✅ AI Analysis result:', data);
       if (data.analysis) {
-        const newAnalyses = new Map(threadAnalyses);
-        newAnalyses.set(threadId, data.analysis);
-        setThreadAnalyses(newAnalyses);
+        // Refresh threads to get updated AI analysis data
+        await fetchThreads(pagination.page, activeFilter, searchQuery);
 
         toast({
           title: "AI Analysis Complete",
@@ -869,7 +868,7 @@ export default function InboxPage() {
                     </div>
                   ) : (
                     threads.map((thread, index) => {
-                      const analysis = threadAnalyses.get(thread.id);
+                      const analysis = thread.aiAnalysis;
                       return (
                         <motion.div
                           key={thread.id}
