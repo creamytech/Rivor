@@ -845,16 +845,30 @@ export default function InboxPage() {
     }
 
     setLastManualSync(new Date());
-    await autoSync.triggerSync();
+    if (autoSync?.triggerSync) {
+      await autoSync.triggerSync();
+    } else {
+      console.error('autoSync.triggerSync is not available');
+      toast({
+        title: "Sync Error",
+        description: "Sync function is not available. Please refresh the page.",
+        variant: "destructive",
+      });
+    }
   };
 
-  // Sync countdown timer
+  // Sync countdown timer with safety checks
   useEffect(() => {
     const updateCountdown = () => {
-      if (autoSync.state.nextSync) {
-        const timeUntilSync = Math.max(0, Math.floor((autoSync.state.nextSync.getTime() - Date.now()) / 1000));
-        setSyncCountdown(timeUntilSync);
-      } else {
+      try {
+        if (autoSync?.nextSync && autoSync.nextSync instanceof Date) {
+          const timeUntilSync = Math.max(0, Math.floor((autoSync.nextSync.getTime() - Date.now()) / 1000));
+          setSyncCountdown(timeUntilSync);
+        } else {
+          setSyncCountdown(0);
+        }
+      } catch (error) {
+        console.error('Error updating sync countdown:', error);
         setSyncCountdown(0);
       }
     };
@@ -862,7 +876,7 @@ export default function InboxPage() {
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
-  }, [autoSync.state.nextSync]);
+  }, [autoSync?.nextSync]);
 
   // Handle pipeline form submission
   const handlePipelineSubmit = async (pipelineData: any) => {
@@ -1220,11 +1234,11 @@ export default function InboxPage() {
                   variant="liquid" 
                   size="sm"
                   onClick={handleManualSync}
-                  disabled={loading || autoSync.isRunning || (lastManualSync && Date.now() - lastManualSync.getTime() < 2 * 60 * 1000)}
+                  disabled={loading || autoSync?.isRunning || (lastManualSync && Date.now() - lastManualSync.getTime() < 2 * 60 * 1000)}
                   className="relative"
                 >
                   <RefreshCw className={`h-4 w-4 mr-2 ${loading || autoSync.isRunning ? 'animate-spin' : ''}`} />
-                  {autoSync.isRunning ? 'Syncing...' : 
+                  {autoSync?.isRunning ? 'Syncing...' : 
                    lastManualSync && Date.now() - lastManualSync.getTime() < 2 * 60 * 1000 ? 
                    `Wait ${Math.ceil((2 * 60 * 1000 - (Date.now() - lastManualSync.getTime())) / 1000)}s` :
                    syncCountdown > 0 ? `Next sync: ${Math.floor(syncCountdown / 60)}:${(syncCountdown % 60).toString().padStart(2, '0')}` :
