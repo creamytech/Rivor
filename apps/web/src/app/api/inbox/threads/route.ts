@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '50'); // Increased default limit
     const filter = url.searchParams.get('filter') || 'all';
+    const search = url.searchParams.get('search') || ''; // Search query parameter
     const since = url.searchParams.get('since'); // Get threads newer than this timestamp
     const offset = (page - 1) * limit;
 
@@ -61,6 +62,11 @@ export async function GET(req: NextRequest) {
     } else if (filter === 'starred') {
       filterCondition = 'AND et.starred = true';
     }
+    
+    console.log(`🔍 Search query: "${search}"`);
+    
+    // Note: Since email data is encrypted, we'll fetch threads normally 
+    // and filter by search term after decryption
 
     // Get threads with proper sorting by latest message date (last 90 days only)
     const threadsQuery = `
@@ -265,13 +271,45 @@ export async function GET(req: NextRequest) {
       };
     }));
 
+    // Apply search filtering after decryption
+    let filteredThreads = threadsFormatted;
+    if (search && search.trim()) {
+      const searchTerm = search.toLowerCase().trim();
+      console.log(`🔍 Applying search filter for: "${searchTerm}"`);
+      
+      filteredThreads = threadsFormatted.filter(thread => {
+        // Search in subject
+        const subjectMatch = thread.subject?.toLowerCase().includes(searchTerm);
+        
+        // Search in participant names and emails
+        const participantMatch = thread.participants.some(participant => 
+          participant.name?.toLowerCase().includes(searchTerm) ||
+          participant.email?.toLowerCase().includes(searchTerm)
+        );
+        
+        // Search in AI analysis summary if available
+        const summaryMatch = thread.aiAnalysis?.keyEntities?.summary?.toLowerCase().includes(searchTerm);
+        
+        return subjectMatch || participantMatch || summaryMatch;
+      });
+      
+      console.log(`🔍 Search results: ${filteredThreads.length}/${threadsFormatted.length} threads match "${searchTerm}"`);
+    }
+
+    // Recalculate pagination for filtered results
+    const filteredTotal = search && search.trim() ? filteredThreads.length : totalCount;
+    const startIndex = (page - 1) * limit;
+    const paginatedThreads = search && search.trim() ? 
+      filteredThreads.slice(startIndex, startIndex + limit) : 
+      filteredThreads;
+
     return NextResponse.json({
-      threads: threadsFormatted,
+      threads: paginatedThreads,
       pagination: {
         page,
         limit,
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / limit)
+        total: filteredTotal,
+        totalPages: Math.ceil(filteredTotal / limit)
       }
     });
 

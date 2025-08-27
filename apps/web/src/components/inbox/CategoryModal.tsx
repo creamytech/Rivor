@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { X, Fire, Home, ShoppingCart, DollarSign, Calculator, Clock, FileText, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { internalFetch } from '@/lib/internal-url';
 
 interface CategoryModalProps {
   isOpen: boolean;
@@ -108,7 +109,7 @@ export function CategoryModal({
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/inbox/threads/${threadId}/actions`, {
+      const response = await internalFetch(`/api/inbox/threads/${threadId}/actions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

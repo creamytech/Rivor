@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { internalFetch } from '@/lib/internal-url';
 
 interface SyncResult {
   email: {
@@ -85,7 +86,7 @@ export function useAutoSync(options: UseAutoSyncOptions = {}) {
     setState(prev => ({ ...prev, isRunning: true, error: null }));
 
     try {
-      const response = await fetch('/api/sync/auto', {
+      const response = await internalFetch('/api/sync/auto', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });

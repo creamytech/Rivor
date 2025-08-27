@@ -22,10 +22,23 @@ export function getInternalBaseUrl(): string {
  * Make internal API call with proper URL handling
  */
 export async function internalFetch(endpoint: string, options: RequestInit = {}) {
-  // For client-side calls, use relative URLs to avoid CORS issues
+  // Force relative URLs for all client-side calls to prevent external domain issues
   if (typeof window !== 'undefined') {
-    console.log(`🔗 Client-side API call: ${endpoint}`);
-    return fetch(endpoint, options);
+    // Ensure the endpoint starts with / for relative URLs
+    const relativeEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    
+    // Double-check that we're not accidentally using an external URL
+    if (relativeEndpoint.includes('://') || relativeEndpoint.includes('http')) {
+      console.error('❌ External URL detected in API call, blocking:', relativeEndpoint);
+      throw new Error(`External URL blocked: ${relativeEndpoint}`);
+    }
+    
+    console.log(`🔗 Client-side API call (forced relative): ${relativeEndpoint}`);
+    return fetch(relativeEndpoint, {
+      ...options,
+      // Ensure we're making the request to the same origin
+      credentials: 'same-origin'
+    });
   }
   
   // For server-side calls, construct full URL

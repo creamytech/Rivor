@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
+import { SearchModal } from './SearchModal';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTheme } from "@/contexts/ThemeContext";
 import EnhancedSidebar from "./EnhancedSidebar";
@@ -56,10 +57,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
-  const [showSearchResults, setShowSearchResults] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
   const [contactFormData, setContactFormData] = useState({ name: '', email: '', phone: '', notes: '' });
   const [listingFormData, setListingFormData] = useState({ address: '', price: '', beds: '', baths: '', sqft: '', description: '' });
   const [meetingFormData, setMeetingFormData] = useState({ title: '', date: '', time: '', attendees: '', notes: '' });
@@ -118,115 +116,6 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // Search functionality
-  useEffect(() => {
-    const performSearch = async () => {
-      if (searchQuery.length < 2) {
-        setSearchResults([]);
-        return;
-      }
-
-      setSearchLoading(true);
-      try {
-        // Search across multiple endpoints
-        const [contactsRes, dealsRes, tasksRes, eventsRes, emailsRes] = await Promise.all([
-          fetch(`/api/contacts?search=${encodeURIComponent(searchQuery)}`),
-          fetch(`/api/pipeline/stages?search=${encodeURIComponent(searchQuery)}`),
-          fetch(`/api/tasks?search=${encodeURIComponent(searchQuery)}`),
-          fetch(`/api/calendar/events?search=${encodeURIComponent(searchQuery)}`),
-          fetch(`/api/inbox/search?q=${encodeURIComponent(searchQuery)}`)
-        ]);
-
-        const results = [];
-        
-        if (contactsRes.ok) {
-          const contactsData = await contactsRes.json();
-          const contacts = contactsData.contacts || contactsData || [];
-          contacts.slice(0, 3).forEach((contact: any) => {
-            results.push({
-              id: `contact-${contact.id}`,
-              type: 'contact',
-              title: contact.name || contact.firstName + ' ' + contact.lastName,
-              subtitle: `Contact • ${contact.email || 'No email'}`,
-              icon: 'User',
-              href: `/app/contacts/${contact.id}`
-            });
-          });
-        }
-
-        if (dealsRes.ok) {
-          const dealsData = await dealsRes.json();
-          const stages = dealsData.stages || [];
-          const deals = stages.flatMap((stage: any) => stage.deals || []);
-          deals.slice(0, 3).forEach((deal: any) => {
-            results.push({
-              id: `deal-${deal.id}`,
-              type: 'deal',
-              title: deal.title || deal.dealTitle,
-              subtitle: `Deal • $${deal.dealValue?.toLocaleString() || '0'}`,
-              icon: 'TrendingUp',
-              href: `/app/pipeline?deal=${deal.id}`
-            });
-          });
-        }
-
-        if (tasksRes.ok) {
-          const tasksData = await tasksRes.json();
-          const tasks = tasksData.tasks || tasksData || [];
-          tasks.slice(0, 3).forEach((task: any) => {
-            results.push({
-              id: `task-${task.id}`,
-              type: 'task',
-              title: task.title || task.name,
-              subtitle: `Task • ${task.status || 'Pending'}`,
-              icon: 'CheckSquare',
-              href: `/app/tasks?task=${task.id}`
-            });
-          });
-        }
-
-        if (eventsRes.ok) {
-          const eventsData = await eventsRes.json();
-          const events = eventsData.events || eventsData || [];
-          events.slice(0, 3).forEach((event: any) => {
-            results.push({
-              id: `event-${event.id}`,
-              type: 'event',
-              title: event.title || event.summary,
-              subtitle: `Event • ${event.start ? new Date(event.start).toLocaleDateString() : 'No date'}`,
-              icon: 'Calendar',
-              href: `/app/calendar?event=${event.id}`
-            });
-          });
-        }
-
-        if (emailsRes.ok) {
-          const emailsData = await emailsRes.json();
-          const emails = emailsData.threads || emailsData || [];
-          emails.slice(0, 3).forEach((email: any) => {
-            results.push({
-              id: `email-${email.id}`,
-              type: 'email',
-              title: email.subject || 'No subject',
-              subtitle: `Email • From ${email.from || 'Unknown'}`,
-              icon: 'Mail',
-              href: `/app/inbox?thread=${email.id}`
-            });
-          });
-        }
-
-        setSearchResults(results);
-      } catch (error) {
-        console.error('Search failed:', error);
-        setSearchResults([]);
-      } finally {
-        setSearchLoading(false);
-      }
-    };
-
-    const debounceTimer = setTimeout(performSearch, 300);
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery]);
   const pathname = usePathname();
 
   
@@ -307,10 +196,6 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         setShowQuickActions(false);
       }
       
-      // Close search results if clicking outside
-      if (showSearchResults && !target.closest('.glass-search-results') && !target.closest('.glass-search-pill-enhanced')) {
-        setShowSearchResults(false);
-      }
       
       // Close notifications if clicking outside
       if (showNotifications && !target.closest('.glass-notification-preview') && !target.closest('[aria-label="Notifications"]')) {
@@ -325,7 +210,23 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showQuickActions, showSearchResults, showNotifications, showUserProfile]);
+  }, [showQuickActions, showNotifications, showUserProfile]);
+
+  // Keyboard shortcut for search (Cmd+K / Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault();
+        setShowSearchModal(true);
+      }
+      if (event.key === 'Escape' && showSearchModal) {
+        setShowSearchModal(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showSearchModal]);
 
   const toggleSidebar = () => {
     const newCollapsedState = !isSidebarCollapsed;
@@ -521,93 +422,31 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                 </div>
               </div>
 
-              {/* Center: Enhanced Search Bar with Smart Dropdown */}
+              {/* Center: AI-Powered Search Button */}
               <div className={`hidden md:flex flex-1 justify-center transition-all duration-300 ${
                 isSidebarCollapsed ? 'max-w-3xl' : 'max-w-2xl'
               }`}>
-                <div className="relative w-full">
-                  <div className="glass-search-pill-enhanced">
-                    <input
-                      type="text"
-                      placeholder="Search everything..."
-                      aria-label="Global search"
-                      value={searchQuery}
-                      onChange={(e) => {
-                        setSearchQuery(e.target.value);
-                        setShowSearchResults(e.target.value.length > 0);
-                      }}
-                      onFocus={() => setShowSearchResults(searchQuery.length > 0 || true)} // Always show on focus for demo
-                      onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
-                      className="w-full px-8 text-base bg-transparent border-none outline-none font-medium py-4 text-center"
-                      style={{ 
-                        color: 'var(--glass-text)',
-                      }}
-                    />
-                  </div>
-                  
-                  {/* Search Results Dropdown - positioned relative to search container */}
-                  <div className={`glass-search-results ${showSearchResults ? 'visible' : ''}`} style={{
-                    width: '600px',
-                    maxWidth: '90vw',
-                    left: '50%',
-                    right: 'auto',
-                    transform: 'translateX(-50%)'
-                  }}>
-                    <div className="space-y-3">
-                      {searchLoading ? (
-                        <div className="flex items-center justify-center py-8">
-                          <div className="glass-spinner w-5 h-5"></div>
-                        </div>
-                      ) : searchResults.length > 0 ? (
-                        searchResults.map((result: any) => {
-                          const IconComponent = result.icon === 'User' ? User :
-                                               result.icon === 'TrendingUp' ? TrendingUp :
-                                               result.icon === 'CheckSquare' ? CheckSquare :
-                                               result.icon === 'Calendar' ? Calendar :
-                                               result.icon === 'Mail' ? Mail : Search;
-                          
-                          return (
-                            <Link
-                              key={result.id}
-                              href={result.href}
-                              className="glass-search-result-item group"
-                              onClick={() => {
-                                setShowSearchResults(false);
-                                setSearchQuery('');
-                              }}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="glass-icon-container-small">
-                                  <IconComponent className="h-4 w-4" style={{ color: 'var(--glass-text)' }} />
-                                </div>
-                                <div className="flex-1">
-                                  <div className="text-sm font-medium" style={{ color: 'var(--glass-text)' }}>
-                                    {result.title}
-                                  </div>
-                                  <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>
-                                    {result.subtitle}
-                                  </div>
-                                </div>
-                              </div>
-                            </Link>
-                          );
-                        })
-                      ) : searchQuery.length > 1 ? (
-                        <div className="text-center py-8">
-                          <div className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
-                            No results found for "{searchQuery}"
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <div className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
-                            Start typing to search...
-                          </div>
-                        </div>
-                      )}
+                <button
+                  onClick={() => setShowSearchModal(true)}
+                  className="glass-search-pill-enhanced flex items-center gap-3 hover:scale-105 transition-all duration-200 cursor-pointer group"
+                  style={{ 
+                    minWidth: '400px',
+                    padding: '12px 24px'
+                  }}
+                >
+                  <Search className="h-5 w-5" style={{ color: 'var(--glass-text-muted)' }} />
+                  <span className="text-base font-medium" style={{ color: 'var(--glass-text-muted)' }}>
+                    Search everything...
+                  </span>
+                  <div className="ml-auto flex items-center gap-2">
+                    <div className="px-2 py-1 rounded-md text-xs font-medium" style={{ 
+                      background: 'var(--glass-bg-secondary)', 
+                      color: 'var(--glass-text-muted)' 
+                    }}>
+                      ⌘K
                     </div>
                   </div>
-                </div>
+                </button>
               </div>
 
               {/* Right Side: Frosted Capsule with System Controls */}
@@ -1352,6 +1191,12 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* AI Search Modal */}
+      <SearchModal
+        isOpen={showSearchModal}
+        onClose={() => setShowSearchModal(false)}
+      />
 
       <Toaster />
     </div>

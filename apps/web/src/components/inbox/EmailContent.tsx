@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useTheme } from '@/contexts/ThemeContext';
+import { internalFetch } from '@/lib/internal-url';
 
 interface EmailMessage {
   id: string;
@@ -87,7 +88,7 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
       setError(null);
 
       console.log('📡 Making API call to:', `/api/inbox/threads/${threadId}`);
-      const response = await fetch(`/api/inbox/threads/${threadId}`);
+      const response = await internalFetch(`/api/inbox/threads/${threadId}`);
       console.log('📡 API response status:', response.status, response.statusText);
       
       const data = await response.json();
