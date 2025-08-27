@@ -68,12 +68,14 @@ Analyze the following email and provide a JSON response with:
 4. confidenceScore: Float 0-1 (confidence in analysis)
 5. sentimentScore: Float 0-1 (0 = negative, 0.5 = neutral, 1 = positive)
 6. keyEntities: Object with extracted information:
+   - summary: 2-3 sentence summary of the email content and intent
    - addresses: Array of property addresses mentioned
    - priceRange: Any price/budget mentioned
    - contacts: Phone numbers mentioned
    - propertyType: Type of property (e.g., "3-bedroom house")
    - timeframes: Any dates/deadlines mentioned
    - urgencyIndicators: Words/phrases showing urgency
+   - contactIntent: Main purpose/request (e.g., "wants to schedule showing", "interested in buying", "selling property")
 
 Real estate context:
 - Hot leads: Immediate buying/selling intent, pre-approved, cash buyers, urgent timelines
