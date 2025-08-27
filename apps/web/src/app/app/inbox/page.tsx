@@ -601,28 +601,45 @@ export default function InboxPage() {
       
       // Extract text content from HTML if available, with image detection
       const extractTextFromHtml = (html: string) => {
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html;
-        const styleElements = tempDiv.querySelectorAll('style, script');
-        styleElements.forEach(el => el.remove());
+        if (!html) return '';
         
-        // Check if HTML contains images
-        const images = tempDiv.querySelectorAll('img');
-        const hasImages = images.length > 0;
-        
-        // If no images, default to text-only content
-        if (!hasImages) {
-          return tempDiv.textContent || tempDiv.innerText || '';
+        try {
+          // First sanitize dangerous URL schemes
+          const sanitizedHtml = html
+            .replace(/mailto:/gi, '#')
+            .replace(/tel:/gi, '#')
+            .replace(/javascript:/gi, '')
+            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+          
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = sanitizedHtml;
+          const styleElements = tempDiv.querySelectorAll('style, script');
+          styleElements.forEach(el => el.remove());
+          
+          // Check if HTML contains images
+          const images = tempDiv.querySelectorAll('img');
+          const hasImages = images.length > 0;
+          
+          // If no images, default to text-only content
+          if (!hasImages) {
+            return tempDiv.textContent || tempDiv.innerText || '';
+          }
+          
+          // If has images, preserve some basic HTML structure but clean it
+          const cleanHtml = tempDiv.innerHTML
+            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+            .replace(/onclick\s*=\s*["'][^"']*["']/gi, '')
+            .replace(/javascript:/gi, '')
+            .replace(/mailto:/gi, '#')
+            .replace(/tel:/gi, '#');
+          
+          return cleanHtml;
+        } catch (error) {
+          console.warn('Error extracting text from HTML:', error);
+          return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
         }
-        
-        // If has images, preserve some basic HTML structure but clean it
-        const cleanHtml = tempDiv.innerHTML
-          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-          .replace(/onclick\s*=\s*["'][^"']*["']/gi, '')
-          .replace(/javascript:/gi, '');
-        
-        return cleanHtml;
       };
       
       const emailContent = latestMessage.htmlBody 
@@ -745,28 +762,45 @@ export default function InboxPage() {
       
       // Extract text content from HTML if available, with image detection
       const extractTextFromHtml = (html: string) => {
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html;
-        const styleElements = tempDiv.querySelectorAll('style, script');
-        styleElements.forEach(el => el.remove());
+        if (!html) return '';
         
-        // Check if HTML contains images
-        const images = tempDiv.querySelectorAll('img');
-        const hasImages = images.length > 0;
-        
-        // If no images, default to text-only content
-        if (!hasImages) {
-          return tempDiv.textContent || tempDiv.innerText || '';
+        try {
+          // First sanitize dangerous URL schemes
+          const sanitizedHtml = html
+            .replace(/mailto:/gi, '#')
+            .replace(/tel:/gi, '#')
+            .replace(/javascript:/gi, '')
+            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+          
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = sanitizedHtml;
+          const styleElements = tempDiv.querySelectorAll('style, script');
+          styleElements.forEach(el => el.remove());
+          
+          // Check if HTML contains images
+          const images = tempDiv.querySelectorAll('img');
+          const hasImages = images.length > 0;
+          
+          // If no images, default to text-only content
+          if (!hasImages) {
+            return tempDiv.textContent || tempDiv.innerText || '';
+          }
+          
+          // If has images, preserve some basic HTML structure but clean it
+          const cleanHtml = tempDiv.innerHTML
+            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+            .replace(/onclick\s*=\s*["'][^"']*["']/gi, '')
+            .replace(/javascript:/gi, '')
+            .replace(/mailto:/gi, '#')
+            .replace(/tel:/gi, '#');
+          
+          return cleanHtml;
+        } catch (error) {
+          console.warn('Error extracting text from HTML:', error);
+          return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
         }
-        
-        // If has images, preserve some basic HTML structure but clean it
-        const cleanHtml = tempDiv.innerHTML
-          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-          .replace(/onclick\s*=\s*["'][^"']*["']/gi, '')
-          .replace(/javascript:/gi, '');
-        
-        return cleanHtml;
       };
       
       const emailContent = latestMessage.htmlBody 
@@ -1959,16 +1993,18 @@ export default function InboxPage() {
       />
 
       {/* Category Modal */}
-      <CategoryModal
-        isOpen={showCategoryModal}
-        onClose={() => {
-          setShowCategoryModal(false);
-          setSelectedThreadForCategory(null);
-        }}
-        currentCategory={selectedThreadForCategory?.aiAnalysis?.category || 'follow_up'}
-        threadId={selectedThreadForCategory?.id || ''}
-        onCategoryChange={handleCategoryChange}
-      />
+      {selectedThreadForCategory && (
+        <CategoryModal
+          isOpen={showCategoryModal}
+          onClose={() => {
+            setShowCategoryModal(false);
+            setSelectedThreadForCategory(null);
+          }}
+          currentCategory={selectedThreadForCategory.aiAnalysis?.category || 'follow_up'}
+          threadId={selectedThreadForCategory.id}
+          onCategoryChange={handleCategoryChange}
+        />
+      )}
 
       {/* Add to Pipeline Modal */}
       {showPipelineModal && selectedThreadForPipeline && (

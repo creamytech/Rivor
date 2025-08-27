@@ -207,8 +207,9 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
   };
 
   const sanitizeHtml = (html: string, allowImages: boolean = false) => {
+    if (!html) return '';
+    
     // Basic HTML sanitization - remove potentially dangerous elements
-    // In production, use a proper sanitization library like DOMPurify
     let sanitized = html
       .replace(/<script[^>]*>.*?<\/script>/gi, '')
       .replace(/<iframe[^>]*>.*?<\/iframe>/gi, '')
@@ -216,7 +217,11 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
       .replace(/<embed[^>]*>.*?<\/embed>/gi, '')
       .replace(/<form[^>]*>.*?<\/form>/gi, '')
       .replace(/on\w+="[^"]*"/gi, '') // Remove event handlers
-      .replace(/javascript:/gi, ''); // Remove javascript: URLs
+      .replace(/javascript:/gi, '') // Remove javascript: URLs
+      .replace(/mailto:/gi, '#') // Convert mailto links to prevent URL scheme errors
+      .replace(/tel:/gi, '#') // Convert tel links to prevent URL scheme errors
+      .replace(/href="[^"]*javascript:/gi, 'href="#"') // Fix javascript hrefs
+      .replace(/src="[^"]*javascript:/gi, 'src="#"'); // Fix javascript src
     
     // Handle images based on user preference
     if (!allowImages) {
@@ -249,16 +254,32 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
   };
 
   const extractTextFromHtml = (html: string) => {
-    // Create a temporary div to parse HTML and extract text
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
+    if (!html) return '';
     
-    // Remove style and script tags
-    const styleElements = tempDiv.querySelectorAll('style, script');
-    styleElements.forEach(el => el.remove());
-    
-    // Get text content and clean it up
-    return tempDiv.textContent || tempDiv.innerText || '';
+    try {
+      // First sanitize the HTML to prevent URL scheme errors
+      const sanitizedHtml = html
+        .replace(/mailto:/gi, '#')
+        .replace(/tel:/gi, '#')
+        .replace(/javascript:/gi, '')
+        .replace(/<script[^>]*>.*?<\/script>/gi, '')
+        .replace(/<style[^>]*>.*?<\/style>/gi, '');
+      
+      // Create a temporary div to parse HTML and extract text
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = sanitizedHtml;
+      
+      // Remove any remaining style and script tags
+      const styleElements = tempDiv.querySelectorAll('style, script');
+      styleElements.forEach(el => el.remove());
+      
+      // Get text content and clean it up
+      return tempDiv.textContent || tempDiv.innerText || '';
+    } catch (error) {
+      console.warn('Error extracting text from HTML:', error);
+      // Fallback: strip HTML tags with regex
+      return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    }
   };
 
   if (loading) {
@@ -453,48 +474,75 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
                             ? 'prose-invert prose-headings:text-white prose-p:text-white/90 prose-strong:text-white prose-a:text-blue-400' 
                             : 'prose-headings:text-black prose-p:text-black/90 prose-strong:text-black prose-a:text-blue-600'
                         }`}>
-                          {message.bodyHtml ? (
-                            <>
-                              {viewMode === 'text' ? (
-                                <div className={`p-4 rounded-lg ${theme === 'black' ? 'bg-white/5 text-white/90' : 'bg-black/5 text-black/90'}`}>
-                                  <div className="font-sans leading-relaxed whitespace-pre-wrap">
-                                    {extractTextFromHtml(message.bodyHtml)}
+                          {(() => {
+                            // Check if we have any content at all
+                            const hasHtmlContent = message.bodyHtml && message.bodyHtml.trim();
+                            const hasTextContent = message.bodyText && message.bodyText.trim();
+                            const extractedText = hasHtmlContent ? extractTextFromHtml(message.bodyHtml) : '';
+                            const hasExtractedText = extractedText && extractedText.trim();
+                            
+                            if (hasHtmlContent || hasTextContent) {
+                              if (hasHtmlContent) {
+                                return (
+                                  <>
+                                    {viewMode === 'text' ? (
+                                      <div className={`p-4 rounded-lg ${theme === 'black' ? 'bg-white/5 text-white/90' : 'bg-black/5 text-black/90'}`}>
+                                        <div className="font-sans leading-relaxed whitespace-pre-wrap">
+                                          {hasExtractedText ? extractedText : 'Content available in HTML view'}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="flex justify-center w-full">
+                                        <div 
+                                          dangerouslySetInnerHTML={{ 
+                                            __html: sanitizeHtml(message.bodyHtml, showImages)
+                                          }}
+                                          className="email-content rounded-lg"
+                                          style={{
+                                            background: 'white',
+                                            color: 'black',
+                                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                            padding: '20px',
+                                            border: theme === 'black' ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)',
+                                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                                            maxWidth: '700px',
+                                            width: '100%',
+                                            minHeight: '70vh',
+                                            height: 'auto',
+                                            overflow: 'auto',
+                                            zoom: '0.9'
+                                          }}
+                                        />
+                                      </div>
+                                    )}
+                                  </>
+                                );
+                              } else if (hasTextContent) {
+                                return (
+                                  <div className={`p-4 rounded-lg ${theme === 'black' ? 'bg-white/5 text-white/90' : 'bg-black/5 text-black/90'}`}>
+                                    <div className="font-sans leading-relaxed whitespace-pre-wrap">
+                                      {message.bodyText}
+                                    </div>
+                                  </div>
+                                );
+                              }
+                            }
+                            
+                            // Fallback: try to show subject or snippet
+                            const fallbackContent = message.subject || message.snippet || 'Email content is encrypted and cannot be displayed';
+                            
+                            return (
+                              <div className={`p-4 rounded-lg border-2 border-dashed ${theme === 'black' ? 'border-white/20 bg-white/5 text-white/70' : 'border-black/20 bg-black/5 text-black/70'}`}>
+                                <div className="text-center">
+                                  <Mail className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                  <div className="font-medium mb-1">Email Content Not Available</div>
+                                  <div className="text-sm opacity-75">
+                                    {fallbackContent.length > 100 ? fallbackContent.substring(0, 100) + '...' : fallbackContent}
                                   </div>
                                 </div>
-                              ) : (
-                                <div className="flex justify-center w-full">
-                                  <div 
-                                    dangerouslySetInnerHTML={{ 
-                                      __html: sanitizeHtml(message.bodyHtml, showImages)
-                                    }}
-                                    className="email-content rounded-lg"
-                                    style={{
-                                      background: 'white',
-                                      color: 'black',
-                                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                                      padding: '20px',
-                                      border: theme === 'black' ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)',
-                                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                                      maxWidth: '700px',
-                                      width: '100%',
-                                      minHeight: '70vh',
-                                      height: 'auto',
-                                      overflow: 'auto',
-                                      zoom: '0.9'
-                                    }}
-                                  />
-                                </div>
-                              )}
-                            </>
-                          ) : message.bodyText ? (
-                            <div className="whitespace-pre-wrap font-sans leading-relaxed">
-                              {message.bodyText}
-                            </div>
-                          ) : (
-                            <div className={`italic ${theme === 'black' ? 'text-white/50' : 'text-black/50'}`}>
-                              No content available
-                            </div>
-                          )}
+                              </div>
+                            );
+                          })()} 
                         </div>
                       </div>
                   </div>

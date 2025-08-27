@@ -158,18 +158,40 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
       if (activeCategory === 'all' || activeCategory === 'emails') {
         searchPromises.push(
           internalFetch(`/api/inbox/threads?search=${encodeURIComponent(query)}&limit=10`)
-            .then(res => res.ok ? res.json() : { threads: [] })
-            .then(data => data.threads?.map((thread: any) => ({
-              id: `email-${thread.id}`,
-              title: thread.subject || 'No Subject',
-              subtitle: `From: ${thread.participants?.[0]?.name || thread.participants?.[0]?.email || 'Unknown'} • ${new Date(thread.lastMessageAt).toLocaleDateString()}${thread.aiAnalysis?.category ? ` • ${thread.aiAnalysis.category.replace('_', ' ').toUpperCase()}` : ''}`,
-              type: 'email',
-              icon: 'Mail',
-              href: `/app/inbox?thread=${thread.id}`,
-              metadata: thread,
-              relevanceScore: calculateEmailRelevance(query, thread)
-            })) || [])
-            .catch(() => [])
+            .then(res => {
+              console.log('🔍 Email search API response status:', res.status);
+              return res.ok ? res.json() : { threads: [] };
+            })
+            .then(data => {
+              console.log('🔍 Email search API data received:', data);
+              console.log('🔍 Number of threads returned:', data.threads?.length || 0);
+              
+              if (data.threads) {
+                data.threads.forEach((thread: any, index: number) => {
+                  console.log(`🔍 Thread ${index + 1}:`, {
+                    id: thread.id,
+                    subject: thread.subject,
+                    category: thread.aiAnalysis?.category,
+                    participants: thread.participants?.map((p: any) => p.name || p.email)
+                  });
+                });
+              }
+              
+              return data.threads?.map((thread: any) => ({
+                id: `email-${thread.id}`,
+                title: thread.subject || 'No Subject',
+                subtitle: `From: ${thread.participants?.[0]?.name || thread.participants?.[0]?.email || 'Unknown'} • ${new Date(thread.lastMessageAt).toLocaleDateString()}${thread.aiAnalysis?.category ? ` • ${thread.aiAnalysis.category.replace('_', ' ').toUpperCase()}` : ''}`,
+                type: 'email',
+                icon: 'Mail',
+                href: `/app/inbox?thread=${thread.id}`,
+                metadata: thread,
+                relevanceScore: calculateEmailRelevance(query, thread)
+              })) || []
+            })
+            .catch(error => {
+              console.error('🔍 Email search error:', error);
+              return [];
+            })
         );
       }
 

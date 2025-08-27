@@ -276,6 +276,17 @@ export async function GET(req: NextRequest) {
     if (search && search.trim()) {
       const searchTerm = search.toLowerCase().trim();
       console.log(`🔍 Applying search filter for: "${searchTerm}"`);
+      console.log(`🔍 Total threads to search through: ${threadsFormatted.length}`);
+      
+      // Log a few sample threads for debugging
+      threadsFormatted.slice(0, 3).forEach((thread, index) => {
+        console.log(`🔍 Sample thread ${index + 1}:`, {
+          id: thread.id?.substring(0, 8),
+          subject: thread.subject?.substring(0, 50),
+          category: thread.aiAnalysis?.category,
+          participants: thread.participants?.slice(0, 2).map(p => p.name || p.email)
+        });
+      });
       
       filteredThreads = threadsFormatted.filter(thread => {
         // Search in subject
@@ -325,10 +336,33 @@ export async function GET(req: NextRequest) {
         }
         
         const matches = subjectMatch || participantMatch || aiMatch;
+        
+        // Debug logging for each thread
+        if (thread.aiAnalysis?.category === 'showing_request' || 
+            thread.subject?.toLowerCase().includes('showing') ||
+            searchTerm.includes('showing')) {
+          console.log(`🔍 DEBUG Thread "${thread.subject?.substring(0, 50)}":`, {
+            searchTerm,
+            subjectMatch,
+            participantMatch, 
+            aiMatch: aiMatch,
+            category: thread.aiAnalysis?.category,
+            finalMatch: matches
+          });
+        }
+        
         return matches;
       });
       
       console.log(`🔍 Search results: ${filteredThreads.length}/${threadsFormatted.length} threads match "${searchTerm}"`);
+      
+      // Log matching threads
+      if (filteredThreads.length > 0) {
+        console.log(`🔍 Matching threads:`, filteredThreads.map(t => ({
+          subject: t.subject?.substring(0, 50),
+          category: t.aiAnalysis?.category
+        })));
+      }
     }
 
     // Recalculate pagination for filtered results

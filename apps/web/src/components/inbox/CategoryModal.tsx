@@ -107,6 +107,12 @@ export function CategoryModal({
       return;
     }
 
+    if (!threadId) {
+      console.error('No thread ID provided for category update');
+      alert('Unable to update category. Please try again.');
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await internalFetch(`/api/inbox/threads/${threadId}/actions`, {
