@@ -1362,6 +1362,7 @@ export default function InboxPage() {
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.05 }}
+                          style={{ minHeight: '120px' }}
                         >
                           <div className="flex items-start gap-3">
                             {/* Actions */}
@@ -1384,14 +1385,20 @@ export default function InboxPage() {
                                   <div className={`text-sm font-medium ${theme === 'black' ? 'text-white' : 'text-black'} truncate`}>
                                     {thread.participants[0]?.name || thread.participants[0]?.email || 'Unknown'}
                                   </div>
-                                  {analysis && getUrgencyIndicator(analysis.urgency, analysis.leadScore)}
+                                  <div className="w-2 h-2 flex items-center justify-center min-w-[8px]">
+                                    {analysis ? getUrgencyIndicator(analysis.keyEntities?.urgency, analysis.leadScore) : <div className="w-2 h-2" />}
+                                  </div>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                  {analysis && (
-                                    <div className={`text-xs px-1.5 py-0.5 rounded border ${getCategoryColor(analysis.category)} font-medium`}>
-                                      {analysis.leadScore}
-                                    </div>
-                                  )}
+                                  <div className="w-8 flex justify-end min-h-[20px] items-center">
+                                    {analysis ? (
+                                      <div className={`text-xs px-1.5 py-0.5 rounded border ${getCategoryColor(analysis.category)} font-medium min-w-[24px] text-center`}>
+                                        {analysis.leadScore}
+                                      </div>
+                                    ) : (
+                                      <div className="w-6 h-4" />
+                                    )}
+                                  </div>
                                   {thread.hasAttachments && (
                                     <div className={`w-2 h-2 rounded-full bg-blue-500`} />
                                   )}
@@ -1402,31 +1409,37 @@ export default function InboxPage() {
                               </div>
 
                               {/* AI Category Badge - Clickable */}
-                              {analysis?.category && (
-                                <div className="mb-1 flex items-center gap-2">
-                                  <button
-                                    onClick={(e) => handleCategoryBadgeClick(thread, e)}
-                                    className={`text-xs px-2 py-0.5 rounded-full border ${getCategoryColor(analysis.category)} hover:opacity-80 transition-opacity cursor-pointer flex items-center gap-1`}
-                                  >
-                                    <span>{getCategoryEmoji(analysis.category)}</span>
-                                    {analysis.category.replace('_', ' ').toUpperCase()}
-                                  </button>
-                                  <button
-                                    onClick={(e) => handleAddToPipeline(thread, e)}
-                                    className="text-xs px-2 py-0.5 rounded-full border border-green-400/50 bg-green-600/20 text-green-200 hover:opacity-80 transition-opacity cursor-pointer"
-                                    title="Add to Pipeline"
-                                  >
-                                    + PIPELINE
-                                  </button>
-                                </div>
-                              )}
+                              <div className="mb-1 flex items-center gap-2 min-h-[24px]">
+                                {analysis?.category ? (
+                                  <>
+                                    <button
+                                      onClick={(e) => handleCategoryBadgeClick(thread, e)}
+                                      className={`text-xs px-2 py-0.5 rounded-full border ${getCategoryColor(analysis.category)} hover:opacity-80 transition-opacity cursor-pointer flex items-center gap-1`}
+                                    >
+                                      <span>{getCategoryEmoji(analysis.category)}</span>
+                                      {analysis.category.replace('_', ' ').toUpperCase()}
+                                    </button>
+                                    <button
+                                      onClick={(e) => handleAddToPipeline(thread, e)}
+                                      className="text-xs px-2 py-0.5 rounded-full border border-green-400/50 bg-green-600/20 text-green-200 hover:opacity-80 transition-opacity cursor-pointer"
+                                      title="Add to Pipeline"
+                                    >
+                                      + PIPELINE
+                                    </button>
+                                  </>
+                                ) : (
+                                  <div className="h-6" />
+                                )}
+                              </div>
 
                               <div className={`text-xs font-medium ${theme === 'black' ? 'text-white/90' : 'text-black/90'} truncate mb-1`}>
                                 {thread.subject}
                               </div>
 
-                              <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'} truncate mb-1 line-clamp-2`}>
-                                {analysis?.summary || thread.snippet}
+                              <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'} mb-1 min-h-[32px] leading-4`}>
+                                <div className="line-clamp-2 break-words">
+                                  {analysis?.keyEntities?.summary || thread.snippet || ''}
+                                </div>
                               </div>
 
                               <div className="flex items-center justify-between">
@@ -1434,11 +1447,9 @@ export default function InboxPage() {
                                   <div className={`text-xs ${theme === 'black' ? 'text-white/40' : 'text-black/40'}`}>
                                     {thread.messageCount} message{thread.messageCount !== 1 ? 's' : ''}
                                   </div>
-                                  {analysis && (
-                                    <div className={`text-xs ${theme === 'black' ? 'text-white/40' : 'text-black/40'}`}>
-                                      {analysis.contactIntent}
-                                    </div>
-                                  )}
+                                  <div className={`text-xs ${theme === 'black' ? 'text-white/40' : 'text-black/40'} min-w-0 truncate min-h-[16px] flex items-center`}>
+                                    <span>{analysis?.keyEntities?.contactIntent || ''}</span>
+                                  </div>
                                 </div>
                                 
                                 <div className={`text-xs ${theme === 'black' ? 'text-white/40' : 'text-black/40'}`}>
