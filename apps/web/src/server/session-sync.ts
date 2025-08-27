@@ -37,7 +37,7 @@ export async function syncUserSessions(userId: string, triggerSessionToken?: str
 
     // Instead of forcefully shortening sessions, just log the sync event
     // This prevents breaking active sessions on other devices
-    let updatedCount = 0;
+    const updatedCount = 0;
     
     // For monitoring purposes only - don't actually modify session expiration
     logger.info('Cross-device session sync triggered', {

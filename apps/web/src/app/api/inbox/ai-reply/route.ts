@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/lib/db-pool';
+import { getThreadWithMessages } from '@/server/email';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
@@ -63,23 +64,37 @@ export async function POST(request: NextRequest) {
 
     const { 
       emailId, 
-      threadId, 
-      fromName, 
-      fromEmail, 
-      subject, 
-      body,
+      threadId,
       agentName = session.user.name || 'Real Estate Agent',
       brokerage = 'Rivor Realty',
       agentPhone = '',
       agentEmail = session.user.email || ''
     } = await request.json();
     
-    console.log('📦 Request data:', { emailId, threadId, fromName, fromEmail, subject: subject?.substring(0, 50), bodyLength: body?.length });
+    console.log('📦 Request data:', { emailId, threadId });
 
-    if (!emailId || !subject || !body) {
-      console.log('❌ Missing required fields:', { emailId: !!emailId, subject: !!subject, body: !!body });
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!emailId) {
+      console.log('❌ Missing required fields:', { emailId: !!emailId });
+      return NextResponse.json({ error: "Missing required field: emailId" }, { status: 400 });
     }
+
+    // Get the organization ID from session
+    const orgId = (session as { orgId?: string }).orgId;
+    if (!orgId) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
+    }
+
+    // Get thread with decrypted messages
+    const threadData = await getThreadWithMessages(orgId, threadId || emailId);
+    if (!threadData.thread || threadData.messages.length === 0) {
+      return NextResponse.json({ error: "Thread or message not found" }, { status: 404 });
+    }
+
+    // Find the specific message or use the latest one
+    const message = threadData.messages.find(m => m.id === emailId) || threadData.messages[threadData.messages.length - 1];
+    const { subject, body, from } = message;
+
+    console.log('📦 Decrypted email data:', { subject: subject?.substring(0, 50), bodyLength: body?.length, from });
 
     // Check for OpenAI API key
     if (!process.env.OPENAI_API_KEY) {
@@ -88,7 +103,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get existing AI analysis
-    const analysis = await prisma.EmailAIAnalysis.findUnique({
+    const analysis = await prisma.emailAIAnalysis.findUnique({
       where: { emailId }
     });
 
@@ -97,7 +112,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if reply already exists
-    const existingReply = await prisma.AISuggestedReply.findFirst({
+    const existingReply = await prisma.aISuggestedReply.findFirst({
       where: { 
         emailId,
         status: { in: ['pending', 'approved'] }
@@ -108,6 +123,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ reply: existingReply });
     }
 
+    // Parse from field to extract name and email
+    const fromParts = from.split(' ');
+    const fromEmail = fromParts[fromParts.length - 1].replace(/[<>]/g, '') || from;
+    const fromName = fromParts.slice(0, -1).join(' ') || fromEmail;
+
     // Create reply generation prompt
     const prompt = REPLY_GENERATION_PROMPT
       .replace('{category}', analysis.category)
@@ -117,14 +137,14 @@ export async function POST(request: NextRequest) {
       .replace('{fromName}', fromName || 'Valued Client')
       .replace('{fromEmail}', fromEmail || 'Unknown')
       .replace('{subject}', subject)
-      .replace('{body}', body)
+      .replace('{body}', body || '')
       .replace('{agentName}', agentName)
       .replace('{brokerage}', brokerage)
       .replace('{agentPhone}', agentPhone)
       .replace('{agentEmail}', agentEmail);
 
     // Get appropriate template for this category
-    const template = await prisma.AIEmailTemplate.findFirst({
+    const template = await prisma.aIEmailTemplate.findFirst({
       where: {
         category: analysis.category,
         isActive: true
@@ -198,7 +218,7 @@ ${template ? `Use this template as inspiration but customize for the specific si
     confidenceScore = Math.min(1, confidenceScore);
 
     // Save the suggested reply
-    const reply = await prisma.AISuggestedReply.create({
+    const reply = await prisma.aISuggestedReply.create({
       data: {
         emailId,
         threadId: threadId || emailId,
@@ -211,14 +231,14 @@ ${template ? `Use this template as inspiration but customize for the specific si
 
     // Update template usage if one was used
     if (template) {
-      await prisma.AIEmailTemplate.update({
+      await prisma.aIEmailTemplate.update({
         where: { id: template.id },
         data: { usageCount: { increment: 1 } }
       });
     }
 
     // Update processing queue status
-    await prisma.AIProcessingQueue.updateMany({
+    await prisma.aIProcessingQueue.updateMany({
       where: {
         emailId,
         processingType: 'reply_generation',
@@ -256,7 +276,7 @@ export async function GET(request: NextRequest) {
 
     if (emailId) {
       // Get reply for specific email
-      const reply = await prisma.AISuggestedReply.findFirst({
+      const reply = await prisma.aISuggestedReply.findFirst({
         where: { 
           emailId,
           ...(status && { status: status as any })
@@ -266,7 +286,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ reply });
     } else {
       // Get pending replies
-      const replies = await prisma.AISuggestedReply.findMany({
+      const replies = await prisma.aISuggestedReply.findMany({
         where: {
           status: status as any || 'pending'
         },
@@ -296,7 +316,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Update reply status
-    const reply = await prisma.AISuggestedReply.update({
+    const reply = await prisma.aISuggestedReply.update({
       where: { id: replyId },
       data: {
         status,
@@ -307,7 +327,7 @@ export async function PATCH(request: NextRequest) {
 
     // Record feedback if provided
     if (feedbackType) {
-      await prisma.AIFeedback.create({
+      await prisma.aIFeedback.create({
         data: {
           replyId,
           feedbackType,
@@ -317,7 +337,7 @@ export async function PATCH(request: NextRequest) {
 
       // Update template success rate if reply was approved/sent
       if (status === 'approved' || status === 'sent') {
-        const template = await prisma.AIEmailTemplate.findFirst({
+        const template = await prisma.aIEmailTemplate.findFirst({
           where: {
             category: reply.category.replace('-response', '')
           }
@@ -327,7 +347,7 @@ export async function PATCH(request: NextRequest) {
           const feedbackWeight = feedbackType === 'positive' ? 0.1 : feedbackType === 'negative' ? -0.05 : 0;
           const newSuccessRate = Math.min(1, Math.max(0, template.successRate + feedbackWeight));
           
-          await prisma.AIEmailTemplate.update({
+          await prisma.aIEmailTemplate.update({
             where: { id: template.id },
             data: { successRate: newSuccessRate }
           });

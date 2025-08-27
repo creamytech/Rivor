@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/lib/db-pool';
+import { getThreadWithMessages } from '@/server/email';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
@@ -17,7 +18,7 @@ const ANALYSIS_PROMPT = `You are an AI assistant specialized in analyzing real e
 
 Analyze the following email and provide a JSON response with:
 
-1. category: One of ['hot-lead', 'showing-request', 'price-inquiry', 'seller-lead', 'buyer-lead', 'follow-up', 'contract', 'marketing']
+1. category: One of ['hot_lead', 'showing_request', 'price_inquiry', 'seller_lead', 'buyer_lead', 'follow_up', 'contract', 'marketing']
 2. priorityScore: Integer 1-100 (100 = most urgent)
 3. leadScore: Integer 1-100 (100 = highest quality lead) 
 4. confidenceScore: Float 0-1 (confidence in analysis)
@@ -64,13 +65,31 @@ export async function POST(request: NextRequest) {
     }
     console.log('✅ User authenticated:', session.user.email);
 
-    const { emailId, threadId, fromName, fromEmail, subject, body } = await request.json();
-    console.log('📦 Request data:', { emailId, threadId, fromName, fromEmail, subject: subject?.substring(0, 50), bodyLength: body?.length });
+    const { emailId, threadId } = await request.json();
+    console.log('📦 Request data:', { emailId, threadId });
 
-    if (!emailId || !subject || !body) {
-      console.log('❌ Missing required fields:', { emailId: !!emailId, subject: !!subject, body: !!body });
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!emailId) {
+      console.log('❌ Missing required fields:', { emailId: !!emailId });
+      return NextResponse.json({ error: "Missing required field: emailId" }, { status: 400 });
     }
+
+    // Get the organization ID from session
+    const orgId = (session as { orgId?: string }).orgId;
+    if (!orgId) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
+    }
+
+    // Get thread with decrypted messages
+    const threadData = await getThreadWithMessages(orgId, threadId || emailId);
+    if (!threadData.thread || threadData.messages.length === 0) {
+      return NextResponse.json({ error: "Thread or message not found" }, { status: 404 });
+    }
+
+    // Find the specific message or use the latest one
+    const message = threadData.messages.find(m => m.id === emailId) || threadData.messages[threadData.messages.length - 1];
+    const { subject, body, from } = message;
+
+    console.log('📦 Decrypted email data:', { subject: subject?.substring(0, 50), bodyLength: body?.length, from });
 
     // Check for OpenAI API key
     if (!process.env.OPENAI_API_KEY) {
@@ -80,7 +99,7 @@ export async function POST(request: NextRequest) {
 
     // Check if analysis already exists
     console.log('🔍 Checking for existing analysis...');
-    const existingAnalysis = await prisma.EmailAIAnalysis.findUnique({
+    const existingAnalysis = await prisma.emailAIAnalysis.findUnique({
       where: { emailId }
     });
 
@@ -91,11 +110,15 @@ export async function POST(request: NextRequest) {
     console.log('💫 No existing analysis found, creating new one...');
 
     // Create analysis prompt
+    const fromParts = from.split(' ');
+    const fromEmail = fromParts[fromParts.length - 1].replace(/[<>]/g, '') || from;
+    const fromName = fromParts.slice(0, -1).join(' ') || fromEmail;
+    
     const prompt = ANALYSIS_PROMPT
       .replace('{fromName}', fromName || 'Unknown')
       .replace('{fromEmail}', fromEmail || 'Unknown') 
       .replace('{subject}', subject)
-      .replace('{body}', body);
+      .replace('{body}', body || '');
 
     // Call OpenAI for analysis
     console.log('🤖 Calling OpenAI API...');
@@ -150,11 +173,29 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate and save analysis to database
-    const analysis = await prisma.EmailAIAnalysis.create({
+    // Map category to match enum values
+    const categoryMap: { [key: string]: string } = {
+      'hot-lead': 'hot_lead',
+      'hot_lead': 'hot_lead',
+      'showing-request': 'showing_request', 
+      'showing_request': 'showing_request',
+      'price-inquiry': 'price_inquiry',
+      'price_inquiry': 'price_inquiry',
+      'seller-lead': 'seller_lead',
+      'seller_lead': 'seller_lead',
+      'buyer-lead': 'buyer_lead',
+      'buyer_lead': 'buyer_lead',
+      'follow-up': 'follow_up',
+      'follow_up': 'follow_up',
+      'contract': 'contract',
+      'marketing': 'marketing'
+    };
+
+    const analysis = await prisma.emailAIAnalysis.create({
       data: {
         emailId,
         threadId: threadId || emailId,
-        category: analysisResult.category || 'follow-up',
+        category: categoryMap[analysisResult.category] || 'follow_up',
         priorityScore: Math.min(100, Math.max(0, analysisResult.priorityScore || 50)),
         leadScore: Math.min(100, Math.max(0, analysisResult.leadScore || 50)),
         confidenceScore: Math.min(1, Math.max(0, analysisResult.confidenceScore || 0.5)),
@@ -165,8 +206,8 @@ export async function POST(request: NextRequest) {
     });
 
     // If high-priority email, queue for auto-reply generation
-    if (analysis.priorityScore >= 80 || analysis.category === 'hot-lead') {
-      await prisma.AIProcessingQueue.create({
+    if (analysis.priorityScore >= 80 || analysis.category === 'hot_lead') {
+      await prisma.aIProcessingQueue.create({
         data: {
           emailId,
           threadId: threadId || emailId,
@@ -203,14 +244,14 @@ export async function GET(request: NextRequest) {
 
     if (emailId) {
       // Get specific analysis
-      const analysis = await prisma.EmailAIAnalysis.findUnique({
+      const analysis = await prisma.emailAIAnalysis.findUnique({
         where: { emailId }
       });
       return NextResponse.json({ analysis });
     } else if (threadIds) {
       // Get analyses for specific threads
       const threadIdArray = threadIds.split(',').filter(id => id.trim());
-      const analyses = await prisma.EmailAIAnalysis.findMany({
+      const analyses = await prisma.emailAIAnalysis.findMany({
         where: { 
           threadId: { in: threadIdArray }
         },
@@ -219,7 +260,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ analyses });
     } else {
       // Get recent analyses
-      const analyses = await prisma.EmailAIAnalysis.findMany({
+      const analyses = await prisma.emailAIAnalysis.findMany({
         orderBy: { createdAt: 'desc' },
         take: 100
       });

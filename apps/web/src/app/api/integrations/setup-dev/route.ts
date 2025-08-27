@@ -13,7 +13,7 @@ export async function POST() {
   }
 
   // In development, use default values if no session
-  let session = await auth();
+  const session = await auth();
   let userEmail = 'dev@test.com';
   let userName = 'Dev User';
 

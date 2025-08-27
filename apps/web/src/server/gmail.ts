@@ -516,7 +516,7 @@ export class GmailService {
       // Extract body content
       let htmlBody = '';
       let textBody = '';
-      let attachments: Array<{filename: string, mimeType: string, size: number}> = [];
+      const attachments: Array<{filename: string, mimeType: string, size: number}> = [];
 
       if (message.payload.body?.data) {
         // Single part message
@@ -713,7 +713,7 @@ export class GmailService {
       // Extract body content
       let htmlBody = '';
       let textBody = '';
-      let attachments: Array<{filename: string, mimeType: string, size: number}> = [];
+      const attachments: Array<{filename: string, mimeType: string, size: number}> = [];
 
       if (message.payload.body?.data) {
         // Single part message
