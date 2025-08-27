@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -98,8 +98,13 @@ export function CategoryModal({
   threadId, 
   onCategoryChange 
 }: CategoryModalProps) {
-  const [selectedCategory, setSelectedCategory] = useState(currentCategory);
+  const [selectedCategory, setSelectedCategory] = useState(currentCategory || 'follow_up');
   const [loading, setLoading] = useState(false);
+
+  // Update selectedCategory when currentCategory changes
+  useEffect(() => {
+    setSelectedCategory(currentCategory || 'follow_up');
+  }, [currentCategory]);
 
   const handleSave = async () => {
     if (selectedCategory === currentCategory) {
@@ -139,19 +144,18 @@ export function CategoryModal({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="absolute inset-0 bg-black/50"
-        />
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-black/50"
+          />
         
         {/* Modal */}
         <motion.div
@@ -270,7 +274,8 @@ export function CategoryModal({
             </div>
           </div>
         </motion.div>
-      </div>
+        </div>
+      )}
     </AnimatePresence>
   );
 }

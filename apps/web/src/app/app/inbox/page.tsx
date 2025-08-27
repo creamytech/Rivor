@@ -980,13 +980,25 @@ export default function InboxPage() {
       // Update local state optimistically
       setThreads(prev => prev.map(t => 
         t.id === threadId 
-          ? { ...t, aiAnalysis: { ...t.aiAnalysis, category: newCategory } }
+          ? { 
+              ...t, 
+              aiAnalysis: { 
+                ...(t.aiAnalysis || {}), 
+                category: newCategory 
+              } 
+            }
           : t
       ));
 
       if (activeThread?.id === threadId) {
         setActiveThread(prev => prev 
-          ? { ...prev, aiAnalysis: { ...prev.aiAnalysis, category: newCategory } }
+          ? { 
+              ...prev, 
+              aiAnalysis: { 
+                ...(prev.aiAnalysis || {}), 
+                category: newCategory 
+              } 
+            }
           : null
         );
       }
