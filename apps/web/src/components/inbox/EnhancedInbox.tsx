@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { Mail, Star, Clock, AlertTriangle, CheckCircle, MoreHorizontal, Reply, ReplyAll, Forward, Archive, Trash2, Pin, Snooze, Tag, User, Building, Phone, MapPin, Calendar, MessageSquare, FileText, Eye, EyeOff, Filter, Search, ChevronRight, ChevronLeft, Send, Edit, Plus, Sparkles, Zap, Target, Briefcase, CheckSquare, Home, DollarSign, Users, Bot, Brain, TrendingUp, Bookmark, Bell, Palette, RefreshCw, Settings, X, Copy, ExternalLink, Timer, Calendar2, Clock3, CheckCircle2, XCircle, Lightbulb, MessageCircle, Paperclip, Flag, Gauge, ArrowRight, PlayCircle, PauseCircle, CalendarDays, UserPlus, FileCheck, HandHeart, Handshake, MapPinIcon, CreditCard, Calculator, Building2, Key, Wrench, Percent } from 'lucide-react';
+import { Mail, Star, Clock, AlertTriangle, CheckCircle, MoreHorizontal, Reply, ReplyAll, Forward, Archive, Trash2, Pin, Snooze, Tag, User, Building, Phone, MapPin, Calendar, MessageSquare, FileText, Eye, EyeOff, Filter, Search, ChevronRight, ChevronLeft, Send, Edit, Plus, Sparkles, Zap, Target, Briefcase, CheckSquare, Home, DollarSign, Users, Bot, Brain, TrendingUp, Bookmark, Bell, Palette, RefreshCw, Settings, X, Copy, ExternalLink, Timer, Calendar2, Clock3, CheckCircle2, XCircle, Lightbulb, MessageCircle, Paperclip, Flag, Gauge, ArrowRight, PlayCircle, PauseCircle, CalendarDays, UserPlus, FileCheck, HandHeart, Handshake, MapPinIcon, CreditCard, Calculator, Building2, Key, Wrench, Percent, Fire, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { CategoryModal } from './CategoryModal';
 
 interface EmailThread {
   id: string;
@@ -21,12 +22,23 @@ interface EmailThread {
   labels: string[];
   lastMessageAt: string;
   updatedAt: string;
-  // Real estate specific fields
+  // AI Analysis data
+  aiAnalysis?: {
+    category: string;
+    priorityScore: number;
+    leadScore: number;
+    confidenceScore: number;
+    sentimentScore: number;
+    keyEntities: any;
+    processingStatus: string;
+    analyzedAt: string;
+  };
+  // Real estate specific fields derived from AI analysis
   emailType?: 'buyer_inquiry' | 'seller_lead' | 'showing_request' | 'property_inquiry' | 'referral' | 'vendor' | 'follow_up' | 'market_update' | 'general';
   priority?: 'high' | 'medium' | 'low';
   propertyInfo?: {
     address?: string;
-    price?: number;
+    price?: number | string;
     propertyType?: string;
     mlsId?: string;
   };
@@ -136,6 +148,8 @@ export default function EnhancedInbox({ activeTab = 'all', searchQuery = '', sel
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [syncStatus, setSyncStatus] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [categoryModalThread, setCategoryModalThread] = useState<{ id: string; category: string } | null>(null);
 
   const fetchThreads = async () => {
     try {
@@ -440,6 +454,147 @@ export default function EnhancedInbox({ activeTab = 'all', searchQuery = '', sel
     }
   };
 
+  // AI Analysis Helper Functions
+  const getCategoryColor = (category: string) => {
+    const colors = {
+      'hot_lead': 'bg-red-100 text-red-800 border-red-300',
+      'showing_request': 'bg-blue-100 text-blue-800 border-blue-300',
+      'buyer_lead': 'bg-green-100 text-green-800 border-green-300',
+      'seller_lead': 'bg-purple-100 text-purple-800 border-purple-300',
+      'price_inquiry': 'bg-yellow-100 text-yellow-800 border-yellow-300',
+      'follow_up': 'bg-gray-100 text-gray-800 border-gray-300',
+      'contract': 'bg-indigo-100 text-indigo-800 border-indigo-300',
+      'marketing': 'bg-pink-100 text-pink-800 border-pink-300',
+    };
+    return colors[category as keyof typeof colors] || colors.follow_up;
+  };
+
+  const getCategoryIcon = (category: string) => {
+    const icons = {
+      'hot_lead': <Fire className="h-3 w-3 mr-1" />,
+      'showing_request': <Home className="h-3 w-3 mr-1" />,
+      'buyer_lead': <ShoppingCart className="h-3 w-3 mr-1" />,
+      'seller_lead': <DollarSign className="h-3 w-3 mr-1" />,
+      'price_inquiry': <Calculator className="h-3 w-3 mr-1" />,
+      'follow_up': <Clock className="h-3 w-3 mr-1" />,
+      'contract': <FileText className="h-3 w-3 mr-1" />,
+      'marketing': <Zap className="h-3 w-3 mr-1" />,
+    };
+    return icons[category as keyof typeof icons] || icons.follow_up;
+  };
+
+  const formatCategory = (category: string) => {
+    const labels = {
+      'hot_lead': 'Hot Lead',
+      'showing_request': 'Showing',
+      'buyer_lead': 'Buyer',
+      'seller_lead': 'Seller',
+      'price_inquiry': 'Pricing',
+      'follow_up': 'Follow Up',
+      'contract': 'Contract',
+      'marketing': 'Marketing',
+    };
+    return labels[category as keyof typeof labels] || 'General';
+  };
+
+  const getPriorityColor = (priority: string) => {
+    const colors = {
+      'high': 'border-red-300 text-red-700',
+      'medium': 'border-yellow-300 text-yellow-700',
+      'low': 'border-green-300 text-green-700',
+    };
+    return colors[priority as keyof typeof colors] || colors.medium;
+  };
+
+  const getPriorityIcon = (priority: string) => {
+    const icons = {
+      'high': <AlertTriangle className="h-3 w-3 mr-1" />,
+      'medium': <Clock className="h-3 w-3 mr-1" />,
+      'low': <CheckCircle className="h-3 w-3 mr-1" />,
+    };
+    return icons[priority as keyof typeof icons] || icons.medium;
+  };
+
+  // Handler Functions
+  const handleCategoryChange = async (threadId: string, currentCategory: string) => {
+    setCategoryModalThread({ id: threadId, category: currentCategory });
+    setCategoryModalOpen(true);
+  };
+
+  const handleCategoryUpdate = async (threadId: string, newCategory: string) => {
+    // Refresh threads to show updated category
+    await fetchThreads();
+  };
+
+  const handlePriorityChange = async (threadId: string, currentPriority: string) => {
+    const priorities = ['low', 'medium', 'high'];
+    const currentIndex = priorities.indexOf(currentPriority);
+    const nextPriority = priorities[(currentIndex + 1) % priorities.length];
+    
+    try {
+      const response = await fetch(`/api/inbox/threads/${threadId}/actions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_priority',
+          data: { priority: nextPriority }
+        })
+      });
+
+      if (response.ok) {
+        // Refresh threads to show updated priority
+        await fetchThreads();
+      } else {
+        console.error('Failed to update priority');
+      }
+    } catch (error) {
+      console.error('Error updating priority:', error);
+    }
+  };
+
+  const handleAddToPipeline = async (thread: EmailThread) => {
+    try {
+      // Extract contact info from thread
+      const contactInfo = {
+        contactName: thread.participants[0]?.name || 'Unknown Contact',
+        contactEmail: thread.participants[0]?.email || '',
+        propertyAddress: thread.propertyInfo?.address || '',
+        propertyType: thread.propertyInfo?.propertyType || '',
+        budget: thread.propertyInfo?.price || '',
+        timeline: thread.extractedData?.timeline || '',
+        notes: `Email thread: ${thread.subject}\nAI Analysis: ${thread.aiAnalysis?.category} (${thread.aiAnalysis?.leadScore}% lead score)`
+      };
+
+      const response = await fetch(`/api/inbox/threads/${thread.id}/actions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'add_to_pipeline',
+          data: contactInfo
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        // Show success message
+        alert(`Successfully added ${contactInfo.contactName} to pipeline!`);
+        
+        // Refresh threads to show updated state
+        await fetchThreads();
+      } else {
+        if (response.status === 409) {
+          alert('This contact is already in your pipeline!');
+        } else {
+          alert(`Failed to add to pipeline: ${result.error}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error adding to pipeline:', error);
+      alert('Failed to add to pipeline. Please try again.');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -573,21 +728,89 @@ export default function EnhancedInbox({ activeTab = 'all', searchQuery = '', sel
                         )}
                       </div>
 
-                      {/* Labels */}
-                      {thread.labels.length > 0 && (
-                        <div className="flex items-center gap-1 mt-2">
-                          {thread.labels.slice(0, 2).map((label) => (
-                            <Badge key={label} variant="secondary" className="text-xs">
-                              {label}
+                      {/* AI Analysis Badges */}
+                      <div className="flex items-center gap-1 mt-2 flex-wrap">
+                        {thread.aiAnalysis && (
+                          <>
+                            {/* Category Badge */}
+                            <Badge 
+                              variant="default"
+                              className={cn(
+                                "text-xs cursor-pointer hover:opacity-80",
+                                getCategoryColor(thread.aiAnalysis.category)
+                              )}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCategoryChange(thread.id, thread.aiAnalysis?.category || 'follow_up');
+                              }}
+                            >
+                              {getCategoryIcon(thread.aiAnalysis.category)}
+                              {formatCategory(thread.aiAnalysis.category)}
                             </Badge>
-                          ))}
-                          {thread.labels.length > 2 && (
-                            <Badge variant="secondary" className="text-xs">
-                              +{thread.labels.length - 2}
+
+                            {/* Priority Badge */}
+                            <Badge 
+                              variant="outline"
+                              className={cn(
+                                "text-xs cursor-pointer hover:opacity-80",
+                                getPriorityColor(thread.priority)
+                              )}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePriorityChange(thread.id, thread.priority);
+                              }}
+                            >
+                              {getPriorityIcon(thread.priority)}
+                              {thread.priority?.toUpperCase()}
                             </Badge>
-                          )}
-                        </div>
-                      )}
+
+                            {/* Lead Score Badge */}
+                            {thread.aiAnalysis.leadScore > 60 && (
+                              <Badge variant="secondary" className="text-xs">
+                                <Target className="h-3 w-3 mr-1" />
+                                {thread.aiAnalysis.leadScore}% Lead
+                              </Badge>
+                            )}
+
+                            {/* Sentiment Badge */}
+                            {thread.sentiment && thread.sentiment !== 'neutral' && (
+                              <Badge 
+                                variant="outline" 
+                                className={cn(
+                                  "text-xs",
+                                  thread.sentiment === 'positive' ? 'text-green-600 border-green-300' : 'text-red-600 border-red-300'
+                                )}
+                              >
+                                {thread.sentiment === 'positive' ? '😊' : '😕'}
+                                {thread.sentiment}
+                              </Badge>
+                            )}
+                          </>
+                        )}
+
+                        {/* Add to Pipeline Button */}
+                        {thread.aiAnalysis && ['hot_lead', 'buyer_lead', 'seller_lead', 'showing_request'].includes(thread.aiAnalysis.category) && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 text-xs px-2 ml-auto"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddToPipeline(thread);
+                            }}
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Pipeline
+                          </Button>
+                        )}
+
+                        {/* Original Labels */}
+                        {thread.labels.length > 0 && thread.labels.slice(0, 1).map((label) => (
+                          <Badge key={label} variant="secondary" className="text-xs">
+                            {label}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
 
                     {/* Actions */}
@@ -846,6 +1069,18 @@ export default function EnhancedInbox({ activeTab = 'all', searchQuery = '', sel
           </div>
         </div>
       )}
+
+      {/* Category Modal */}
+      <CategoryModal
+        isOpen={categoryModalOpen}
+        onClose={() => {
+          setCategoryModalOpen(false);
+          setCategoryModalThread(null);
+        }}
+        currentCategory={categoryModalThread?.category || 'follow_up'}
+        threadId={categoryModalThread?.id || ''}
+        onCategoryChange={handleCategoryUpdate}
+      />
     </div>
   );
 }

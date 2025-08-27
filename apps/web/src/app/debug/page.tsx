@@ -251,6 +251,33 @@ ${JSON.stringify(result.data, null, 2)}
           description: "Quick health check of all workflow services",
           endpoint: "/api/debug/test-workflow",
           method: "GET"
+        },
+        {
+          name: "Test Badge Persistence",
+          description: "Test AI analysis badge persistence and updates",
+          endpoint: "/api/debug/test-badges",
+          method: "POST",
+          body: { action: "check_threads_api" }
+        },
+        {
+          name: "Test Badge Updates",
+          description: "Test priority and category badge updates",
+          endpoint: "/api/debug/test-badges",
+          method: "POST",
+          body: { action: "test_badge_updates" }
+        },
+        {
+          name: "Test Pipeline Integration",
+          description: "Test Add to Pipeline functionality",
+          endpoint: "/api/debug/test-badges",
+          method: "POST",
+          body: { action: "test_pipeline" }
+        },
+        {
+          name: "Badge System Status",
+          description: "Check overall badge system health and statistics",
+          endpoint: "/api/debug/test-badges",
+          method: "GET"
         }
       ]
     },
@@ -487,6 +514,17 @@ ${JSON.stringify(result.data, null, 2)}
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Health Check
+              </Button>
+              <Button
+                onClick={() => {
+                  executeDebug("/api/debug/test-badges", "POST", "Test badge persistence", { action: "check_threads_api" });
+                  setTimeout(() => executeDebug("/api/debug/test-badges", "GET", "Badge system status"), 1000);
+                }}
+                variant="outline"
+                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+              >
+                <Badge className="h-4 w-4 mr-2" />
+                Test Badges
               </Button>
             </div>
           </CardContent>

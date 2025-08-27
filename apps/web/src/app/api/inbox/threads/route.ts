@@ -113,6 +113,7 @@ export async function GET(req: NextRequest) {
       const latestMessage = await prisma.emailMessage.findFirst({
         where: { threadId: thread.id },
         select: {
+          id: true,
           subjectEnc: true,
           fromEnc: true,
           toEnc: true,
@@ -122,6 +123,24 @@ export async function GET(req: NextRequest) {
         },
         orderBy: { sentAt: 'desc' }
       });
+
+      // Get AI analysis for the latest message if it exists
+      let aiAnalysis = null;
+      if (latestMessage?.id) {
+        aiAnalysis = await prisma.emailAIAnalysis.findUnique({
+          where: { emailId: latestMessage.id },
+          select: {
+            category: true,
+            priorityScore: true,
+            leadScore: true,
+            confidenceScore: true,
+            sentimentScore: true,
+            keyEntities: true,
+            processingStatus: true,
+            createdAt: true
+          }
+        });
+      }
 
       // Decrypt sensitive data for display
       let participants: Array<{ name: string; email: string }> = [];
@@ -209,7 +228,36 @@ export async function GET(req: NextRequest) {
         hasAttachments: false, // Not implemented yet
         labels: thread.labels || [],
         lastMessageAt: thread.latest_message_date?.toISOString() || thread.updatedAt.toISOString(),
-        updatedAt: thread.updatedAt.toISOString()
+        updatedAt: thread.updatedAt.toISOString(),
+        // AI Analysis data
+        aiAnalysis: aiAnalysis ? {
+          category: aiAnalysis.category,
+          priorityScore: aiAnalysis.priorityScore,
+          leadScore: aiAnalysis.leadScore,
+          confidenceScore: aiAnalysis.confidenceScore,
+          sentimentScore: aiAnalysis.sentimentScore,
+          keyEntities: aiAnalysis.keyEntities,
+          processingStatus: aiAnalysis.processingStatus,
+          analyzedAt: aiAnalysis.createdAt.toISOString()
+        } : null,
+        // Real estate specific fields derived from AI analysis
+        emailType: aiAnalysis?.category || 'general',
+        priority: aiAnalysis?.priorityScore >= 80 ? 'high' : aiAnalysis?.priorityScore >= 60 ? 'medium' : 'low',
+        leadScore: aiAnalysis?.leadScore || 0,
+        requiresFollowUp: aiAnalysis?.priorityScore >= 70 || ['hot_lead', 'showing_request', 'seller_lead', 'buyer_lead'].includes(aiAnalysis?.category || ''),
+        sentiment: aiAnalysis?.sentimentScore >= 0.7 ? 'positive' : aiAnalysis?.sentimentScore <= 0.3 ? 'negative' : 'neutral',
+        urgency: aiAnalysis?.priorityScore ? Math.ceil(aiAnalysis.priorityScore / 10) : 1,
+        propertyInfo: aiAnalysis?.keyEntities ? {
+          address: aiAnalysis.keyEntities.addresses?.[0],
+          price: aiAnalysis.keyEntities.priceRange,
+          propertyType: aiAnalysis.keyEntities.propertyType,
+        } : undefined,
+        extractedData: aiAnalysis?.keyEntities ? {
+          budget: aiAnalysis.keyEntities.priceRange ? { min: 0, max: 0 } : undefined,
+          preferredLocations: aiAnalysis.keyEntities.addresses || [],
+          propertyTypes: aiAnalysis.keyEntities.propertyType ? [aiAnalysis.keyEntities.propertyType] : [],
+          timeline: aiAnalysis.keyEntities.timeframes?.[0],
+        } : undefined
       };
     }));
 
