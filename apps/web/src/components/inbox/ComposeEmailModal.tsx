@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Send, Plus, X, Bot, Sparkles, Calendar, Building2, FileText, Target, Clock, Zap, Palette, Copy, RefreshCw, Paperclip } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/river/RiverToast';
+import { internalFetch } from '@/lib/internal-url';
 
 interface ComposeEmailModalProps {
   trigger?: React.ReactNode;
@@ -90,7 +91,7 @@ export default function ComposeEmailModal({
     setLoading(true);
 
     try {
-      const response = await fetch('/api/inbox/compose', {
+      const response = await internalFetch('/api/inbox/compose', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

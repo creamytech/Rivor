@@ -27,9 +27,17 @@ export async function internalFetch(endpoint: string, options: RequestInit = {})
     // Ensure the endpoint starts with / for relative URLs
     const relativeEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     
-    // Double-check that we're not accidentally using an external URL
-    if (relativeEndpoint.includes('://') || relativeEndpoint.includes('http')) {
-      console.error('❌ External URL detected in API call, blocking:', relativeEndpoint);
+    // Enhanced validation to catch tracking URLs and external domains
+    if (relativeEndpoint.includes('://') || 
+        relativeEndpoint.includes('http') || 
+        relativeEndpoint.includes('trk.') ||
+        relativeEndpoint.includes('.com/') ||
+        relativeEndpoint.includes('promotions.') ||
+        relativeEndpoint.includes('tracking.') ||
+        relativeEndpoint.length > 200) {
+      console.error('❌ BLOCKED: External/tracking URL detected in API call:', relativeEndpoint);
+      console.error('❌ Original endpoint:', endpoint);
+      console.error('❌ Call stack:', new Error().stack);
       throw new Error(`External URL blocked: ${relativeEndpoint}`);
     }
     

@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { internalFetch } from "@/lib/internal-url";
 
 interface MobileInboxProps {
   className?: string;
@@ -147,7 +148,7 @@ export default function MobileInbox({ className }: MobileInboxProps) {
       
       // Call new consolidated thread action API for Gmail sync
       const action = newStarred ? 'star' : 'unstar';
-      await fetch(`/api/inbox/threads/${emailId}/${action}`, { method: 'PATCH' });
+      await internalFetch(`/api/inbox/threads/${emailId}/${action}`, { method: 'PATCH' });
     } catch (error) {
       console.error('Error toggling star:', error);
       // Could add toast notification or error handling here
@@ -162,7 +163,7 @@ export default function MobileInbox({ className }: MobileInboxProps) {
       ));
       
       // Call new consolidated thread action API for Gmail sync
-      await fetch(`/api/inbox/threads/${emailId}/read`, { method: 'PATCH' });
+      await internalFetch(`/api/inbox/threads/${emailId}/read`, { method: 'PATCH' });
     } catch (error) {
       console.error('Error marking as read:', error);
       // Could add toast notification or error handling here

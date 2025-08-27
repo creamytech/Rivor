@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Mail, Star, Clock, AlertTriangle, CheckCircle, MoreHorizontal, Reply, ReplyAll, Forward, Archive, Trash2, Pin, Snooze, Tag, User, Building, Phone, MapPin, Calendar, MessageSquare, FileText, Eye, EyeOff, Filter, Search, ChevronRight, ChevronLeft, Send, Edit, Plus, Sparkles, Zap, Target, Briefcase, CheckSquare, Home, DollarSign, Users, Bot, Brain, TrendingUp, Bookmark, Bell, Palette, RefreshCw, Settings, X, Copy, ExternalLink, Timer, Calendar2, Clock3, CheckCircle2, XCircle, Lightbulb, MessageCircle, Paperclip, Flag, Gauge, ArrowRight, PlayCircle, PauseCircle, CalendarDays, UserPlus, FileCheck, HandHeart, Handshake, MapPinIcon, CreditCard, Calculator, Building2, Key, Wrench, Percent, Fire, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CategoryModal } from './CategoryModal';
+import { internalFetch } from '@/lib/internal-url';
 
 interface EmailThread {
   id: string;
@@ -158,7 +159,7 @@ export default function EnhancedInbox({ activeTab = 'all', searchQuery = '', sel
       if (searchQuery) params.append('search', searchQuery);
       if (selectedFilter) params.append('filter', selectedFilter);
       
-      const response = await fetch(`/api/inbox/threads?${params.toString()}`);
+      const response = await internalFetch(`/api/inbox/threads?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
         setThreads(data.threads || []);
@@ -176,7 +177,7 @@ export default function EnhancedInbox({ activeTab = 'all', searchQuery = '', sel
 
   const checkSyncStatus = async () => {
     try {
-      const response = await fetch('/api/sync/auto');
+      const response = await internalFetch('/api/sync/auto');
       if (response.ok) {
         const data = await response.json();
         setSyncStatus(data);
@@ -237,7 +238,7 @@ export default function EnhancedInbox({ activeTab = 'all', searchQuery = '', sel
       const fetchContact = async () => {
         try {
           const participant = selectedThread.participants[0];
-          const response = await fetch(`/api/contacts?search=${participant.email}`);
+          const response = await internalFetch(`/api/contacts?search=${participant.email}`);
           if (response.ok) {
             const data = await response.json();
             if (data.contacts && data.contacts.length > 0) {
@@ -532,7 +533,7 @@ export default function EnhancedInbox({ activeTab = 'all', searchQuery = '', sel
     const nextPriority = priorities[(currentIndex + 1) % priorities.length];
     
     try {
-      const response = await fetch(`/api/inbox/threads/${threadId}/actions`, {
+      const response = await internalFetch(`/api/inbox/threads/${threadId}/actions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -565,7 +566,7 @@ export default function EnhancedInbox({ activeTab = 'all', searchQuery = '', sel
         notes: `Email thread: ${thread.subject}\nAI Analysis: ${thread.aiAnalysis?.category} (${thread.aiAnalysis?.leadScore}% lead score)`
       };
 
-      const response = await fetch(`/api/inbox/threads/${thread.id}/actions`, {
+      const response = await internalFetch(`/api/inbox/threads/${thread.id}/actions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

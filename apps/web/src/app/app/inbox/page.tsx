@@ -387,13 +387,24 @@ export default function InboxPage() {
     }
   };
 
-  // Validate thread ID helper
+  // Enhanced thread ID validation helper
   const validateThreadId = (threadId: string, functionName: string): boolean => {
-    if (!threadId || typeof threadId !== 'string' || threadId.includes('http') || threadId.includes('://') || threadId.length > 50) {
-      console.error(`❌ Invalid thread ID in ${functionName}:`, threadId);
+    if (!threadId || typeof threadId !== 'string' || 
+        threadId.includes('http') || 
+        threadId.includes('://') || 
+        threadId.includes('trk.') ||
+        threadId.includes('.com') ||
+        threadId.includes('promotions.') ||
+        threadId.includes('tracking.') ||
+        threadId.length > 50 ||
+        threadId.includes('wf/open') ||
+        threadId.includes('upn=')) {
+      console.error(`❌ BLOCKED: Invalid/external thread ID in ${functionName}:`, threadId);
+      console.error(`❌ Thread ID length: ${threadId?.length}`);
+      console.error(`❌ Call stack:`, new Error().stack);
       toast({
-        title: "Error",
-        description: `Invalid thread ID detected in ${functionName}`,
+        title: "Security Error",
+        description: `External URL detected as thread ID in ${functionName} - blocked for security`,
         variant: "destructive"
       });
       return false;
@@ -588,13 +599,30 @@ export default function InboxPage() {
       // Use the latest message for analysis
       const latestMessage = threadData.messages[threadData.messages.length - 1];
       
-      // Extract text content from HTML if available
+      // Extract text content from HTML if available, with image detection
       const extractTextFromHtml = (html: string) => {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
         const styleElements = tempDiv.querySelectorAll('style, script');
         styleElements.forEach(el => el.remove());
-        return tempDiv.textContent || tempDiv.innerText || '';
+        
+        // Check if HTML contains images
+        const images = tempDiv.querySelectorAll('img');
+        const hasImages = images.length > 0;
+        
+        // If no images, default to text-only content
+        if (!hasImages) {
+          return tempDiv.textContent || tempDiv.innerText || '';
+        }
+        
+        // If has images, preserve some basic HTML structure but clean it
+        const cleanHtml = tempDiv.innerHTML
+          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+          .replace(/onclick\s*=\s*["'][^"']*["']/gi, '')
+          .replace(/javascript:/gi, '');
+        
+        return cleanHtml;
       };
       
       const emailContent = latestMessage.htmlBody 
@@ -715,13 +743,30 @@ export default function InboxPage() {
       // Use the latest message for reply generation
       const latestMessage = threadData.messages[threadData.messages.length - 1];
       
-      // Extract text content from HTML if available
+      // Extract text content from HTML if available, with image detection
       const extractTextFromHtml = (html: string) => {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
         const styleElements = tempDiv.querySelectorAll('style, script');
         styleElements.forEach(el => el.remove());
-        return tempDiv.textContent || tempDiv.innerText || '';
+        
+        // Check if HTML contains images
+        const images = tempDiv.querySelectorAll('img');
+        const hasImages = images.length > 0;
+        
+        // If no images, default to text-only content
+        if (!hasImages) {
+          return tempDiv.textContent || tempDiv.innerText || '';
+        }
+        
+        // If has images, preserve some basic HTML structure but clean it
+        const cleanHtml = tempDiv.innerHTML
+          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+          .replace(/onclick\s*=\s*["'][^"']*["']/gi, '')
+          .replace(/javascript:/gi, '');
+        
+        return cleanHtml;
       };
       
       const emailContent = latestMessage.htmlBody 
@@ -877,8 +922,8 @@ export default function InboxPage() {
   };
 
   // Handle category badge click to open modal
-  const handleCategoryBadgeClick = (thread: EmailThread, event: React.MouseEvent) => {
-    event.stopPropagation();
+  const handleCategoryBadgeClick = (thread: EmailThread, event?: React.MouseEvent) => {
+    event?.stopPropagation?.();
     setSelectedThreadForCategory(thread);
     setShowCategoryModal(true);
   };
@@ -917,8 +962,8 @@ export default function InboxPage() {
   };
 
   // Handle add to pipeline
-  const handleAddToPipeline = (thread: EmailThread, event: React.MouseEvent) => {
-    event.stopPropagation();
+  const handleAddToPipeline = (thread: EmailThread, event?: React.MouseEvent) => {
+    event?.stopPropagation?.();
     setSelectedThreadForPipeline(thread);
     setShowPipelineModal(true);
   };
@@ -1616,7 +1661,7 @@ export default function InboxPage() {
                           <Button 
                             variant="outline" 
                             size="sm"
-                            onClick={() => handleCategoryBadgeClick(activeThread, {} as React.MouseEvent)}
+                            onClick={() => handleCategoryBadgeClick(activeThread)}
                           >
                             <Edit className="h-4 w-4 mr-1" />
                             Category
@@ -1626,7 +1671,7 @@ export default function InboxPage() {
                           <Button 
                             variant="outline" 
                             size="sm"
-                            onClick={() => handleAddToPipeline(activeThread, {} as React.MouseEvent)}
+                            onClick={() => handleAddToPipeline(activeThread)}
                           >
                             <Users className="h-4 w-4 mr-1" />
                             Pipeline

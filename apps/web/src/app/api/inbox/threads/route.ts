@@ -287,10 +287,45 @@ export async function GET(req: NextRequest) {
           participant.email?.toLowerCase().includes(searchTerm)
         );
         
-        // Search in AI analysis summary if available
-        const summaryMatch = thread.aiAnalysis?.keyEntities?.summary?.toLowerCase().includes(searchTerm);
+        // Enhanced AI analysis search
+        let aiMatch = false;
+        if (thread.aiAnalysis) {
+          const analysis = thread.aiAnalysis;
+          
+          // Search in summary
+          const summaryMatch = analysis.keyEntities?.summary?.toLowerCase().includes(searchTerm);
+          
+          // Search in category (convert underscore to space and check both formats)
+          const categoryText = analysis.category?.replace('_', ' ') || '';
+          const categoryMatch = categoryText.toLowerCase().includes(searchTerm) ||
+                               analysis.category?.toLowerCase().includes(searchTerm);
+          
+          // Search in urgency level
+          const urgencyMatch = analysis.urgency?.toLowerCase().includes(searchTerm);
+          
+          // Search in key entities
+          const entitiesMatch = analysis.keyEntities ? (
+            analysis.keyEntities.people?.some((person: string) => person.toLowerCase().includes(searchTerm)) ||
+            analysis.keyEntities.properties?.some((property: string) => property.toLowerCase().includes(searchTerm)) ||
+            analysis.keyEntities.amounts?.some((amount: string) => amount.toLowerCase().includes(searchTerm)) ||
+            analysis.keyEntities.dates?.some((date: string) => date.toLowerCase().includes(searchTerm))
+          ) : false;
+          
+          // Smart search for common real estate terms
+          const isRealEstateSearch = /showing|property|house|home|listing|tour|viewing|appointment|visit/i.test(searchTerm);
+          const isLeadSearch = /lead|hot|buyer|seller|client|prospect/i.test(searchTerm);
+          const isPriceSearch = /price|cost|value|budget|offer|deal/i.test(searchTerm);
+          
+          let smartMatch = false;
+          if (isRealEstateSearch && analysis.category === 'showing_request') smartMatch = true;
+          if (isLeadSearch && ['hot_lead', 'buyer_lead', 'seller_lead'].includes(analysis.category || '')) smartMatch = true;
+          if (isPriceSearch && analysis.category === 'price_inquiry') smartMatch = true;
+          
+          aiMatch = summaryMatch || categoryMatch || urgencyMatch || entitiesMatch || smartMatch;
+        }
         
-        return subjectMatch || participantMatch || summaryMatch;
+        const matches = subjectMatch || participantMatch || aiMatch;
+        return matches;
       });
       
       console.log(`🔍 Search results: ${filteredThreads.length}/${threadsFormatted.length} threads match "${searchTerm}"`);

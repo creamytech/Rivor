@@ -49,12 +49,14 @@ const SEARCH_CATEGORIES = [
 ];
 
 const AI_SUGGESTIONS = [
-  "Show me hot leads from this week",
-  "Find emails about property showings",
-  "Upcoming client meetings",
-  "Pipeline deals closing soon",
-  "Recent high-value leads",
-  "Unread emails from today"
+  "emails about property showings",
+  "hot leads from this week", 
+  "emails about pricing inquiries",
+  "showing request emails",
+  "buyer lead emails",
+  "seller lead emails",
+  "contract emails",
+  "follow up emails"
 ];
 
 export function SearchModal({ isOpen, onClose }: SearchModalProps) {
@@ -118,61 +120,82 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
     setLoading(true);
     try {
-      // Comprehensive search across all modules
       const searchPromises = [];
       
+      // Smart search logic: determine intent based on query content
+      const lowerQuery = query.toLowerCase();
+      const isEmailSpecific = /email|mail|message|inbox|thread|reply/.test(lowerQuery);
+      const isCalendarSpecific = /calendar|event|meeting|appointment|schedule/.test(lowerQuery);
+      const isPipelineSpecific = /pipeline|deal|client|sale|contract/.test(lowerQuery);
+      const isContactSpecific = /contact|person|people|phone|address/.test(lowerQuery);
+      
+      // If query mentions emails specifically, prioritize email search
+      if (isEmailSpecific && activeCategory === 'all') {
+        setActiveCategory('emails');
+      }
+      
       if (activeCategory === 'all' || activeCategory === 'contacts') {
-        searchPromises.push(
-          internalFetch(`/api/contacts?search=${encodeURIComponent(query)}&limit=5`)
-            .then(res => res.ok ? res.json() : { contacts: [] })
-            .then(data => data.contacts?.map((contact: any) => ({
-              id: `contact-${contact.id}`,
-              title: contact.name || contact.email,
-              subtitle: `${contact.email} • ${contact.phone || 'No phone'}`,
-              type: 'contact',
-              icon: 'User',
-              href: `/app/contacts?id=${contact.id}`,
-              metadata: contact,
-              relevanceScore: calculateRelevance(query, contact.name + ' ' + contact.email)
-            })) || [])
-        );
+        // Only search contacts if not email-specific or if contacts category is selected
+        if (!isEmailSpecific || activeCategory === 'contacts') {
+          searchPromises.push(
+            internalFetch(`/api/contacts?search=${encodeURIComponent(query)}&limit=5`)
+              .then(res => res.ok ? res.json() : { contacts: [] })
+              .then(data => data.contacts?.map((contact: any) => ({
+                id: `contact-${contact.id}`,
+                title: contact.name || contact.email,
+                subtitle: `${contact.email} • ${contact.phone || 'No phone'}`,
+                type: 'contact',
+                icon: 'User',
+                href: `/app/contacts?id=${contact.id}`,
+                metadata: contact,
+                relevanceScore: calculateRelevance(query, contact.name + ' ' + contact.email)
+              })) || [])
+              .catch(() => [])
+          );
+        }
       }
 
       if (activeCategory === 'all' || activeCategory === 'emails') {
         searchPromises.push(
-          internalFetch(`/api/inbox/threads?search=${encodeURIComponent(query)}&limit=5`)
+          internalFetch(`/api/inbox/threads?search=${encodeURIComponent(query)}&limit=10`)
             .then(res => res.ok ? res.json() : { threads: [] })
             .then(data => data.threads?.map((thread: any) => ({
               id: `email-${thread.id}`,
               title: thread.subject || 'No Subject',
-              subtitle: `From: ${thread.participants?.[0]?.name || thread.participants?.[0]?.email || 'Unknown'} • ${new Date(thread.lastMessageAt).toLocaleDateString()}`,
+              subtitle: `From: ${thread.participants?.[0]?.name || thread.participants?.[0]?.email || 'Unknown'} • ${new Date(thread.lastMessageAt).toLocaleDateString()}${thread.aiAnalysis?.category ? ` • ${thread.aiAnalysis.category.replace('_', ' ').toUpperCase()}` : ''}`,
               type: 'email',
               icon: 'Mail',
               href: `/app/inbox?thread=${thread.id}`,
               metadata: thread,
-              relevanceScore: calculateRelevance(query, thread.subject + ' ' + thread.participants?.[0]?.name)
+              relevanceScore: calculateEmailRelevance(query, thread)
             })) || [])
+            .catch(() => [])
         );
       }
 
       if (activeCategory === 'all' || activeCategory === 'pipeline') {
-        searchPromises.push(
-          internalFetch(`/api/pipeline/deals?search=${encodeURIComponent(query)}&limit=5`)
-            .then(res => res.ok ? res.json() : { deals: [] })
-            .then(data => data.deals?.map((deal: any) => ({
-              id: `deal-${deal.id}`,
-              title: deal.title || deal.clientName,
-              subtitle: `${deal.value ? `$${deal.value.toLocaleString()}` : ''} • ${deal.stage || 'Unknown stage'}`,
-              type: 'pipeline',
-              icon: 'TrendingUp',
-              href: `/app/pipeline?deal=${deal.id}`,
-              metadata: deal,
-              relevanceScore: calculateRelevance(query, deal.title + ' ' + deal.clientName)
-            })) || [])
-        );
+        // Only search pipeline if not email-specific or if pipeline category is selected
+        if (!isEmailSpecific || activeCategory === 'pipeline') {
+          searchPromises.push(
+            internalFetch(`/api/pipeline/deals?search=${encodeURIComponent(query)}&limit=5`)
+              .then(res => res.ok ? res.json() : { deals: [] })
+              .then(data => data.deals?.map((deal: any) => ({
+                id: `deal-${deal.id}`,
+                title: deal.title || deal.clientName,
+                subtitle: `${deal.value ? `$${deal.value.toLocaleString()}` : ''} • ${deal.stage || 'Unknown stage'}`,
+                type: 'pipeline',
+                icon: 'TrendingUp',
+                href: `/app/pipeline?deal=${deal.id}`,
+                metadata: deal,
+                relevanceScore: calculateRelevance(query, deal.title + ' ' + deal.clientName)
+              })) || [])
+              .catch(() => [])
+          );
+        }
       }
 
-      if (activeCategory === 'all' || activeCategory === 'calendar') {
+      // Only search calendar if specifically requested or if calendar category is selected
+      if ((activeCategory === 'calendar') || (activeCategory === 'all' && isCalendarSpecific)) {
         searchPromises.push(
           internalFetch(`/api/calendar/events?search=${encodeURIComponent(query)}&limit=5`)
             .then(res => res.ok ? res.json() : { events: [] })
@@ -186,13 +209,14 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
               metadata: event,
               relevanceScore: calculateRelevance(query, event.title + ' ' + event.description)
             })) || [])
+            .catch(() => [])
         );
       }
 
       const results = await Promise.all(searchPromises);
       const allResults = results.flat().sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
       
-      setSearchResults(allResults.slice(0, 20)); // Limit to top 20 results
+      setSearchResults(allResults.slice(0, 20));
     } catch (error) {
       console.error('Search failed:', error);
       setSearchResults([]);
@@ -225,6 +249,72 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     });
     
     return Math.min(score, 90);
+  };
+
+  const calculateEmailRelevance = (query: string, thread: any): number => {
+    const lowerQuery = query.toLowerCase();
+    let score = 0;
+    
+    // Subject line match (high priority)
+    if (thread.subject && thread.subject.toLowerCase().includes(lowerQuery)) {
+      score += thread.subject.toLowerCase().indexOf(lowerQuery) === 0 ? 100 : 80;
+    }
+    
+    // AI category match (very high priority for specific searches)
+    if (thread.aiAnalysis?.category) {
+      const categoryText = thread.aiAnalysis.category.replace('_', ' ');
+      if (categoryText.toLowerCase().includes(lowerQuery)) {
+        score += 90;
+      }
+      
+      // Smart matching for real estate terms
+      if (/showing|property|house|home|listing|tour|viewing/i.test(lowerQuery) && 
+          thread.aiAnalysis.category === 'showing_request') {
+        score += 95;
+      }
+      if (/lead|hot|buyer|seller|prospect/i.test(lowerQuery) && 
+          ['hot_lead', 'buyer_lead', 'seller_lead'].includes(thread.aiAnalysis.category)) {
+        score += 95;
+      }
+      if (/price|cost|value|budget|offer/i.test(lowerQuery) && 
+          thread.aiAnalysis.category === 'price_inquiry') {
+        score += 95;
+      }
+    }
+    
+    // AI analysis summary match
+    if (thread.aiAnalysis?.keyEntities?.summary && 
+        thread.aiAnalysis.keyEntities.summary.toLowerCase().includes(lowerQuery)) {
+      score += 70;
+    }
+    
+    // Participant match
+    if (thread.participants) {
+      thread.participants.forEach((participant: any) => {
+        if (participant.name && participant.name.toLowerCase().includes(lowerQuery)) {
+          score += 60;
+        }
+        if (participant.email && participant.email.toLowerCase().includes(lowerQuery)) {
+          score += 50;
+        }
+      });
+    }
+    
+    // AI entities match
+    if (thread.aiAnalysis?.keyEntities) {
+      const entities = thread.aiAnalysis.keyEntities;
+      ['people', 'properties', 'amounts', 'dates'].forEach(entityType => {
+        if (entities[entityType] && Array.isArray(entities[entityType])) {
+          entities[entityType].forEach((entity: string) => {
+            if (entity.toLowerCase().includes(lowerQuery)) {
+              score += 40;
+            }
+          });
+        }
+      });
+    }
+    
+    return Math.min(score, 100);
   };
 
   const saveRecentSearch = (query: string) => {

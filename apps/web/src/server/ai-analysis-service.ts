@@ -7,29 +7,44 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Helper function to strip HTML tags and clean text
+// Helper function to process HTML content with image detection
 function stripHtml(html: string): string {
   if (!html) return '';
   
-  // Remove HTML tags
-  let text = html.replace(/<[^>]*>/g, ' ');
+  // Check if HTML contains images using regex (server-side compatible)
+  const imageRegex = /<img[^>]*>/gi;
+  const hasImages = imageRegex.test(html);
   
-  // Decode common HTML entities
-  text = text
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'");
-  
-  // Clean up whitespace
-  text = text
-    .replace(/\s+/g, ' ')
-    .trim();
+  // If no images, strip all HTML and return text-only
+  if (!hasImages) {
+    let text = html.replace(/<[^>]*>/g, ' ');
     
-  return text;
+    // Decode common HTML entities
+    text = text
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'");
+    
+    // Clean up whitespace
+    text = text
+      .replace(/\s+/g, ' ')
+      .trim();
+      
+    return text;
+  }
+  
+  // If has images, preserve some HTML structure but clean it
+  let cleanHtml = html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/onclick\s*=\s*["'][^"']*["']/gi, '')
+    .replace(/javascript:/gi, '');
+  
+  return cleanHtml;
 }
 
 // Helper function to truncate content to stay within token limits
