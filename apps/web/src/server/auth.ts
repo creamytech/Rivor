@@ -66,10 +66,13 @@ export const authOptions: NextAuthOptions = {
       
       if (user.email && account) {
         try {
+          console.log('🔗 Importing onboarding function...');
           // Import onboarding function
           const { handleOAuthCallback } = await import("./onboarding");
+          console.log('🔗 Onboarding function imported successfully');
           
           // Trigger onboarding to create org and email accounts
+          console.log('🔗 Starting handleOAuthCallback...');
           const onboardingResult = await handleOAuthCallback({
             userId: user.id,
             userEmail: user.email,
