@@ -44,6 +44,7 @@ import { CategoryModal } from '@/components/inbox/CategoryModal';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { internalFetch } from '@/lib/internal-url';
 import { LeadScoreWidget } from '@/components/intelligence/LeadScoreWidget';
+import { DraftPanel } from '@/components/inbox/DraftPanel';
 
 // Types for real email data
 interface EmailThread {
@@ -118,6 +119,7 @@ export default function InboxPage() {
   const [selectedThreadForPipeline, setSelectedThreadForPipeline] = useState<EmailThread | null>(null);
   const [lastManualSync, setLastManualSync] = useState<Date | null>(null);
   const [syncCountdown, setSyncCountdown] = useState<number>(0);
+  const [activeTab, setActiveTab] = useState<'inbox' | 'drafts'>('inbox');
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 50,
@@ -1497,57 +1499,87 @@ export default function InboxPage() {
               </div>
             </div>
 
-            {/* Search and Filters */}
-            <div className="flex items-center gap-4">
-              <div className="relative flex-1 max-w-md">
-                <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${theme === 'black' ? 'text-white/40' : 'text-black/40'}`} />
-                <input
-                  type="text"
-                  placeholder="Search emails..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`w-full pl-10 pr-4 py-2 rounded-xl ${theme === 'black' ? 'bg-white/10 border-white/20 text-white placeholder-white/40' : 'bg-black/10 border-black/20 text-black placeholder-black/40'} focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                  style={{
-                    backdropFilter: 'blur(20px) saturate(1.3)',
-                    WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
-                  }}
-                />
-              </div>
-
+            {/* Tabs */}
+            <div className="flex items-center gap-4 mb-4">
               <div className="flex items-center gap-2">
                 {[
-                  { key: 'all', label: 'All', icon: Mail },
-                  { key: 'unread', label: 'Unread', icon: Circle },
-                  { key: 'starred', label: 'Starred', icon: Star },
-                ].map(filter => (
+                  { key: 'inbox', label: 'Inbox', icon: Mail, count: threads.filter(t => t.unread).length },
+                  { key: 'drafts', label: 'AI Drafts', icon: Bot, count: null },
+                ].map(tab => (
                   <Button
-                    key={filter.key}
-                    variant={activeFilter === filter.key ? "liquid" : "outline"}
+                    key={tab.key}
+                    variant={activeTab === tab.key ? "liquid" : "outline"}
                     size="sm"
-                    onClick={() => setActiveFilter(filter.key)}
-                    className="text-xs"
+                    onClick={() => setActiveTab(tab.key as 'inbox' | 'drafts')}
+                    className="text-xs relative"
                   >
-                    <filter.icon className="h-3 w-3 mr-1" />
-                    {filter.label}
+                    <tab.icon className="h-3 w-3 mr-1" />
+                    {tab.label}
+                    {tab.count !== null && tab.count > 0 && (
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">
+                        {tab.count > 9 ? '9+' : tab.count}
+                      </div>
+                    )}
                   </Button>
                 ))}
               </div>
             </div>
+
+            {/* Search and Filters - Only show for inbox tab */}
+            {activeTab === 'inbox' && (
+              <div className="flex items-center gap-4">
+                <div className="relative flex-1 max-w-md">
+                  <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${theme === 'black' ? 'text-white/40' : 'text-black/40'}`} />
+                  <input
+                    type="text"
+                    placeholder="Search emails..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className={`w-full pl-10 pr-4 py-2 rounded-xl ${theme === 'black' ? 'bg-white/10 border-white/20 text-white placeholder-white/40' : 'bg-black/10 border-black/20 text-black placeholder-black/40'} focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                    style={{
+                      backdropFilter: 'blur(20px) saturate(1.3)',
+                      WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
+                    }}
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {[
+                    { key: 'all', label: 'All', icon: Mail },
+                    { key: 'unread', label: 'Unread', icon: Circle },
+                    { key: 'starred', label: 'Starred', icon: Star },
+                  ].map(filter => (
+                    <Button
+                      key={filter.key}
+                      variant={activeFilter === filter.key ? "liquid" : "outline"}
+                      size="sm"
+                      onClick={() => setActiveFilter(filter.key)}
+                      className="text-xs"
+                    >
+                      <filter.icon className="h-3 w-3 mr-1" />
+                      {filter.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
 
           {/* Main Content */}
           <div className="flex-1 flex overflow-hidden">
-            {/* Thread List Panel - Made narrower */}
-            <motion.div 
-              className={`w-80 border-r ${theme === 'black' ? 'border-white/10' : 'border-black/10'} flex flex-col`}
-              style={{
-                background: theme === 'black' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.2)',
-                backdropFilter: 'blur(20px) saturate(1.3)',
-                WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
-              }}
-              initial={{ x: -100, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-            >
+            {activeTab === 'inbox' ? (
+              <>
+                {/* Thread List Panel - Made narrower */}
+                <motion.div 
+                  className={`w-80 border-r ${theme === 'black' ? 'border-white/10' : 'border-black/10'} flex flex-col`}
+                  style={{
+                    background: theme === 'black' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.2)',
+                    backdropFilter: 'blur(20px) saturate(1.3)',
+                    WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
+                  }}
+                  initial={{ x: -100, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                >
               <div className="flex-1 overflow-y-auto">
                 <AnimatePresence>
                   {loading ? (
@@ -1937,6 +1969,69 @@ export default function InboxPage() {
                 </div>
               )}
             </motion.div>
+              </>
+            ) : (
+              /* Drafts Tab */
+              <motion.div 
+                className="flex-1 flex"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                {/* Draft Panel */}
+                <motion.div 
+                  className={`w-96 border-r ${theme === 'black' ? 'border-white/10' : 'border-black/10'} flex flex-col`}
+                  style={{
+                    background: theme === 'black' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.2)',
+                    backdropFilter: 'blur(20px) saturate(1.3)',
+                    WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
+                  }}
+                  initial={{ x: -100, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                >
+                  <DraftPanel theme={theme} onDraftAction={(action, draftId) => {
+                    console.log('Draft action:', action, draftId);
+                    if (action === 'send') {
+                      // Refresh threads to show sent status
+                      fetchThreads(pagination.page, activeFilter, searchQuery, true);
+                    }
+                  }} />
+                </motion.div>
+
+                {/* Draft Detail/Info Panel */}
+                <motion.div 
+                  className="flex-1 flex flex-col"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center max-w-md">
+                      <Bot className={`h-16 w-16 ${theme === 'black' ? 'text-white/40' : 'text-black/40'} mx-auto mb-4`} />
+                      <h3 className={`text-xl font-medium ${theme === 'black' ? 'text-white/60' : 'text-black/60'} mb-2`}>
+                        AI Draft Center
+                      </h3>
+                      <p className={`${theme === 'black' ? 'text-white/40' : 'text-black/40'} mb-4`}>
+                        AI automatically creates drafts for high-priority emails like showing requests and hot leads. 
+                        Review, edit, and send drafts with one click.
+                      </p>
+                      <div className={`text-sm ${theme === 'black' ? 'text-white/60' : 'text-black/60'} space-y-2`}>
+                        <div className="flex items-center gap-2 justify-center">
+                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                          <span>Hot Lead: Auto-draft when lead score ≥ 70</span>
+                        </div>
+                        <div className="flex items-center gap-2 justify-center">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <span>Showing Request: Auto-draft for property inquiries</span>
+                        </div>
+                        <div className="flex items-center gap-2 justify-center">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span>Lead Follow-up: Personalized responses</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
           </div>
         </div>
       </AppShell>
