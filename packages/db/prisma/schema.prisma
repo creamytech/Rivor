@@ -222,7 +222,7 @@ model EmailThread {
 }
 
 model EmailMessage {
-  id                 String      @id @default(cuid())
+  id                 String             @id @default(cuid())
   threadId           String
   orgId              String
   messageId          String
@@ -238,10 +238,11 @@ model EmailMessage {
   textBodyEnc        Bytes?
   attachmentsMetaEnc Bytes?
   attachments        Json?
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
-  org                Org         @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  thread             EmailThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  org                Org                @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  thread             EmailThread        @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  suggestedReplies   AISuggestedReply[] @relation("EmailSuggestedReplies")
 
   @@unique([orgId, messageId])
 }
@@ -621,6 +622,7 @@ enum ReplyStatus {
   modified
   sent
   draft
+  declined
 }
 
 enum FeedbackType {
@@ -672,10 +674,13 @@ model AISuggestedReply {
   confidenceScore   Decimal        @default(0.00) @db.Decimal(3, 2)
   category          String         @db.VarChar(100)
   userModifications String?        @db.Text
+  metadata          Json?          // For storing additional data like auto-draft info
   sentAt            DateTime?
+  reviewedAt        DateTime?      // When the draft was reviewed/approved/declined
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   feedback          AIFeedback[]
+  email             EmailMessage   @relation("EmailSuggestedReplies", fields: [emailId], references: [id], onDelete: Cascade)
 
   @@index([emailId])
   @@index([status])

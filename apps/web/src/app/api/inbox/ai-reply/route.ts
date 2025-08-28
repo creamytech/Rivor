@@ -295,7 +295,7 @@ ${template ? `Use this template as inspiration but customize for the specific si
         emailId,
         threadId: actualThreadId,
         suggestedContent,
-        confidenceScore,
+        confidenceScore: confidenceScore, // Explicitly include confidenceScore
         category: `${analysis.category}-response`,
         status: 'pending'
       }

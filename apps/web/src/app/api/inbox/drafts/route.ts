@@ -38,7 +38,6 @@ export async function GET(request: NextRequest) {
             thread: {
               include: {
                 aiAnalysis: {
-                  where: { emailId: { equals: { email: { id: true } } } },
                   take: 1,
                   orderBy: { createdAt: 'desc' }
                 }
@@ -101,8 +100,8 @@ export async function GET(request: NextRequest) {
             sentAt: originalMessage?.sentAt || draft.email.sentAt,
             snippet: originalMessage?.body?.substring(0, 150) || ''
           },
-          // AI analysis info if available
-          analysis: draft.email.thread.aiAnalysis?.[0] || null
+          // AI analysis info if available (find the one matching this email)
+          analysis: draft.email.thread.aiAnalysis?.find(a => a.emailId === draft.emailId) || null
         };
       } catch (error) {
         logger.error('Error formatting draft', { 
