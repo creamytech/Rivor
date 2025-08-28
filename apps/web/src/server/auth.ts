@@ -7,6 +7,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === 'development',
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -23,22 +24,33 @@ export const authOptions: NextAuthOptions = {
   session: { 
     strategy: "database",
   },
+  // Allow account linking to fix OAuthAccountNotLinked errors after database reset
+  allowDangerousEmailAccountLinking: true,
   callbacks: {
+    async signIn({ user, account, profile }) {
+      // Allow all sign-ins to proceed, NextAuth will handle account linking
+      return true;
+    },
     async session({ session, user }) {
       if (session?.user?.email) {
-        // Get user's org ID and add to session
-        const userWithOrg = await prisma.user.findUnique({
-          where: { email: session.user.email },
-          include: {
-            orgMembers: {
-              include: { org: true }
+        try {
+          // Get user's org ID and add to session
+          const userWithOrg = await prisma.user.findUnique({
+            where: { email: session.user.email },
+            include: {
+              orgMembers: {
+                include: { org: true }
+              }
             }
+          });
+          
+          if (userWithOrg?.orgMembers[0]) {
+            (session as any).orgId = userWithOrg.orgMembers[0].orgId;
+            (session as any).orgName = userWithOrg.orgMembers[0].org.name;
           }
-        });
-        
-        if (userWithOrg?.orgMembers[0]) {
-          (session as any).orgId = userWithOrg.orgMembers[0].orgId;
-          (session as any).orgName = userWithOrg.orgMembers[0].org.name;
+        } catch (error) {
+          console.error('Error loading user org data:', error);
+          // Continue with session even if org loading fails
         }
       }
       return session;
