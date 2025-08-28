@@ -1449,12 +1449,10 @@ export default function InboxPage() {
         }));
         setLastThreadId(thread.id);
         
-        // If it's a completely new thread, reset the manual edit flag
-        if (!hasManuallyEditedName) {
-          setHasManuallyEditedName(false);
-        }
+        // Reset the manual edit flag only for truly new threads
+        setHasManuallyEditedName(false);
       }
-    }, [thread.id, thread.participants, thread.subject, lastThreadId, hasManuallyEditedName]);
+    }, [thread.id]);
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -2033,11 +2031,19 @@ export default function InboxPage() {
                           variant="outline" 
                           size="sm"
                           onClick={() => {
-                            toast({
-                              title: "Reply",
-                              description: "Manual reply functionality - opening AI reply for now",
-                            });
-                            generateAIReply(activeThread.id);
+                            if (activeThread) {
+                              const latestMessage = activeThread.messages?.[activeThread.messages.length - 1];
+                              if (latestMessage) {
+                                handleReply(activeThread.id, {
+                                  toEmail: latestMessage.from?.email,
+                                  toName: latestMessage.from?.name,
+                                  subject: latestMessage.subject,
+                                  originalBody: latestMessage.htmlBody || latestMessage.textBody,
+                                  originalDate: latestMessage.sentAt,
+                                  originalFrom: latestMessage.from?.name || latestMessage.from?.email
+                                });
+                              }
+                            }
                           }}
                         >
                           <Reply className="h-4 w-4 mr-1" />
@@ -2047,10 +2053,18 @@ export default function InboxPage() {
                           variant="outline" 
                           size="sm"
                           onClick={() => {
-                            toast({
-                              title: "Forward",
-                              description: "Forward functionality coming soon",
-                            });
+                            if (activeThread) {
+                              const latestMessage = activeThread.messages?.[activeThread.messages.length - 1];
+                              if (latestMessage) {
+                                handleForward(activeThread.id, {
+                                  subject: `Fwd: ${latestMessage.subject || activeThread.subject}`,
+                                  originalBody: latestMessage.htmlBody || latestMessage.textBody,
+                                  originalDate: latestMessage.sentAt,
+                                  originalFrom: latestMessage.from?.name || latestMessage.from?.email,
+                                  originalTo: latestMessage.to?.map(t => t.name || t.email).join(', ')
+                                });
+                              }
+                            }
                           }}
                         >
                           <Forward className="h-4 w-4 mr-1" />

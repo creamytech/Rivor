@@ -280,6 +280,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
   };
 
   const handleQuickActionsToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
+    console.log('Plus button clicked, current showQuickActions:', showQuickActions);
     const button = event.currentTarget;
     const rect = button.getBoundingClientRect();
     setQuickActionsPosition({
@@ -287,6 +288,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       left: rect.left
     });
     setShowQuickActions(!showQuickActions);
+    console.log('Setting showQuickActions to:', !showQuickActions);
   };
 
   const handleNotificationToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -596,7 +598,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         }}
       >
         <div className="space-y-2">
-          <div className="glass-quick-action-item" onClick={() => { setShowCreateContactModal(true); setShowQuickActions(false); }}>
+          <div className="glass-quick-action-item" onClick={() => { console.log('Contact modal clicked'); setShowCreateContactModal(true); setShowQuickActions(false); }}>
             <div className="glass-quick-action-icon">
               <User className="h-4 w-4" style={{ color: 'var(--glass-text)' }} />
             </div>
@@ -605,7 +607,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Create new contact</div>
             </div>
           </div>
-          <div className="glass-quick-action-item" onClick={() => { setShowCreateListingModal(true); setShowQuickActions(false); }}>
+          <div className="glass-quick-action-item" onClick={() => { console.log('Listing modal clicked'); setShowCreateListingModal(true); setShowQuickActions(false); }}>
             <div className="glass-quick-action-icon">
               <Building2 className="h-4 w-4" style={{ color: 'var(--glass-text)' }} />
             </div>
@@ -614,7 +616,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Add property listing</div>
             </div>
           </div>
-          <div className="glass-quick-action-item" onClick={() => { setShowScheduleMeetingModal(true); setShowQuickActions(false); }}>
+          <div className="glass-quick-action-item" onClick={() => { console.log('Meeting modal clicked'); setShowScheduleMeetingModal(true); setShowQuickActions(false); }}>
             <div className="glass-quick-action-icon">
               <Calendar className="h-4 w-4" style={{ color: 'var(--glass-text)' }} />
             </div>
