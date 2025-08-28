@@ -20,11 +20,13 @@ export async function POST(req: NextRequest) {
 
     console.log('🧹 Starting emergency auth cleanup...');
 
-    // Delete all NextAuth sessions, accounts, and verification tokens
-    const deletions = await Promise.all([
+    // Delete NextAuth data carefully (skip VerificationToken if it has replica identity issues)
+    const deletions = await Promise.allSettled([
       prisma.session.deleteMany({}),
       prisma.account.deleteMany({}),
-      prisma.verificationToken.deleteMany({}),
+      // Skip verification tokens due to replica identity issue
+      // prisma.verificationToken.deleteMany({}),
+      Promise.resolve({ count: 0 }), // Placeholder for verification tokens
       // Only delete users that don't have org memberships
       prisma.user.deleteMany({
         where: {
@@ -36,10 +38,11 @@ export async function POST(req: NextRequest) {
     ]);
 
     const results = {
-      sessionsDeleted: deletions[0].count,
-      accountsDeleted: deletions[1].count,
-      verificationTokensDeleted: deletions[2].count,
-      orphanedUsersDeleted: deletions[3].count
+      sessionsDeleted: deletions[0].status === 'fulfilled' ? (deletions[0].value as any).count : 0,
+      accountsDeleted: deletions[1].status === 'fulfilled' ? (deletions[1].value as any).count : 0,
+      verificationTokensDeleted: 'skipped (replica identity issue)',
+      orphanedUsersDeleted: deletions[3].status === 'fulfilled' ? (deletions[3].value as any).count : 0,
+      errors: deletions.filter(d => d.status === 'rejected').map(d => d.status === 'rejected' ? d.reason : null)
     };
 
     console.log('🧹 Cleanup results:', results);
