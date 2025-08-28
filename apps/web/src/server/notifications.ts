@@ -51,3 +51,59 @@ export async function markAllNotificationsRead(orgId: string, userId: string) {
   });
 }
 
+/**
+ * Create a notification for an auto-drafted reply
+ */
+export async function createDraftNotification(
+  orgId: string,
+  userId: string,
+  draftId: string,
+  emailSubject: string,
+  emailFrom: string,
+  category: string
+): Promise<string | null> {
+  try {
+    const categoryNames: Record<string, string> = {
+      'showing_request': 'Showing Request',
+      'hot_lead': 'Hot Lead',
+      'seller_lead': 'Seller Lead',
+      'buyer_lead': 'Buyer Lead',
+      'price_inquiry': 'Price Inquiry'
+    };
+
+    const categoryName = categoryNames[category] || 'Email';
+    const priority = category === 'hot_lead' ? 'high' : 'medium';
+
+    const notification = await createNotification({
+      orgId,
+      userId,
+      type: 'draft',
+      title: `AI Draft Ready - ${categoryName}`,
+      message: `Auto-drafted reply for "${emailSubject.substring(0, 50)}" from ${emailFrom}`,
+      priority
+    });
+
+    return notification.id;
+  } catch (error) {
+    console.error('Failed to create draft notification:', error);
+    return null;
+  }
+}
+
+/**
+ * Get the user ID for an organization (first user in org)
+ */
+export async function getOrgUserId(orgId: string): Promise<string | null> {
+  try {
+    const orgMember = await prisma.orgMember.findFirst({
+      where: { orgId },
+      include: { user: true }
+    });
+
+    return orgMember?.userId || null;
+  } catch (error) {
+    console.error('Failed to get org user ID:', error);
+    return null;
+  }
+}
+

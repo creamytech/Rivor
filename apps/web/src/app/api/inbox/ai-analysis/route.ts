@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/lib/db-pool';
 import { getThreadWithMessages } from '@/server/email';
+import { processAutoDraft } from '@/server/ai/auto-draft';
 import OpenAI from 'openai';
 
 // Helper function to process HTML content with image detection
@@ -423,7 +424,22 @@ Do not include any text outside the JSON. Focus on the key information and ignor
       });
     }
 
-    return NextResponse.json({ analysis });
+    // Process auto-drafting for high-priority emails
+    let autoDraftResult = { drafted: false };
+    try {
+      autoDraftResult = await processAutoDraft(orgId, emailId, analysis);
+      if (autoDraftResult.drafted) {
+        console.log(`✅ Auto-draft created for email ${emailId} (${analysis.category})`);
+      }
+    } catch (autoDraftError) {
+      console.error('Auto-draft processing failed:', autoDraftError);
+      // Don't fail the analysis if auto-draft fails
+    }
+
+    return NextResponse.json({ 
+      analysis,
+      autoDraft: autoDraftResult
+    });
 
   } catch (error) {
     console.error('AI analysis error:', error);
