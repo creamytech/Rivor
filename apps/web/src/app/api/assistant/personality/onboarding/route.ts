@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+import { auth } from '@/server/auth';
+import { prisma } from '@/lib/db-pool';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const session = await auth();
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const orgId = (session as { orgId?: string }).orgId;
+    if (!orgId) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
 
     const { message, sessionId, action } = await request.json();
@@ -18,8 +22,8 @@ export async function POST(request: NextRequest) {
       const onboardingSession = await prisma.onboardingSession.create({
         data: {
           id: uuidv4(),
-          orgId: session.user.orgId,
-          userId: session.user.id,
+          orgId,
+          userId: session.user.id!,
           currentStep: 'greeting',
           conversationHistory: JSON.stringify([{
             role: 'assistant',
@@ -102,7 +106,7 @@ export async function POST(request: NextRequest) {
         aiResponse = 'Fantastic! I\'ve learned a lot about your communication style. I\'m now analyzing your responses to understand your tone, vocabulary preferences, and unique voice. This will help me write emails, follow-ups, and messages that sound authentically like you. Give me just a moment to process everything...';
         
         // Analyze the conversation and extract personality traits
-        await analyzeAndSavePersonality(session.user.orgId, session.user.id, conversationHistory);
+        await analyzeAndSavePersonality(orgId, session.user.id!, conversationHistory);
         
         // Mark session as completed
         await prisma.onboardingSession.update({
@@ -155,7 +159,7 @@ async function analyzeAndSavePersonality(orgId: string, userId: string, conversa
       .map(msg => msg.content);
 
     // Analyze communication patterns
-    const analysis = analyzeCommu nicationStyle(userMessages);
+    const analysis = analyzeCommunicationStyle(userMessages);
 
     // Check if personality record exists
     const existingPersonality = await prisma.agentPersonality.findUnique({
@@ -204,7 +208,7 @@ async function analyzeAndSavePersonality(orgId: string, userId: string, conversa
   }
 }
 
-function analyzeCommu nicationStyle(messages: string[]) {
+function analyzeCommunicationStyle(messages: string[]) {
   const allText = messages.join(' ').toLowerCase();
   
   // Analyze tone
@@ -239,7 +243,7 @@ function analyzeCommu nicationStyle(messages: string[]) {
     usesExclamation: allText.includes('!'),
     usesQuestions: allText.includes('?'),
     paragraphStyle: avgSentenceLength > 15 ? 'detailed' : 'concise',
-    emojiUsage: /[😀-🙏]/.test(allText) ? 'frequent' : 'minimal'
+    emojiUsage: /[\u{1F600}-\u{1F64F}]/u.test(allText) ? 'frequent' : 'minimal'
   };
 
   return {
@@ -309,14 +313,19 @@ function calculateConfidence(analysis: any) {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const session = await auth();
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const orgId = (session as { orgId?: string }).orgId;
+    if (!orgId) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
 
     // Check if agent has completed onboarding
     const personality = await prisma.agentPersonality.findUnique({
-      where: { orgId: session.user.orgId }
+      where: { orgId }
     });
 
     return NextResponse.json({

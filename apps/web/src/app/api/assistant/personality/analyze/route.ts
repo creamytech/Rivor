@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+import { auth } from '@/server/auth';
+import { prisma } from '@/lib/db-pool';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const session = await auth();
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const orgId = (session as { orgId?: string }).orgId;
+    if (!orgId) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
 
     const { emailContent, source, context } = await request.json();
@@ -22,7 +26,7 @@ export async function POST(request: NextRequest) {
     
     // Get existing personality
     const existingPersonality = await prisma.agentPersonality.findUnique({
-      where: { orgId: session.user.orgId }
+      where: { orgId }
     });
 
     if (!existingPersonality) {
@@ -35,7 +39,7 @@ export async function POST(request: NextRequest) {
     await prisma.aIPersonalityTraining.create({
       data: {
         id: uuidv4(),
-        orgId: session.user.orgId,
+        orgId,
         trainingType: 'real_communication',
         inputData: JSON.stringify({ emailContent, source, context }),
         extractedPatterns: JSON.stringify(analysis),
@@ -45,7 +49,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Update personality with new insights
-    await updatePersonalityWithAnalysis(session.user.orgId, existingPersonality, analysis);
+    await updatePersonalityWithAnalysis(orgId, existingPersonality, analysis);
 
     return NextResponse.json({
       success: true,
@@ -61,9 +65,14 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const session = await auth();
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const orgId = (session as { orgId?: string }).orgId;
+    if (!orgId) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
 
     const url = new URL(request.url);
@@ -72,7 +81,7 @@ export async function GET(request: NextRequest) {
     // Get recent training data for analysis
     const recentTraining = await prisma.aIPersonalityTraining.findMany({
       where: {
-        orgId: session.user.orgId,
+        orgId,
         createdAt: {
           gte: getDateFromTimeframe(timeframe)
         }
@@ -83,7 +92,7 @@ export async function GET(request: NextRequest) {
 
     // Get current personality
     const personality = await prisma.agentPersonality.findUnique({
-      where: { orgId: session.user.orgId }
+      where: { orgId }
     });
 
     // Analyze trends and improvements
@@ -120,7 +129,7 @@ async function analyzeRealCommunication(emailContent: string) {
     usesPersonalization: /\b(you|your|we|us|together)\b/i.test(text),
     usesQuestions: emailContent.includes('?'),
     usesExclamation: emailContent.includes('!'),
-    usesEmoji: /[😀-🙏]/.test(emailContent)
+    usesEmoji: /[\u{1F600}-\u{1F64F}]/u.test(emailContent)
   };
 
   // Extract vocabulary patterns
@@ -215,7 +224,7 @@ function calculateEnthusiasmScore(text: string): number {
   }, 0);
 
   const exclamationCount = (text.match(/!/g) || []).length;
-  const emojiCount = (text.match(/[😀-🙏]/g) || []).length;
+  const emojiCount = (text.match(/[\u{1F600}-\u{1F64F}]/gu) || []).length;
 
   return Math.min(10, score + exclamationCount * 0.3 + emojiCount * 0.5);
 }

@@ -1,20 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+import { auth } from '@/server/auth';
+import { prisma } from '@/lib/db-pool';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const session = await auth();
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const orgId = (session as { orgId?: string }).orgId;
+    if (!orgId) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
 
     const { type, context, recipient } = await request.json();
 
     // Get agent personality
     const personality = await prisma.agentPersonality.findUnique({
-      where: { orgId: session.user.orgId }
+      where: { orgId }
     });
 
     if (!personality || !personality.onboardingCompleted) {
@@ -35,7 +39,7 @@ export async function POST(request: NextRequest) {
     // Save generated content for learning
     await prisma.aIGeneratedContent.create({
       data: {
-        orgId: session.user.orgId,
+        orgId,
         contentType: type,
         generatedContent,
         context: JSON.stringify(context),
