@@ -20,6 +20,15 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
 
+    // Debug logging
+    console.log(`📋 Fetching drafts with filter:`, {
+      status,
+      orgId,
+      categoryFilter: status === 'draft' ? 'ends with -auto-draft' : 'no filter',
+      limit,
+      offset
+    });
+
     // Get drafts with related email and thread information
     const drafts = await prisma.aISuggestedReply.findMany({
       where: {
@@ -50,6 +59,17 @@ export async function GET(request: NextRequest) {
       take: limit,
       skip: offset
     });
+
+    console.log(`📋 Found ${drafts.length} drafts matching criteria`);
+    if (drafts.length > 0) {
+      console.log(`📋 Draft details:`, drafts.map(d => ({
+        id: d.id,
+        emailId: d.emailId,
+        category: d.category,
+        status: d.status,
+        createdAt: d.createdAt
+      })));
+    }
 
     // Get total count for pagination
     const totalCount = await prisma.aISuggestedReply.count({

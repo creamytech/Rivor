@@ -1025,16 +1025,21 @@ export class GmailService {
 
       // Trigger AI analysis workflow for newly added threads
       try {
+        // Get all threads without AI analysis in the last 5 minutes
         const recentThreads = await prisma.emailThread.findMany({
           where: {
             orgId,
             accountId: emailAccountId,
             createdAt: {
               gte: new Date(Date.now() - 5 * 60 * 1000) // Last 5 minutes for push notifications
+            },
+            // Only process threads that don't have AI analysis yet
+            aiAnalysis: {
+              none: {}
             }
           },
           select: { id: true },
-          take: 3 // Limit to 3 most recent threads
+          take: 10 // Process up to 10 threads to avoid overwhelming the system
         });
 
         if (recentThreads.length > 0) {

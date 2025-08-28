@@ -244,6 +244,7 @@ export async function createAutoDraft(
 ): Promise<string | null> {
   try {
     // Check if auto-draft already exists for this email
+    console.log(`🔍 Checking for existing auto-draft for email: ${emailId}`);
     const existingDraft = await prisma.aISuggestedReply.findFirst({
       where: {
         emailId,
@@ -252,9 +253,15 @@ export async function createAutoDraft(
     });
 
     if (existingDraft) {
+      console.log(`✅ Auto-draft already exists for email ${emailId}:`, { 
+        draftId: existingDraft.id, 
+        category: existingDraft.category,
+        status: existingDraft.status
+      });
       logger.info('Auto-draft already exists for email', { emailId });
       return existingDraft.id;
     }
+    console.log(`💫 No existing auto-draft found for email ${emailId}, creating new one...`);
 
     // Create auto-draft
     const draft = await prisma.aISuggestedReply.create({
@@ -275,6 +282,16 @@ export async function createAutoDraft(
       }
     });
 
+    console.log(`✅ Auto-draft created successfully:`, {
+      draftId: draft.id,
+      emailId,
+      threadId,
+      category: draft.category,
+      status: draft.status,
+      contentLength: draft.suggestedContent.length,
+      confidenceScore: draft.confidenceScore
+    });
+    
     logger.info('Auto-draft created successfully', {
       draftId: draft.id,
       emailId,
