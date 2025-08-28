@@ -10,6 +10,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get user from database using email to ensure we have the ID
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
     const orgId = (session as { orgId?: string }).orgId;
     if (!orgId) {
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
@@ -23,8 +33,9 @@ export async function POST(request: NextRequest) {
         data: {
           id: uuidv4(),
           orgId,
-          userId: session.user.id!,
-          currentStep: 'greeting',
+          userId: user.id,
+          sessionType: 'personality_discovery',
+          currentStep: 1,
           conversationHistory: JSON.stringify([{
             role: 'assistant',
             content: 'Hi! I\'m your AI assistant and I\'m excited to learn how you communicate so I can help you more effectively. This will take just 3-4 minutes. Let\'s start with a simple question: How do you typically greet new leads when you first reach out to them? Go ahead and write it exactly how you\'d send it.',

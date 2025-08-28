@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-08-28T15:14:35.430Z",
+  "buildTime": 0,
+  "performance": {
+    "buildTimeMs": 0,
+    "withinBuildThreshold": true,
+    "bundleSizes": {},
+    "withinBundleThreshold": true
+  },
+  "dependencies": {},
+  "recommendations": []
+}
