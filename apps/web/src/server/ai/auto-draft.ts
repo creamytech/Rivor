@@ -16,11 +16,11 @@ interface AutoDraftTrigger {
 
 // Define which email categories should trigger auto-drafting
 const AUTO_DRAFT_TRIGGERS: AutoDraftTrigger[] = [
-  { category: 'showing_request', minPriorityScore: 70, minLeadScore: 60 },
-  { category: 'hot_lead', minPriorityScore: 80, minLeadScore: 70 },
-  { category: 'seller_lead', minPriorityScore: 75, minLeadScore: 65 },
-  { category: 'buyer_lead', minPriorityScore: 75, minLeadScore: 65 },
-  { category: 'price_inquiry', minPriorityScore: 70, minLeadScore: 60 },
+  { category: 'showing_request', minPriorityScore: 50, minLeadScore: 40 },
+  { category: 'hot_lead', minPriorityScore: 60, minLeadScore: 50 },
+  { category: 'seller_lead', minPriorityScore: 50, minLeadScore: 40 },
+  { category: 'buyer_lead', minPriorityScore: 50, minLeadScore: 40 },
+  { category: 'price_inquiry', minPriorityScore: 50, minLeadScore: 40 },
 ];
 
 /**

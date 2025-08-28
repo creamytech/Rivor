@@ -427,9 +427,19 @@ Do not include any text outside the JSON. Focus on the key information and ignor
     // Process auto-drafting for high-priority emails
     let autoDraftResult = { drafted: false };
     try {
+      console.log(`🤖 Checking auto-draft eligibility for email ${emailId}:`);
+      console.log(`   Category: ${analysis.category}`);
+      console.log(`   Priority Score: ${analysis.priorityScore}`);
+      console.log(`   Lead Score: ${analysis.leadScore}`);
+      
       autoDraftResult = await processAutoDraft(orgId, emailId, analysis);
+      
       if (autoDraftResult.drafted) {
         console.log(`✅ Auto-draft created for email ${emailId} (${analysis.category})`);
+        console.log(`   Draft ID: ${autoDraftResult.draftId}`);
+        console.log(`   Notification ID: ${autoDraftResult.notificationId}`);
+      } else {
+        console.log(`❌ Auto-draft NOT created for email ${emailId} - criteria not met`);
       }
     } catch (autoDraftError) {
       console.error('Auto-draft processing failed:', autoDraftError);

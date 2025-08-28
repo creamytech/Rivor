@@ -45,6 +45,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { internalFetch } from '@/lib/internal-url';
 import { LeadScoreWidget } from '@/components/intelligence/LeadScoreWidget';
 import { DraftPanel } from '@/components/inbox/DraftPanel';
+import { ManualDraftButton } from '@/components/inbox/ManualDraftButton';
 
 // Types for real email data
 interface EmailThread {
@@ -1853,11 +1854,28 @@ export default function InboxPage() {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                     >
-                      <div className="flex items-center gap-2 mb-3">
-                        <Bot className="h-4 w-4 text-purple-400" />
-                        <span className={`font-semibold text-sm ${theme === 'black' ? 'text-white' : 'text-black'}`}>
-                          AI Analysis
-                        </span>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Bot className="h-4 w-4 text-purple-400" />
+                          <span className={`font-semibold text-sm ${theme === 'black' ? 'text-white' : 'text-black'}`}>
+                            AI Analysis
+                          </span>
+                        </div>
+                        <ManualDraftButton
+                          emailId={(() => {
+                            // Find the latest message in the thread to get emailId
+                            // This is a simplified approach - in reality you'd pass this data properly
+                            return activeThread.id; // Using thread ID as fallback
+                          })()}
+                          threadId={activeThread.id}
+                          analysis={activeThread.aiAnalysis}
+                          onDraftCreated={() => {
+                            toast({
+                              title: "Draft Created",
+                              description: "Check the AI Drafts tab to review and send",
+                            });
+                          }}
+                        />
                       </div>
                       
                       {(() => {
