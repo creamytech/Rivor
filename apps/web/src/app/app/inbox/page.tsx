@@ -95,11 +95,15 @@ export default function InboxPage() {
     runOnMount: true, // Run initial sync on page load
     onSyncComplete: (result) => {
       console.log('🔄 Auto-sync completed:', result);
-      // Only refresh if new content was found
+      // Real-time updates: refresh both inbox and drafts when sync completes
       if (result.email.newMessages || result.email.newThreads) {
-        console.log(`📧 Found ${result.email.newMessages} new messages, ${result.email.newThreads} new threads - adding to list`);
-        // Fetch only new threads and prepend them to the existing list
-        fetchNewThreadsOnly();
+        console.log(`📧 Found ${result.email.newMessages} new messages, ${result.email.newThreads} new threads - updating in real-time`);
+        // Refresh threads without page reload
+        fetchThreads();
+        // Also trigger draft refresh if we're on the drafts tab
+        if (activeTab === 'drafts' || result.autoDraftsCreated) {
+          refreshDrafts();
+        }
       }
     }
   });
@@ -127,6 +131,13 @@ export default function InboxPage() {
     total: 0,
     totalPages: 0
   });
+  
+  // Draft panel refresh function for real-time updates
+  const [refreshDraftsTrigger, setRefreshDraftsTrigger] = useState(0);
+  const refreshDrafts = () => {
+    console.log('🔄 Triggering real-time draft refresh');
+    setRefreshDraftsTrigger(prev => prev + 1);
+  };
 
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{
@@ -1086,8 +1097,20 @@ export default function InboxPage() {
     }
 
     setLastManualSync(new Date());
+    
     if (autoSync?.triggerSync) {
-      await autoSync.triggerSync();
+      console.log('🔄 Manual sync triggered - will update in real-time');
+      const result = await autoSync.triggerSync();
+      
+      // Manual sync always refreshes both inbox and drafts
+      console.log('🔄 Manual sync completed - refreshing all data');
+      fetchThreads(); // Refresh inbox
+      refreshDrafts(); // Refresh drafts
+      
+      toast({
+        title: "Sync Complete", 
+        description: "Inbox and drafts updated successfully",
+      });
     } else {
       console.error('autoSync.triggerSync is not available');
       toast({
@@ -2006,13 +2029,17 @@ export default function InboxPage() {
                   initial={{ x: -100, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                 >
-                  <DraftPanel theme={theme} onDraftAction={(action, draftId) => {
-                    console.log('Draft action:', action, draftId);
-                    if (action === 'send') {
-                      // Refresh threads to show sent status
-                      fetchThreads(pagination.page, activeFilter, searchQuery, true);
-                    }
-                  }} />
+                  <DraftPanel 
+                    theme={theme} 
+                    refreshTrigger={refreshDraftsTrigger}
+                    onDraftAction={(action, draftId) => {
+                      console.log('Draft action:', action, draftId);
+                      if (action === 'send') {
+                        // Refresh threads to show sent status
+                        fetchThreads(pagination.page, activeFilter, searchQuery, true);
+                      }
+                    }} 
+                  />
                 </motion.div>
 
                 {/* Draft Detail/Info Panel */}

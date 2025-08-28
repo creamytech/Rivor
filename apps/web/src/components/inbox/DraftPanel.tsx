@@ -42,10 +42,11 @@ interface Draft {
 
 interface DraftPanelProps {
   theme: string;
+  refreshTrigger?: number; // When this changes, trigger a refresh
   onDraftAction?: (action: string, draftId: string) => void;
 }
 
-export function DraftPanel({ theme, onDraftAction }: DraftPanelProps) {
+export function DraftPanel({ theme, refreshTrigger, onDraftAction }: DraftPanelProps) {
   const { toast } = useToast();
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,6 +80,14 @@ export function DraftPanel({ theme, onDraftAction }: DraftPanelProps) {
     const interval = setInterval(fetchDrafts, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Real-time refresh trigger effect
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) {
+      console.log('🔄 DraftPanel: Received refresh trigger, fetching drafts');
+      fetchDrafts();
+    }
+  }, [refreshTrigger]);
 
   // Handle draft actions
   const handleDraftAction = async (action: 'approve' | 'edit' | 'decline' | 'send', draftId: string, content?: string) => {
@@ -228,14 +237,6 @@ export function DraftPanel({ theme, onDraftAction }: DraftPanelProps) {
             {drafts.length}
           </div>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={fetchDrafts}
-          disabled={loading}
-        >
-          <Sparkles className="h-4 w-4" />
-        </Button>
       </div>
 
       {/* Drafts List */}
