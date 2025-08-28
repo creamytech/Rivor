@@ -17,7 +17,8 @@ export async function GET(req: NextRequest) {
             message: 'AI detected a potential lead from john@example.com',
             timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
             isRead: false,
-            priority: 'high'
+            priority: 'high',
+            actionUrl: '/app/inbox'
           },
           {
             id: '2',
@@ -26,7 +27,8 @@ export async function GET(req: NextRequest) {
             message: 'Property inquiry from Sarah needs response within 24 hours',
             timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
             isRead: false,
-            priority: 'medium'
+            priority: 'medium',
+            actionUrl: '/app/tasks'
           }
         ]
       });
@@ -56,6 +58,7 @@ export async function GET(req: NextRequest) {
       timestamp: n.createdAt.toISOString(),
       isRead: n.isRead,
       priority: n.priority as 'low' | 'medium' | 'high',
+      actionUrl: n.actionUrl,
     }));
 
     return NextResponse.json({ notifications: formatted });

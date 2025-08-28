@@ -679,6 +679,36 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         width: '320px'
       }}>
         <div className="space-y-3">
+          {notifications.length > 0 && (
+            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+              <span className="text-sm font-medium" style={{ color: 'var(--glass-text)' }}>
+                Notifications ({notifications.length})
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/notifications/clear', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    if (response.ok) {
+                      setNotifications([]);
+                      setUnreadCount(0);
+                    }
+                  } catch (error) {
+                    console.error('Failed to clear notifications:', error);
+                  }
+                }}
+                className="h-6 px-2 text-xs opacity-70 hover:opacity-100"
+                style={{ color: 'var(--glass-text-muted)' }}
+              >
+                Clear All
+              </Button>
+            </div>
+          )}
           {notifications.length > 0 ? (
             notifications.slice(0, 5).map((notification: any) => {
               const getNotificationColor = (type: string, priority: string) => {

@@ -53,6 +53,8 @@ const AUTO_DRAFT_TRIGGERS: AutoDraftTrigger[] = [
 
 /**
  * Check if an AI analysis should trigger auto-drafting
+ * Note: This function does basic analysis checks. The main AI loop prevention
+ * is handled in shouldAutoDraftForEmail which has access to the actual email data.
  */
 export function shouldAutoDraft(analysis: any): boolean {
   if (!analysis?.category || !analysis?.priorityScore || !analysis?.leadScore) {
@@ -66,6 +68,84 @@ export function shouldAutoDraft(analysis: any): boolean {
 
   return analysis.priorityScore >= trigger.minPriorityScore && 
          analysis.leadScore >= trigger.minLeadScore;
+}
+
+/**
+ * Enhanced check that includes email sender verification to prevent AI reply loops
+ */
+export async function shouldAutoDraftForEmail(
+  orgId: string,
+  emailId: string, 
+  analysis: any
+): Promise<boolean> {
+  // First check basic analysis criteria
+  if (!shouldAutoDraft(analysis)) {
+    return false;
+  }
+
+  try {
+    // Get the email message to check the sender
+    const emailMessage = await prisma.emailMessage.findUnique({
+      where: { id: emailId },
+      select: { fromEmail: true, fromName: true }
+    });
+
+    if (!emailMessage) {
+      logger.warn('Email message not found for auto-draft check', { emailId });
+      return false;
+    }
+
+    // Get organization's email accounts to check if this is from the agent
+    const orgEmailAccounts = await prisma.emailAccount.findMany({
+      where: { orgId },
+      select: { email: true }
+    });
+
+    const orgEmails = orgEmailAccounts.map(account => account.email.toLowerCase());
+    const senderEmail = emailMessage.fromEmail?.toLowerCase();
+
+    // Prevent auto-drafting if the email is from the agent/organization
+    if (senderEmail && orgEmails.includes(senderEmail)) {
+      logger.info('Skipping auto-draft - email is from organization account', {
+        orgId,
+        emailId,
+        senderEmail,
+        orgEmails: orgEmails.length
+      });
+      return false;
+    }
+
+    // Additional check for common agent/system patterns in the sender name or email
+    const senderName = emailMessage.fromName?.toLowerCase() || '';
+    const agentPatterns = [
+      'no-reply', 'noreply', 'do-not-reply', 'donotreply',
+      'system', 'automated', 'auto-reply', 'autoreply',
+      'rivor', 'assistant', 'bot'
+    ];
+
+    const isSystemEmail = agentPatterns.some(pattern => 
+      senderEmail?.includes(pattern) || senderName.includes(pattern)
+    );
+
+    if (isSystemEmail) {
+      logger.info('Skipping auto-draft - detected system/automated email', {
+        orgId,
+        emailId,
+        senderEmail,
+        senderName
+      });
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    logger.error('Error checking auto-draft eligibility', {
+      orgId,
+      emailId,
+      error: error instanceof Error ? error.message : String(error)
+    });
+    return false;
+  }
 }
 
 /**
@@ -317,7 +397,8 @@ export async function processAutoDraft(
   emailId: string,
   analysis: any
 ): Promise<{ drafted: boolean; draftId?: string; notificationId?: string }> {
-  if (!shouldAutoDraft(analysis)) {
+  // Use enhanced check that prevents AI reply loops
+  if (!(await shouldAutoDraftForEmail(orgId, emailId, analysis))) {
     return { drafted: false };
   }
 
