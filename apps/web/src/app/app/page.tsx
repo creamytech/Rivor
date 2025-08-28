@@ -48,7 +48,8 @@ import {
   RotateCcw,
   Save,
   Move3D,
-  Sparkles
+  Sparkles,
+  Bot
 } from "lucide-react";
 
 interface DashboardMetric {
