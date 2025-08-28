@@ -118,29 +118,53 @@ export async function GET(req: NextRequest) {
     
     console.log(`📊 Threads found (last 90 days): ${totalCount}`);
 
-    // Transform to UI format - process each thread
-    const threadsFormatted = await Promise.all((threads as any[]).map(async (thread: any) => {
-      // Get the latest message for this thread to extract real data
-      const latestMessage = await prisma.emailMessage.findFirst({
-        where: { threadId: thread.id },
-        select: {
-          id: true,
-          subjectEnc: true,
-          fromEnc: true,
-          toEnc: true,
-          ccEnc: true,
-          bccEnc: true,
-          sentAt: true
-        },
-        orderBy: { sentAt: 'desc' }
-      });
-
-      // Get AI analysis for the latest message if it exists
-      let aiAnalysis = null;
-      if (latestMessage?.id) {
-        aiAnalysis = await prisma.emailAIAnalysis.findUnique({
-          where: { emailId: latestMessage.id },
+    // Get all latest messages for threads in batch with timeout
+    const threadIds = (threads as any[]).map(thread => thread.id);
+    let allLatestMessages: any[] = [];
+    
+    try {
+      const messagePromises = threadIds.map(threadId =>
+        prisma.emailMessage.findFirst({
+          where: { threadId },
           select: {
+            id: true,
+            threadId: true,
+            subjectEnc: true,
+            fromEnc: true,
+            toEnc: true,
+            ccEnc: true,
+            bccEnc: true,
+            sentAt: true
+          },
+          orderBy: { sentAt: 'desc' }
+        }).catch(error => {
+          console.error(`Failed to load message for thread ${threadId}:`, error);
+          return null; // Return null for failed queries
+        })
+      );
+      
+      allLatestMessages = await Promise.all(messagePromises);
+      console.log(`📧 Latest messages loaded: ${allLatestMessages.filter(Boolean).length}/${threadIds.length} threads`);
+    } catch (messageError) {
+      console.error('Failed to load latest messages:', messageError);
+      logger.error('Latest messages batch load failed', { 
+        error: messageError instanceof Error ? messageError.message : String(messageError),
+        threadCount: threadIds.length 
+      });
+      // Create empty array to continue processing
+      allLatestMessages = new Array(threadIds.length).fill(null);
+    }
+
+    // Get all AI analysis data in batch with error handling
+    const messageIds = allLatestMessages.filter(msg => msg?.id).map(msg => msg!.id);
+    let allAiAnalysis: any[] = [];
+    
+    try {
+      if (messageIds.length > 0) {
+        allAiAnalysis = await prisma.emailAIAnalysis.findMany({
+          where: { emailId: { in: messageIds } },
+          select: {
+            emailId: true,
             category: true,
             priorityScore: true,
             leadScore: true,
@@ -151,7 +175,29 @@ export async function GET(req: NextRequest) {
             createdAt: true
           }
         });
+        console.log(`📊 AI Analysis found: ${allAiAnalysis.length}/${messageIds.length} messages`);
       }
+    } catch (aiError) {
+      console.error('Failed to load AI analysis data:', aiError);
+      logger.error('AI analysis batch load failed', { 
+        error: aiError instanceof Error ? aiError.message : String(aiError),
+        messageCount: messageIds.length 
+      });
+      // Continue without AI analysis data - don't fail the entire request
+    }
+
+    // Create lookup map for AI analysis
+    const aiAnalysisMap = new Map();
+    allAiAnalysis.forEach(analysis => {
+      aiAnalysisMap.set(analysis.emailId, analysis);
+    });
+
+    // Transform to UI format - process each thread
+    const threadsFormatted = await Promise.all((threads as any[]).map(async (thread: any, index: number) => {
+      const latestMessage = allLatestMessages[index];
+      
+      // Get AI analysis from our batch-loaded data
+      const aiAnalysis = latestMessage?.id ? aiAnalysisMap.get(latestMessage.id) : null;
 
       // Decrypt sensitive data for display
       let participants: Array<{ name: string; email: string }> = [];
