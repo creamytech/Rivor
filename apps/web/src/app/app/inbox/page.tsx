@@ -95,14 +95,40 @@ export default function InboxPage() {
     runOnMount: true, // Run initial sync on page load
     onSyncComplete: (result) => {
       console.log('🔄 Auto-sync completed:', result);
-      // Real-time updates: refresh both inbox and drafts when sync completes
+      // Real-time updates with enhanced glass animations
       if (result.email.newMessages || result.email.newThreads) {
         console.log(`📧 Found ${result.email.newMessages} new messages, ${result.email.newThreads} new threads - updating in real-time`);
+        
+        // Add glass animation class to new threads
+        setTimeout(() => {
+          const threadCards = document.querySelectorAll('.thread-card-unread');
+          threadCards.forEach((card, index) => {
+            if (index < result.email.newThreads) {
+              card.classList.add('thread-new-email');
+              setTimeout(() => card.classList.remove('thread-new-email'), 4000);
+            }
+          });
+        }, 500);
+        
         // Refresh threads without page reload
         fetchThreads();
-        // Also trigger draft refresh if we're on the drafts tab
+        
+        // Also trigger draft refresh with glass animation if we're on the drafts tab
         if (activeTab === 'drafts' || result.autoDraftsCreated) {
           refreshDrafts();
+          
+          // Add draft creation animation
+          if (result.autoDraftsCreated) {
+            setTimeout(() => {
+              const draftItems = document.querySelectorAll('.draft-item');
+              draftItems.forEach((item, index) => {
+                if (index < 3) { // Animate first 3 new drafts
+                  item.classList.add('thread-draft-created');
+                  setTimeout(() => item.classList.remove('thread-draft-created'), 3000);
+                }
+              });
+            }, 800);
+          }
         }
       }
     }
@@ -1501,7 +1527,12 @@ export default function InboxPage() {
                   size="sm"
                   onClick={handleManualSync}
                   disabled={loading || autoSync?.isRunning || (lastManualSync && Date.now() - lastManualSync.getTime() < 2 * 60 * 1000)}
-                  className="relative min-w-[140px]"
+                  className="relative min-w-[140px] sync-button-glass category-badge-glass"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.8), rgba(139, 92, 246, 0.6))',
+                    border: '1px solid rgba(139, 92, 246, 0.6)',
+                    boxShadow: autoSync?.isRunning ? '0 0 20px rgba(139, 92, 246, 0.5)' : '0 4px 16px rgba(139, 92, 246, 0.3)'
+                  }}
                 >
                   <RefreshCw className={`h-4 w-4 mr-2 ${loading || autoSync.isRunning ? 'animate-spin' : ''}`} />
                   <span className="text-xs font-medium">
@@ -1530,21 +1561,46 @@ export default function InboxPage() {
                   { key: 'inbox', label: 'Inbox', icon: Mail, count: threads.filter(t => t.unread).length },
                   { key: 'drafts', label: 'AI Drafts', icon: Bot, count: null },
                 ].map(tab => (
-                  <Button
-                    key={tab.key}
-                    variant={activeTab === tab.key ? "liquid" : "outline"}
-                    size="sm"
-                    onClick={() => setActiveTab(tab.key as 'inbox' | 'drafts')}
-                    className="text-xs relative"
-                  >
-                    <tab.icon className="h-3 w-3 mr-1" />
-                    {tab.label}
-                    {tab.count !== null && tab.count > 0 && (
-                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">
-                        {tab.count > 9 ? '9+' : tab.count}
-                      </div>
-                    )}
-                  </Button>
+                  <motion.div key={tab.key}>
+                    <Button
+                      variant={activeTab === tab.key ? "liquid" : "outline"}
+                      size="sm"
+                      onClick={() => setActiveTab(tab.key as 'inbox' | 'drafts')}
+                      className={`text-xs relative category-badge-glass ${
+                        activeTab === tab.key ? 'category-badge-showing' : ''
+                      }`}
+                      style={activeTab === tab.key ? {
+                        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.2))',
+                        border: '1px solid rgba(59, 130, 246, 0.5)',
+                        boxShadow: '0 0 20px rgba(59, 130, 246, 0.3)'
+                      } : {}}
+                    >
+                      <tab.icon className="h-3 w-3 mr-1" />
+                      {tab.label}
+                      {tab.count !== null && tab.count > 0 && (
+                        <motion.div 
+                          className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-xs flex items-center justify-center category-badge-glass"
+                          style={{
+                            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.9), rgba(239, 68, 68, 0.7))',
+                            border: '1px solid rgba(239, 68, 68, 0.6)',
+                            color: 'white',
+                            boxShadow: '0 0 12px rgba(239, 68, 68, 0.4)'
+                          }}
+                          animate={{ 
+                            scale: [1, 1.1, 1],
+                            boxShadow: [
+                              '0 0 12px rgba(239, 68, 68, 0.4)',
+                              '0 0 20px rgba(239, 68, 68, 0.6)',
+                              '0 0 12px rgba(239, 68, 68, 0.4)'
+                            ]
+                          }}
+                          transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+                        >
+                          {tab.count > 9 ? '9+' : tab.count}
+                        </motion.div>
+                      )}
+                    </Button>
+                  </motion.div>
                 ))}
               </div>
             </div>
@@ -1554,15 +1610,23 @@ export default function InboxPage() {
               <div className="flex items-center gap-4">
                 <div className="relative flex-1 max-w-md">
                   <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${theme === 'black' ? 'text-white/40' : 'text-black/40'}`} />
-                  <input
+                  <motion.input
                     type="text"
                     placeholder="Search emails..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className={`w-full pl-10 pr-4 py-2 rounded-xl ${theme === 'black' ? 'bg-white/10 border-white/20 text-white placeholder-white/40' : 'bg-black/10 border-black/20 text-black placeholder-black/40'} focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                    className={`w-full pl-10 pr-4 py-2 rounded-xl category-badge-glass focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300`}
                     style={{
+                      background: 'var(--glass-surface-alpha)',
+                      border: '1px solid var(--glass-border)',
+                      color: theme === 'black' ? 'white' : 'black',
                       backdropFilter: 'blur(20px) saturate(1.3)',
                       WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
+                    }}
+                    whileFocus={{
+                      scale: 1.02,
+                      boxShadow: '0 0 20px rgba(139, 92, 246, 0.3)',
+                      borderColor: 'rgba(139, 92, 246, 0.5)'
                     }}
                   />
                 </div>
@@ -1573,16 +1637,24 @@ export default function InboxPage() {
                     { key: 'unread', label: 'Unread', icon: Circle },
                     { key: 'starred', label: 'Starred', icon: Star },
                   ].map(filter => (
-                    <Button
-                      key={filter.key}
-                      variant={activeFilter === filter.key ? "liquid" : "outline"}
-                      size="sm"
-                      onClick={() => setActiveFilter(filter.key)}
-                      className="text-xs"
-                    >
-                      <filter.icon className="h-3 w-3 mr-1" />
-                      {filter.label}
-                    </Button>
+                    <motion.div key={filter.key}>
+                      <Button
+                        variant={activeFilter === filter.key ? "liquid" : "outline"}
+                        size="sm"
+                        onClick={() => setActiveFilter(filter.key)}
+                        className={`text-xs category-badge-glass ${
+                          activeFilter === filter.key ? 'category-badge-showing' : ''
+                        }`}
+                        style={activeFilter === filter.key ? {
+                          background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(139, 92, 246, 0.2))',
+                          border: '1px solid rgba(139, 92, 246, 0.5)',
+                          boxShadow: '0 0 16px rgba(139, 92, 246, 0.3)'
+                        } : {}}
+                      >
+                        <filter.icon className="h-3 w-3 mr-1" />
+                        {filter.label}
+                      </Button>
+                    </motion.div>
                   ))}
                 </div>
               </div>
@@ -1619,17 +1691,47 @@ export default function InboxPage() {
                   ) : (
                     threads.filter(thread => thread.id && !thread.id.includes('http')).map((thread, index) => {
                       const analysis = thread.aiAnalysis;
+                      
+                      // Dynamic glass effect classes based on thread properties
+                      const getThreadGlassClasses = () => {
+                        const classes = ['glass-transition-smooth', 'glass-hover-lift'];
+                        
+                        // Selected thread
+                        if (activeThread?.id === thread.id) {
+                          classes.push('thread-card-selected');
+                        }
+                        // Priority-based styling
+                        else if (analysis?.urgency === 'critical' || (analysis?.leadScore >= 90)) {
+                          classes.push('thread-card-priority-high');
+                        }
+                        else if (analysis?.urgency === 'high' || (analysis?.leadScore >= 70)) {
+                          classes.push('thread-card-priority-medium');
+                        }
+                        // Read/unread status
+                        else if (thread.unread) {
+                          classes.push('thread-card-unread');
+                        }
+                        else {
+                          classes.push('thread-card-read');
+                        }
+                        
+                        // AI analyzed threads get special glass effect
+                        if (analysis) {
+                          classes.push('thread-card-ai-analyzed');
+                        }
+                        
+                        return classes.join(' ');
+                      };
+                      
                       return (
                         <motion.div
                           key={thread.id}
-                          className={`p-3 border-b ${theme === 'black' ? 'border-white/5 hover:bg-white/5' : 'border-black/5 hover:bg-black/5'} cursor-pointer transition-all duration-300 ${
-                            activeThread?.id === thread.id ? (theme === 'black' ? 'bg-white/10' : 'bg-black/10') : ''
-                          } ${analysis?.urgency === 'critical' || (analysis?.leadScore >= 90) ? 'ring-1 ring-red-400/50' : ''}`}
+                          className={`p-3 border-b cursor-pointer relative overflow-hidden ${getThreadGlassClasses()}`}
                           onClick={() => handleThreadSelect(thread)}
                           onContextMenu={(e) => handleContextMenu(e, thread)}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
+                          transition={{ delay: index * 0.05, duration: 0.4 }}
                           style={{ minHeight: '120px' }}
                         >
                           <div className="flex items-start gap-3">
@@ -1676,24 +1778,40 @@ export default function InboxPage() {
                                 </div>
                               </div>
 
-                              {/* AI Category Badge - Clickable */}
+                              {/* Enhanced AI Category Badge with Glass Effects */}
                               <div className="mb-1 flex items-center gap-2 min-h-[24px]">
                                 {analysis?.category ? (
                                   <>
-                                    <button
+                                    <motion.button
                                       onClick={(e) => handleCategoryBadgeClick(thread, e)}
-                                      className={`text-xs px-2 py-0.5 rounded-full border ${getCategoryColor(analysis.category)} hover:opacity-80 transition-opacity cursor-pointer flex items-center gap-1`}
+                                      className={`text-xs px-2 py-0.5 rounded-full cursor-pointer flex items-center gap-1 category-badge-glass ${
+                                        analysis.category.includes('hot') ? 'category-badge-hot-lead' :
+                                        analysis.category.includes('showing') ? 'category-badge-showing' :
+                                        analysis.category.includes('buyer') ? 'category-badge-buyer-lead' :
+                                        analysis.category.includes('seller') ? 'category-badge-seller-lead' :
+                                        'category-badge-glass'
+                                      }`}
+                                      whileHover={{ scale: 1.05 }}
+                                      whileTap={{ scale: 0.95 }}
                                     >
                                       <span>{getCategoryEmoji(analysis.category)}</span>
-                                      {analysis.category.replace('_', ' ').toUpperCase()}
-                                    </button>
-                                    <button
+                                      <span className="font-medium">{analysis.category.replace('_', ' ').toUpperCase()}</span>
+                                    </motion.button>
+                                    <motion.button
                                       onClick={(e) => handleAddToPipeline(thread, e)}
-                                      className="text-xs px-2 py-0.5 rounded-full border border-green-400/50 bg-green-600/20 text-green-200 hover:opacity-80 transition-opacity cursor-pointer"
+                                      className="text-xs px-2 py-0.5 rounded-full cursor-pointer category-badge-glass"
+                                      style={{
+                                        background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1))',
+                                        border: '1px solid rgba(34, 197, 94, 0.4)',
+                                        color: theme === 'black' ? 'rgb(134, 239, 172)' : 'rgb(22, 163, 74)',
+                                        boxShadow: '0 0 12px rgba(34, 197, 94, 0.2)'
+                                      }}
                                       title="Add to Pipeline"
+                                      whileHover={{ scale: 1.05, boxShadow: '0 0 16px rgba(34, 197, 94, 0.3)' }}
+                                      whileTap={{ scale: 0.95 }}
                                     >
-                                      + PIPELINE
-                                    </button>
+                                      <span className="font-medium">+ PIPELINE</span>
+                                    </motion.button>
                                   </>
                                 ) : (
                                   <div className="h-6" />

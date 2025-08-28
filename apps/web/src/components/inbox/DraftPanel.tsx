@@ -225,19 +225,51 @@ export function DraftPanel({ theme, refreshTrigger, onDraftAction }: DraftPanelP
   }
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className={`p-4 border-b ${theme === 'black' ? 'border-white/10' : 'border-black/10'} flex items-center justify-between`}>
-        <div className="flex items-center gap-2">
-          <Bot className="h-5 w-5 text-purple-400" />
-          <h3 className={`font-semibold ${theme === 'black' ? 'text-white' : 'text-black'}`}>
-            AI Drafts
-          </h3>
-          <div className={`px-2 py-1 rounded-full text-xs ${getCategoryColor('hot_lead')} font-medium`}>
-            {drafts.length}
+    <div className="h-full flex flex-col draft-panel-glass">
+      {/* Enhanced Header with Glass Effect */}
+      <motion.div 
+        className={`p-4 border-b ${theme === 'black' ? 'border-white/10' : 'border-black/10'} flex items-center justify-between`}
+        style={{
+          background: 'var(--glass-gradient-glow)',
+          backdropFilter: 'blur(20px) saturate(1.3)',
+          WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
+        }}
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="flex items-center gap-3">
+          <motion.div 
+            className="p-2 rounded-xl"
+            style={{
+              background: 'rgba(139, 92, 246, 0.15)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              boxShadow: '0 0 20px rgba(139, 92, 246, 0.2)'
+            }}
+            whileHover={{ scale: 1.05 }}
+          >
+            <Bot className="h-5 w-5 text-purple-400" />
+          </motion.div>
+          <div>
+            <h3 className={`font-semibold ${theme === 'black' ? 'text-white' : 'text-black'}`}>
+              AI Drafts
+            </h3>
+            <motion.div 
+              className="category-badge-glass px-2 py-1 rounded-full text-xs font-medium mt-1"
+              style={{
+                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1))',
+                border: '1px solid rgba(139, 92, 246, 0.4)',
+                color: theme === 'black' ? 'rgb(196, 181, 253)' : 'rgb(109, 40, 217)',
+                boxShadow: '0 0 12px rgba(139, 92, 246, 0.2)'
+              }}
+              animate={{ scale: drafts.length > 0 ? [1, 1.1, 1] : 1 }}
+              transition={{ duration: 2, repeat: drafts.length > 0 ? Infinity : 0, repeatDelay: 3 }}
+            >
+              {drafts.length} Draft{drafts.length !== 1 ? 's' : ''}
+            </motion.div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Drafts List */}
       <div className="flex-1 overflow-y-auto">
@@ -245,10 +277,22 @@ export function DraftPanel({ theme, refreshTrigger, onDraftAction }: DraftPanelP
           {drafts.map((draft, index) => (
             <motion.div
               key={draft.id}
-              className={`border-b ${theme === 'black' ? 'border-white/5 hover:bg-white/5' : 'border-black/5 hover:bg-black/5'} transition-all duration-200`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
+              className={`draft-item glass-hover-lift border-b ${theme === 'black' ? 'border-white/5' : 'border-black/5'} transition-all duration-300 relative overflow-hidden`}
+              style={{
+                background: 'var(--glass-surface-alpha)',
+                border: '1px solid var(--glass-border-subtle)',
+                backdropFilter: 'blur(8px) saturate(1.1)',
+                WebkitBackdropFilter: 'blur(8px) saturate(1.1)'
+              }}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: index * 0.1, duration: 0.4 }}
+              whileHover={{ 
+                y: -2, 
+                boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 0 0 1px var(--glass-border-strong)',
+                backdropFilter: 'blur(12px) saturate(1.2) brightness(1.1)',
+                WebkitBackdropFilter: 'blur(12px) saturate(1.2) brightness(1.1)'
+              }}
             >
               {/* Draft Header */}
               <div 
@@ -257,10 +301,25 @@ export function DraftPanel({ theme, refreshTrigger, onDraftAction }: DraftPanelP
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <div className={`text-xs px-2 py-0.5 rounded-full border ${getCategoryColor(draft.category)} flex items-center gap-1`}>
+                    <motion.div 
+                      className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 category-badge-glass ${
+                        draft.category.includes('hot') ? 'category-badge-hot-lead' :
+                        draft.category.includes('showing') ? 'category-badge-showing' :
+                        draft.category.includes('buyer') ? 'category-badge-buyer-lead' :
+                        draft.category.includes('seller') ? 'category-badge-seller-lead' :
+                        'category-badge-glass'
+                      }`}
+                      whileHover={{ scale: 1.05 }}
+                      animate={{ 
+                        boxShadow: draft.confidenceScore > 0.8 ? 
+                          ['0 0 8px rgba(34, 197, 94, 0.3)', '0 0 12px rgba(34, 197, 94, 0.5)', '0 0 8px rgba(34, 197, 94, 0.3)'] : 
+                          '0 0 8px rgba(139, 92, 246, 0.2)'
+                      }}
+                      transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+                    >
                       <span>{getCategoryEmoji(draft.category)}</span>
-                      {draft.category.replace('-auto-draft', '').replace('_', ' ').toUpperCase()}
-                    </div>
+                      <span className="font-medium">{draft.category.replace('-auto-draft', '').replace('_', ' ').toUpperCase()}</span>
+                    </motion.div>
                     <div className="flex items-center gap-1 text-xs text-green-400">
                       <Clock className="h-3 w-3" />
                       {formatTimeAgo(draft.createdAt)}
@@ -331,67 +390,169 @@ export function DraftPanel({ theme, refreshTrigger, onDraftAction }: DraftPanelP
                             </div>
                           </div>
                         ) : (
-                          <div className={`text-sm ${theme === 'black' ? 'text-white/90' : 'text-black/90'} whitespace-pre-wrap p-3 rounded ${theme === 'black' ? 'bg-white/5' : 'bg-black/5'}`}>
+                          <motion.div 
+                            className={`text-sm ${theme === 'black' ? 'text-white/90' : 'text-black/90'} whitespace-pre-wrap p-3 rounded`}
+                            style={{
+                              background: 'var(--glass-surface-subtle)',
+                              border: '1px solid var(--glass-border-subtle)',
+                              backdropFilter: 'blur(6px)',
+                              WebkitBackdropFilter: 'blur(6px)'
+                            }}
+                            whileHover={{
+                              background: 'var(--glass-surface)',
+                              borderColor: 'var(--glass-border)'
+                            }}
+                          >
                             {draft.suggestedContent}
-                          </div>
+                          </motion.div>
                         )}
                       </div>
 
-                      {/* Draft Actions */}
+                      {/* Enhanced Draft Actions with Glass Effects */}
                       {editingDraft !== draft.id && (
-                        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-white/10">
-                          <Button
-                            variant="liquid"
-                            size="sm"
-                            onClick={() => handleDraftAction('send', draft.id)}
-                            disabled={actionLoading === `send-${draft.id}`}
-                            className="flex-1"
-                          >
-                            <Send className="h-4 w-4 mr-1" />
-                            Send Now
-                          </Button>
+                        <motion.div 
+                          className="flex items-center gap-2 mt-4 pt-3 border-t border-white/10"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.2 }}
+                        >
+                          <motion.div className="flex-1">
+                            <Button
+                              variant="liquid"
+                              size="sm"
+                              onClick={() => handleDraftAction('send', draft.id)}
+                              disabled={actionLoading === `send-${draft.id}`}
+                              className="w-full"
+                              style={{
+                                background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.8), rgba(34, 197, 94, 0.6))',
+                                border: '1px solid rgba(34, 197, 94, 0.6)',
+                                boxShadow: '0 4px 16px rgba(34, 197, 94, 0.3)'
+                              }}
+                            >
+                              <Send className="h-4 w-4 mr-1" />
+                              Send Now
+                            </Button>
+                          </motion.div>
                           
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setEditingDraft(draft.id);
-                              setEditContent(draft.suggestedContent);
-                            }}
-                            disabled={actionLoading?.includes(draft.id)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setEditingDraft(draft.id);
+                                setEditContent(draft.suggestedContent);
+                              }}
+                              disabled={actionLoading?.includes(draft.id)}
+                              className="category-badge-glass"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </motion.div>
                           
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDraftAction('approve', draft.id)}
-                            disabled={actionLoading === `approve-${draft.id}`}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDraftAction('approve', draft.id)}
+                              disabled={actionLoading === `approve-${draft.id}`}
+                              className="category-badge-glass"
+                              style={{
+                                borderColor: 'rgba(34, 197, 94, 0.4)',
+                                color: theme === 'black' ? 'rgb(134, 239, 172)' : 'rgb(22, 163, 74)'
+                              }}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                          </motion.div>
                           
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDraftAction('decline', draft.id)}
-                            disabled={actionLoading === `decline-${draft.id}`}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDraftAction('decline', draft.id)}
+                              disabled={actionLoading === `decline-${draft.id}`}
+                              className="category-badge-glass"
+                              style={{
+                                borderColor: 'rgba(239, 68, 68, 0.4)',
+                                color: theme === 'black' ? 'rgb(252, 165, 165)' : 'rgb(185, 28, 28)'
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </motion.div>
+                        </motion.div>
                       )}
 
-                      {/* Draft Metadata */}
-                      <div className="mt-3 pt-3 border-t border-white/10">
-                        <div className={`text-xs ${theme === 'black' ? 'text-white/40' : 'text-black/40'} space-y-1`}>
-                          <div>Confidence: {Math.round(draft.confidenceScore * 100)}%</div>
+                      {/* Enhanced Draft Metadata with Glass Effect */}
+                      <motion.div 
+                        className="mt-3 pt-3 border-t border-white/10"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                      >
+                        <div className={`text-xs ${theme === 'black' ? 'text-white/40' : 'text-black/40'} space-y-2`}>
+                          <motion.div 
+                            className="flex items-center gap-2"
+                            whileHover={{ scale: 1.02 }}
+                          >
+                            <span>Confidence:</span>
+                            <div 
+                              className="flex-1 h-2 rounded-full overflow-hidden"
+                              style={{
+                                background: 'var(--glass-surface-subtle)',
+                                border: '1px solid var(--glass-border-subtle)'
+                              }}
+                            >
+                              <motion.div
+                                className="h-full rounded-full"
+                                style={{
+                                  background: draft.confidenceScore > 0.8 ? 
+                                    'linear-gradient(90deg, rgba(34, 197, 94, 0.8), rgba(34, 197, 94, 0.6))' :
+                                    draft.confidenceScore > 0.6 ?
+                                    'linear-gradient(90deg, rgba(251, 191, 36, 0.8), rgba(251, 191, 36, 0.6))' :
+                                    'linear-gradient(90deg, rgba(239, 68, 68, 0.8), rgba(239, 68, 68, 0.6))',
+                                  boxShadow: '0 0 8px rgba(139, 92, 246, 0.3)'
+                                }}
+                                initial={{ width: '0%' }}
+                                animate={{ width: `${Math.round(draft.confidenceScore * 100)}%` }}
+                                transition={{ duration: 1, delay: 0.5 }}
+                              />
+                            </div>
+                            <span className="font-medium">{Math.round(draft.confidenceScore * 100)}%</span>
+                          </motion.div>
                           {draft.analysis && (
-                            <div>Lead Score: {draft.analysis.leadScore}/100</div>
+                            <motion.div 
+                              className="flex items-center gap-2"
+                              whileHover={{ scale: 1.02 }}
+                            >
+                              <span>Lead Score:</span>
+                              <div 
+                                className="flex-1 h-2 rounded-full overflow-hidden"
+                                style={{
+                                  background: 'var(--glass-surface-subtle)',
+                                  border: '1px solid var(--glass-border-subtle)'
+                                }}
+                              >
+                                <motion.div
+                                  className="h-full rounded-full"
+                                  style={{
+                                    background: draft.analysis.leadScore >= 80 ? 
+                                      'linear-gradient(90deg, rgba(34, 197, 94, 0.8), rgba(34, 197, 94, 0.6))' :
+                                      draft.analysis.leadScore >= 60 ?
+                                      'linear-gradient(90deg, rgba(251, 191, 36, 0.8), rgba(251, 191, 36, 0.6))' :
+                                      'linear-gradient(90deg, rgba(239, 68, 68, 0.8), rgba(239, 68, 68, 0.6))',
+                                    boxShadow: '0 0 8px rgba(139, 92, 246, 0.3)'
+                                  }}
+                                  initial={{ width: '0%' }}
+                                  animate={{ width: `${draft.analysis.leadScore}%` }}
+                                  transition={{ duration: 1, delay: 0.7 }}
+                                />
+                              </div>
+                              <span className="font-medium">{draft.analysis.leadScore}/100</span>
+                            </motion.div>
                           )}
                         </div>
-                      </div>
+                      </motion.div>
                     </div>
                   </motion.div>
                 )}
