@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db-pool';
 import { auth } from '@/server/auth';
+import { getPersonalityForOrg, generatePersonalityPrompt, generateFallbackPrompt } from './personality';
 
 interface AssistantParams {
   prompt: string;
@@ -54,7 +55,21 @@ export async function streamAssistantResponse(params: AssistantParams) {
     }
   }
 
-  const systemPrompt = `You are a helpful real estate assistant. Use the provided context to answer questions.\n${context}`;
+  // Get personality data for this organization
+  const personality = await getPersonalityForOrg(orgId);
+  
+  let systemPrompt: string;
+  if (personality) {
+    systemPrompt = generatePersonalityPrompt(personality);
+    if (context) {
+      systemPrompt += `\n\nContext for this conversation:\n${context}`;
+    }
+  } else {
+    systemPrompt = generateFallbackPrompt();
+    if (context) {
+      systemPrompt += `\n\nContext for this conversation:\n${context}`;
+    }
+  }
 
   const apiKey = process.env.AI_API_KEY;
   if (!apiKey) {

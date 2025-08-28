@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { prisma } from './db';
 import { decryptForOrg } from './crypto';
+import { getPersonalityForOrg, generatePersonalityPrompt, generateFallbackPrompt } from './ai/personality';
 
 let openai: OpenAI | null = null;
 
@@ -39,7 +40,16 @@ export class AIService {
     options?: { useContext?: boolean }
   ): Promise<string> {
     try {
-      let systemMessage = `You are Rivor, an AI assistant for real estate professionals. You help with email management, lead qualification, scheduling, and sales strategy. Keep responses helpful, professional, and actionable.`;
+      // Get personality data for personalized chat responses
+      const personality = await getPersonalityForOrg(orgId);
+      
+      let systemMessage: string;
+      if (personality) {
+        systemMessage = generatePersonalityPrompt(personality);
+        systemMessage += '\n\nYou are helping with real estate CRM tasks like email management, lead qualification, scheduling, and sales strategy. Always respond as this agent would, maintaining their personal style and voice.';
+      } else {
+        systemMessage = `You are Rivor, an AI assistant for real estate professionals. You help with email management, lead qualification, scheduling, and sales strategy. Keep responses helpful, professional, and actionable.`;
+      }
 
       // Add context if requested
       if (options?.useContext) {
@@ -81,6 +91,17 @@ export class AIService {
     try {
       const { type, tone, context } = options;
 
+      // Get personality data for personalized email generation
+      const personality = await getPersonalityForOrg(orgId);
+      
+      let systemPrompt: string;
+      if (personality) {
+        systemPrompt = generatePersonalityPrompt(personality);
+        systemPrompt += '\n\nGenerate emails that sound exactly like this agent wrote them personally.';
+      } else {
+        systemPrompt = 'You are an expert email writer for real estate professionals. Generate professional, contextually appropriate emails.';
+      }
+
       let prompt = `Generate a ${tone} ${type} email`;
       
       if (context?.threadSubject) {
@@ -107,14 +128,14 @@ export class AIService {
   "confidence": number between 80-100
 }
 
-Make the email contextually appropriate, ${tone} in tone, and suitable for a real estate professional.`;
+Make the email contextually appropriate, ${tone} in tone, and suitable for a real estate professional.${personality ? ' Write exactly as the agent would write it - match their communication style, vocabulary, and patterns.' : ''}`;
 
       const completion = await getOpenAI().chat.completions.create({
         model: 'gpt-4',
         messages: [
           {
             role: 'system',
-            content: 'You are an expert email writer for real estate professionals. Generate professional, contextually appropriate emails.'
+            content: systemPrompt
           },
           {
             role: 'user',

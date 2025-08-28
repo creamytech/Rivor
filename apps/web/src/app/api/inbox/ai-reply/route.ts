@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/server/auth';
 import { prisma } from '@/lib/db-pool';
 import { getThreadWithMessages } from '@/server/email';
+import { getPersonalityForOrg, generatePersonalityPrompt, generateFallbackPrompt } from '@/server/ai/personality';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
@@ -214,6 +215,29 @@ export async function POST(request: NextRequest) {
       orderBy: { successRate: 'desc' }
     });
 
+    // Get personality data for personalized responses
+    console.log('🧠 Getting personality data for orgId:', orgId);
+    const personality = await getPersonalityForOrg(orgId);
+    
+    let systemPrompt: string;
+    if (personality) {
+      console.log('✅ Using personalized communication style:', personality.communicationStyle);
+      systemPrompt = generatePersonalityPrompt(personality);
+      systemPrompt += '\n\nFor this email reply, make sure to:';
+    } else {
+      console.log('⚠️ No personality data found, using generic prompt');
+      systemPrompt = 'You are a professional real estate agent assistant.';
+    }
+    
+    systemPrompt += `
+- Generate email responses that are professional and helpful
+- Specific to real estate scenarios  
+- Include relevant next steps
+- Compliant with real estate regulations
+- Personalized to the client's needs and situation
+
+${template ? `Use this template as inspiration but customize for the specific situation:\n${template.templateContent}` : ''}`;
+
     // Call OpenAI for reply generation
     console.log('🤖 Calling OpenAI API for reply generation...');
     
@@ -225,14 +249,7 @@ export async function POST(request: NextRequest) {
         messages: [
           {
             role: "system",
-            content: `You are a professional real estate agent assistant. Generate email responses that are:
-- Professional and friendly
-- Specific to real estate scenarios
-- Include relevant next steps
-- Compliant with real estate regulations
-- Personalized to the client's needs
-
-${template ? `Use this template as inspiration but customize for the specific situation:\n${template.templateContent}` : ''}`
+            content: systemPrompt
           },
           {
             role: "user",
@@ -251,14 +268,7 @@ ${template ? `Use this template as inspiration but customize for the specific si
         messages: [
           {
             role: "system",
-            content: `You are a professional real estate agent assistant. Generate email responses that are:
-- Professional and friendly
-- Specific to real estate scenarios
-- Include relevant next steps
-- Compliant with real estate regulations
-- Personalized to the client's needs
-
-${template ? `Use this template as inspiration but customize for the specific situation:\n${template.templateContent}` : ''}`
+            content: systemPrompt
           },
           {
             role: "user",
