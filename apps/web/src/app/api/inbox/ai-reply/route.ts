@@ -105,6 +105,10 @@ async function getOrgIdForUser(session: any): Promise<string | null> {
 }
 
 export async function POST(request: NextRequest) {
+  let emailId: string | undefined;
+  let actualThreadId: string | undefined;
+  let orgId: string | null = null;
+
   try {
     console.log('🚀 AI Reply POST request started');
     
@@ -124,13 +128,15 @@ export async function POST(request: NextRequest) {
     console.log('✅ User authenticated:', session.user.email);
 
     const { 
-      emailId, 
+      emailId: requestEmailId, 
       threadId,
       agentName = session.user.name || 'Real Estate Agent',
       brokerage = 'Rivor Realty',
       agentPhone = '',
       agentEmail = session.user.email || ''
     } = await request.json();
+    
+    emailId = requestEmailId; // Set for error handling scope
     
     console.log('📦 Request data:', { emailId, threadId });
 
@@ -140,14 +146,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the organization ID
-    const orgId = await getOrgIdForUser(session);
+    orgId = await getOrgIdForUser(session);
     if (!orgId) {
       console.log('❌ No organization found for user');
       return NextResponse.json({ error: 'No organization found' }, { status: 400 });
     }
 
     // If we only have emailId, find the thread it belongs to
-    let actualThreadId = threadId;
+    actualThreadId = threadId;
     if (!actualThreadId && emailId) {
       console.log('🔍 Finding thread for emailId:', emailId);
       const message = await prisma.emailMessage.findFirst({
@@ -338,10 +344,10 @@ ${template ? `Use this template as inspiration but customize for the specific si
     }
 
     // Calculate confidence score based on analysis quality and template availability
-    let confidenceScore = analysis.confidenceScore;
+    let confidenceScore = Number(analysis.confidenceScore) || 0.7; // Convert Decimal to number, default to 0.7
     if (template) confidenceScore += 0.1; // Boost confidence if we have a good template
     if (analysis.priorityScore >= 80) confidenceScore += 0.05; // High priority emails get slight boost
-    confidenceScore = Math.min(1, confidenceScore);
+    confidenceScore = Math.min(1, Math.max(0, confidenceScore)); // Clamp between 0 and 1
     
     console.log('📊 Calculated confidence score:', confidenceScore);
 
