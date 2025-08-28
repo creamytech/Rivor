@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Search,
@@ -146,6 +146,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
   }, []);
 
   const pathname = usePathname();
+  const router = useRouter();
 
   
   useEffect(() => setShowDrawer(Boolean(rightDrawer)), [rightDrawer]);
@@ -291,14 +292,33 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
     console.log('Setting showQuickActions to:', !showQuickActions);
   };
 
-  const handleNotificationToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleNotificationToggle = async (event: React.MouseEvent<HTMLButtonElement>) => {
     const button = event.currentTarget;
     const rect = button.getBoundingClientRect();
     setNotificationPosition({
       top: rect.bottom + 8,
       right: window.innerWidth - rect.right
     });
+    
+    const wasNotificationsPanelClosed = !showNotifications;
     setShowNotifications(!showNotifications);
+    
+    // If opening the notifications panel, mark all as read and clear the count
+    if (wasNotificationsPanelClosed && unreadCount > 0) {
+      try {
+        const response = await fetch('/api/notifications/read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (response.ok) {
+          setUnreadCount(0);
+          console.log('Notifications marked as read');
+        }
+      } catch (error) {
+        console.error('Failed to mark notifications as read:', error);
+      }
+    }
   };
 
   const handleProfileToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -689,8 +709,37 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                 return `${diffDays}d`;
               };
               
+              const handleNotificationClick = () => {
+                if (notification.actionUrl) {
+                  router.push(notification.actionUrl);
+                  setShowNotifications(false);
+                } else {
+                  // Fallback navigation based on type
+                  switch (notification.type) {
+                    case 'lead':
+                    case 'email':
+                    case 'draft':
+                      router.push('/app/inbox');
+                      break;
+                    case 'meeting':
+                      router.push('/app/calendar');
+                      break;
+                    case 'task':
+                      router.push('/app/tasks');
+                      break;
+                    default:
+                      router.push('/app');
+                  }
+                  setShowNotifications(false);
+                }
+              };
+
               return (
-                <div key={notification.id} className="flex items-center gap-3 p-2 rounded-lg glass-hover-pulse">
+                <div 
+                  key={notification.id} 
+                  className="flex items-center gap-3 p-2 rounded-lg glass-hover-pulse cursor-pointer transition-all duration-200 hover:bg-white/5"
+                  onClick={handleNotificationClick}
+                >
                   <div className={`w-2 h-2 rounded-full ${getNotificationColor(notification.type, notification.priority)}`}></div>
                   <div className="flex-1">
                     <p className={`text-sm ${notification.isRead ? 'font-normal' : 'font-medium'}`} style={{ color: 'var(--glass-text)' }}>

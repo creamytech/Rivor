@@ -468,6 +468,8 @@ export class GmailService {
 
       // Process each message in the thread
       let messagesProcessed = 0;
+      let isNewThread = false;
+      
       for (const message of gmailThread.messages) {
         if (message.id) {
           // Check if message already exists before processing
@@ -478,6 +480,10 @@ export class GmailService {
           if (!existing) {
             await this.processMessageInThread(orgId, emailAccountId, thread.id, message);
             messagesProcessed++;
+            // If this is the first message, it's a new thread
+            if (messagesProcessed === 1) {
+              isNewThread = true;
+            }
           }
         }
       }
@@ -521,6 +527,45 @@ export class GmailService {
             error: error instanceof Error ? error.message : 'Unknown error',
             action: 'pipeline_auto_link_failed'
           });
+        }
+        
+        // Broadcast real-time update for new threads or thread updates
+        if (messagesProcessed > 0) {
+          try {
+            // Dynamic import to avoid circular dependencies
+            const { broadcastInboxUpdate } = await import('@/app/api/inbox/stream/route');
+            
+            // Get updated thread data for broadcast
+            const updatedThread = await prisma.emailThread.findUnique({
+              where: { id: thread.id },
+              include: {
+                messages: {
+                  select: { id: true, sentAt: true, isRead: true },
+                  orderBy: { sentAt: 'desc' },
+                  take: 1
+                }
+              }
+            });
+            
+            if (updatedThread) {
+              await broadcastInboxUpdate(orgId, {
+                type: isNewThread ? 'new_thread' : 'thread_updated',
+                threadId: thread.id,
+                threadData: {
+                  id: updatedThread.id,
+                  messageCount: messagesProcessed,
+                  lastMessageAt: updatedThread.messages[0]?.sentAt,
+                  unread: updatedThread.unread
+                }
+              });
+            }
+          } catch (broadcastError) {
+            logger.warn('Failed to broadcast inbox update', {
+              orgId,
+              threadId: thread.id,
+              error: broadcastError instanceof Error ? broadcastError.message : String(broadcastError)
+            });
+          }
         }
       }
 

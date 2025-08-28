@@ -392,15 +392,66 @@ export default function InboxPage() {
     fetchThreads(1, activeFilter, searchQuery);
   }, [activeFilter]);
 
-  // Polling mechanism to check for updated AI analysis every 30 seconds (without full refresh)
+  // Real-time inbox updates with SSE instead of polling
   useEffect(() => {
-    const pollForUpdates = setInterval(() => {
-      console.log('🔍 Polling for AI analysis updates...');
-      updateExistingThreadsAnalysis();
-    }, 30000); // Poll every 30 seconds
+    console.log('🔄 Setting up real-time inbox updates...');
+    
+    const eventSource = new EventSource('/api/inbox/stream');
+    
+    eventSource.onmessage = (event) => {
+      try {
+        const update = JSON.parse(event.data);
+        console.log('📧 Real-time inbox update:', update);
+        
+        switch (update.type) {
+          case 'new_thread':
+            // Fetch the full thread data and add to top of list
+            fetchNewThreadsOnly();
+            break;
+            
+          case 'thread_updated':
+            // Update existing thread in the list
+            setThreads(prev => prev.map(thread => 
+              thread.id === update.threadId 
+                ? { ...thread, unread: update.threadData.unread, lastMessageAt: update.threadData.lastMessageAt }
+                : thread
+            ));
+            break;
+            
+          case 'thread_deleted':
+            // Remove thread from list
+            setThreads(prev => prev.filter(thread => thread.id !== update.threadId));
+            break;
+            
+          case 'connected':
+            console.log('📧 Real-time inbox connection established');
+            break;
+            
+          default:
+            console.log('Unknown update type:', update.type);
+        }
+      } catch (error) {
+        console.error('Failed to parse inbox update:', error);
+      }
+    };
 
-    return () => clearInterval(pollForUpdates);
-  }, []);
+    eventSource.onerror = (error) => {
+      console.error('Inbox SSE connection error:', error);
+      eventSource.close();
+      
+      // Fallback to periodic analysis updates only (less frequent)
+      const fallbackInterval = setInterval(() => {
+        console.log('🔍 Fallback: Polling for AI analysis updates...');
+        updateExistingThreadsAnalysis();
+      }, 60000); // Poll every minute as fallback
+      
+      return () => clearInterval(fallbackInterval);
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, []); // Remove threads dependency to avoid reconnection loops
 
   // Handle search with debounce
   useEffect(() => {
@@ -1662,6 +1713,7 @@ export default function InboxPage() {
                 <SyncStatusIndicator 
                   variant="compact" 
                   className="mr-2"
+                  showControls={false}
                 />
                 <Button 
                   variant="liquid" 
@@ -2035,12 +2087,12 @@ export default function InboxPage() {
                               const latestMessage = activeThread.messages?.[activeThread.messages.length - 1];
                               if (latestMessage) {
                                 handleReply(activeThread.id, {
-                                  toEmail: latestMessage.from?.email,
-                                  toName: latestMessage.from?.name,
-                                  subject: latestMessage.subject,
-                                  originalBody: latestMessage.htmlBody || latestMessage.textBody,
+                                  toEmail: latestMessage.fromEmail,
+                                  toName: latestMessage.fromName,
+                                  subject: latestMessage.subject?.startsWith('Re: ') ? latestMessage.subject : `Re: ${latestMessage.subject}`,
+                                  originalBody: latestMessage.bodyHtml || latestMessage.bodyText,
                                   originalDate: latestMessage.sentAt,
-                                  originalFrom: latestMessage.from?.name || latestMessage.from?.email
+                                  originalFrom: latestMessage.fromName || latestMessage.fromEmail
                                 });
                               }
                             }
@@ -2058,10 +2110,10 @@ export default function InboxPage() {
                               if (latestMessage) {
                                 handleForward(activeThread.id, {
                                   subject: `Fwd: ${latestMessage.subject || activeThread.subject}`,
-                                  originalBody: latestMessage.htmlBody || latestMessage.textBody,
+                                  originalBody: latestMessage.bodyHtml || latestMessage.bodyText,
                                   originalDate: latestMessage.sentAt,
-                                  originalFrom: latestMessage.from?.name || latestMessage.from?.email,
-                                  originalTo: latestMessage.to?.map(t => t.name || t.email).join(', ')
+                                  originalFrom: latestMessage.fromName || latestMessage.fromEmail,
+                                  originalTo: latestMessage.toName || latestMessage.toEmail || 'Recipients'
                                 });
                               }
                             }

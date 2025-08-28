@@ -10,7 +10,33 @@ export async function createNotification(data: {
   title: string;
   message: string;
   priority?: string;
+  actionUrl?: string;
 }) {
+  // Check for duplicate notifications within the last 5 minutes
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  
+  const existingNotification = await prisma.notification.findFirst({
+    where: {
+      orgId: data.orgId,
+      userId: data.userId,
+      type: data.type,
+      title: data.title,
+      message: data.message,
+      createdAt: {
+        gte: fiveMinutesAgo
+      }
+    }
+  });
+
+  if (existingNotification) {
+    console.log('Duplicate notification prevented:', {
+      type: data.type,
+      title: data.title,
+      existingId: existingNotification.id
+    });
+    return existingNotification;
+  }
+
   const notification = await prisma.notification.create({
     data: {
       orgId: data.orgId,
@@ -19,6 +45,7 @@ export async function createNotification(data: {
       title: data.title,
       message: data.message,
       priority: data.priority || 'low',
+      actionUrl: data.actionUrl,
     },
   });
 
@@ -60,7 +87,8 @@ export async function createDraftNotification(
   draftId: string,
   emailSubject: string,
   emailFrom: string,
-  category: string
+  category: string,
+  threadId?: string
 ): Promise<string | null> {
   try {
     const categoryNames: Record<string, string> = {
@@ -80,7 +108,8 @@ export async function createDraftNotification(
       type: 'draft',
       title: `AI Draft Ready - ${categoryName}`,
       message: `Auto-drafted reply for "${emailSubject.substring(0, 50)}" from ${emailFrom}`,
-      priority
+      priority,
+      actionUrl: threadId ? `/app/inbox?thread=${threadId}&tab=drafts` : '/app/inbox?tab=drafts'
     });
 
     return notification.id;
@@ -132,7 +161,8 @@ export async function createLeadNotification(
         type: 'lead',
         title: categoryName,
         message: `${confidencePercent}% confidence lead from ${emailFrom}: "${emailSubject.substring(0, 50)}..."`,
-        priority
+        priority,
+        actionUrl: `/app/inbox?thread=${threadId}`
       });
       notificationIds.push(notification.id);
     }
@@ -173,7 +203,8 @@ export async function createNewEmailNotification(
         type: 'email',
         title,
         message: `New email from ${emailFrom}: "${emailSubject.substring(0, 50)}..."`,
-        priority
+        priority,
+        actionUrl: `/app/inbox?thread=${threadId}`
       });
       notificationIds.push(notification.id);
     }
