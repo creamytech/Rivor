@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { OnboardingGate } from '@/components/app/OnboardingGate';
 import SimpleOnboarding from './SimpleOnboarding';
 
 interface OnboardingManagerProps {
@@ -17,7 +18,7 @@ export default function OnboardingManager({ children }: OnboardingManagerProps) 
 
   const checkOnboardingStatus = () => {
     try {
-      // Check if user has completed onboarding
+      // Check if user has completed basic onboarding
       const hasCompletedOnboarding = localStorage.getItem('rivor-onboarding-completed');
       
       // Show walkthrough for new users
@@ -63,7 +64,7 @@ export default function OnboardingManager({ children }: OnboardingManagerProps) 
   }
 
   return (
-    <>
+    <OnboardingGate>
       {children}
       
       {showWalkthrough && (
@@ -72,6 +73,6 @@ export default function OnboardingManager({ children }: OnboardingManagerProps) 
           onSkip={handleWalkthroughSkip}
         />
       )}
-    </>
+    </OnboardingGate>
   );
 }

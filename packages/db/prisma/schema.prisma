@@ -8,21 +8,22 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  emailVerified DateTime?
-  name          String?
-  image         String?
-  timezone      String         @default("America/New_York")
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  accounts      Account[]
-  emailAccounts EmailAccount[] @relation("UserEmailAccounts")
-  oauthAccounts OAuthAccount[]
-  orgMembers    OrgMember[]
-  sessions      Session[]
-  chatThreads   ChatThread[]
-  notifications Notification[]
+  id                    String         @id @default(cuid())
+  email                 String         @unique
+  emailVerified         DateTime?
+  name                  String?
+  image                 String?
+  timezone              String         @default("America/New_York")
+  personalityOnboarded  Boolean        @default(false) // AI personality onboarding completion
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  accounts              Account[]
+  emailAccounts         EmailAccount[] @relation("UserEmailAccounts")
+  oauthAccounts         OAuthAccount[]
+  orgMembers            OrgMember[]
+  sessions              Session[]
+  chatThreads           ChatThread[]
+  notifications         Notification[]
 }
 
 model Account {
