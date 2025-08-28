@@ -620,6 +620,7 @@ enum ReplyStatus {
   rejected
   modified
   sent
+  draft
 }
 
 enum FeedbackType {

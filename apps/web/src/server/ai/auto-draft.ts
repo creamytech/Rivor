@@ -6,7 +6,35 @@ import OpenAI from 'openai';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  timeout: 30000, // 30 second timeout
 });
+
+// Retry function with exponential backoff
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      
+      const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
+      logger.warn(`Auto-draft attempt ${attempt} failed, retrying in ${delay}ms...`, {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        attempt,
+        maxRetries
+      });
+      
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  throw new Error('Retry logic error'); // This should never be reached
+}
 
 interface AutoDraftTrigger {
   category: string;
@@ -165,16 +193,19 @@ Write a professional, personalized email reply that:
 
 Keep the response concise but comprehensive (2-3 paragraphs maximum).`;
 
-    // Generate the auto-draft
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.7,
-      max_tokens: 800,
-    });
+    // Generate the auto-draft with retry logic
+    const completion = await retryWithBackoff(async () => {
+      logger.info('Generating auto-draft with OpenAI API...', { emailId, category: analysis.category });
+      return await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 800,
+      });
+    }, 3, 1500); // 3 retries with 1.5s base delay for auto-drafts
 
     const draftContent = completion.choices[0]?.message?.content;
     if (!draftContent) {

@@ -66,7 +66,32 @@ function truncateContent(text: string, maxLength: number = 8000): string {
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  timeout: 30000, // 30 second timeout
 });
+
+// Retry function with exponential backoff
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      
+      const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
+      console.log(`⏳ Attempt ${attempt} failed, retrying in ${delay}ms...`);
+      console.log(`   Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  throw new Error('Retry logic error'); // This should never be reached
+}
 
 // Check if OpenAI API key is configured
 if (!process.env.OPENAI_API_KEY) {
@@ -196,7 +221,9 @@ export async function POST(request: NextRequest) {
 
     // Get thread with decrypted messages
     console.log('🔍 Fetching thread data for orgId:', orgId, 'threadId:', actualThreadId);
+    console.time(`thread-fetch-${emailId}`);
     const threadData = await getThreadWithMessages(orgId, actualThreadId);
+    console.timeEnd(`thread-fetch-${emailId}`);
     if (!threadData.thread || threadData.messages.length === 0) {
       console.log('❌ Thread or message not found:', { threadId: actualThreadId });
       return NextResponse.json({ error: "Thread or message not found" }, { status: 404 });
@@ -232,7 +259,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 });
     }
 
-    // Check if analysis already exists
+    // Check if analysis already exists before making OpenAI call
     console.log('🔍 Checking for existing analysis...');
     const existingAnalysis = await prisma.emailAIAnalysis.findUnique({
       where: { emailId }
@@ -242,7 +269,7 @@ export async function POST(request: NextRequest) {
       console.log('✅ Found existing analysis:', existingAnalysis.id);
       return NextResponse.json({ analysis: existingAnalysis });
     }
-    console.log('💫 No existing analysis found, creating new one...');
+    console.log('💫 No existing analysis found, proceeding with AI analysis...');
 
     // Create analysis prompt
     const fromParts = from.split(' ');
@@ -256,22 +283,18 @@ export async function POST(request: NextRequest) {
       .replace('{body}', truncatedBody);
 
     // Call OpenAI for analysis
-    console.log('🤖 Calling OpenAI API...');
+    console.log('🤖 Preparing OpenAI API call...');
     console.log('📝 Prompt length:', prompt.length);
+    console.time(`openai-analysis-${emailId}`);
     
     let completion;
     // Calculate approximate token count (rough estimate: 4 chars = 1 token)
     const estimatedTokens = Math.ceil((prompt.length) / 4);
     console.log('📊 Estimated token count:', estimatedTokens);
 
-    try {
-      // Use gpt-4o-mini for better cost efficiency and token handling
-      completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: `You are a real estate email analysis expert. You must respond with ONLY valid JSON in this exact format:
+    const systemMessage = {
+      role: "system" as const,
+      content: `You are a real estate email analysis expert. You must respond with ONLY valid JSON in this exact format:
 
 {
   "category": "hot_lead|showing_request|price_inquiry|seller_lead|buyer_lead|follow_up|contract|marketing",
@@ -280,63 +303,60 @@ export async function POST(request: NextRequest) {
   "confidenceScore": 0.0-1.0,
   "sentimentScore": 0.0-1.0,
   "keyEntities": {
+    "summary": "2-3 sentence summary",
     "addresses": ["address1", "address2"],
     "priceRange": "price mentioned",
     "contacts": ["phone numbers"],
     "propertyType": "property type",
     "timeframes": ["dates mentioned"],
-    "urgencyIndicators": ["urgent words"]
+    "urgencyIndicators": ["urgent words"],
+    "contactIntent": "main purpose/request"
   }
 }
 
 Do not include any text outside the JSON. Focus on the key information and ignore HTML formatting.`
-          },
-          {
-            role: "user", 
-            content: prompt
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 1000,
-      });
+    };
+
+    const userMessage = {
+      role: "user" as const,
+      content: prompt
+    };
+
+    try {
+      // Try gpt-4o-mini with retry logic
+      completion = await retryWithBackoff(async () => {
+        console.log('🤖 Calling OpenAI API (gpt-4o-mini) with retry logic...');
+        return await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [systemMessage, userMessage],
+          temperature: 0.3,
+          max_tokens: 1000,
+        });
+      }, 3, 1000);
+      console.timeEnd(`openai-analysis-${emailId}`);
       console.log('✅ OpenAI response received (gpt-4o-mini)');
     } catch (openaiError) {
-      console.log('⚠️ GPT-4o-mini failed, trying GPT-3.5-turbo...');
-      // Fallback to gpt-3.5-turbo if gpt-4o-mini fails
-      completion = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages: [
-          {
-            role: "system",
-            content: `You are a real estate email analysis expert. You must respond with ONLY valid JSON in this exact format:
-
-{
-  "category": "hot_lead|showing_request|price_inquiry|seller_lead|buyer_lead|follow_up|contract|marketing",
-  "priorityScore": 1-100,
-  "leadScore": 1-100, 
-  "confidenceScore": 0.0-1.0,
-  "sentimentScore": 0.0-1.0,
-  "keyEntities": {
-    "addresses": ["address1", "address2"],
-    "priceRange": "price mentioned",
-    "contacts": ["phone numbers"],
-    "propertyType": "property type",
-    "timeframes": ["dates mentioned"],
-    "urgencyIndicators": ["urgent words"]
-  }
-}
-
-Do not include any text outside the JSON. Focus on the key information and ignore HTML formatting.`
-          },
-          {
-            role: "user", 
-            content: prompt
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 1000,
-      });
-      console.log('✅ OpenAI response received (gpt-3.5-turbo fallback)');
+      console.log('⚠️ GPT-4o-mini failed after retries, trying GPT-3.5-turbo...');
+      console.log('Error details:', openaiError instanceof Error ? openaiError.message : openaiError);
+      
+      // Fallback to gpt-3.5-turbo with retry logic
+      try {
+        completion = await retryWithBackoff(async () => {
+          console.log('🤖 Calling OpenAI API (gpt-3.5-turbo fallback) with retry logic...');
+          return await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [systemMessage, userMessage],
+            temperature: 0.3,
+            max_tokens: 1000,
+          });
+        }, 3, 1000);
+        console.timeEnd(`openai-analysis-${emailId}`);
+        console.log('✅ OpenAI response received (gpt-3.5-turbo fallback)');
+      } catch (fallbackError) {
+        console.error('❌ Both GPT-4o-mini and GPT-3.5-turbo failed after retries');
+        console.error('Final error:', fallbackError instanceof Error ? fallbackError.message : fallbackError);
+        throw new Error(`OpenAI API failed after retries: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
+      }
     }
 
     let analysisResult;
@@ -397,8 +417,12 @@ Do not include any text outside the JSON. Focus on the key information and ignor
       'marketing': 'marketing'
     };
 
-    const analysis = await prisma.emailAIAnalysis.create({
-      data: {
+    // Use upsert to handle race conditions where multiple requests try to create the same analysis
+    console.log('💾 Saving analysis to database...');
+    console.time(`database-save-${emailId}`);
+    const analysis = await prisma.emailAIAnalysis.upsert({
+      where: { emailId },
+      create: {
         emailId,
         threadId: actualThreadId,
         category: categoryMap[analysisResult.category] || 'follow_up',
@@ -408,8 +432,21 @@ Do not include any text outside the JSON. Focus on the key information and ignor
         sentimentScore: Math.min(1, Math.max(0, analysisResult.sentimentScore || 0.5)),
         keyEntities: analysisResult.keyEntities || {},
         processingStatus: 'completed'
+      },
+      update: {
+        // If analysis already exists, update it with new results
+        category: categoryMap[analysisResult.category] || 'follow_up',
+        priorityScore: Math.min(100, Math.max(0, analysisResult.priorityScore || 50)),
+        leadScore: Math.min(100, Math.max(0, analysisResult.leadScore || 50)),
+        confidenceScore: Math.min(1, Math.max(0, analysisResult.confidenceScore || 0.5)),
+        sentimentScore: Math.min(1, Math.max(0, analysisResult.sentimentScore || 0.5)),
+        keyEntities: analysisResult.keyEntities || {},
+        processingStatus: 'completed',
+        updatedAt: new Date()
       }
     });
+    console.timeEnd(`database-save-${emailId}`);
+    console.log('✅ Analysis saved to database:', { analysisId: analysis.id, category: analysis.category });
 
     // If high-priority email, queue for auto-reply generation
     if (analysis.priorityScore >= 80 || analysis.category === 'hot_lead') {
@@ -452,12 +489,56 @@ Do not include any text outside the JSON. Focus on the key information and ignor
     });
 
   } catch (error) {
-    console.error('AI analysis error:', error);
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('❌ AI analysis error:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      emailId,
+      threadId: actualThreadId,
+      orgId,
+      userEmail: session?.user?.email
+    });
+    
+    // Try to save a failed analysis record for debugging
+    try {
+      if (emailId && actualThreadId) {
+        await prisma.emailAIAnalysis.upsert({
+          where: { emailId },
+          create: {
+            emailId,
+            threadId: actualThreadId,
+            category: 'follow_up', // Default category
+            priorityScore: 0,
+            leadScore: 0,
+            confidenceScore: 0.0,
+            sentimentScore: 0.5,
+            keyEntities: {
+              error: 'Analysis failed',
+              errorMessage: error instanceof Error ? error.message : 'Unknown error',
+              timestamp: new Date().toISOString()
+            },
+            processingStatus: 'failed'
+          },
+          update: {
+            processingStatus: 'failed',
+            keyEntities: {
+              error: 'Analysis failed',
+              errorMessage: error instanceof Error ? error.message : 'Unknown error',
+              timestamp: new Date().toISOString()
+            },
+            updatedAt: new Date()
+          }
+        });
+        console.log('🔍 Saved failed analysis record for debugging');
+      }
+    } catch (saveError) {
+      console.error('Failed to save error analysis record:', saveError);
+    }
+    
     return NextResponse.json({ 
       error: "Failed to analyze email",
       details: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : 'No stack trace'
+      emailId,
+      timestamp: new Date().toISOString()
     }, { status: 500 });
   }
 }
