@@ -324,17 +324,34 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if agent has completed onboarding
-    const personality = await prisma.agentPersonality.findUnique({
-      where: { orgId }
-    });
+    try {
+      const personality = await prisma.agentPersonality.findUnique({
+        where: { orgId }
+      });
 
-    return NextResponse.json({
-      hasCompletedOnboarding: personality?.onboardingCompleted || false,
-      personality: personality || null
-    });
+      return NextResponse.json({
+        hasCompletedOnboarding: personality?.onboardingCompleted || false,
+        personality: personality || null
+      });
+    } catch (dbError: any) {
+      // Handle case where personality tables don't exist yet (migration not run)
+      if (dbError.code === 'P2021' || dbError.message?.includes('does not exist')) {
+        console.warn('AgentPersonality table not found, personality features not available');
+        return NextResponse.json({
+          hasCompletedOnboarding: false,
+          personality: null,
+          migrationRequired: true
+        });
+      }
+      throw dbError;
+    }
 
   } catch (error) {
     console.error('Error checking onboarding status:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      hasCompletedOnboarding: false,
+      personality: null 
+    }, { status: 500 });
   }
 }

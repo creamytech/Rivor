@@ -346,10 +346,16 @@ async function generatePersonalizedContent(
   customizations: any
 ) {
   try {
-    // Get agent personality for personalized content generation
-    const personality = await prisma.agentPersonality.findUnique({
-      where: { orgId: execution.orgId }
-    });
+    // Get agent personality for personalized content generation (optional)
+    let personality = null;
+    try {
+      personality = await prisma.agentPersonality.findUnique({
+        where: { orgId: execution.orgId }
+      });
+    } catch (dbError: any) {
+      // If personality tables don't exist, continue without personalization
+      console.warn('AgentPersonality table not available, using basic personalization');
+    }
 
     // Get context about the contact/lead
     let context: any = {

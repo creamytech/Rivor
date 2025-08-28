@@ -80,9 +80,15 @@ export function AssistantDashboard({ className }: AssistantDashboardProps) {
       if (response.ok) {
         const data = await response.json();
         setHasCompletedOnboarding(data.hasCompletedOnboarding);
+      } else {
+        // If personality API isn't available (e.g., production migration not complete)
+        // Default to false and continue normal operation
+        console.warn('Personality onboarding API not available, defaulting to false');
+        setHasCompletedOnboarding(false);
       }
     } catch (error) {
       console.error('Error checking onboarding status:', error);
+      // Gracefully handle missing personality features
       setHasCompletedOnboarding(false);
     }
   };
