@@ -381,13 +381,69 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { replyId, status, userModifications, feedbackType, comments } = await request.json();
+    const orgId = (session as { orgId?: string }).orgId;
+    if (!orgId) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
+    }
+
+    const { replyId, status, userModifications, feedbackType, comments, autoSend } = await request.json();
 
     if (!replyId || !status) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Update reply status
+    // If status is being changed to 'approved' and autoSend is true, send the email
+    if ((status === 'approved' || status === 'sent') && autoSend) {
+      try {
+        // Send the email using the send-reply functionality
+        const sendResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/inbox/send-reply`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // Forward session cookies for authentication
+            'Cookie': request.headers.get('cookie') || ''
+          },
+          body: JSON.stringify({
+            replyId,
+            customContent: userModifications
+          })
+        });
+
+        if (!sendResponse.ok) {
+          const errorData = await sendResponse.json().catch(() => ({}));
+          throw new Error(`Failed to send email: ${errorData.details || 'Unknown error'}`);
+        }
+
+        const sendData = await sendResponse.json();
+        
+        // Return success with sent message info
+        return NextResponse.json({
+          reply: { id: replyId, status: 'sent', sentAt: sendData.sentAt },
+          sent: true,
+          messageId: sendData.messageId
+        });
+
+      } catch (sendError) {
+        console.error('Failed to auto-send reply:', sendError);
+        
+        // Continue with status update even if send fails
+        const reply = await prisma.aISuggestedReply.update({
+          where: { id: replyId },
+          data: {
+            status: 'approved', // Keep as approved since send failed
+            userModifications
+          }
+        });
+
+        return NextResponse.json({
+          reply,
+          sent: false,
+          error: `Status updated but failed to send: ${sendError instanceof Error ? sendError.message : 'Unknown error'}`
+        });
+      }
+    }
+
+    // Regular status update without sending
     const reply = await prisma.aISuggestedReply.update({
       where: { id: replyId },
       data: {

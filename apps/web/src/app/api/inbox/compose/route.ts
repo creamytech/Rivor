@@ -3,6 +3,7 @@ import { auth } from '@/server/auth';
 import { prisma } from '@/lib/db-pool';
 import { logger } from '@/lib/logger';
 import { GmailService } from '@/server/gmail';
+import { encryptForOrg } from '@/server/crypto';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,6 +65,16 @@ export async function POST(req: NextRequest) {
     if (response.data.id) {
       // If this is a reply, add the message to the existing thread
       if (threadId && type === 'reply') {
+        // Encrypt message data for storage
+        const subjectEnc = await encryptForOrg(orgId, subject, 'email:subject');
+        const fromEnc = await encryptForOrg(orgId, session.user.email || '', 'email:from');
+        const toEnc = await encryptForOrg(orgId, to, 'email:to');
+        const snippetEnc = await encryptForOrg(orgId, body.substring(0, 200), 'email:snippet');
+        
+        // Store body content as text
+        const bodyContent = JSON.stringify({ type: 'text', content: body });
+        const bodyEnc = await encryptForOrg(orgId, bodyContent, 'email:body');
+
         // Create a new message in the existing thread
         await prisma.emailMessage.create({
           data: {
@@ -71,11 +82,11 @@ export async function POST(req: NextRequest) {
             threadId,
             messageId: response.data.id,
             sentAt: new Date(),
-            subjectIndex: subject.toLowerCase(),
-            participantsIndex: `${session.user.email} ${to}`.toLowerCase(),
-            textBody: body,
-            htmlBody: body.replace(/\n/g, '<br>'),
-            snippet: body.substring(0, 200)
+            subjectEnc,
+            fromEnc,
+            toEnc,
+            snippetEnc,
+            bodyRefEnc: bodyEnc
           }
         });
 
