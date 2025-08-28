@@ -38,6 +38,7 @@ model Account {
   token_type        String?
   scope             String?
   session_state     String?
+  refresh_token_expires_in Int? // Added for Google OAuth compatibility
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
