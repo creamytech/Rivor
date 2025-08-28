@@ -840,8 +840,8 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
           className="max-w-md glass-modal rounded-xl overflow-hidden"
           data-glass-theme="black"
           style={{ 
-            background: 'rgba(0, 0, 0, 0.98)',
-            border: '1px solid rgba(255, 255, 255, 0.4)',
+            background: 'rgba(255, 0, 0, 0.98)',
+            border: '3px solid rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(32px) saturate(1.4) brightness(0.85)'
           }}
         >
@@ -1017,8 +1017,8 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
           className="max-w-2xl glass-modal rounded-xl overflow-hidden"
           data-glass-theme="black"
           style={{ 
-            background: 'rgba(0, 0, 0, 0.98)',
-            border: '1px solid rgba(255, 255, 255, 0.4)',
+            background: 'rgba(255, 0, 0, 0.98)',
+            border: '3px solid rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(32px) saturate(1.4) brightness(0.85)'
           }}
         >
@@ -1204,8 +1204,8 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
           className="max-w-md glass-modal rounded-xl overflow-hidden"
           data-glass-theme="black"
           style={{ 
-            background: 'rgba(0, 0, 0, 0.98)',
-            border: '1px solid rgba(255, 255, 255, 0.4)',
+            background: 'rgba(255, 0, 0, 0.98)',
+            border: '3px solid rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(32px) saturate(1.4) brightness(0.85)'
           }}
         >

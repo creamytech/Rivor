@@ -3946,6 +3946,15 @@ body:has(.glass-modal[data-state="open"]) * {
   filter: none !important;
 }
 
+/* Fix for Dialog overlay z-index */
+[data-radix-dialog-overlay] {
+  z-index: 9998 !important;
+}
+
+[data-radix-dialog-content] {
+  z-index: 9999 !important;
+}
+
 /* Enhanced navigation glass theming */
 .glass-nav-enhanced {
   box-shadow: 
@@ -5473,4 +5482,23 @@ body.glass-theme-white[data-permanent-theme="true"] {
   min-width: 0;
   flex-shrink: 1;
   overflow: hidden;
+}
+
+/* Force dialog visibility for quick action modals */
+[data-radix-dialog-content] {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 10000 !important;
+  visibility: visible !important;
+  display: block !important;
+  pointer-events: auto !important;
+}
+
+[data-radix-dialog-overlay] {
+  position: fixed !important;
+  z-index: 9999 !important;
+  visibility: visible !important;
+  display: block !important;
 }
