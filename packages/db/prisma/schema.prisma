@@ -202,21 +202,22 @@ model SecureToken {
 }
 
 model EmailThread {
-  id                String         @id @default(cuid())
+  id                String            @id @default(cuid())
   orgId             String
   accountId         String
   subjectEnc        Bytes?
   participantsEnc   Bytes?
   summaryEnc        Bytes?
   summaryAt         DateTime?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  labels            String[]       @default([])
-  starred           Boolean        @default(false)
-  unread            Boolean        @default(true)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  labels            String[]          @default([])
+  starred           Boolean           @default(false)
+  unread            Boolean           @default(true)
   messages          EmailMessage[]
-  account           EmailAccount   @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  org               Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  aiAnalysis        EmailAIAnalysis[]
+  account           EmailAccount      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  org               Org               @relation(fields: [orgId], references: [id], onDelete: Cascade)
 }
 
 model EmailMessage {
@@ -362,14 +363,14 @@ model PipelineStage {
   id        String   @id @default(cuid())
   orgId     String
   name      String
-  order     Int
+  position  Int      // Changed from 'order' to 'position'
   color     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   leads     Lead[]
   org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
-  @@unique([orgId, order])
+  @@unique([orgId, position])
 }
 
 model WebhookSubscription {
@@ -653,6 +654,7 @@ model EmailAIAnalysis {
   processingStatus ProcessingStatus @default(pending)
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
+  thread           EmailThread      @relation(fields: [threadId], references: [id], onDelete: Cascade)
 
   @@index([category])
   @@index([priorityScore])
