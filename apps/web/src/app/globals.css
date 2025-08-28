@@ -193,18 +193,36 @@ body:has([data-state="open"]) {
 
 /* Dynamic Thread Card Glass Effects */
 .thread-card-unread {
-  background: var(--glass-surface-strong) !important;
-  border: 1px solid var(--glass-border-strong);
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.1), 0 0 0 1px var(--glass-glow-cyan);
-  backdrop-filter: var(--glass-blur) brightness(1.1);
-  -webkit-backdrop-filter: var(--glass-blur) brightness(1.1);
+  background: linear-gradient(135deg, var(--glass-surface-strong), rgba(59, 130, 246, 0.15)) !important;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  box-shadow: 
+    0 4px 16px rgba(59, 130, 246, 0.2), 
+    0 0 0 1px rgba(59, 130, 246, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  backdrop-filter: var(--glass-blur) brightness(1.15) saturate(1.1);
+  -webkit-backdrop-filter: var(--glass-blur) brightness(1.15) saturate(1.1);
+  position: relative;
+}
+
+.thread-card-unread::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.05));
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .thread-card-read {
   background: var(--glass-surface-subtle) !important;
   border: 1px solid var(--glass-border-subtle);
-  backdrop-filter: var(--glass-blur) brightness(0.95);
-  -webkit-backdrop-filter: var(--glass-blur) brightness(0.95);
+  backdrop-filter: var(--glass-blur) brightness(0.9) saturate(0.8);
+  -webkit-backdrop-filter: var(--glass-blur) brightness(0.9) saturate(0.8);
+  opacity: 0.85;
 }
 
 .thread-card-priority-high {

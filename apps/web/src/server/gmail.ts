@@ -482,11 +482,23 @@ export class GmailService {
         }
       }
       
-      // Update thread timestamp if we processed new messages
+      // Update thread timestamp and read status if we processed new messages
       if (messagesProcessed > 0) {
+        // Calculate thread read status by checking all messages in the thread
+        const threadMessages = await prisma.emailMessage.findMany({
+          where: { threadId: thread.id, orgId },
+          select: { isRead: true }
+        });
+        
+        // Thread is unread if any message is unread
+        const threadIsUnread = threadMessages.some(msg => !msg.isRead);
+        
         await prisma.emailThread.update({
           where: { id: thread.id },
-          data: { updatedAt: new Date() }
+          data: { 
+            updatedAt: new Date(),
+            unread: threadIsUnread
+          }
         });
 
         // Automatically link this thread to pipeline contacts if any participants match
@@ -597,6 +609,9 @@ export class GmailService {
       const bccEnc = await encryptForOrg(orgId, bcc, 'email:bcc');
       const snippetEnc = await encryptForOrg(orgId, snippet, 'email:snippet');
 
+      // Determine read status from Gmail labels
+      const isRead = !message.labelIds?.includes('UNREAD');
+
       // Create message in the provided thread
       await prisma.emailMessage.create({
         data: {
@@ -611,6 +626,7 @@ export class GmailService {
           ccEnc,
           bccEnc,
           snippetEnc,
+          isRead, // Set read status from Gmail
         }
       });
 
@@ -620,6 +636,50 @@ export class GmailService {
         emailAccountId,
         threadId,
         messageId: message.id,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  // Update message read status and propagate to thread
+  private async updateMessageReadStatus(orgId: string, messageId: string, isRead: boolean): Promise<void> {
+    try {
+      // Update the specific message
+      const message = await prisma.emailMessage.update({
+        where: { messageId, orgId },
+        data: { isRead },
+        select: { threadId: true }
+      });
+
+      if (message.threadId) {
+        // Update thread read status based on all messages in the thread
+        const threadMessages = await prisma.emailMessage.findMany({
+          where: { threadId: message.threadId, orgId },
+          select: { isRead: true }
+        });
+
+        // Thread is unread if any message is unread
+        const threadIsUnread = threadMessages.some(msg => !msg.isRead);
+        
+        await prisma.emailThread.update({
+          where: { id: message.threadId },
+          data: { unread: threadIsUnread }
+        });
+
+        logger.info('Updated message and thread read status from Gmail', {
+          orgId,
+          messageId,
+          threadId: message.threadId,
+          isRead,
+          threadIsUnread,
+          action: 'gmail_read_status_sync'
+        });
+      }
+    } catch (error) {
+      logger.error('Failed to update message read status', {
+        orgId,
+        messageId,
+        isRead,
         error: error instanceof Error ? error.message : String(error)
       });
     }
@@ -990,7 +1050,7 @@ export class GmailService {
       const response = await gmail.users.history.list({
         userId: 'me',
         startHistoryId: emailAccount.historyId,
-        historyTypes: ['messageAdded', 'messageDeleted'],
+        historyTypes: ['messageAdded', 'messageDeleted', 'labelAdded', 'labelRemoved'],
       });
 
       const history = response.data.history || [];
@@ -1012,6 +1072,23 @@ export class GmailService {
               // For now, we'll log deleted messages but not update the database
               // since the schema doesn't have an isDeleted field
               console.log(`Message deleted: ${deleted.message.id}`);
+            }
+          }
+        }
+
+        // Handle label changes (including read status)
+        if (historyItem.labelsAdded) {
+          for (const labelChange of historyItem.labelsAdded) {
+            if (labelChange.message?.id && labelChange.labelIds?.includes('UNREAD')) {
+              await this.updateMessageReadStatus(orgId, labelChange.message.id, false);
+            }
+          }
+        }
+
+        if (historyItem.labelsRemoved) {
+          for (const labelChange of historyItem.labelsRemoved) {
+            if (labelChange.message?.id && labelChange.labelIds?.includes('UNREAD')) {
+              await this.updateMessageReadStatus(orgId, labelChange.message.id, true);
             }
           }
         }
