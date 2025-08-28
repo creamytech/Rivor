@@ -7,7 +7,32 @@ import OpenAI from 'openai';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  timeout: 30000, // 30 second timeout
 });
+
+// Retry function with exponential backoff
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      
+      const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
+      console.log(`⏳ AI Reply attempt ${attempt} failed, retrying in ${delay}ms...`);
+      console.log(`   Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  throw new Error('Retry logic error'); // This should never be reached
+}
 
 // Check if OpenAI API key is configured
 if (!process.env.OPENAI_API_KEY) {
@@ -166,15 +191,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Get existing AI analysis
+    console.log('🔍 Looking for AI analysis for email:', emailId);
     const analysis = await prisma.emailAIAnalysis.findUnique({
       where: { emailId }
     });
 
     if (!analysis) {
+      console.log('❌ No AI analysis found for email:', emailId);
       return NextResponse.json({ error: "Email analysis not found. Please analyze email first." }, { status: 400 });
     }
+    console.log('✅ Found AI analysis:', { 
+      id: analysis.id, 
+      category: analysis.category, 
+      priorityScore: analysis.priorityScore,
+      confidenceScore: analysis.confidenceScore 
+    });
 
     // Check if reply already exists
+    console.log('🔍 Checking for existing reply for email:', emailId);
     const existingReply = await prisma.aISuggestedReply.findFirst({
       where: { 
         emailId,
@@ -183,8 +217,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingReply) {
+      console.log('✅ Found existing reply:', { id: existingReply.id, status: existingReply.status });
       return NextResponse.json({ reply: existingReply });
     }
+    console.log('💫 No existing reply found, proceeding with generation...');
 
     // Parse from field to extract name and email
     const fromParts = from.split(' ');
@@ -239,57 +275,79 @@ export async function POST(request: NextRequest) {
 ${template ? `Use this template as inspiration but customize for the specific situation:\n${template.templateContent}` : ''}`;
 
     // Call OpenAI for reply generation
-    console.log('🤖 Calling OpenAI API for reply generation...');
+    console.log('🤖 Preparing OpenAI API call for reply generation...');
+    console.log('📝 System prompt length:', systemPrompt.length);
+    console.log('📝 User prompt length:', prompt.length);
+    console.time(`openai-reply-${emailId}`);
+    
+    const systemMessage = {
+      role: "system" as const,
+      content: systemPrompt
+    };
+
+    const userMessage = {
+      role: "user" as const,
+      content: prompt
+    };
     
     let completion;
     try {
-      // Try gpt-4-turbo-preview first
-      completion = await openai.chat.completions.create({
-        model: "gpt-4-turbo-preview",
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 1500,
-      });
+      // Try gpt-4-turbo-preview with retry logic
+      completion = await retryWithBackoff(async () => {
+        console.log('🤖 Calling OpenAI API (gpt-4-turbo-preview) with retry logic...');
+        return await openai.chat.completions.create({
+          model: "gpt-4-turbo-preview",
+          messages: [systemMessage, userMessage],
+          temperature: 0.7,
+          max_tokens: 1500,
+        });
+      }, 3, 1500);
+      console.timeEnd(`openai-reply-${emailId}`);
       console.log('✅ OpenAI reply response received (gpt-4-turbo-preview)');
     } catch (openaiError) {
-      console.log('⚠️ GPT-4 failed for reply, trying GPT-3.5-turbo...');
-      // Fallback to gpt-3.5-turbo if gpt-4 fails
-      completion = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 1500,
-      });
-      console.log('✅ OpenAI reply response received (gpt-3.5-turbo fallback)');
+      console.log('⚠️ GPT-4 failed for reply after retries, trying GPT-3.5-turbo...');
+      console.log('Error details:', openaiError instanceof Error ? openaiError.message : openaiError);
+      
+      // Fallback to gpt-3.5-turbo with retry logic
+      try {
+        completion = await retryWithBackoff(async () => {
+          console.log('🤖 Calling OpenAI API (gpt-3.5-turbo fallback) with retry logic...');
+          return await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [systemMessage, userMessage],
+            temperature: 0.7,
+            max_tokens: 1500,
+          });
+        }, 3, 1500);
+        console.timeEnd(`openai-reply-${emailId}`);
+        console.log('✅ OpenAI reply response received (gpt-3.5-turbo fallback)');
+      } catch (fallbackError) {
+        console.error('❌ Both GPT-4 and GPT-3.5-turbo failed for reply generation after retries');
+        console.error('Final error:', fallbackError instanceof Error ? fallbackError.message : fallbackError);
+        throw new Error(`OpenAI API failed for reply generation: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
+      }
     }
 
-    const suggestedContent = completion.choices[0].message.content || '';
+    const suggestedContent = completion.choices[0]?.message?.content || '';
+    console.log('📝 Generated reply content length:', suggestedContent.length);
+    console.log('📝 Reply preview:', suggestedContent.substring(0, 100) + '...');
+
+    if (!suggestedContent) {
+      console.error('❌ No content generated by OpenAI for reply');
+      throw new Error('OpenAI did not generate any reply content');
+    }
 
     // Calculate confidence score based on analysis quality and template availability
     let confidenceScore = analysis.confidenceScore;
     if (template) confidenceScore += 0.1; // Boost confidence if we have a good template
     if (analysis.priorityScore >= 80) confidenceScore += 0.05; // High priority emails get slight boost
     confidenceScore = Math.min(1, confidenceScore);
+    
+    console.log('📊 Calculated confidence score:', confidenceScore);
 
     // Save the suggested reply
+    console.log('💾 Saving suggested reply to database...');
+    console.time(`database-reply-save-${emailId}`);
     const reply = await prisma.aISuggestedReply.create({
       data: {
         emailId,
@@ -300,6 +358,8 @@ ${template ? `Use this template as inspiration but customize for the specific si
         status: 'pending'
       }
     });
+    console.timeEnd(`database-reply-save-${emailId}`);
+    console.log('✅ Suggested reply saved:', { replyId: reply.id, category: reply.category });
 
     // Update template usage if one was used
     if (template) {
@@ -325,12 +385,44 @@ ${template ? `Use this template as inspiration but customize for the specific si
     return NextResponse.json({ reply });
 
   } catch (error) {
-    console.error('AI reply generation error:', error);
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('❌ AI reply generation error:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      emailId,
+      threadId: actualThreadId,
+      orgId,
+      userEmail: session?.user?.email
+    });
+    
+    // Try to save a failed reply record for debugging
+    try {
+      if (emailId && actualThreadId) {
+        await prisma.aISuggestedReply.create({
+          data: {
+            emailId,
+            threadId: actualThreadId,
+            suggestedContent: 'Reply generation failed',
+            confidenceScore: 0.0,
+            category: 'failed-response',
+            status: 'rejected',
+            metadata: {
+              error: 'Reply generation failed',
+              errorMessage: error instanceof Error ? error.message : 'Unknown error',
+              timestamp: new Date().toISOString()
+            }
+          }
+        });
+        console.log('🔍 Saved failed reply record for debugging');
+      }
+    } catch (saveError) {
+      console.error('Failed to save error reply record:', saveError);
+    }
+    
     return NextResponse.json({
       error: "Failed to generate reply",
       details: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : 'No stack trace'
+      emailId,
+      timestamp: new Date().toISOString()
     }, { status: 500 });
   }
 }
