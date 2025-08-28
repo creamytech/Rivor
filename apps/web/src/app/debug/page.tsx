@@ -21,7 +21,9 @@ import {
   AlertCircle,
   RefreshCw,
   Brain,
-  Bot
+  Bot,
+  Shield,
+  Wrench
 } from 'lucide-react';
 
 interface DebugResult {
@@ -34,9 +36,38 @@ interface DebugResult {
   duration?: number;
 }
 
+interface AuthDebugData {
+  stats?: {
+    totalUsers: number;
+    totalOrganizations: number;
+    totalOrgMembers: number;
+    totalAccounts: number;
+    totalSessions: number;
+  };
+  problem?: {
+    description: string;
+    orphanedUsersCount: number;
+    orphanedUsers: any[];
+  };
+  recentAccountCreations?: any[];
+  diagnosis?: string;
+  usersWithoutOrgs?: any[];
+}
+
+interface ActionResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+  results?: any;
+}
+
 export default function DebugDashboard() {
   const [results, setResults] = useState<DebugResult[]>([]);
   const [loading, setLoading] = useState<string | null>(null);
+  const [authDebugData, setAuthDebugData] = useState<AuthDebugData | null>(null);
+  const [actionResults, setActionResults] = useState<ActionResult[]>([]);
+  const [selectedEmail, setSelectedEmail] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
 
   const executeDebug = async (endpoint: string, method: string = 'GET', description: string, body?: any) => {
     setLoading(endpoint);
@@ -99,7 +130,81 @@ ${JSON.stringify(result.data, null, 2)}
     navigator.clipboard.writeText(formatted);
   };
 
+  const fetchAuthDebugData = async () => {
+    setAuthLoading(true);
+    try {
+      const [publicDebugRes, manualOnboardingRes] = await Promise.all([
+        fetch('/api/debug/public-auth-debug'),
+        fetch('/api/debug/manual-onboarding')
+      ]);
+      
+      const publicData = await publicDebugRes.json();
+      const manualData = await manualOnboardingRes.json();
+      
+      setAuthDebugData({
+        ...publicData,
+        usersWithoutOrgs: manualData.usersWithoutOrgs
+      });
+    } catch (error) {
+      console.error('Failed to fetch auth debug data:', error);
+      setActionResults(prev => [...prev, {
+        success: false,
+        error: 'Failed to fetch auth debug data: ' + (error as Error).message
+      }]);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const runAuthAction = async (action: string, email?: string) => {
+    setAuthLoading(true);
+    try {
+      let url = '';
+      let body: any = { action };
+      
+      if (action === 'cleanup_orphans') {
+        url = '/api/debug/public-auth-debug';
+      } else if (action === 'manual_onboarding' && email) {
+        url = '/api/debug/manual-onboarding';
+        body = { userEmail: email, authorization: 'EMERGENCY_CLEANUP' };
+      } else if (action === 'test_onboarding') {
+        url = '/api/debug/public-auth-debug';
+        body = { action: 'test_onboarding', email: email || 'test@example.com' };
+      }
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      
+      const result = await response.json();
+      setActionResults(prev => [...prev, {
+        success: result.success || response.ok,
+        message: result.message || result.result,
+        error: result.error,
+        results: result.results || result.onboardingResult
+      }]);
+      
+      // Refresh data after action
+      await fetchAuthDebugData();
+    } catch (error) {
+      setActionResults(prev => [...prev, {
+        success: false,
+        error: 'Action failed: ' + (error as Error).message
+      }]);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
   const debugEndpoints = [
+    {
+      category: "🛡️ OAuth Authentication Issues",
+      icon: Shield,
+      special: true,
+      endpoints: []
+    },
     {
       category: "Authentication & Session",
       icon: User,
@@ -316,8 +421,8 @@ ${JSON.stringify(result.data, null, 2)}
               <Bug className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Debug Dashboard</h1>
-              <p className="text-gray-600">Comprehensive system debugging and diagnostics</p>
+              <h1 className="text-3xl font-bold text-gray-900">🔧 Debug Dashboard</h1>
+              <p className="text-gray-600">Comprehensive system debugging and OAuth authentication tools</p>
             </div>
           </div>
         </div>
@@ -327,41 +432,233 @@ ${JSON.stringify(result.data, null, 2)}
           <div className="space-y-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Debug Controls</h2>
             
-            {debugEndpoints.map((category, categoryIndex) => (
-              <Card key={categoryIndex}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <category.icon className="h-5 w-5" />
-                    {category.category}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {category.endpoints.map((endpoint, endpointIndex) => (
-                    <div key={endpointIndex} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex-1">
-                        <div className="font-medium text-sm">{endpoint.name}</div>
-                        <div className="text-xs text-gray-500">{endpoint.description}</div>
-                        <div className="text-xs font-mono text-gray-400 mt-1">
-                          {endpoint.method} {endpoint.endpoint}
+            {debugEndpoints.map((category, categoryIndex) => {
+              if ((category as any).special) {
+                return (
+                  <Card key={categoryIndex} className="border-2 border-red-200 bg-red-50">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-red-800">
+                        <category.icon className="h-5 w-5" />
+                        {category.category}
+                      </CardTitle>
+                      <CardDescription className="text-red-600">
+                        Comprehensive OAuth debugging tools - No authentication required
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {/* Auth Debug Dashboard */}
+                      <div className="space-y-6">
+                        <div className="flex gap-3">
+                          <Button
+                            onClick={fetchAuthDebugData}
+                            disabled={authLoading}
+                            className="bg-blue-600 text-white hover:bg-blue-700"
+                          >
+                            {authLoading ? (
+                              <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                            ) : (
+                              <Shield className="h-4 w-4 mr-2" />
+                            )}
+                            Fetch Auth Debug Data
+                          </Button>
+                          <Button
+                            onClick={() => setActionResults([])}
+                            variant="outline"
+                            disabled={actionResults.length === 0}
+                          >
+                            Clear Results
+                          </Button>
                         </div>
-                      </div>
-                      <Button
-                        onClick={() => executeDebug(endpoint.endpoint, endpoint.method, endpoint.description, (endpoint as any).body)}
-                        disabled={loading === endpoint.endpoint}
-                        size="sm"
-                        className="ml-3"
-                      >
-                        {loading === endpoint.endpoint ? (
-                          <RefreshCw className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Zap className="h-4 w-4" />
+
+                        {/* Action Results */}
+                        {actionResults.length > 0 && (
+                          <div className="bg-white rounded-lg p-4 border">
+                            <h4 className="font-medium mb-3">Action Results</h4>
+                            <div className="space-y-2 max-h-40 overflow-y-auto">
+                              {actionResults.map((result, index) => (
+                                <div
+                                  key={index}
+                                  className={`p-2 rounded text-sm ${
+                                    result.success 
+                                      ? 'bg-green-100 border border-green-200' 
+                                      : 'bg-red-100 border border-red-200'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    {result.success ? '✅' : '❌'}
+                                    <span className="font-medium">
+                                      {result.message || result.error}
+                                    </span>
+                                  </div>
+                                  {result.results && (
+                                    <pre className="text-xs mt-1 p-1 bg-gray-100 rounded overflow-x-auto">
+                                      {JSON.stringify(result.results, null, 2)}
+                                    </pre>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         )}
-                      </Button>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            ))}
+
+                        {/* Auth System Stats */}
+                        {authDebugData && (
+                          <>
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                              <div className="bg-white p-3 rounded border text-center">
+                                <div className="text-2xl font-bold text-blue-600">{authDebugData.stats?.totalUsers || 0}</div>
+                                <div className="text-xs text-gray-500">Users</div>
+                              </div>
+                              <div className="bg-white p-3 rounded border text-center">
+                                <div className="text-2xl font-bold text-green-600">{authDebugData.stats?.totalOrganizations || 0}</div>
+                                <div className="text-xs text-gray-500">Organizations</div>
+                              </div>
+                              <div className="bg-white p-3 rounded border text-center">
+                                <div className="text-2xl font-bold text-purple-600">{authDebugData.stats?.totalAccounts || 0}</div>
+                                <div className="text-xs text-gray-500">Accounts</div>
+                              </div>
+                              <div className="bg-white p-3 rounded border text-center">
+                                <div className="text-2xl font-bold text-orange-600">{authDebugData.stats?.totalSessions || 0}</div>
+                                <div className="text-xs text-gray-500">Sessions</div>
+                              </div>
+                              <div className="bg-white p-3 rounded border text-center">
+                                <div className="text-2xl font-bold text-indigo-600">{authDebugData.stats?.totalOrgMembers || 0}</div>
+                                <div className="text-xs text-gray-500">Members</div>
+                              </div>
+                            </div>
+
+                            {/* Diagnosis */}
+                            <div className={`p-3 rounded border ${
+                              authDebugData.diagnosis?.includes('PROBLEM') 
+                                ? 'bg-red-100 border-red-200' 
+                                : 'bg-green-100 border-green-200'
+                            }`}>
+                              <div className="flex items-center gap-2">
+                                <div className="text-lg">
+                                  {authDebugData.diagnosis?.includes('PROBLEM') ? '🚨' : '✅'}
+                                </div>
+                                <div className="font-medium">
+                                  {authDebugData.diagnosis}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <div className="bg-white p-3 rounded border">
+                                <h5 className="font-medium mb-2 text-red-800">🧹 Cleanup</h5>
+                                <Button
+                                  onClick={() => runAuthAction('cleanup_orphans')}
+                                  disabled={authLoading}
+                                  size="sm"
+                                  className="w-full bg-red-600 hover:bg-red-700"
+                                >
+                                  Clean Orphaned Users ({authDebugData.problem?.orphanedUsersCount || 0})
+                                </Button>
+                              </div>
+                              
+                              <div className="bg-white p-3 rounded border">
+                                <h5 className="font-medium mb-2 text-blue-800">🔧 Manual Fix</h5>
+                                <div className="space-y-2">
+                                  <input
+                                    type="email"
+                                    placeholder="user@example.com"
+                                    value={selectedEmail}
+                                    onChange={(e) => setSelectedEmail(e.target.value)}
+                                    className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                                  />
+                                  <Button
+                                    onClick={() => runAuthAction('manual_onboarding', selectedEmail)}
+                                    disabled={authLoading || !selectedEmail}
+                                    size="sm"
+                                    className="w-full"
+                                  >
+                                    Fix User
+                                  </Button>
+                                </div>
+                              </div>
+                              
+                              <div className="bg-white p-3 rounded border">
+                                <h5 className="font-medium mb-2 text-green-800">🧪 Test</h5>
+                                <Button
+                                  onClick={() => runAuthAction('test_onboarding')}
+                                  disabled={authLoading}
+                                  size="sm"
+                                  className="w-full bg-green-600 hover:bg-green-700"
+                                >
+                                  Test Onboarding
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* Users Without Organizations */}
+                            {authDebugData.usersWithoutOrgs && authDebugData.usersWithoutOrgs.length > 0 && (
+                              <div className="bg-white rounded border p-3">
+                                <h5 className="font-medium mb-2 text-yellow-800">⚠️ Users Without Organizations</h5>
+                                <div className="space-y-2 max-h-40 overflow-y-auto">
+                                  {authDebugData.usersWithoutOrgs.map((user: any) => (
+                                    <div key={user.id} className="flex items-center justify-between p-2 bg-yellow-50 rounded text-sm">
+                                      <div>
+                                        <div className="font-medium">{user.name || 'No name'}</div>
+                                        <div className="text-xs text-gray-500">{user.email}</div>
+                                      </div>
+                                      <Button
+                                        onClick={() => runAuthAction('manual_onboarding', user.email)}
+                                        disabled={authLoading}
+                                        size="sm"
+                                        className="text-xs px-2 py-1"
+                                      >
+                                        Fix
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              }
+              
+              return (
+                <Card key={categoryIndex}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <category.icon className="h-5 w-5" />
+                      {category.category}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {category.endpoints.map((endpoint, endpointIndex) => (
+                      <div key={endpointIndex} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="font-medium text-sm">{endpoint.name}</div>
+                          <div className="text-xs text-gray-500">{endpoint.description}</div>
+                          <div className="text-xs font-mono text-gray-400 mt-1">
+                            {endpoint.method} {endpoint.endpoint}
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => executeDebug(endpoint.endpoint, endpoint.method, endpoint.description, (endpoint as any).body)}
+                          disabled={loading === endpoint.endpoint}
+                          size="sm"
+                          className="ml-3"
+                        >
+                          {loading === endpoint.endpoint ? (
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Zap className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           {/* Results Panel */}
@@ -444,6 +741,14 @@ ${JSON.stringify(result.data, null, 2)}
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-3">
+              <Button
+                onClick={fetchAuthDebugData}
+                variant="outline"
+                className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+              >
+                <Shield className="h-4 w-4 mr-2" />
+                OAuth Debug Center
+              </Button>
               <Button
                 onClick={() => {
                   executeDebug("/api/debug/check-onboarding", "GET", "Check onboarding");
