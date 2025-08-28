@@ -32,7 +32,11 @@ import {
   Edit,
   Send,
   Zap,
-  RefreshCw
+  RefreshCw,
+  ChevronUp,
+  ChevronDown,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAutoSync } from '@/hooks/useAutoSync';
@@ -46,6 +50,7 @@ import { internalFetch } from '@/lib/internal-url';
 import { LeadScoreWidget } from '@/components/intelligence/LeadScoreWidget';
 import { DraftPanel } from '@/components/inbox/DraftPanel';
 import { ManualDraftButton } from '@/components/inbox/ManualDraftButton';
+import ComposeEmailModal from '@/components/inbox/ComposeEmailModal';
 
 // Types for real email data
 interface EmailThread {
@@ -144,6 +149,9 @@ export default function InboxPage() {
   const [showAiReplyModal, setShowAiReplyModal] = useState(false);
   const [aiReply, setAiReply] = useState<any>(null);
   const [showComposeModal, setShowComposeModal] = useState(false);
+  const [composeModalData, setComposeModalData] = useState<any>(null);
+  const [isAnalysisPanelCollapsed, setIsAnalysisPanelCollapsed] = useState(false);
+  const [quickFilter, setQuickFilter] = useState<string>('all');
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [selectedThreadForCategory, setSelectedThreadForCategory] = useState<EmailThread | null>(null);
   const [showPipelineModal, setShowPipelineModal] = useState(false);
@@ -1202,6 +1210,50 @@ export default function InboxPage() {
     }
   };
 
+  // Handle reply and forward actions from EmailContent component
+  const handleEmailAction = (action: string, threadId: string, messageId?: string, data?: any) => {
+    console.log('Email action triggered:', { action, threadId, messageId, data });
+    
+    switch (action) {
+      case 'reply':
+        handleReply(threadId, data);
+        break;
+      case 'forward':
+        handleForward(threadId, data);
+        break;
+      case 'delete':
+        const thread = threads.find(t => t.id === threadId);
+        if (thread) {
+          handleContextMenuAction(action, threadId);
+        }
+        break;
+      default:
+        console.log('Unknown email action:', action);
+    }
+  };
+
+  const handleReply = (threadId: string, replyData: any) => {
+    console.log('Opening reply modal with data:', replyData);
+    // Set compose modal data for reply
+    setComposeModalData({
+      threadId,
+      defaultTo: replyData.toEmail,
+      defaultSubject: replyData.subject,
+      defaultBody: `\n\nOn ${new Date(replyData.originalDate || new Date()).toLocaleDateString()}, ${replyData.toName || replyData.toEmail} wrote:\n> ${replyData.originalBody?.replace(/\n/g, '\n> ') || ''}`
+    });
+    setShowComposeModal(true);
+  };
+
+  const handleForward = (threadId: string, forwardData: any) => {
+    console.log('Opening forward modal with data:', forwardData);
+    // Set compose modal data for forward
+    setComposeModalData({
+      defaultSubject: forwardData.subject,
+      defaultBody: `\n\n---------- Forwarded message ----------\nFrom: ${forwardData.originalFrom}\nTo: ${forwardData.originalTo}\nDate: ${new Date(forwardData.originalDate || new Date()).toLocaleString()}\nSubject: ${forwardData.subject?.replace('Fwd: ', '') || ''}\n\n${forwardData.originalBody || ''}`
+    });
+    setShowComposeModal(true);
+  };
+
   const handleContextMenuAction = async (action: string, threadId: string) => {
     try {
       switch (action) {
@@ -1358,7 +1410,7 @@ export default function InboxPage() {
     onCancel: () => void;
     theme: string;
   }) => {
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState(() => ({
       contactName: thread.participants[0]?.name || '',
       contactEmail: thread.participants[0]?.email || '',
       contactPhone: '',
@@ -1368,7 +1420,41 @@ export default function InboxPage() {
       timeline: '3 months',
       notes: `Created from email: ${thread.subject}`,
       stage: 'new_lead'
-    });
+    }));
+
+    // Track if user has manually edited the contact name
+    const [hasManuallyEditedName, setHasManuallyEditedName] = useState(false);
+    const [lastThreadId, setLastThreadId] = useState(thread.id);
+    
+    // Handle contact name changes
+    const handleContactNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setHasManuallyEditedName(true);
+      setFormData(prev => ({ ...prev, contactName: e.target.value }));
+    };
+
+    // Only reset form data when thread changes, and preserve manual name edits
+    useEffect(() => {
+      if (thread.id !== lastThreadId) {
+        // Thread changed, reset form data but preserve manual name edits if any
+        setFormData(prev => ({
+          contactName: hasManuallyEditedName ? prev.contactName : (thread.participants[0]?.name || ''),
+          contactEmail: thread.participants[0]?.email || '',
+          contactPhone: '',
+          propertyAddress: '',
+          propertyType: 'Single Family Home',
+          budget: '',
+          timeline: '3 months',
+          notes: `Created from email: ${thread.subject}`,
+          stage: 'new_lead'
+        }));
+        setLastThreadId(thread.id);
+        
+        // If it's a completely new thread, reset the manual edit flag
+        if (!hasManuallyEditedName) {
+          setHasManuallyEditedName(false);
+        }
+      }
+    }, [thread.id, thread.participants, thread.subject, lastThreadId, hasManuallyEditedName]);
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -1386,9 +1472,15 @@ export default function InboxPage() {
               type="text"
               required
               value={formData.contactName}
-              onChange={(e) => setFormData(prev => ({ ...prev, contactName: e.target.value }))}
+              onChange={handleContactNameChange}
+              placeholder="Enter contact name"
               className={`w-full px-3 py-2 rounded border ${theme === 'black' ? 'bg-white/5 border-white/20 text-white' : 'bg-black/5 border-black/20 text-black'}`}
             />
+            {!hasManuallyEditedName && formData.contactName && (
+              <p className={`text-xs mt-1 ${theme === 'black' ? 'text-white/50' : 'text-black/50'}`}>
+                Pre-filled from email sender (you can edit this)
+              </p>
+            )}
           </div>
           <div>
             <label className={`block text-sm font-medium mb-2 ${theme === 'black' ? 'text-white/80' : 'text-black/80'}`}>
@@ -1497,23 +1589,74 @@ export default function InboxPage() {
             animate={{ opacity: 1, y: 0 }}
           >
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl" style={{
-                  background: 'rgba(139, 92, 246, 0.15)',
-                  backdropFilter: 'blur(20px)',
-                  border: '1px solid rgba(139, 92, 246, 0.2)'
-                }}>
-                  <Mail className="h-6 w-6 text-purple-400" />
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl" style={{
+                    background: 'rgba(139, 92, 246, 0.15)',
+                    backdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(139, 92, 246, 0.2)'
+                  }}>
+                    <Mail className="h-6 w-6 text-purple-400" />
+                  </div>
+                  <div>
+                    <h1 className={`text-2xl font-bold ${theme === 'black' ? 'text-white' : 'text-black'}`}>
+                      Inbox
+                    </h1>
+                    <div className={`text-sm ${theme === 'black' ? 'text-white/60' : 'text-black/60'} flex items-center gap-4`}>
+                      <span>{pagination.total} threads</span>
+                      <span className={`flex items-center gap-1 ${threads.filter(t => t.unread).length > 0 ? 'text-orange-400 font-medium' : ''}`}>
+                        <div className={`w-2 h-2 rounded-full ${threads.filter(t => t.unread).length > 0 ? 'bg-orange-400 animate-pulse' : 'bg-green-400'}`} />
+                        {threads.filter(t => t.unread).length} unread
+                      </span>
+                      <span className={`flex items-center gap-1 ${threads.filter(t => t.aiAnalysis?.leadScore && t.aiAnalysis.leadScore >= 70).length > 0 ? 'text-green-400' : ''}`}>
+                        <TrendingUp className="w-3 h-3" />
+                        {threads.filter(t => t.aiAnalysis?.leadScore && t.aiAnalysis.leadScore >= 70).length} hot leads
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h1 className={`text-2xl font-bold ${theme === 'black' ? 'text-white' : 'text-black'}`}>
-                    Inbox
-                  </h1>
-                  <p className={`text-sm ${theme === 'black' ? 'text-white/60' : 'text-black/60'} min-h-[20px] flex items-center`}>
-                    <span className="min-w-[120px]">
-                      {pagination.total} threads • {threads.filter(t => t.unread).length} unread
-                    </span>
-                  </p>
+                
+                {/* Quick Filters */}
+                <div className="flex items-center gap-2 ml-8">
+                  <div className={`text-xs font-medium ${theme === 'black' ? 'text-white/40' : 'text-black/40'} mr-2`}>Quick:</div>
+                  {[
+                    { key: 'all', label: 'All', count: threads.length },
+                    { key: 'unread', label: 'Unread', count: threads.filter(t => t.unread).length },
+                    { key: 'leads', label: 'Leads >50', count: threads.filter(t => t.aiAnalysis?.leadScore && t.aiAnalysis.leadScore >= 50).length },
+                    { key: 'urgent', label: 'Urgent', count: threads.filter(t => t.aiAnalysis?.keyEntities?.urgency === 'high' || t.aiAnalysis?.keyEntities?.urgency === 'critical').length }
+                  ].map(filter => (
+                    <Button
+                      key={filter.key}
+                      variant={quickFilter === filter.key ? "liquid" : "ghost"}
+                      size="sm"
+                      onClick={() => {
+                        setQuickFilter(filter.key);
+                        if (filter.key === 'unread') {
+                          setActiveFilter('unread');
+                        } else if (filter.key === 'leads') {
+                          setActiveFilter('leads');
+                        } else if (filter.key === 'urgent') {
+                          setActiveFilter('urgent');
+                        } else {
+                          setActiveFilter('all');
+                        }
+                      }}
+                      className={`text-xs h-7 px-2 ${
+                        quickFilter === filter.key 
+                          ? 'bg-blue-500/20 text-blue-400 border-blue-400/30' 
+                          : `${theme === 'black' ? 'hover:bg-white/5 text-white/60 hover:text-white/80' : 'hover:bg-black/5 text-black/60 hover:text-black/80'}`
+                      }`}
+                    >
+                      {filter.label}
+                      {filter.count > 0 && (
+                        <span className={`ml-1 text-xs px-1 rounded ${
+                          quickFilter === filter.key ? 'bg-blue-400/30' : theme === 'black' ? 'bg-white/10' : 'bg-black/10'
+                        }`}>
+                          {filter.count}
+                        </span>
+                      )}
+                    </Button>
+                  ))}
                 </div>
               </div>
               
@@ -1750,81 +1893,70 @@ export default function InboxPage() {
                             </div>
 
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between mb-1">
-                                <div className="flex items-center gap-1 flex-1 min-w-0">
-                                  <div className={`text-sm font-medium ${theme === 'black' ? 'text-white' : 'text-black'} truncate min-w-0`}>
-                                    {thread.participants[0]?.name || thread.participants[0]?.email || 'Unknown'}
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <div className={`text-base font-semibold ${theme === 'black' ? 'text-white' : 'text-black'} truncate min-w-0`}>
+                                    {thread.participants[0]?.name || thread.participants[0]?.email?.split('@')[0] || 'Unknown'}
                                   </div>
-                                  <div className="w-2 h-2 flex items-center justify-center min-w-[8px]">
-                                    {analysis ? getUrgencyIndicator(analysis.keyEntities?.urgency, analysis.leadScore) : <div className="w-2 h-2" />}
-                                  </div>
+                                  {analysis && getUrgencyIndicator(analysis.keyEntities?.urgency, analysis.leadScore)}
                                 </div>
-                                <div className="flex items-center gap-1">
-                                  <div className="w-8 flex justify-end min-h-[20px] items-center">
-                                    {analysis ? (
-                                      <div className={`text-xs px-1.5 py-0.5 rounded border ${getCategoryColor(analysis.category)} font-medium min-w-[24px] text-center`}>
-                                        {analysis.leadScore}
-                                      </div>
-                                    ) : (
-                                      <div className="w-6 h-4" />
-                                    )}
+                                <div className="flex items-center gap-2">
+                                  <div className={`text-xs ${theme === 'black' ? 'text-white/50' : 'text-black/50'}`}>
+                                    {new Date(thread.lastMessageAt).toLocaleDateString()}
                                   </div>
+                                  {analysis && (
+                                    <div className={`text-xs px-2 py-1 rounded-full border ${getCategoryColor(analysis.category)} font-bold`}>
+                                      {analysis.leadScore}
+                                    </div>
+                                  )}
                                   {thread.hasAttachments && (
                                     <div className={`w-2 h-2 rounded-full bg-blue-500`} />
                                   )}
                                   {thread.unread && (
-                                    <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                                    <div className="w-3 h-3 bg-blue-500 rounded-full" />
                                   )}
                                 </div>
                               </div>
 
-                              {/* Enhanced AI Category Badge with Glass Effects */}
-                              <div className="mb-1 flex items-center gap-2 min-h-[24px]">
-                                {analysis?.category ? (
-                                  <>
-                                    <motion.button
-                                      onClick={(e) => handleCategoryBadgeClick(thread, e)}
-                                      className={`text-xs px-2 py-0.5 rounded-full cursor-pointer flex items-center gap-1 category-badge-glass ${
-                                        analysis.category.includes('hot') ? 'category-badge-hot-lead' :
-                                        analysis.category.includes('showing') ? 'category-badge-showing' :
-                                        analysis.category.includes('buyer') ? 'category-badge-buyer-lead' :
-                                        analysis.category.includes('seller') ? 'category-badge-seller-lead' :
-                                        'category-badge-glass'
-                                      }`}
-                                      whileHover={{ scale: 1.05 }}
-                                      whileTap={{ scale: 0.95 }}
-                                    >
-                                      <span>{getCategoryEmoji(analysis.category)}</span>
-                                      <span className="font-medium">{analysis.category.replace('_', ' ').toUpperCase()}</span>
-                                    </motion.button>
-                                    <motion.button
-                                      onClick={(e) => handleAddToPipeline(thread, e)}
-                                      className="text-xs px-2 py-0.5 rounded-full cursor-pointer category-badge-glass"
-                                      style={{
-                                        background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1))',
-                                        border: '1px solid rgba(34, 197, 94, 0.4)',
-                                        color: theme === 'black' ? 'rgb(134, 239, 172)' : 'rgb(22, 163, 74)',
-                                        boxShadow: '0 0 12px rgba(34, 197, 94, 0.2)'
-                                      }}
-                                      title="Add to Pipeline"
-                                      whileHover={{ scale: 1.05, boxShadow: '0 0 16px rgba(34, 197, 94, 0.3)' }}
-                                      whileTap={{ scale: 0.95 }}
-                                    >
-                                      <span className="font-medium">+ PIPELINE</span>
-                                    </motion.button>
-                                  </>
-                                ) : (
-                                  <div className="h-6" />
+                              {/* Subtle Category Badge */}
+                              <div className="mb-2 flex items-center justify-between min-h-[20px]">
+                                <div className="flex items-center gap-2">
+                                  {analysis?.category && (
+                                    <span className={`text-xs px-2 py-1 rounded ${getCategoryColor(analysis.category)} font-medium opacity-80`}>
+                                      {getCategoryEmoji(analysis.category)} {analysis.category.replace('_', ' ').toUpperCase()}
+                                    </span>
+                                  )}
+                                </div>
+                                {analysis?.category && (
+                                  <motion.button
+                                    onClick={(e) => handleAddToPipeline(thread, e)}
+                                    className={`text-xs px-2 py-0.5 rounded opacity-60 hover:opacity-100 transition-opacity ${
+                                      theme === 'black' ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-green-500/20 text-green-600 hover:bg-green-500/30'
+                                    }`}
+                                    title="Add to Pipeline"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                  >
+                                    + Pipeline
+                                  </motion.button>
                                 )}
                               </div>
 
-                              <div className={`text-xs font-medium ${theme === 'black' ? 'text-white/90' : 'text-black/90'} truncate mb-1 min-h-[16px] leading-4`}>
-                                {thread.subject || 'No Subject'}
+                              {/* Subject Line */}
+                              <div className={`text-sm font-medium ${
+                                thread.unread 
+                                  ? theme === 'black' ? 'text-white' : 'text-black'
+                                  : theme === 'black' ? 'text-white/80' : 'text-black/80'
+                              } mb-1 min-h-[20px] leading-5`}>
+                                <div className="line-clamp-1 break-words">
+                                  {thread.subject || 'No Subject'}
+                                </div>
                               </div>
 
-                              <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'} mb-1 min-h-[32px] leading-4`}>
+                              {/* Email Preview with Two Lines */}
+                              <div className={`text-sm ${theme === 'black' ? 'text-white/60' : 'text-black/60'} mb-2 min-h-[40px] leading-5`}>
                                 <div className="line-clamp-2 break-words">
-                                  {analysis?.keyEntities?.summary || thread.snippet || ''}
+                                  {analysis?.keyEntities?.summary || thread.snippet || 'No preview available'}
                                 </div>
                               </div>
 
@@ -1983,139 +2115,174 @@ export default function InboxPage() {
                     </div>
                   )}
 
-                  {/* AI Analysis Panel */}
+                  {/* Compact AI Analysis Header Strip */}
                   {activeThread.aiAnalysis && (
-                    <motion.div 
-                      className={`p-4 border-b ${theme === 'black' ? 'border-white/10' : 'border-black/10'}`}
-                      style={{
-                        background: theme === 'black' ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.05)',
-                        backdropFilter: 'blur(20px) saturate(1.3)',
-                        WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
-                      }}
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <Bot className="h-4 w-4 text-purple-400" />
-                          <span className={`font-semibold text-sm ${theme === 'black' ? 'text-white' : 'text-black'}`}>
-                            AI Analysis
+                    <div className={`px-4 py-2 border-b ${theme === 'black' ? 'border-white/10 bg-purple-500/5' : 'border-black/10 bg-purple-500/5'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          {/* Quick Lead Score */}
+                          <div className="flex items-center gap-2">
+                            <div className={`text-lg font-bold ${
+                              activeThread.aiAnalysis.leadScore >= 70 ? 'text-green-400' :
+                              activeThread.aiAnalysis.leadScore >= 40 ? 'text-yellow-400' : 'text-gray-400'
+                            }`}>
+                              {activeThread.aiAnalysis.leadScore}
+                            </div>
+                            <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>Lead Score</div>
+                          </div>
+
+                          {/* Category Badge */}
+                          <span className={`text-xs px-2 py-1 rounded-full border ${getCategoryColor(activeThread.aiAnalysis.category)} flex items-center gap-1`}>
+                            <span>{getCategoryEmoji(activeThread.aiAnalysis.category)}</span>
+                            {activeThread.aiAnalysis.category?.replace('_', ' ').toUpperCase()}
                           </span>
+
+                          {/* Urgency Indicator */}
+                          {activeThread.aiAnalysis.keyEntities?.urgency && (
+                            <div className={`text-xs font-bold px-2 py-1 rounded ${
+                              activeThread.aiAnalysis.keyEntities?.urgency === 'critical' ? 'bg-red-500/20 text-red-400' :
+                              activeThread.aiAnalysis.keyEntities?.urgency === 'high' ? 'bg-orange-500/20 text-orange-400' :
+                              activeThread.aiAnalysis.keyEntities?.urgency === 'medium' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'
+                            }`}>
+                              {activeThread.aiAnalysis.keyEntities?.urgency?.toUpperCase()}
+                            </div>
+                          )}
                         </div>
-                        <ManualDraftButton
-                          emailId={(() => {
-                            // Find the latest message in the thread to get emailId
-                            // This is a simplified approach - in reality you'd pass this data properly
-                            return activeThread.id; // Using thread ID as fallback
-                          })()}
-                          threadId={activeThread.id}
-                          analysis={activeThread.aiAnalysis}
-                          onDraftCreated={() => {
-                            toast({
-                              title: "Draft Created",
-                              description: "Check the AI Drafts tab to review and send",
-                            });
-                          }}
-                        />
+
+                        <div className="flex items-center gap-2">
+                          <ManualDraftButton
+                            emailId={activeThread.id}
+                            threadId={activeThread.id}
+                            analysis={activeThread.aiAnalysis}
+                            onDraftCreated={() => {
+                              toast({
+                                title: "Draft Created",
+                                description: "Check the AI Drafts tab to review and send",
+                              });
+                            }}
+                          />
+                          
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setIsAnalysisPanelCollapsed(!isAnalysisPanelCollapsed)}
+                            className={`h-8 w-8 p-0 ${theme === 'black' ? 'hover:bg-white/10' : 'hover:bg-black/10'}`}
+                          >
+                            {isAnalysisPanelCollapsed ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronUp className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
                       </div>
-                      
-                      {(() => {
-                        const analysis = activeThread.aiAnalysis;
-                        return (
-                          <div className="grid grid-cols-4 gap-4 mb-3">
+                    </div>
+                  )}
+
+                  {/* Expanded AI Analysis Details */}
+                  <AnimatePresence>
+                    {activeThread.aiAnalysis && !isAnalysisPanelCollapsed && (
+                      <motion.div
+                        className={`border-b ${theme === 'black' ? 'border-white/10' : 'border-black/10'}`}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <div className="p-4 space-y-4">
+                          {/* Detailed Metrics */}
+                          <div className="grid grid-cols-4 gap-4">
                             <div className="text-center">
-                              <div className={`text-2xl font-bold ${theme === 'black' ? 'text-white' : 'text-black'}`}>
-                                {analysis.leadScore}/100
+                              <div className={`text-xl font-bold ${theme === 'black' ? 'text-white' : 'text-black'}`}>
+                                {activeThread.aiAnalysis.leadScore}/100
                               </div>
                               <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>Lead Score</div>
                             </div>
                             <div className="text-center">
                               <div className={`text-sm font-bold ${
-                                analysis.keyEntities?.urgency === 'critical' ? 'text-red-400' :
-                                analysis.keyEntities?.urgency === 'high' ? 'text-orange-400' :
-                                analysis.keyEntities?.urgency === 'medium' ? 'text-yellow-400' : 'text-green-400'
+                                activeThread.aiAnalysis.keyEntities?.urgency === 'critical' ? 'text-red-400' :
+                                activeThread.aiAnalysis.keyEntities?.urgency === 'high' ? 'text-orange-400' :
+                                activeThread.aiAnalysis.keyEntities?.urgency === 'medium' ? 'text-yellow-400' : 'text-green-400'
                               }`}>
-                                {analysis.keyEntities?.urgency?.toUpperCase() || 'LOW'}
+                                {activeThread.aiAnalysis.keyEntities?.urgency?.toUpperCase() || 'LOW'}
                               </div>
                               <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>Urgency</div>
                             </div>
                             <div className="text-center">
                               <div className={`text-sm font-bold ${theme === 'black' ? 'text-white' : 'text-black'}`}>
-                                {analysis.keyEntities?.contactIntent?.replace('_', ' ') || 'Unknown'}
+                                {activeThread.aiAnalysis.keyEntities?.contactIntent?.replace('_', ' ') || 'Unknown'}
                               </div>
                               <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>Intent</div>
                             </div>
                             <div className="text-center">
                               <div className={`text-sm font-bold ${
-                                analysis.sentimentScore > 0.6 ? 'text-green-400' :
-                                analysis.sentimentScore < 0.4 ? 'text-red-400' : 'text-blue-400'
+                                activeThread.aiAnalysis.sentimentScore > 0.6 ? 'text-green-400' :
+                                activeThread.aiAnalysis.sentimentScore < 0.4 ? 'text-red-400' : 'text-blue-400'
                               }`}>
-                                {analysis.sentimentScore > 0.6 ? 'POSITIVE' :
-                                 analysis.sentimentScore < 0.4 ? 'NEGATIVE' : 'NEUTRAL'}
+                                {activeThread.aiAnalysis.sentimentScore > 0.6 ? 'POSITIVE' :
+                                 activeThread.aiAnalysis.sentimentScore < 0.4 ? 'NEGATIVE' : 'NEUTRAL'}
                               </div>
                               <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>Sentiment</div>
                             </div>
                           </div>
-                        );
-                      })()}
 
-                      <div className="mb-3">
-                        <span className={`text-xs px-2 py-1 rounded-full border ${getCategoryColor(activeThread.aiAnalysis.category)} flex items-center gap-1 w-fit`}>
-                          <span>{getCategoryEmoji(activeThread.aiAnalysis.category)}</span>
-                          {activeThread.aiAnalysis.category?.replace('_', ' ').toUpperCase()}
-                        </span>
-                      </div>
+                          {/* Summary */}
+                          {activeThread.aiAnalysis.keyEntities?.summary && (
+                            <div className={`text-sm ${theme === 'black' ? 'text-white/80' : 'text-black/80'} leading-relaxed`}>
+                              {activeThread.aiAnalysis.keyEntities.summary}
+                            </div>
+                          )}
 
-                      <div className={`text-sm ${theme === 'black' ? 'text-white/80' : 'text-black/80'} mb-2`}>
-                        {activeThread.aiAnalysis.keyEntities?.summary || 'No summary available'}
-                      </div>
+                          {/* Key Points */}
+                          {activeThread.aiAnalysis.keyEntities?.keyPoints && (
+                            <div>
+                              <div className={`text-xs font-semibold ${theme === 'black' ? 'text-white/60' : 'text-black/60'} mb-2`}>
+                                Key Points:
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                {activeThread.aiAnalysis.keyEntities.keyPoints.map((point: string, i: number) => (
+                                  <span key={i} className={`text-xs px-2 py-1 rounded ${theme === 'black' ? 'bg-white/10 text-white/70' : 'bg-black/10 text-black/70'}`}>
+                                    {point}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
-                      {activeThread.aiAnalysis.keyEntities?.keyPoints && (
-                        <div>
-                          <div className={`text-xs font-semibold ${theme === 'black' ? 'text-white/60' : 'text-black/60'} mb-1`}>
-                            Key Points:
-                          </div>
-                          <div className="flex flex-wrap gap-1">
-                            {activeThread.aiAnalysis.keyEntities.keyPoints.map((point: string, i: number) => (
-                              <span key={i} className={`text-xs px-2 py-0.5 rounded ${theme === 'black' ? 'bg-white/10 text-white/70' : 'bg-black/10 text-black/70'}`}>
-                                {point}
-                              </span>
-                            ))}
-                          </div>
+                          {/* Property Details */}
+                          {activeThread.aiAnalysis.keyEntities?.propertyDetails && (
+                            <div>
+                              <div className={`text-xs font-semibold ${theme === 'black' ? 'text-white/60' : 'text-black/60'} mb-2`}>
+                                Property Information:
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                {activeThread.aiAnalysis.keyEntities.propertyDetails.address && (
+                                  <div>
+                                    <span className="font-medium">Address:</span> {activeThread.aiAnalysis.keyEntities.propertyDetails.address}
+                                  </div>
+                                )}
+                                {activeThread.aiAnalysis.keyEntities.propertyDetails.priceRange && (
+                                  <div>
+                                    <span className="font-medium">Price:</span> {activeThread.aiAnalysis.keyEntities.propertyDetails.priceRange}
+                                  </div>
+                                )}
+                                {activeThread.aiAnalysis.keyEntities.propertyDetails.propertyType && (
+                                  <div>
+                                    <span className="font-medium">Type:</span> {activeThread.aiAnalysis.keyEntities.propertyDetails.propertyType}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      )}
-
-                      {activeThread.aiAnalysis.keyEntities?.propertyDetails && (
-                        <div className="mt-3 pt-3 border-t border-white/10">
-                          <div className={`text-xs font-semibold ${theme === 'black' ? 'text-white/60' : 'text-black/60'} mb-2`}>
-                            Property Information:
-                          </div>
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            {activeThread.aiAnalysis.keyEntities.propertyDetails.address && (
-                              <div>
-                                <span className="font-medium">Address:</span> {activeThread.aiAnalysis.keyEntities.propertyDetails.address}
-                              </div>
-                            )}
-                            {activeThread.aiAnalysis.keyEntities.propertyDetails.priceRange && (
-                              <div>
-                                <span className="font-medium">Price:</span> {activeThread.aiAnalysis.keyEntities.propertyDetails.priceRange}
-                              </div>
-                            )}
-                            {activeThread.aiAnalysis.keyEntities.propertyDetails.propertyType && (
-                              <div>
-                                <span className="font-medium">Type:</span> {activeThread.aiAnalysis.keyEntities.propertyDetails.propertyType}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   {/* Thread Content */}
                   <EmailContent 
                     threadId={activeThread.id}
-                    onAction={handleContextMenuAction}
+                    onAction={handleEmailAction}
                   />
                 </>
               ) : (
@@ -2400,6 +2567,23 @@ export default function InboxPage() {
           </motion.div>
         </div>
       )}
+
+      {/* Compose Email Modal for Reply/Forward */}
+      <ComposeEmailModal
+        open={showComposeModal}
+        onOpenChange={setShowComposeModal}
+        threadId={composeModalData?.threadId}
+        defaultTo={composeModalData?.defaultTo}
+        defaultSubject={composeModalData?.defaultSubject}
+        defaultBody={composeModalData?.defaultBody}
+        onEmailSent={(result) => {
+          console.log('Email sent:', result);
+          setShowComposeModal(false);
+          setComposeModalData(null);
+          // Refresh threads to show the sent email
+          fetchThreads(pagination.page, activeFilter, searchQuery, true);
+        }}
+      />
     </div>
   );
 }

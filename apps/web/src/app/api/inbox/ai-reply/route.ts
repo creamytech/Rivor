@@ -367,6 +367,34 @@ ${template ? `Use this template as inspiration but customize for the specific si
     console.timeEnd(`database-reply-save-${emailId}`);
     console.log('✅ Suggested reply saved:', { replyId: reply.id, category: reply.category });
 
+    // Create notification for new draft
+    try {
+      console.log('📢 Creating notification for new AI draft...');
+      await prisma.notification.create({
+        data: {
+          orgId,
+          userId: session.user.id,
+          type: 'draft',
+          title: '🤖 New AI Draft Ready',
+          message: `AI generated a ${analysis.category.replace('_', ' ')} reply with ${Math.round(confidenceScore * 100)}% confidence`,
+          priority: confidenceScore > 0.8 ? 'high' : confidenceScore > 0.6 ? 'medium' : 'low',
+          isRead: false,
+          metadata: {
+            draftId: reply.id,
+            emailId,
+            threadId: actualThreadId,
+            category: analysis.category,
+            confidenceScore,
+            leadScore: analysis.leadScore
+          }
+        }
+      });
+      console.log('✅ Notification created for new draft');
+    } catch (notificationError) {
+      console.error('⚠️ Failed to create notification:', notificationError);
+      // Don't fail the entire operation if notification creation fails
+    }
+
     // Update template usage if one was used
     if (template) {
       await prisma.aIEmailTemplate.update({
@@ -581,7 +609,11 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ reply });
+    return NextResponse.json({ 
+      reply,
+      notificationCreated: true,
+      message: 'AI draft created and notification sent'
+    });
 
   } catch (error) {
     console.error('Update reply error:', error);

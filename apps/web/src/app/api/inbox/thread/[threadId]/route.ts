@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/server/auth";
-import { db } from "@/server/db";
+import { prisma } from "@/lib/db-pool";
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +25,7 @@ export async function GET(
     }
 
     // Get user's org membership to check access
-    const user = await db.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { email: session.user.email! },
       include: {
         orgMembers: {
@@ -41,7 +41,7 @@ export async function GET(
     const orgId = user.orgMembers[0].orgId;
 
     // Get thread with all messages
-    const thread = await db.emailThread.findUnique({
+    const thread = await prisma.emailThread.findUnique({
       where: { 
         id: threadId,
         orgId: orgId // Ensure user can only access threads from their org
@@ -204,7 +204,7 @@ export async function PATCH(
     }
 
     // Get user's org membership to check access
-    const user = await db.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { email: session.user.email! },
       include: {
         orgMembers: {
@@ -238,7 +238,7 @@ export async function PATCH(
     }
 
     // Update thread
-    const updatedThread = await db.emailThread.update({
+    const updatedThread = await prisma.emailThread.update({
       where: { 
         id: threadId,
         orgId: orgId // Ensure user can only update threads from their org
@@ -251,7 +251,7 @@ export async function PATCH(
 
     // If marking as read/unread, update all messages in thread
     if (typeof isRead === 'boolean') {
-      await db.emailMessage.updateMany({
+      await prisma.emailMessage.updateMany({
         where: { threadId },
         data: { isRead }
       });

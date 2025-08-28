@@ -58,7 +58,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
-  const [contactFormData, setContactFormData] = useState({ name: '', email: '', phone: '', notes: '' });
+  const [contactFormData, setContactFormData] = useState({ name: '', email: '', phone: '', company: '', title: '', location: '', tags: [], notes: '' });
   const [listingFormData, setListingFormData] = useState({ address: '', price: '', beds: '', baths: '', sqft: '', description: '' });
   const [meetingFormData, setMeetingFormData] = useState({ title: '', date: '', time: '', attendees: '', notes: '' });
   const [modalLoading, setModalLoading] = useState(false);
@@ -93,16 +93,16 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
   }, [showCreateContactModal, showCreateListingModal, showScheduleMeetingModal, showComposeModal]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Fetch notifications
+  // Fetch notifications with real-time SSE updates
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
         const response = await fetch('/api/notifications');
         if (response.ok) {
           const data = await response.json();
-          setNotifications(data);
+          setNotifications(data.notifications || data);
           // Count unread notifications
-          const unread = data.filter((notif: any) => !notif.isRead).length;
+          const unread = (data.notifications || data).filter((notif: any) => !notif.isRead).length;
           setUnreadCount(unread);
         }
       } catch (error) {
@@ -110,10 +110,39 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       }
     };
 
+    // Initial fetch
     fetchNotifications();
-    // Refresh notifications every 30 seconds
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+    
+    // Set up SSE connection for real-time notifications
+    const eventSource = new EventSource('/api/notifications/stream');
+    
+    eventSource.onmessage = (event) => {
+      try {
+        const notification = JSON.parse(event.data);
+        console.log('Real-time notification received:', notification);
+        
+        // Add new notification to the list
+        setNotifications(prev => [notification, ...prev.slice(0, 49)]); // Keep last 50
+        
+        // Update unread count
+        if (!notification.isRead) {
+          setUnreadCount(prev => prev + 1);
+        }
+      } catch (error) {
+        console.error('Failed to parse SSE notification:', error);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error('SSE connection error:', error);
+      // Fallback to polling if SSE fails
+      const fallbackInterval = setInterval(fetchNotifications, 60000);
+      return () => clearInterval(fallbackInterval);
+    };
+
+    return () => {
+      eventSource.close();
+    };
   }, []);
 
   const pathname = usePathname();
@@ -768,32 +797,65 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               </div>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="contact-name" style={{ color: 'var(--glass-text)' }}>Full Name</Label>
+                  <Label htmlFor="contact-name" style={{ color: 'var(--glass-text)' }}>Full Name *</Label>
                   <Input 
                     id="contact-name" 
                     placeholder="Enter contact name" 
                     value={contactFormData.name}
                     onChange={(e) => setContactFormData({...contactFormData, name: e.target.value})}
+                    required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="contact-email" style={{ color: 'var(--glass-text)' }}>Email</Label>
+                  <Label htmlFor="contact-email" style={{ color: 'var(--glass-text)' }}>Email *</Label>
                   <Input 
                     id="contact-email" 
                     type="email" 
                     placeholder="Enter email address" 
                     value={contactFormData.email}
                     onChange={(e) => setContactFormData({...contactFormData, email: e.target.value})}
+                    required
                   />
                 </div>
-                <div>
-                  <Label htmlFor="contact-phone" style={{ color: 'var(--glass-text)' }}>Phone</Label>
-                  <Input 
-                    id="contact-phone" 
-                    placeholder="Enter phone number" 
-                    value={contactFormData.phone}
-                    onChange={(e) => setContactFormData({...contactFormData, phone: e.target.value})}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="contact-phone" style={{ color: 'var(--glass-text)' }}>Phone</Label>
+                    <Input 
+                      id="contact-phone" 
+                      placeholder="Enter phone number" 
+                      value={contactFormData.phone}
+                      onChange={(e) => setContactFormData({...contactFormData, phone: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="contact-company" style={{ color: 'var(--glass-text)' }}>Company</Label>
+                    <Input 
+                      id="contact-company" 
+                      placeholder="Company name" 
+                      value={contactFormData.company}
+                      onChange={(e) => setContactFormData({...contactFormData, company: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="contact-title" style={{ color: 'var(--glass-text)' }}>Job Title</Label>
+                    <Input 
+                      id="contact-title" 
+                      placeholder="Job title" 
+                      value={contactFormData.title}
+                      onChange={(e) => setContactFormData({...contactFormData, title: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="contact-location" style={{ color: 'var(--glass-text)' }}>Location</Label>
+                    <Input 
+                      id="contact-location" 
+                      placeholder="City, State" 
+                      value={contactFormData.location}
+                      onChange={(e) => setContactFormData({...contactFormData, location: e.target.value})}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -831,6 +893,11 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                 variant="liquid" 
                 className="flex-1"
                 onClick={async () => {
+                  if (!contactFormData.name || !contactFormData.email) {
+                    alert('Please fill in all required fields');
+                    return;
+                  }
+                  
                   setModalLoading(true);
                   try {
                     const response = await fetch('/api/contacts', {
@@ -838,13 +905,19 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify(contactFormData)
                     });
+                    
+                    const result = await response.json();
+                    
                     if (response.ok) {
                       setShowCreateContactModal(false);
-                      setContactFormData({ name: '', email: '', phone: '', notes: '' });
-                      // TODO: Show success toast
+                      setContactFormData({ name: '', email: '', phone: '', company: '', title: '', location: '', tags: [], notes: '' });
+                      console.log('Contact created successfully!', result);
+                    } else {
+                      alert(result.error || 'Failed to create contact');
                     }
                   } catch (error) {
                     console.error('Failed to create contact:', error);
+                    alert('Failed to create contact. Please try again.');
                   } finally {
                     setModalLoading(false);
                   }
@@ -902,21 +975,23 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="listing-address" style={{ color: 'var(--glass-text)' }}>Property Address</Label>
+                    <Label htmlFor="listing-address" style={{ color: 'var(--glass-text)' }}>Property Address *</Label>
                     <Input 
                       id="listing-address" 
                       placeholder="Enter property address" 
                       value={listingFormData.address}
                       onChange={(e) => setListingFormData({...listingFormData, address: e.target.value})}
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="listing-price" style={{ color: 'var(--glass-text)' }}>Price</Label>
+                    <Label htmlFor="listing-price" style={{ color: 'var(--glass-text)' }}>Price *</Label>
                     <Input 
                       id="listing-price" 
                       placeholder="$0" 
                       value={listingFormData.price}
                       onChange={(e) => setListingFormData({...listingFormData, price: e.target.value})}
+                      required
                     />
                   </div>
                 </div>
@@ -1005,6 +1080,11 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                 variant="liquid" 
                 className="flex-1"
                 onClick={async () => {
+                  if (!listingFormData.address || !listingFormData.price) {
+                    alert('Please fill in all required fields');
+                    return;
+                  }
+                  
                   setModalLoading(true);
                   try {
                     const response = await fetch('/api/listings', {
@@ -1012,13 +1092,19 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify(listingFormData)
                     });
+                    
+                    const result = await response.json();
+                    
                     if (response.ok) {
                       setShowCreateListingModal(false);
                       setListingFormData({ address: '', price: '', beds: '', baths: '', sqft: '', description: '' });
-                      // TODO: Show success toast
+                      console.log('Listing created successfully!', result);
+                    } else {
+                      alert(result.error || 'Failed to create listing');
                     }
                   } catch (error) {
                     console.error('Failed to create listing:', error);
+                    alert('Failed to create listing. Please try again.');
                   } finally {
                     setModalLoading(false);
                   }
@@ -1075,31 +1161,35 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               </div>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="meeting-title" style={{ color: 'var(--glass-text)' }}>Meeting Title</Label>
+                  <Label htmlFor="meeting-title" style={{ color: 'var(--glass-text)' }}>Meeting Title *</Label>
                   <Input 
                     id="meeting-title" 
                     placeholder="Enter meeting title" 
                     value={meetingFormData.title}
                     onChange={(e) => setMeetingFormData({...meetingFormData, title: e.target.value})}
+                    required
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="meeting-date" style={{ color: 'var(--glass-text)' }}>Date</Label>
+                    <Label htmlFor="meeting-date" style={{ color: 'var(--glass-text)' }}>Date *</Label>
                     <Input 
                       id="meeting-date" 
                       type="date" 
                       value={meetingFormData.date}
                       onChange={(e) => setMeetingFormData({...meetingFormData, date: e.target.value})}
+                      min={new Date().toISOString().split('T')[0]}
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="meeting-time" style={{ color: 'var(--glass-text)' }}>Time</Label>
+                    <Label htmlFor="meeting-time" style={{ color: 'var(--glass-text)' }}>Time *</Label>
                     <Input 
                       id="meeting-time" 
                       type="time" 
                       value={meetingFormData.time}
                       onChange={(e) => setMeetingFormData({...meetingFormData, time: e.target.value})}
+                      required
                     />
                   </div>
                 </div>
@@ -1165,6 +1255,11 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                 variant="liquid" 
                 className="flex-1"
                 onClick={async () => {
+                  if (!meetingFormData.title || !meetingFormData.date || !meetingFormData.time) {
+                    alert('Please fill in all required fields');
+                    return;
+                  }
+                  
                   setModalLoading(true);
                   try {
                     const response = await fetch('/api/meetings', {
@@ -1172,13 +1267,19 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify(meetingFormData)
                     });
+                    
+                    const result = await response.json();
+                    
                     if (response.ok) {
                       setShowScheduleMeetingModal(false);
                       setMeetingFormData({ title: '', date: '', time: '', attendees: '', notes: '' });
-                      // TODO: Show success toast
+                      console.log('Meeting scheduled successfully!', result);
+                    } else {
+                      alert(result.error || 'Failed to schedule meeting');
                     }
                   } catch (error) {
                     console.error('Failed to schedule meeting:', error);
+                    alert('Failed to schedule meeting. Please try again.');
                   } finally {
                     setModalLoading(false);
                   }

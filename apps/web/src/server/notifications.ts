@@ -91,6 +91,101 @@ export async function createDraftNotification(
 }
 
 /**
+ * Create a notification for a new email lead
+ */
+export async function createLeadNotification(
+  orgId: string,
+  leadId: string,
+  threadId: string,
+  emailSubject: string,
+  emailFrom: string,
+  category: string,
+  confidence: number,
+  aiAnalysis?: any
+): Promise<string[]> {
+  try {
+    const orgMembers = await prisma.orgMember.findMany({
+      where: { orgId },
+      include: { user: true }
+    });
+
+    const categoryNames: Record<string, string> = {
+      'showing_request': 'Property Showing Request',
+      'hot_lead': 'Hot Lead Alert',
+      'seller_lead': 'New Seller Lead',
+      'buyer_lead': 'New Buyer Lead',
+      'price_inquiry': 'Price Inquiry'
+    };
+
+    const categoryName = categoryNames[category] || 'New Lead Detected';
+    const priority = category === 'hot_lead' || confidence > 80 ? 'high' : 'medium';
+    
+    const confidencePercent = Math.round(confidence);
+    const priorityScore = aiAnalysis?.priorityScore || confidencePercent;
+
+    const notificationIds: string[] = [];
+
+    for (const member of orgMembers) {
+      const notification = await createNotification({
+        orgId,
+        userId: member.userId,
+        type: 'lead',
+        title: categoryName,
+        message: `${confidencePercent}% confidence lead from ${emailFrom}: "${emailSubject.substring(0, 50)}..."`,
+        priority
+      });
+      notificationIds.push(notification.id);
+    }
+
+    console.log(`Created ${notificationIds.length} lead notifications for ${categoryName}`);
+    return notificationIds;
+  } catch (error) {
+    console.error('Failed to create lead notification:', error);
+    return [];
+  }
+}
+
+/**
+ * Create a notification for new incoming email
+ */
+export async function createNewEmailNotification(
+  orgId: string,
+  threadId: string,
+  emailSubject: string,
+  emailFrom: string,
+  isHighPriority: boolean = false
+): Promise<string[]> {
+  try {
+    const orgMembers = await prisma.orgMember.findMany({
+      where: { orgId },
+      include: { user: true }
+    });
+
+    const priority = isHighPriority ? 'high' : 'low';
+    const title = isHighPriority ? 'High Priority Email' : 'New Email';
+
+    const notificationIds: string[] = [];
+
+    for (const member of orgMembers) {
+      const notification = await createNotification({
+        orgId,
+        userId: member.userId,
+        type: 'email',
+        title,
+        message: `New email from ${emailFrom}: "${emailSubject.substring(0, 50)}..."`,
+        priority
+      });
+      notificationIds.push(notification.id);
+    }
+
+    return notificationIds;
+  } catch (error) {
+    console.error('Failed to create new email notification:', error);
+    return [];
+  }
+}
+
+/**
  * Get the user ID for an organization (first user in org)
  */
 export async function getOrgUserId(orgId: string): Promise<string | null> {

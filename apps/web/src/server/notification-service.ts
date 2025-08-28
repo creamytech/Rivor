@@ -234,34 +234,30 @@ export class NotificationService {
   }
 
   /**
-   * Create database notification record
+   * Create database notification record and emit to real-time stream
    */
   private async createDatabaseNotification(
     orgId: string,
     payload: NotificationPayload
   ): Promise<void> {
+    // Import here to avoid circular dependency
+    const { createNotification } = await import('./notifications');
+    
     // Get all org members to notify
     const orgMembers = await prisma.orgMember.findMany({
       where: { orgId },
       include: { user: true }
     });
 
-    // Create notification record for each member
+    // Create notification record for each member and emit to real-time stream
     for (const member of orgMembers) {
-      await prisma.notification.create({
-        data: {
-          orgId,
-          userId: member.userId,
-          type: payload.type,
-          title: payload.title,
-          message: payload.message,
-          priority: payload.priority,
-          actionUrl: payload.actionUrl,
-          metadata: {
-            leadId: payload.leadId,
-            threadId: payload.threadId
-          }
-        }
+      await createNotification({
+        orgId,
+        userId: member.userId,
+        type: payload.type,
+        title: payload.title,
+        message: payload.message,
+        priority: payload.priority
       });
     }
   }

@@ -12,7 +12,8 @@ import {
   ChevronRight,
   Reply,
   Forward,
-  Trash2
+  Trash2,
+  Bot
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -62,7 +63,7 @@ interface EmailThread {
 
 interface EmailContentProps {
   threadId: string;
-  onAction?: (action: string, threadId: string, messageId?: string) => void;
+  onAction?: (action: string, threadId: string, messageId?: string, data?: any) => void;
 }
 
 export function EmailContent({ threadId, onAction }: EmailContentProps) {
@@ -177,6 +178,82 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
       }
       return newSet;
     });
+  };
+
+  const handleReply = (threadId: string) => {
+    if (!thread || !thread.messages || thread.messages.length === 0) return;
+    
+    // Get the latest message to reply to
+    const latestMessage = thread.messages[thread.messages.length - 1];
+    
+    // Extract plain text from HTML or use bodyText
+    const getPlainTextContent = (message: EmailMessage): string => {
+      if (message.bodyText) {
+        return message.bodyText;
+      } else if (message.bodyHtml) {
+        // Simple HTML to text conversion
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = message.bodyHtml;
+        return tempDiv.textContent || tempDiv.innerText || '';
+      }
+      return '';
+    };
+    
+    // Create reply data
+    const replyData = {
+      type: 'reply',
+      originalMessageId: latestMessage.id,
+      toEmail: latestMessage.fromEmail,
+      toName: latestMessage.fromName || '',
+      subject: latestMessage.subject?.startsWith('Re:') 
+        ? latestMessage.subject 
+        : `Re: ${latestMessage.subject}`,
+      originalBody: getPlainTextContent(latestMessage),
+      originalDate: latestMessage.sentAt || latestMessage.receivedAt,
+      inReplyTo: latestMessage.messageId,
+      references: latestMessage.references || latestMessage.messageId,
+      threadId: threadId
+    };
+    
+    console.log('Manual reply initiated:', replyData);
+    onAction?.('reply', threadId, latestMessage.id, replyData);
+  };
+
+  const handleForward = (threadId: string) => {
+    if (!thread || !thread.messages || thread.messages.length === 0) return;
+    
+    // Get the latest message to forward
+    const latestMessage = thread.messages[thread.messages.length - 1];
+    
+    // Extract plain text from HTML or use bodyText (reuse function from reply)
+    const getPlainTextContent = (message: EmailMessage): string => {
+      if (message.bodyText) {
+        return message.bodyText;
+      } else if (message.bodyHtml) {
+        // Simple HTML to text conversion
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = message.bodyHtml;
+        return tempDiv.textContent || tempDiv.innerText || '';
+      }
+      return '';
+    };
+    
+    // Create forward data
+    const forwardData = {
+      type: 'forward',
+      originalMessageId: latestMessage.id,
+      subject: latestMessage.subject?.startsWith('Fwd:') 
+        ? latestMessage.subject 
+        : `Fwd: ${latestMessage.subject}`,
+      originalBody: getPlainTextContent(latestMessage),
+      originalFrom: `${latestMessage.fromName || latestMessage.fromEmail} <${latestMessage.fromEmail}>`,
+      originalTo: latestMessage.toEmail?.join(', ') || '',
+      originalDate: latestMessage.sentAt || latestMessage.receivedAt,
+      threadId: threadId
+    };
+    
+    console.log('Manual forward initiated:', forwardData);
+    onAction?.('forward', threadId, latestMessage.id, forwardData);
   };
 
   const formatDate = (dateString: string) => {
@@ -568,6 +645,67 @@ export function EmailContent({ threadId, onAction }: EmailContentProps) {
           })}
         </div>
       </ScrollArea>
+
+      {/* Action Bar */}
+      {thread && (
+        <div className={`sticky bottom-0 border-t p-4 ${
+          theme === 'black' 
+            ? 'bg-black/80 border-white/10 backdrop-blur-xl' 
+            : 'bg-white/80 border-black/10 backdrop-blur-xl'
+        }`}>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              {/* Primary Reply Button */}
+              <Button
+                variant="liquid"
+                size="sm"
+                onClick={() => handleReply(thread.id)}
+                className="flex items-center gap-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border-blue-400/30 font-medium"
+              >
+                <Reply className="h-4 w-4" />
+                Reply
+              </Button>
+              
+              {/* Secondary Actions */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleForward(thread.id)}
+                  className="flex items-center gap-2 opacity-70 hover:opacity-100"
+                >
+                  <Forward className="h-4 w-4" />
+                  Forward
+                </Button>
+                
+                {/* AI Reply as Secondary Option */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onAction?.('ai-reply', thread.id)}
+                  className="flex items-center gap-2 opacity-70 hover:opacity-100 text-purple-400"
+                  title="Generate AI Reply"
+                >
+                  <Bot className="h-4 w-4" />
+                  AI Reply
+                </Button>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onAction?.('delete', thread.id)}
+                className="flex items-center gap-2 opacity-50 hover:opacity-100 text-red-400"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx global>{`
         .email-content {

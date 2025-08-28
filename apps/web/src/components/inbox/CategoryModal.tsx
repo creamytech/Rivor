@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { X, Fire, Home, ShoppingCart, DollarSign, Calculator, Clock, FileText, Zap } from 'lucide-react';
+import { X, Flame, Home, ShoppingCart, DollarSign, Calculator, Clock, FileText, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { internalFetch } from '@/lib/internal-url';
 
@@ -22,7 +22,7 @@ const categories = [
     label: 'Hot Lead',
     emoji: '🔥',
     description: 'Immediate buying/selling intent, urgent response needed',
-    icon: Fire,
+    icon: Flame,
     color: 'bg-red-100 text-red-800 border-red-300',
     priority: 'high'
   },
