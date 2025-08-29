@@ -423,8 +423,15 @@ export default function EnhancedSidebar({
         <div className="flex-1 flex flex-col relative z-10">
           {/* Core Navigation */}
           <div className={`py-4 flex-1 ${isCollapsed ? 'px-1' : 'px-3'}`}>
+            {!isCollapsed && (
+              <div className="px-2 mb-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-center" style={{ color: 'var(--glass-text-muted)' }}>
+                  Core Features
+                </h3>
+              </div>
+            )}
 
-            <nav className="space-y-1">
+            <nav className="space-y-2">
               {groupedItems.core.map((item, index) => {
                 const active = isActive(item);
                 return (
@@ -432,29 +439,55 @@ export default function EnhancedSidebar({
                     <TooltipTrigger asChild>
                       <Link href={item.href} className="block">
                         <div
-                          className={`glass-nav-item ${active ? 'active' : ''} group relative flex items-center gap-3 transition-all duration-100`}
+                          className={`glass-nav-item ${active ? 'active' : ''} group relative transition-all duration-100 ${
+                            isCollapsed 
+                              ? 'flex items-center justify-center' 
+                              : 'flex flex-col items-center text-center'
+                          }`}
                           style={{
                             background: active ? 'var(--glass-surface)' : 'rgba(0, 0, 0, 0)',
                             border: `1px solid ${active ? 'var(--glass-border)' : 'rgba(0, 0, 0, 0)'}`,
                             color: active ? 'var(--glass-text)' : 'var(--glass-text-muted)',
                             borderRadius: '12px',
-                            padding: isCollapsed ? '12px' : '12px',
+                            padding: isCollapsed ? '12px' : '16px 12px',
                             margin: isCollapsed ? '4px 4px' : '4px 8px',
-                            justifyContent: isCollapsed ? 'center' : 'flex-start'
+                            minHeight: isCollapsed ? 'auto' : '64px'
                           }}
                         >
-                          <div className="flex-shrink-0">
+                          <div className={`${isCollapsed ? '' : 'mb-2'} flex-shrink-0 relative`}>
                             {item.icon}
+                            {item.badge && item.badge.count > 0 && isCollapsed && (
+                              <div
+                                className="absolute -top-2 -right-2 glass-bubble text-xs font-bold"
+                                style={{
+                                  background: item.badge.color === 'destructive' 
+                                    ? 'rgba(255, 59, 48, 0.9)' 
+                                    : item.badge.color === 'warning'
+                                    ? 'rgba(255, 193, 7, 0.9)'
+                                    : 'rgba(52, 199, 89, 0.9)',
+                                  color: '#ffffff',
+                                  borderRadius: '50%',
+                                  minWidth: '18px',
+                                  height: '18px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontSize: '10px'
+                                }}
+                              >
+                                {item.badge.count}
+                              </div>
+                            )}
                           </div>
                           
                           {!isCollapsed && (
-                            <div className="flex-1 flex items-center justify-between min-w-0">
-                              <span className="font-medium truncate">
+                            <div className="flex flex-col items-center min-w-0">
+                              <span className="font-medium text-sm truncate text-center">
                                 {item.label}
                               </span>
                               {item.badge && item.badge.count > 0 && (
                                 <div
-                                  className="glass-bubble px-2 py-1 text-xs font-bold"
+                                  className="mt-1 glass-bubble px-2 py-1 text-xs font-bold"
                                   style={{
                                     background: item.badge.color === 'destructive' 
                                       ? 'rgba(255, 59, 48, 0.2)' 
@@ -462,7 +495,7 @@ export default function EnhancedSidebar({
                                       ? 'rgba(255, 193, 7, 0.2)'
                                       : 'rgba(52, 199, 89, 0.2)',
                                     color: 'var(--glass-text)',
-                                    borderRadius: '50%',
+                                    borderRadius: '12px',
                                     minWidth: '20px',
                                     height: '20px',
                                     display: 'flex',
@@ -494,8 +527,22 @@ export default function EnhancedSidebar({
 
           </div>
 
+          {/* Divider */}
+          {!isCollapsed && (
+            <div className="px-6 py-2">
+              <div className="h-px" style={{ background: 'var(--glass-border)' }}></div>
+            </div>
+          )}
+
           {/* Utilities Section */}
           <div className={`py-2 ${isCollapsed ? 'px-1' : 'px-3'}`}>
+            {!isCollapsed && (
+              <div className="px-2 mb-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-center" style={{ color: 'var(--glass-text-muted)' }}>
+                  Settings & Tools
+                </h3>
+              </div>
+            )}
             {groupedItems.utilities.map((item) => {
               const active = isActive(item);
               return (
@@ -503,22 +550,26 @@ export default function EnhancedSidebar({
                   <TooltipTrigger asChild>
                     <Link href={item.href} className="block">
                       <div
-                        className={`glass-nav-item ${active ? 'active' : ''} group relative flex items-center gap-3 transition-all duration-100`}
+                        className={`glass-nav-item ${active ? 'active' : ''} group relative transition-all duration-100 ${
+                          isCollapsed 
+                            ? 'flex items-center justify-center' 
+                            : 'flex flex-col items-center text-center'
+                        }`}
                         style={{
                           background: active ? 'var(--glass-surface)' : 'rgba(0, 0, 0, 0)',
                           border: `1px solid ${active ? 'var(--glass-border)' : 'rgba(0, 0, 0, 0)'}`,
                           color: active ? 'var(--glass-text)' : 'var(--glass-text-muted)',
                           borderRadius: '12px',
-                          padding: isCollapsed ? '12px' : '12px',
+                          padding: isCollapsed ? '12px' : '16px 12px',
                           margin: isCollapsed ? '4px 4px' : '4px 8px',
-                          justifyContent: isCollapsed ? 'center' : 'flex-start'
+                          minHeight: isCollapsed ? 'auto' : '64px'
                         }}
                       >
-                        <div>
+                        <div className={`${isCollapsed ? '' : 'mb-2'} flex-shrink-0`}>
                           {item.icon}
                         </div>
                         {!isCollapsed && (
-                          <span className="font-medium">
+                          <span className="font-medium text-sm truncate text-center">
                             {item.label}
                           </span>
                         )}
