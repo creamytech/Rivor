@@ -20,7 +20,9 @@ import {
   LogOut,
   Settings,
   Home,
-  FileText
+  FileText,
+  UserPlus,
+  Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
@@ -36,6 +38,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { signOut, useSession } from "next-auth/react";
+import dynamic from "next/dynamic";
+
+// Dynamic imports for modal components
+const CreateLeadModal = dynamic(() => import("@/components/pipeline/CreateLeadModal"), { ssr: false });
+const CreateEventModal = dynamic(() => import("@/components/calendar/CreateEventModal"), { ssr: false });
+const CreateTaskModal = dynamic(() => import("@/components/tasks/CreateTaskModal"), { ssr: false });
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -74,11 +82,13 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
   const [showCreateContactModal, setShowCreateContactModal] = useState(false);
   const [showCreateListingModal, setShowCreateListingModal] = useState(false);
   const [showScheduleMeetingModal, setShowScheduleMeetingModal] = useState(false);
+  const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
+  const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
   // Apply dashboard modal blur effects when any modal is open
   useEffect(() => {
-    const isDashboardModalOpen = showCreateContactModal || showCreateListingModal || showScheduleMeetingModal || showComposeModal;
+    const isDashboardModalOpen = showCreateContactModal || showCreateListingModal || showScheduleMeetingModal || showComposeModal || showCreateLeadModal || showCreateTaskModal;
     
     if (isDashboardModalOpen) {
       document.body.classList.add('dashboard-modal-open');
@@ -90,7 +100,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
     return () => {
       document.body.classList.remove('dashboard-modal-open');
     };
-  }, [showCreateContactModal, showCreateListingModal, showScheduleMeetingModal, showComposeModal]);
+  }, [showCreateContactModal, showCreateListingModal, showScheduleMeetingModal, showComposeModal, showCreateLeadModal, showCreateTaskModal]);
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Fetch notifications with real-time SSE updates
@@ -379,7 +389,7 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
   const pageContext = getPageContext();
 
   // Check if any modal is open
-  const isAnyModalOpen = showComposeModal || showCreateContactModal || showCreateListingModal || showScheduleMeetingModal;
+  const isAnyModalOpen = showComposeModal || showCreateContactModal || showCreateListingModal || showScheduleMeetingModal || showCreateLeadModal || showCreateTaskModal;
 
   return (
     <div className={`${theme === 'black' ? 'glass-theme-black' : 'glass-theme-white'} min-h-screen`}>
@@ -658,6 +668,24 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
               <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Compose message</div>
             </div>
           </div>
+          <div className="glass-quick-action-item" onClick={() => { console.log('Lead modal clicked'); setShowCreateLeadModal(true); setShowQuickActions(false); }}>
+            <div className="glass-quick-action-icon">
+              <UserPlus className="h-4 w-4" style={{ color: 'var(--glass-text)' }} />
+            </div>
+            <div>
+              <div className="font-medium text-sm" style={{ color: 'var(--glass-text)' }}>Add Lead</div>
+              <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Create new lead</div>
+            </div>
+          </div>
+          <div className="glass-quick-action-item" onClick={() => { console.log('Task modal clicked'); setShowCreateTaskModal(true); setShowQuickActions(false); }}>
+            <div className="glass-quick-action-icon">
+              <Clock className="h-4 w-4" style={{ color: 'var(--glass-text)' }} />
+            </div>
+            <div>
+              <div className="font-medium text-sm" style={{ color: 'var(--glass-text)' }}>Create Task</div>
+              <div className="text-xs" style={{ color: 'var(--glass-text-muted)' }}>Add new task</div>
+            </div>
+          </div>
           <Link href="/app/reporting" className="glass-quick-action-item" onClick={() => setShowQuickActions(false)}>
             <div className="glass-quick-action-icon">
               <BarChart3 className="h-4 w-4" style={{ color: 'var(--glass-text)' }} />
@@ -833,6 +861,21 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         trigger={null}
         open={showComposeModal}
         onOpenChange={setShowComposeModal}
+      />
+      
+      <CreateLeadModal
+        open={showCreateLeadModal}
+        onOpenChange={setShowCreateLeadModal}
+      />
+      
+      <CreateEventModal
+        open={showScheduleMeetingModal}
+        onOpenChange={setShowScheduleMeetingModal}
+      />
+      
+      <CreateTaskModal
+        open={showCreateTaskModal}
+        onOpenChange={setShowCreateTaskModal}
       />
 
       {/* Test simple modal instead of Radix Dialog */}
@@ -1241,180 +1284,6 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showScheduleMeetingModal} onOpenChange={setShowScheduleMeetingModal}>
-        <DialogContent 
-          className="max-w-md glass-modal rounded-xl overflow-hidden"
-          data-glass-theme="black"
-          style={{ 
-            background: 'rgba(255, 0, 0, 0.98)',
-            border: '3px solid rgba(255, 255, 255, 0.8)',
-            backdropFilter: 'blur(32px) saturate(1.4) brightness(0.85)'
-          }}
-        >
-          <DialogHeader className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--glass-border)' }}>
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-white">
-                <Calendar className="h-5 w-5" />
-              </div>
-              <div>
-                <DialogTitle className="text-xl font-bold" style={{ color: 'var(--glass-text)' }}>
-                  Schedule Meeting
-                </DialogTitle>
-                <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
-                  Book a new appointment or meeting
-                </p>
-              </div>
-            </div>
-          </DialogHeader>
-          <div className="p-6 space-y-6">
-            {/* Meeting Details Card */}
-            <div className="glass-card p-4 rounded-lg transition-all duration-200 hover:bg-white/5">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-white">
-                  <Calendar className="h-4 w-4" />
-                </div>
-                <div>
-                  <h5 className="font-medium" style={{ color: 'var(--glass-text)' }}>
-                    Meeting Information
-                  </h5>
-                  <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
-                    Basic meeting details and timing
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="meeting-title" style={{ color: 'var(--glass-text)' }}>Meeting Title *</Label>
-                  <Input 
-                    id="meeting-title" 
-                    placeholder="Enter meeting title" 
-                    value={meetingFormData.title}
-                    onChange={(e) => setMeetingFormData({...meetingFormData, title: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="meeting-date" style={{ color: 'var(--glass-text)' }}>Date *</Label>
-                    <Input 
-                      id="meeting-date" 
-                      type="date" 
-                      value={meetingFormData.date}
-                      onChange={(e) => setMeetingFormData({...meetingFormData, date: e.target.value})}
-                      min={new Date().toISOString().split('T')[0]}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="meeting-time" style={{ color: 'var(--glass-text)' }}>Time *</Label>
-                    <Input 
-                      id="meeting-time" 
-                      type="time" 
-                      value={meetingFormData.time}
-                      onChange={(e) => setMeetingFormData({...meetingFormData, time: e.target.value})}
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Attendees Card */}
-            <div className="glass-card p-4 rounded-lg transition-all duration-200 hover:bg-white/5">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
-                  <User className="h-4 w-4" />
-                </div>
-                <div>
-                  <h5 className="font-medium" style={{ color: 'var(--glass-text)' }}>
-                    Attendees
-                  </h5>
-                  <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
-                    Who will be attending this meeting
-                  </p>
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="meeting-attendees" style={{ color: 'var(--glass-text)' }}>Attendees</Label>
-                <Input 
-                  id="meeting-attendees" 
-                  placeholder="Enter email addresses" 
-                  value={meetingFormData.attendees}
-                  onChange={(e) => setMeetingFormData({...meetingFormData, attendees: e.target.value})}
-                />
-              </div>
-            </div>
-
-            {/* Meeting Notes Card */}
-            <div className="glass-card p-4 rounded-lg transition-all duration-200 hover:bg-white/5">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                  <FileText className="h-4 w-4" />
-                </div>
-                <div>
-                  <h5 className="font-medium" style={{ color: 'var(--glass-text)' }}>
-                    Meeting Notes
-                  </h5>
-                  <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
-                    Agenda and additional notes
-                  </p>
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="meeting-notes" style={{ color: 'var(--glass-text)' }}>Notes</Label>
-                <Textarea 
-                  id="meeting-notes" 
-                  placeholder="Meeting agenda or notes..." 
-                  value={meetingFormData.notes}
-                  onChange={(e) => setMeetingFormData({...meetingFormData, notes: e.target.value})}
-                />
-              </div>
-            </div>
-            <div className="flex gap-2 pt-4">
-              <Button variant="outline" onClick={() => setShowScheduleMeetingModal(false)} className="flex-1">
-                Cancel
-              </Button>
-              <Button 
-                variant="liquid" 
-                className="flex-1"
-                onClick={async () => {
-                  if (!meetingFormData.title || !meetingFormData.date || !meetingFormData.time) {
-                    alert('Please fill in all required fields');
-                    return;
-                  }
-                  
-                  setModalLoading(true);
-                  try {
-                    const response = await fetch('/api/meetings', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(meetingFormData)
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (response.ok) {
-                      setShowScheduleMeetingModal(false);
-                      setMeetingFormData({ title: '', date: '', time: '', attendees: '', notes: '' });
-                      console.log('Meeting scheduled successfully!', result);
-                    } else {
-                      alert(result.error || 'Failed to schedule meeting');
-                    }
-                  } catch (error) {
-                    console.error('Failed to schedule meeting:', error);
-                    alert('Failed to schedule meeting. Please try again.');
-                  } finally {
-                    setModalLoading(false);
-                  }
-                }}
-                disabled={modalLoading}
-              >
-                {modalLoading ? 'Scheduling...' : 'Schedule Meeting'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* AI Search Modal */}
       <SearchModal
