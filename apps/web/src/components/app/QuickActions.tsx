@@ -12,7 +12,8 @@ import {
   UserPlus,
   FileText,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -20,6 +21,7 @@ const ChatAgent = dynamic(() => import('./ChatAgent'), { ssr: false });
 const ComposeEmailModal = dynamic(() => import('../inbox/ComposeEmailModal'), { ssr: false });
 const CreateLeadModal = dynamic(() => import('../pipeline/CreateLeadModal'), { ssr: false });
 const CreateEventModal = dynamic(() => import('../calendar/CreateEventModal'), { ssr: false });
+const CreateTaskModal = dynamic(() => import('../tasks/CreateTaskModal'), { ssr: false });
 
 /**
  * Floating quick actions menu.
@@ -38,10 +40,11 @@ export function useQuickActionCallbacks() {
   const [composeOpen, setComposeOpen] = useState(false);
   const [leadOpen, setLeadOpen] = useState(false);
   const [eventOpen, setEventOpen] = useState(false);
+  const [taskOpen, setTaskOpen] = useState(false);
 
   // Apply dashboard modal blur effects when modal is open
   useEffect(() => {
-    if (noteOpen || composeOpen || leadOpen || eventOpen) {
+    if (noteOpen || composeOpen || leadOpen || eventOpen || taskOpen) {
       document.body.classList.add('dashboard-modal-open');
     } else {
       document.body.classList.remove('dashboard-modal-open');
@@ -51,17 +54,46 @@ export function useQuickActionCallbacks() {
     return () => {
       document.body.classList.remove('dashboard-modal-open');
     };
-  }, [noteOpen, composeOpen, leadOpen, eventOpen]);
+  }, [noteOpen, composeOpen, leadOpen, eventOpen, taskOpen]);
 
   const composeEmail = useCallback(() => setComposeOpen(true), []);
   const scheduleMeeting = useCallback(() => setEventOpen(true), []);
   const addLead = useCallback(() => setLeadOpen(true), []);
+  const createTask = useCallback(() => setTaskOpen(true), []);
 
   const startChat = useCallback(() => setChatOpen(true), []);
   const createNote = useCallback(() => setNoteOpen(true), []);
 
   const chatModal = (
     <ChatAgent isOpen={chatOpen} onClose={() => setChatOpen(false)} />
+  );
+
+  const composeModal = (
+    <ComposeEmailModal 
+      open={composeOpen}
+      onOpenChange={setComposeOpen}
+    />
+  );
+
+  const leadModal = (
+    <CreateLeadModal 
+      open={leadOpen}
+      onOpenChange={setLeadOpen}
+    />
+  );
+
+  const eventModal = (
+    <CreateEventModal 
+      open={eventOpen}
+      onOpenChange={setEventOpen}
+    />
+  );
+
+  const taskModal = (
+    <CreateTaskModal 
+      open={taskOpen}
+      onOpenChange={setTaskOpen}
+    />
   );
 
   const noteModal = (
@@ -81,9 +113,14 @@ export function useQuickActionCallbacks() {
     composeEmail,
     scheduleMeeting,
     addLead,
+    createTask,
     startChat,
     createNote,
     chatModal,
+    composeModal,
+    leadModal,
+    eventModal,
+    taskModal,
     noteModal
   };
 }
@@ -107,9 +144,14 @@ export default function QuickActions({ className = '' }: QuickActionsProps) {
     composeEmail,
     scheduleMeeting,
     addLead,
+    createTask,
     startChat,
     createNote,
     chatModal,
+    composeModal,
+    leadModal,
+    eventModal,
+    taskModal,
     noteModal
   } = useQuickActionCallbacks();
 
@@ -137,6 +179,14 @@ export default function QuickActions({ className = '' }: QuickActionsProps) {
       onClick: addLead,
       color: 'purple',
       shortcut: '⌘L'
+    },
+    {
+      id: 'create-task',
+      label: 'Create Task',
+      icon: <Clock className="h-4 w-4" />,
+      onClick: createTask,
+      color: 'indigo',
+      shortcut: '⌘T'
     },
     {
       id: 'start-chat',
@@ -167,6 +217,10 @@ export default function QuickActions({ className = '' }: QuickActionsProps) {
   return (
     <div className={`fixed bottom-6 right-6 z-50 ${className}`}>
       {chatModal}
+      {composeModal}
+      {leadModal}
+      {eventModal}
+      {taskModal}
       {noteModal}
       <AnimatePresence>
         {isExpanded && (
