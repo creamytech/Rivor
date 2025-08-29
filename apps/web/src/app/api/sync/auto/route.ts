@@ -191,97 +191,93 @@ export async function POST(req: NextRequest) {
         let leadsDetected = 0;
         let notifications = 0;
         
-        if (totalNewMessages > 0) {
-          try {
-            logger.info('Starting AI workflow processing for new emails', {
-              correlationId,
-              orgId,
-              newMessages: totalNewMessages,
-              newThreads: totalNewThreads
-            });
+        // Always run AI analysis to process both new emails and existing backlog
+        try {
+          logger.info('Starting AI workflow processing', {
+            correlationId,
+            orgId,
+            newMessages: totalNewMessages,
+            newThreads: totalNewThreads,
+            note: 'Processing new emails and existing backlog'
+          });
 
-            // Get recently updated threads that haven't been processed yet
-            const recentThreads = await prisma.emailThread.findMany({
-              where: {
+          // Get all threads that haven't been processed yet (no time restriction)
+          const unprocessedThreads = await prisma.emailThread.findMany({
+            where: {
+              orgId,
+              OR: [
+                { status: { not: 'processed' } }, // Not processed yet
+                { status: null } // No status set
+              ]
+            },
+            orderBy: { updatedAt: 'desc' },
+            take: 100 // Process up to 100 threads per sync to handle large backlogs
+          });
+
+          logger.info('Found threads for AI processing', {
+            correlationId,
+            orgId,
+            threadCount: unprocessedThreads.length
+          });
+
+          // Process each thread through the AI workflow
+          for (const thread of unprocessedThreads) {
+            try {
+              const workflowResult = await emailWorkflowService.processEmailThread(
                 orgId,
-                updatedAt: {
-                  gte: new Date(Date.now() - 15 * 60 * 1000) // Last 15 minutes
-                },
-                OR: [
-                  { status: { not: 'processed' } }, // Not processed yet
-                  { status: null } // No status set
-                ]
-              },
-              orderBy: { updatedAt: 'desc' },
-              take: 20 // Limit to avoid overwhelming the system
-            });
+                thread.id
+              );
 
-            logger.info('Found threads for AI processing', {
-              correlationId,
-              orgId,
-              threadCount: recentThreads.length
-            });
-
-            // Process each thread through the AI workflow
-            for (const thread of recentThreads) {
-              try {
-                const workflowResult = await emailWorkflowService.processEmailThread(
-                  orgId,
-                  thread.id
-                );
-
-                if (workflowResult.processed) {
-                  aiAnalyzedThreads++;
-                  
-                  if (workflowResult.leadDetected) {
-                    leadsDetected++;
-                  }
-                  
-                  // Count AI analysis with high priority as potential notification trigger
-                  if (workflowResult.aiAnalysis && (
-                    workflowResult.aiAnalysis.priorityScore >= 80 ||
-                    ['hot_lead', 'showing_request', 'seller_lead', 'buyer_lead'].includes(workflowResult.aiAnalysis.category)
-                  )) {
-                    notifications++;
-                  }
-
-                  logger.info('Thread AI workflow completed', {
-                    correlationId,
-                    orgId,
-                    threadId: thread.id,
-                    leadDetected: workflowResult.leadDetected,
-                    aiCategory: workflowResult.aiAnalysis?.category,
-                    priorityScore: workflowResult.aiAnalysis?.priorityScore
-                  });
+              if (workflowResult.processed) {
+                aiAnalyzedThreads++;
+                
+                if (workflowResult.leadDetected) {
+                  leadsDetected++;
                 }
-              } catch (threadError) {
-                logger.error('Thread AI workflow failed', {
+                
+                // Count AI analysis with high priority as potential notification trigger
+                if (workflowResult.aiAnalysis && (
+                  workflowResult.aiAnalysis.priorityScore >= 80 ||
+                  ['hot_lead', 'showing_request', 'seller_lead', 'buyer_lead'].includes(workflowResult.aiAnalysis.category)
+                )) {
+                  notifications++;
+                }
+
+                logger.info('Thread AI workflow completed', {
                   correlationId,
                   orgId,
                   threadId: thread.id,
-                  error: threadError instanceof Error ? threadError.message : String(threadError)
+                  leadDetected: workflowResult.leadDetected,
+                  aiCategory: workflowResult.aiAnalysis?.category,
+                  priorityScore: workflowResult.aiAnalysis?.priorityScore
                 });
-              }
-
-              // Small delay to prevent overwhelming the system
-              await new Promise(resolve => setTimeout(resolve, 100));
+            } catch (threadError) {
+              logger.error('Thread AI workflow failed', {
+                correlationId,
+                orgId,
+                threadId: thread.id,
+                error: threadError instanceof Error ? threadError.message : String(threadError)
+              });
             }
 
-            logger.info('AI workflow processing completed', {
-              correlationId,
-              orgId,
-              aiAnalyzedThreads,
-              leadsDetected,
-              notifications
-            });
-
-          } catch (aiWorkflowError) {
-            logger.error('AI workflow processing failed', {
-              correlationId,
-              orgId,
-              error: aiWorkflowError instanceof Error ? aiWorkflowError.message : String(aiWorkflowError)
-            });
+            // Small delay to prevent overwhelming the system
+            await new Promise(resolve => setTimeout(resolve, 100));
           }
+
+          logger.info('AI workflow processing completed', {
+            correlationId,
+            orgId,
+            aiAnalyzedThreads,
+            leadsDetected,
+            notifications
+          });
+
+        } catch (aiWorkflowError) {
+          logger.error('AI workflow processing failed', {
+            correlationId,
+            orgId,
+            error: aiWorkflowError instanceof Error ? aiWorkflowError.message : String(aiWorkflowError)
+          });
         }
 
         result.email = {
