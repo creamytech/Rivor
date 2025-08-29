@@ -36,7 +36,8 @@ import {
   ChevronUp,
   ChevronDown,
   Eye,
-  EyeOff
+  EyeOff,
+  GripVertical
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAutoSync } from '@/hooks/useAutoSync';
@@ -166,12 +167,65 @@ export default function InboxPage() {
     totalPages: 0
   });
   
+  // Resizable panel state
+  const [leftPanelWidth, setLeftPanelWidth] = useState(320); // Default 320px (w-80)
+  const [isDragging, setIsDragging] = useState(false);
+  
   // Draft panel refresh function for real-time updates
   const [refreshDraftsTrigger, setRefreshDraftsTrigger] = useState(0);
   const refreshDrafts = () => {
     console.log('🔄 Triggering real-time draft refresh');
     setRefreshDraftsTrigger(prev => prev + 1);
   };
+
+  // Drag handling for resizable panel
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    document.body.classList.add('resizing');
+    e.preventDefault();
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging) return;
+    
+    const container = document.querySelector('.inbox-main-container') as HTMLElement;
+    if (!container) return;
+    
+    const containerRect = container.getBoundingClientRect();
+    const newWidth = e.clientX - containerRect.left;
+    
+    // Set reasonable bounds (minimum 250px, maximum 600px)
+    const clampedWidth = Math.max(250, Math.min(600, newWidth));
+    setLeftPanelWidth(clampedWidth);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    document.body.classList.remove('resizing');
+  };
+
+  // Add/remove global mouse listeners
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'ew-resize';
+      document.body.style.userSelect = 'none';
+    } else {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.body.classList.remove('resizing');
+    };
+  }, [isDragging]);
 
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{
@@ -1855,13 +1909,16 @@ export default function InboxPage() {
           </motion.div>
 
           {/* Main Content */}
-          <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 flex overflow-hidden inbox-main-container">
             {activeTab === 'inbox' ? (
               <>
-                {/* Thread List Panel - Made narrower */}
+                {/* Thread List Panel - Resizable */}
                 <motion.div 
-                  className={`w-80 border-r ${theme === 'black' ? 'border-white/10' : 'border-black/10'} flex flex-col`}
+                  className={`border-r ${theme === 'black' ? 'border-white/10' : 'border-black/10'} flex flex-col`}
                   style={{
+                    width: `${leftPanelWidth}px`,
+                    minWidth: '250px',
+                    maxWidth: '600px',
                     background: theme === 'black' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.2)',
                     backdropFilter: 'blur(20px) saturate(1.3)',
                     WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
@@ -2036,6 +2093,35 @@ export default function InboxPage() {
                 </AnimatePresence>
               </div>
             </motion.div>
+
+            {/* Resize Handle */}
+            <div
+              className={`resize-handle w-1 hover:w-2 bg-transparent hover:bg-gradient-to-b transition-all duration-200 cursor-ew-resize relative group ${
+                theme === 'black' 
+                  ? 'hover:from-white/20 hover:to-white/10' 
+                  : 'hover:from-black/20 hover:to-black/10'
+              } ${isDragging ? 'w-2 bg-gradient-to-b from-purple-500/40 to-blue-500/40' : ''}`}
+              onMouseDown={handleMouseDown}
+              style={{
+                backdropFilter: isDragging ? 'blur(10px)' : 'none',
+                WebkitBackdropFilter: isDragging ? 'blur(10px)' : 'none'
+              }}
+            >
+              {/* Resize Handle Icon */}
+              <div 
+                className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 p-1 rounded ${
+                  theme === 'black' 
+                    ? 'bg-white/10 text-white/60' 
+                    : 'bg-black/10 text-black/60'
+                } ${isDragging ? 'opacity-100 bg-purple-500/20 text-purple-300' : ''}`}
+                style={{
+                  backdropFilter: 'blur(20px) saturate(1.3)',
+                  WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
+                }}
+              >
+                <GripVertical className="h-4 w-4" />
+              </div>
+            </div>
 
             {/* Thread Detail Panel */}
             <motion.div 
@@ -2369,10 +2455,13 @@ export default function InboxPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
-                {/* Draft Panel */}
+                {/* Draft Panel - Resizable */}
                 <motion.div 
-                  className={`w-96 border-r ${theme === 'black' ? 'border-white/10' : 'border-black/10'} flex flex-col`}
+                  className={`border-r ${theme === 'black' ? 'border-white/10' : 'border-black/10'} flex flex-col`}
                   style={{
+                    width: `${leftPanelWidth}px`,
+                    minWidth: '250px',
+                    maxWidth: '600px',
                     background: theme === 'black' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.2)',
                     backdropFilter: 'blur(20px) saturate(1.3)',
                     WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
@@ -2392,6 +2481,35 @@ export default function InboxPage() {
                     }} 
                   />
                 </motion.div>
+
+                {/* Resize Handle for Drafts */}
+                <div
+                  className={`resize-handle w-1 hover:w-2 bg-transparent hover:bg-gradient-to-b transition-all duration-200 cursor-ew-resize relative group ${
+                    theme === 'black' 
+                      ? 'hover:from-white/20 hover:to-white/10' 
+                      : 'hover:from-black/20 hover:to-black/10'
+                  } ${isDragging ? 'w-2 bg-gradient-to-b from-purple-500/40 to-blue-500/40' : ''}`}
+                  onMouseDown={handleMouseDown}
+                  style={{
+                    backdropFilter: isDragging ? 'blur(10px)' : 'none',
+                    WebkitBackdropFilter: isDragging ? 'blur(10px)' : 'none'
+                  }}
+                >
+                  {/* Resize Handle Icon */}
+                  <div 
+                    className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 p-1 rounded ${
+                      theme === 'black' 
+                        ? 'bg-white/10 text-white/60' 
+                        : 'bg-black/10 text-black/60'
+                    } ${isDragging ? 'opacity-100 bg-purple-500/20 text-purple-300' : ''}`}
+                    style={{
+                      backdropFilter: 'blur(20px) saturate(1.3)',
+                      WebkitBackdropFilter: 'blur(20px) saturate(1.3)'
+                    }}
+                  >
+                    <GripVertical className="h-4 w-4" />
+                  </div>
+                </div>
 
                 {/* Draft Detail/Info Panel */}
                 <motion.div 
