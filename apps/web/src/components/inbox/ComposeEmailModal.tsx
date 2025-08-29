@@ -1,9 +1,10 @@
 "use client";
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { RichTextEditor } from '@/components/ui/RichTextEditor';
+import { Textarea } from '@/components/ui/textarea';
 import { Send, Plus, X, Bot, Sparkles, Calendar, Building2, FileText, Target, Clock, Zap, Palette, Copy, RefreshCw, Paperclip } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/river/RiverToast';
@@ -498,14 +499,92 @@ export default function ComposeEmailModal({
                 </Button>
               </div>
             </div>
-            <RichTextEditor
-              content={formData.body}
-              onChange={handleBodyChange}
-              onAttachmentUpload={handleAttachmentUpload}
-              attachments={attachments}
-              onRemoveAttachment={handleRemoveAttachment}
-              placeholder="Write your personalized message here..."
-            />
+            <div className="border border-input rounded-lg overflow-hidden bg-background">
+              {/* Simple Toolbar */}
+              <div className="border-b p-2 bg-muted/30">
+                <div className="flex items-center gap-1">
+                  <div className="text-xs text-muted-foreground px-2">
+                    Enhanced rich text editor - basic formatting available
+                  </div>
+                  
+                  <div className="ml-auto flex items-center gap-1">
+                    {/* File Attachments */}
+                    <div className="relative">
+                      <input
+                        type="file"
+                        id="file-upload"
+                        className="hidden"
+                        multiple
+                        onChange={async (e) => {
+                          const files = e.target.files;
+                          if (!files) return;
+                          for (const file of Array.from(files)) {
+                            try {
+                              await handleAttachmentUpload(file);
+                            } catch (error) {
+                              console.error('Failed to upload file:', error);
+                            }
+                          }
+                          e.target.value = '';
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => document.getElementById('file-upload')?.click()}
+                      >
+                        <Paperclip className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Editor Content */}
+              <Textarea 
+                value={formData.body}
+                onChange={(e) => handleBodyChange(e.target.value)}
+                placeholder="Write your personalized message here..."
+                className="min-h-[200px] border-0 resize-none focus:ring-0 focus:ring-offset-0"
+              />
+
+              {/* Attachments */}
+              {attachments.length > 0 && (
+                <div className="border-t p-3 bg-muted/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Paperclip className="h-4 w-4" />
+                    <span className="text-sm font-medium">Attachments ({attachments.length})</span>
+                  </div>
+                  <div className="space-y-2">
+                    {attachments.map((attachment) => (
+                      <div 
+                        key={attachment.id}
+                        className="flex items-center justify-between p-2 bg-background border rounded"
+                      >
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <div className="text-sm font-medium">{attachment.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {attachment.size ? `${(attachment.size / 1024).toFixed(1)} KB` : 'Unknown size'}
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveAttachment(attachment.id)}
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <div>Attachments: {attachments.length}</div>
               {propertyInfo && formData.includePropertyAttachment && (
