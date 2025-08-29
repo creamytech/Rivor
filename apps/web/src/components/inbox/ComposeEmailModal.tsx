@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/RichTextEditor';
 import { Send, Plus, X, Bot, Sparkles, Calendar, Building2, FileText, Target, Clock, Zap, Palette, Copy, RefreshCw, Paperclip } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/river/RiverToast';
@@ -33,6 +33,14 @@ interface ComposeEmailModalProps {
   };
 }
 
+interface Attachment {
+  id: string;
+  name: string;
+  size: number;
+  file?: File;
+  url?: string;
+}
+
 export default function ComposeEmailModal({
   trigger,
   threadId,
@@ -54,6 +62,7 @@ export default function ComposeEmailModal({
   const [showAIAssist, setShowAIAssist] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [formData, setFormData] = useState({
     to: defaultTo,
     cc: '',
@@ -125,6 +134,7 @@ export default function ComposeEmailModal({
           includePropertyAttachment: false,
           followUpDate: ''
         });
+        setAttachments([]);
         onEmailSent?.(result);
       } else {
         addToast({
@@ -144,8 +154,30 @@ export default function ComposeEmailModal({
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+  
+  const handleAttachmentUpload = async (file: File): Promise<string> => {
+    const newAttachment: Attachment = {
+      id: Math.random().toString(36).substring(7),
+      name: file.name,
+      size: file.size,
+      file: file
+    };
+    
+    setAttachments(prev => [...prev, newAttachment]);
+    
+    // In a real implementation, you'd upload to a server and return the URL
+    return Promise.resolve(`/uploads/${file.name}`);
+  };
+  
+  const handleRemoveAttachment = (id: string) => {
+    setAttachments(prev => prev.filter(attachment => attachment.id !== id));
+  };
+  
+  const handleBodyChange = (content: string) => {
+    setFormData(prev => ({ ...prev, body: content }));
   };
   
   const applyTemplate = (templateKey: string) => {
@@ -206,7 +238,7 @@ export default function ComposeEmailModal({
         </DialogTrigger>
       )}
       <DialogContent 
-        className="max-w-2xl max-h-[85vh] glass-modal rounded-xl overflow-hidden"
+        className="max-w-4xl max-h-[90vh] glass-modal rounded-xl overflow-hidden"
         data-glass-theme="black"
         style={{ 
           background: 'rgba(0, 0, 0, 0.98)',
@@ -431,10 +463,10 @@ export default function ComposeEmailModal({
             </div>
           </div>
 
-          {/* Body Field */}
+          {/* Rich Text Editor Body Field */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label htmlFor="body" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Message *
               </label>
               <div className="flex items-center gap-2">
@@ -443,8 +475,8 @@ export default function ComposeEmailModal({
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    const enhanced = formData.body + '\n\n[Property details and market insights will be automatically included]';
-                    handleInputChange('body', enhanced);
+                    const enhanced = formData.body + '<p><br/>[Property details and market insights will be automatically included]</p>';
+                    handleBodyChange(enhanced);
                   }}
                   className="text-xs"
                 >
@@ -456,8 +488,8 @@ export default function ComposeEmailModal({
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    const withScheduling = formData.body + '\n\nI have the following time slots available for a showing:\n• [Time Option 1]\n• [Time Option 2]\n• [Time Option 3]\n\nWhich works best for you?';
-                    handleInputChange('body', withScheduling);
+                    const withScheduling = formData.body + '<p><br/>I have the following time slots available for a showing:</p><ul><li>[Time Option 1]</li><li>[Time Option 2]</li><li>[Time Option 3]</li></ul><p>Which works best for you?</p>';
+                    handleBodyChange(withScheduling);
                   }}
                   className="text-xs"
                 >
@@ -466,16 +498,16 @@ export default function ComposeEmailModal({
                 </Button>
               </div>
             </div>
-            <Textarea
-              id="body"
-              value={formData.body}
-              onChange={(e) => handleInputChange('body', e.target.value)}
+            <RichTextEditor
+              content={formData.body}
+              onChange={handleBodyChange}
+              onAttachmentUpload={handleAttachmentUpload}
+              attachments={attachments}
+              onRemoveAttachment={handleRemoveAttachment}
               placeholder="Write your personalized message here..."
-              className="min-h-[250px]"
-              required
             />
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <div>Character count: {formData.body.length}</div>
+              <div>Attachments: {attachments.length}</div>
               {propertyInfo && formData.includePropertyAttachment && (
                 <div className="flex items-center gap-1">
                   <Paperclip className="h-3 w-3" />
@@ -492,7 +524,7 @@ export default function ComposeEmailModal({
                 type="checkbox"
                 id="includeProperty"
                 checked={formData.includePropertyAttachment}
-                onChange={(e) => handleInputChange('includePropertyAttachment', e.target.checked.toString())}
+                onChange={(e) => handleInputChange('includePropertyAttachment', e.target.checked)}
                 className="rounded"
               />
               <label htmlFor="includeProperty" className="text-sm">

@@ -289,7 +289,7 @@ export default function ChatAgent({ isOpen, onClose }: ChatAgentProps) {
                       style={{
                         background: message.type === 'user' 
                           ? 'linear-gradient(135deg, #3b82f6, #1d4ed8)'
-                          : 'var(--glass-surface-subtle)',
+                          : 'var(--glass-surface)',
                         color: message.type === 'user' 
                           ? '#ffffff' 
                           : 'var(--glass-text)',
@@ -297,10 +297,13 @@ export default function ChatAgent({ isOpen, onClose }: ChatAgentProps) {
                           ? '1px solid var(--glass-border)' 
                           : 'none',
                         backdropFilter: message.type === 'assistant' 
-                          ? 'blur(8px)' 
+                          ? 'blur(12px) saturate(1.1)' 
                           : 'none',
                         WebkitBackdropFilter: message.type === 'assistant' 
-                          ? 'blur(8px)' 
+                          ? 'blur(12px) saturate(1.1)' 
+                          : 'none',
+                        boxShadow: message.type === 'assistant'
+                          ? '0 2px 8px rgba(0, 0, 0, 0.1)'
                           : 'none'
                       }}
                     >
@@ -343,10 +346,11 @@ export default function ChatAgent({ isOpen, onClose }: ChatAgentProps) {
                     <div 
                       className="p-3 rounded-lg"
                       style={{
-                        background: 'var(--glass-surface-subtle)',
+                        background: 'var(--glass-surface)',
                         border: '1px solid var(--glass-border)',
-                        backdropFilter: 'blur(8px)',
-                        WebkitBackdropFilter: 'blur(8px)'
+                        backdropFilter: 'blur(12px) saturate(1.1)',
+                        WebkitBackdropFilter: 'blur(12px) saturate(1.1)',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
                       }}
                     >
                       <div className="flex gap-1">

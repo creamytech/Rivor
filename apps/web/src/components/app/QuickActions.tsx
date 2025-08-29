@@ -17,6 +17,9 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ChatAgent = dynamic(() => import('./ChatAgent'), { ssr: false });
+const ComposeEmailModal = dynamic(() => import('../inbox/ComposeEmailModal'), { ssr: false });
+const CreateLeadModal = dynamic(() => import('../pipeline/CreateLeadModal'), { ssr: false });
+const CreateEventModal = dynamic(() => import('../calendar/CreateEventModal'), { ssr: false });
 
 /**
  * Floating quick actions menu.
@@ -32,10 +35,13 @@ export function useQuickActionCallbacks() {
   const router = useRouter();
   const [chatOpen, setChatOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [leadOpen, setLeadOpen] = useState(false);
+  const [eventOpen, setEventOpen] = useState(false);
 
   // Apply dashboard modal blur effects when modal is open
   useEffect(() => {
-    if (noteOpen) {
+    if (noteOpen || composeOpen || leadOpen || eventOpen) {
       document.body.classList.add('dashboard-modal-open');
     } else {
       document.body.classList.remove('dashboard-modal-open');
@@ -45,19 +51,11 @@ export function useQuickActionCallbacks() {
     return () => {
       document.body.classList.remove('dashboard-modal-open');
     };
-  }, [noteOpen]);
+  }, [noteOpen, composeOpen, leadOpen, eventOpen]);
 
-  const composeEmail = useCallback(() => {
-    router.push('/app/inbox/compose');
-  }, [router]);
-
-  const scheduleMeeting = useCallback(() => {
-    router.push('/app/calendar');
-  }, [router]);
-
-  const addLead = useCallback(() => {
-    router.push('/app/pipeline/create');
-  }, [router]);
+  const composeEmail = useCallback(() => setComposeOpen(true), []);
+  const scheduleMeeting = useCallback(() => setEventOpen(true), []);
+  const addLead = useCallback(() => setLeadOpen(true), []);
 
   const startChat = useCallback(() => setChatOpen(true), []);
   const createNote = useCallback(() => setNoteOpen(true), []);

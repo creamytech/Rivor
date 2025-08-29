@@ -6,6 +6,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import dynamic from 'next/dynamic';
+
+// Dynamic imports for modal components
+const CreateLeadModal = dynamic(() => import('../pipeline/CreateLeadModal'), { ssr: false });
+const ComposeEmailModal = dynamic(() => import('../inbox/ComposeEmailModal'), { ssr: false });
+const CreateEventModal = dynamic(() => import('../calendar/CreateEventModal'), { ssr: false });
+const CreateTaskModal = dynamic(() => import('../tasks/CreateTaskModal'), { ssr: false });
 import {
   Search,
   Plus,
@@ -51,6 +58,12 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const router = useRouter();
+  
+  // Modal states
+  const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
+  const [showComposeModal, setShowComposeModal] = useState(false);
+  const [showCreateEventModal, setShowCreateEventModal] = useState(false);
+  const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
 
   const quickActions: QuickAction[] = [
     // Create Actions
@@ -61,7 +74,10 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <UserPlus className="h-4 w-4" />,
       shortcut: '⌘L',
       category: 'create',
-      action: () => router.push('/app/pipeline?action=create')
+      action: () => {
+        setShowCreateLeadModal(true);
+        onClose();
+      }
     },
     {
       id: 'compose-email',
@@ -70,7 +86,10 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <Mail className="h-4 w-4" />,
       shortcut: '⌘E',
       category: 'create',
-      action: () => router.push('/app/inbox?compose=true')
+      action: () => {
+        setShowComposeModal(true);
+        onClose();
+      }
     },
     {
       id: 'schedule-meeting',
@@ -79,7 +98,10 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <Calendar className="h-4 w-4" />,
       shortcut: '⌘M',
       category: 'create',
-      action: () => router.push('/app/calendar?action=create')
+      action: () => {
+        setShowCreateEventModal(true);
+        onClose();
+      }
     },
     {
       id: 'new-task',
@@ -88,7 +110,10 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
       icon: <Clock className="h-4 w-4" />,
       shortcut: '⌘T',
       category: 'create',
-      action: () => router.push('/app/tasks?action=create')
+      action: () => {
+        setShowCreateTaskModal(true);
+        onClose();
+      }
     },
 
     // Navigate Actions
@@ -219,6 +244,7 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
   };
 
   return (
+    <>
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -341,5 +367,34 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
         </motion.div>
       )}
     </AnimatePresence>
+
+    {/* Modal Components */}
+    {showCreateLeadModal && (
+      <CreateLeadModal 
+        isOpen={showCreateLeadModal}
+        onClose={() => setShowCreateLeadModal(false)}
+      />
+    )}
+    
+    {showComposeModal && (
+      <ComposeEmailModal 
+        isOpen={showComposeModal}
+        onClose={() => setShowComposeModal(false)}
+      />
+    )}
+    
+    {showCreateEventModal && (
+      <CreateEventModal 
+        isOpen={showCreateEventModal}
+        onClose={() => setShowCreateEventModal(false)}
+      />
+    )}
+    
+    {showCreateTaskModal && (
+      <CreateTaskModal 
+        isOpen={showCreateTaskModal}
+        onClose={() => setShowCreateTaskModal(false)}
+      />
+    )}
   );
 }

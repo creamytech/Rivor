@@ -4,7 +4,6 @@ import React, { useEffect, useState, useRef } from 'react';
 
 export default function GlassCursor() {
   const cursorRef = useRef<HTMLDivElement>(null);
-  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
   const [isClicking, setIsClicking] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -20,7 +19,10 @@ export default function GlassCursor() {
     setIsVisible(true);
 
     const updateCursorPosition = (e: MouseEvent) => {
-      setCursorPos({ x: e.clientX, y: e.clientY });
+      if (cursorRef.current) {
+        // Use transform for better performance, no state updates
+        cursorRef.current.style.transform = `translate(${e.clientX - 6}px, ${e.clientY - 6}px)`;
+      }
     };
 
     const handleMouseOver = (e: MouseEvent) => {
@@ -74,7 +76,6 @@ export default function GlassCursor() {
       ref={cursorRef}
       className={`glass-cursor ${isHovering ? 'hover' : ''} ${isClicking ? 'click' : ''}`}
       style={{
-        transform: `translate(${cursorPos.x - 10}px, ${cursorPos.y - 10}px)`,
         opacity: isVisible ? 1 : 0,
       }}
     />

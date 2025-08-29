@@ -205,7 +205,7 @@ export function DraftPanel({ theme, refreshTrigger, onDraftAction }: DraftPanelP
     return (
       <div className="p-6 text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
-        <p className={`${theme === 'black' ? 'text-white/60' : 'text-gray-700'}`}>Loading drafts...</p>
+        <p className={`${theme === 'black' ? 'text-white/60' : 'text-gray-800'}`}>Loading drafts...</p>
       </div>
     );
   }
@@ -213,11 +213,11 @@ export function DraftPanel({ theme, refreshTrigger, onDraftAction }: DraftPanelP
   if (drafts.length === 0) {
     return (
       <div className="p-6 text-center">
-        <Bot className={`h-12 w-12 ${theme === 'black' ? 'text-white/40' : 'text-gray-600'} mx-auto mb-4`} />
-        <h3 className={`text-lg font-medium ${theme === 'black' ? 'text-white/60' : 'text-gray-800'} mb-2`}>
+        <Bot className={`h-12 w-12 ${theme === 'black' ? 'text-white/40' : 'text-gray-700'} mx-auto mb-4`} />
+        <h3 className={`text-lg font-medium ${theme === 'black' ? 'text-white/60' : 'text-gray-900'} mb-2`}>
           No Drafts Available
         </h3>
-        <p className={`${theme === 'black' ? 'text-white/40' : 'text-gray-600'} text-sm`}>
+        <p className={`${theme === 'black' ? 'text-white/40' : 'text-gray-700'} text-sm`}>
           AI will automatically create drafts for high-priority emails like showing requests and hot leads.
         </p>
       </div>
@@ -328,7 +328,7 @@ export function DraftPanel({ theme, refreshTrigger, onDraftAction }: DraftPanelP
                   <ChevronRight 
                     className={`h-4 w-4 transition-transform ${
                       expandedDraft === draft.id ? 'rotate-90' : ''
-                    } ${theme === 'black' ? 'text-white/40' : 'text-gray-600'}`} 
+                    } ${theme === 'black' ? 'text-white/40' : 'text-gray-700'}`} 
                   />
                 </div>
 
@@ -336,11 +336,11 @@ export function DraftPanel({ theme, refreshTrigger, onDraftAction }: DraftPanelP
                   Re: {draft.originalEmail.subject}
                 </div>
                 
-                <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-gray-700'} truncate`}>
+                <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-gray-800'} truncate`}>
                   Reply to: {draft.originalEmail.from}
                 </div>
 
-                <div className={`text-xs mt-2 ${theme === 'black' ? 'text-white/50' : 'text-gray-600'} line-clamp-2`}>
+                <div className={`text-xs mt-2 ${theme === 'black' ? 'text-white/50' : 'text-gray-700'} line-clamp-2`}>
                   {draft.suggestedContent.substring(0, 150)}...
                 </div>
               </div>
@@ -490,7 +490,7 @@ export function DraftPanel({ theme, refreshTrigger, onDraftAction }: DraftPanelP
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.3 }}
                       >
-                        <div className={`text-xs ${theme === 'black' ? 'text-white/40' : 'text-gray-600'} space-y-2`}>
+                        <div className={`text-xs ${theme === 'black' ? 'text-white/40' : 'text-gray-700'} space-y-2`}>
                           <motion.div 
                             className="flex items-center gap-2"
                             whileHover={{ scale: 1.02 }}

@@ -444,7 +444,7 @@ const EnhancedCalendar = forwardRef<EnhancedCalendarRef, EnhancedCalendarProps>(
                         key={event.id}
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="absolute inset-1 bg-blue-100 dark:bg-blue-900/20 rounded p-1 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800/40 transition-colors"
+                        className="absolute inset-1 bg-blue-100 dark:bg-blue-900/20 rounded p-1 cursor-pointer hover:bg-gray-200 dark:hover:bg-blue-800/40 transition-colors"
                         onClick={() => setSelectedEvent(event)}
                       >
                         <div className="text-xs font-medium truncate">
@@ -538,7 +538,7 @@ const EnhancedCalendar = forwardRef<EnhancedCalendarRef, EnhancedCalendarProps>(
                       key={event.id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="absolute inset-1 bg-blue-100 dark:bg-blue-900/20 rounded p-2 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800/40 transition-colors"
+                      className="absolute inset-1 bg-blue-100 dark:bg-blue-900/20 rounded p-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-blue-800/40 transition-colors"
                       onClick={() => setSelectedEvent(event)}
                     >
                       <div className="text-sm font-medium truncate">
