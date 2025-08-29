@@ -41,6 +41,7 @@ import { signOut, useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 
 // Dynamic imports for modal components
+const CreateContactModal = dynamic(() => import("@/components/contacts/CreateContactModal"), { ssr: false });
 const CreateLeadModal = dynamic(() => import("@/components/pipeline/CreateLeadModal"), { ssr: false });
 const CreateEventModal = dynamic(() => import("@/components/calendar/CreateEventModal"), { ssr: false });
 const CreateTaskModal = dynamic(() => import("@/components/tasks/CreateTaskModal"), { ssr: false });
@@ -863,6 +864,11 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         onOpenChange={setShowComposeModal}
       />
       
+      <CreateContactModal
+        open={showCreateContactModal}
+        onOpenChange={setShowCreateContactModal}
+      />
+      
       <CreateLeadModal
         open={showCreateLeadModal}
         onOpenChange={setShowCreateLeadModal}
@@ -878,224 +884,6 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         onOpenChange={setShowCreateTaskModal}
       />
 
-      {/* Test simple modal instead of Radix Dialog */}
-      {showCreateContactModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          zIndex: 10000,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <div style={{
-            background: 'rgba(255, 0, 0, 0.98)',
-            border: '3px solid rgba(255, 255, 255, 0.8)',
-            borderRadius: '12px',
-            padding: '24px',
-            maxWidth: '400px',
-            width: '90%'
-          }}>
-            <h2 style={{ color: 'white', marginBottom: '16px' }}>Create Contact Modal Test</h2>
-            <p style={{ color: 'white', marginBottom: '16px' }}>This is a test modal to verify rendering works.</p>
-            <button 
-              onClick={() => setShowCreateContactModal(false)}
-              style={{
-                background: 'white',
-                color: 'black',
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: '6px',
-                cursor: 'pointer'
-              }}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-
-      <Dialog open={showCreateContactModal} onOpenChange={setShowCreateContactModal}>
-        <DialogContent 
-          className="max-w-md glass-modal rounded-xl overflow-hidden"
-          data-glass-theme="black"
-          style={{ 
-            background: 'rgba(255, 0, 0, 0.98)',
-            border: '3px solid rgba(255, 255, 255, 0.8)',
-            backdropFilter: 'blur(32px) saturate(1.4) brightness(0.85)',
-            display: 'none'
-          }}
-        >
-          <DialogHeader className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--glass-border)' }}>
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
-                <User className="h-5 w-5" />
-              </div>
-              <div>
-                <DialogTitle className="text-xl font-bold" style={{ color: 'var(--glass-text)' }}>
-                  Add New Contact
-                </DialogTitle>
-                <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
-                  Create a new contact in your CRM
-                </p>
-              </div>
-            </div>
-          </DialogHeader>
-          <div className="p-6 space-y-6">
-            {/* Contact Information Card */}
-            <div className="glass-card p-4 rounded-lg transition-all duration-200 hover:bg-white/5">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
-                  <User className="h-4 w-4" />
-                </div>
-                <div>
-                  <h5 className="font-medium" style={{ color: 'var(--glass-text)' }}>
-                    Contact Information
-                  </h5>
-                  <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
-                    Basic contact details
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="contact-name" style={{ color: 'var(--glass-text)' }}>Full Name *</Label>
-                  <Input 
-                    id="contact-name" 
-                    placeholder="Enter contact name" 
-                    value={contactFormData.name}
-                    onChange={(e) => setContactFormData({...contactFormData, name: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="contact-email" style={{ color: 'var(--glass-text)' }}>Email *</Label>
-                  <Input 
-                    id="contact-email" 
-                    type="email" 
-                    placeholder="Enter email address" 
-                    value={contactFormData.email}
-                    onChange={(e) => setContactFormData({...contactFormData, email: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="contact-phone" style={{ color: 'var(--glass-text)' }}>Phone</Label>
-                    <Input 
-                      id="contact-phone" 
-                      placeholder="Enter phone number" 
-                      value={contactFormData.phone}
-                      onChange={(e) => setContactFormData({...contactFormData, phone: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="contact-company" style={{ color: 'var(--glass-text)' }}>Company</Label>
-                    <Input 
-                      id="contact-company" 
-                      placeholder="Company name" 
-                      value={contactFormData.company}
-                      onChange={(e) => setContactFormData({...contactFormData, company: e.target.value})}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="contact-title" style={{ color: 'var(--glass-text)' }}>Job Title</Label>
-                    <Input 
-                      id="contact-title" 
-                      placeholder="Job title" 
-                      value={contactFormData.title}
-                      onChange={(e) => setContactFormData({...contactFormData, title: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="contact-location" style={{ color: 'var(--glass-text)' }}>Location</Label>
-                    <Input 
-                      id="contact-location" 
-                      placeholder="City, State" 
-                      value={contactFormData.location}
-                      onChange={(e) => setContactFormData({...contactFormData, location: e.target.value})}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Additional Details Card */}
-            <div className="glass-card p-4 rounded-lg transition-all duration-200 hover:bg-white/5">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                  <FileText className="h-4 w-4" />
-                </div>
-                <div>
-                  <h5 className="font-medium" style={{ color: 'var(--glass-text)' }}>
-                    Additional Details
-                  </h5>
-                  <p className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>
-                    Notes and extra information
-                  </p>
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="contact-notes" style={{ color: 'var(--glass-text)' }}>Notes</Label>
-                <Textarea 
-                  id="contact-notes" 
-                  placeholder="Additional notes..." 
-                  value={contactFormData.notes}
-                  onChange={(e) => setContactFormData({...contactFormData, notes: e.target.value})}
-                />
-              </div>
-            </div>
-            <div className="flex gap-2 pt-4">
-              <Button variant="outline" onClick={() => setShowCreateContactModal(false)} className="flex-1">
-                Cancel
-              </Button>
-              <Button 
-                variant="liquid" 
-                className="flex-1"
-                onClick={async () => {
-                  if (!contactFormData.name || !contactFormData.email) {
-                    alert('Please fill in all required fields');
-                    return;
-                  }
-                  
-                  setModalLoading(true);
-                  try {
-                    const response = await fetch('/api/contacts', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(contactFormData)
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (response.ok) {
-                      setShowCreateContactModal(false);
-                      setContactFormData({ name: '', email: '', phone: '', company: '', title: '', location: '', tags: [], notes: '' });
-                      console.log('Contact created successfully!', result);
-                    } else {
-                      alert(result.error || 'Failed to create contact');
-                    }
-                  } catch (error) {
-                    console.error('Failed to create contact:', error);
-                    alert('Failed to create contact. Please try again.');
-                  } finally {
-                    setModalLoading(false);
-                  }
-                }}
-                disabled={modalLoading}
-              >
-                {modalLoading ? 'Saving...' : 'Save Contact'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={showCreateListingModal} onOpenChange={setShowCreateListingModal}>
         <DialogContent 
