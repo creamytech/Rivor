@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
 import AppShell from "@/components/app/AppShell";
 import MobileDashboard from "@/components/app/MobileDashboard";
+import ProfileCompletion from "@/components/onboarding/ProfileCompletion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,6 +86,12 @@ interface UpcomingTask {
   completed: boolean;
 }
 
+interface ProfileCompletionStatus {
+  isComplete: boolean;
+  missingFields: string[];
+  completionPercentage: number;
+}
+
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const { theme } = useTheme();
@@ -112,6 +119,34 @@ export default function DashboardPage() {
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
+  const [checkingProfile, setCheckingProfile] = useState(true);
+
+  // Check profile completion first
+  useEffect(() => {
+    const checkProfileCompletion = async () => {
+      if (status === 'loading') return;
+      
+      try {
+        const response = await fetch('/api/profile/completion');
+        if (response.ok) {
+          const profileStatus: ProfileCompletionStatus = await response.json();
+          setProfileComplete(profileStatus.isComplete);
+        } else {
+          // If API fails, assume profile is complete to avoid blocking access
+          setProfileComplete(true);
+        }
+      } catch (error) {
+        console.error('Failed to check profile completion:', error);
+        // If check fails, assume profile is complete to avoid blocking access
+        setProfileComplete(true);
+      } finally {
+        setCheckingProfile(false);
+      }
+    };
+
+    checkProfileCompletion();
+  }, [status]);
 
   // Detect mobile
   useEffect(() => {
@@ -510,7 +545,7 @@ export default function DashboardPage() {
     }
   };
 
-  if (status === "loading") {
+  if (status === "loading" || checkingProfile) {
     return (
       <div 
         className={`min-h-screen flex items-center justify-center ${
@@ -522,7 +557,9 @@ export default function DashboardPage() {
             className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4"
             style={{ borderColor: 'var(--glass-primary)' }}
           ></div>
-          <p style={{ color: 'var(--glass-text-muted)' }}>Loading...</p>
+          <p style={{ color: 'var(--glass-text-muted)' }}>
+            {status === "loading" ? "Loading..." : "Checking profile..."}
+          </p>
         </div>
       </div>
     );
@@ -544,6 +581,15 @@ export default function DashboardPage() {
           </p>
         </div>
       </div>
+    );
+  }
+
+  // Show profile completion flow if profile is incomplete
+  if (profileComplete === false) {
+    return (
+      <ProfileCompletion 
+        onComplete={() => setProfileComplete(true)} 
+      />
     );
   }
 
