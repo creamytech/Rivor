@@ -103,13 +103,15 @@ export async function POST(req: NextRequest) {
 
         for (const emailAccount of emailAccounts) {
           try {
-            // Check if we need to sync (only if no recent sync in last 10 minutes)
-            const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
-            if (emailAccount.updatedAt && emailAccount.updatedAt > tenMinutesAgo) {
+            // Check if we need to sync (only if no recent sync in last 90 minutes)
+            // This works well with our 2-hour scheduled sync interval
+            const ninetyMinutesAgo = new Date(Date.now() - 90 * 60 * 1000);
+            if (emailAccount.updatedAt && emailAccount.updatedAt > ninetyMinutesAgo && !isInternalCall) {
               logger.info('Skipping email sync - recently synced', {
                 correlationId,
                 emailAccountId: emailAccount.id,
-                lastSync: emailAccount.updatedAt
+                lastSync: emailAccount.updatedAt,
+                isInternalCall
               });
               continue;
             }
@@ -329,13 +331,15 @@ export async function POST(req: NextRequest) {
 
         for (const calendarAccount of calendarAccounts) {
           try {
-            // Check if we need to sync (only if no recent sync in last 15 minutes)
-            const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
-            if (calendarAccount.updatedAt && calendarAccount.updatedAt > fifteenMinutesAgo) {
+            // Check if we need to sync (only if no recent sync in last 3 hours)
+            // This works well with our 4-hour scheduled sync interval
+            const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
+            if (calendarAccount.updatedAt && calendarAccount.updatedAt > threeHoursAgo && !isInternalCall) {
               logger.info('Skipping calendar sync - recently synced', {
                 correlationId,
                 calendarAccountId: calendarAccount.id,
-                lastSync: calendarAccount.updatedAt
+                lastSync: calendarAccount.updatedAt,
+                isInternalCall
               });
               continue;
             }

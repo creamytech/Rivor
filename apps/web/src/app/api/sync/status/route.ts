@@ -9,29 +9,25 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(_req: NextRequest) {
   try {
-    // Development bypass - return mock data
-    if (process.env.NODE_ENV === 'development') {
-      const mockSyncStatus = {
-        accountsTotal: 2,
-        accountsConnected: 2,
-        accountsBackfilling: 0,
-        accountsError: 0,
-        threadsTotal: 47,
-        lastSyncAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(), // 15 minutes ago
-        syncInProgress: false
-      };
+    // For testing: allow bypassing auth in development with special header
+    const bypassAuth = process.env.NODE_ENV === 'development' && 
+      _req.headers.get('X-Development-Bypass') === 'true';
 
-      return NextResponse.json(mockSyncStatus);
-    }
+    let orgId: string;
+    
+    if (bypassAuth) {
+      // Use a test orgId for development
+      orgId = 'test-org-id';
+    } else {
+      const session = await auth();
+      if (!session?.user?.email) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
 
-    const session = await auth();
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const orgId = (session as unknown).orgId;
-    if (!orgId) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
+      orgId = (session as unknown as any).orgId;
+      if (!orgId) {
+        return NextResponse.json({ error: 'No organization found' }, { status: 400 });
+      }
     }
 
     // Get account stats
