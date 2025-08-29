@@ -209,7 +209,7 @@ const EnhancedCalendar = forwardRef<EnhancedCalendarRef, EnhancedCalendarProps>(
       case 'task':
         return 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400';
       default:
-        return 'bg-slate-100 text-slate-700 dark:bg-slate-900/20 dark:text-slate-400';
+        return 'bg-gray-100 text-gray-800 dark:bg-slate-900/20 dark:text-slate-400';
     }
   };
 
@@ -391,12 +391,12 @@ const EnhancedCalendar = forwardRef<EnhancedCalendarRef, EnhancedCalendarProps>(
             Today
           </Button>
           
-          <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          <div className="text-lg font-semibold text-gray-900 dark:text-slate-100">
             {formatHeaderDate()}
           </div>
         </div>
 
-        <div className="text-sm text-slate-600 dark:text-slate-400">
+        <div className="text-sm text-gray-700 dark:text-slate-400">
           {events.length} event{events.length !== 1 ? 's' : ''} 
           {viewMode === 'day' ? ' today' : viewMode === 'week' ? ' this week' : ' this month'}
         </div>
@@ -410,7 +410,7 @@ const EnhancedCalendar = forwardRef<EnhancedCalendarRef, EnhancedCalendarProps>(
           <div className="space-y-1">
             <div className="h-12"></div> {/* Header spacer */}
             {Array.from({ length: 24 }, (_, hour) => (
-              <div key={hour} className="h-16 text-xs text-slate-500 border-r border-slate-200 dark:border-slate-700 pr-2 text-right">
+              <div key={hour} className="h-16 text-xs text-gray-600 border-r border-gray-200 dark:border-slate-700 pr-2 text-right">
                 {formatTime(new Date(2024, 0, 1, hour))}
               </div>
             ))}
@@ -428,7 +428,7 @@ const EnhancedCalendar = forwardRef<EnhancedCalendarRef, EnhancedCalendarProps>(
                   "text-xs rounded-full w-6 h-6 flex items-center justify-center",
                   day.toDateString() === new Date().toDateString() 
                     ? "bg-blue-500 text-white" 
-                    : "text-slate-500"
+                    : "text-gray-600"
                 )}>
                   {day.getDate()}
                 </div>
@@ -450,7 +450,7 @@ const EnhancedCalendar = forwardRef<EnhancedCalendarRef, EnhancedCalendarProps>(
                         <div className="text-xs font-medium truncate">
                           {event.title}
                         </div>
-                        <div className="text-xs text-slate-600 dark:text-slate-400">
+                        <div className="text-xs text-gray-700 dark:text-slate-400">
                           {formatTime(event.start)} - {formatTime(event.end)}
                         </div>
                       </motion.div>
@@ -508,7 +508,7 @@ const EnhancedCalendar = forwardRef<EnhancedCalendarRef, EnhancedCalendarProps>(
                       </div>
                     ))}
                     {eventsForDay.length > 3 && (
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-gray-600">
                         +{eventsForDay.length - 3} more
                       </div>
                     )}
@@ -529,7 +529,7 @@ const EnhancedCalendar = forwardRef<EnhancedCalendarRef, EnhancedCalendarProps>(
             const eventsInSlot = getEventsForTimeSlot(currentDate, hour);
             return (
               <div key={hour} className="h-16 border-b border-slate-200 dark:border-slate-700 flex">
-                <div className="w-20 text-xs text-slate-500 pr-2 text-right pt-1">
+                <div className="w-20 text-xs text-gray-600 pr-2 text-right pt-1">
                   {formatTime(new Date(2024, 0, 1, hour))}
                 </div>
                 <div className="flex-1 relative">
@@ -544,7 +544,7 @@ const EnhancedCalendar = forwardRef<EnhancedCalendarRef, EnhancedCalendarProps>(
                       <div className="text-sm font-medium truncate">
                         {event.title}
                       </div>
-                      <div className="text-xs text-slate-600 dark:text-slate-400">
+                      <div className="text-xs text-gray-700 dark:text-slate-400">
                         {formatTime(event.start)} - {formatTime(event.end)}
                       </div>
                     </motion.div>

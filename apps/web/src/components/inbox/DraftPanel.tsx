@@ -205,7 +205,7 @@ export function DraftPanel({ theme, refreshTrigger, onDraftAction }: DraftPanelP
     return (
       <div className="p-6 text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
-        <p className={`${theme === 'black' ? 'text-white/60' : 'text-black/60'}`}>Loading drafts...</p>
+        <p className={`${theme === 'black' ? 'text-white/60' : 'text-gray-700'}`}>Loading drafts...</p>
       </div>
     );
   }
@@ -213,11 +213,11 @@ export function DraftPanel({ theme, refreshTrigger, onDraftAction }: DraftPanelP
   if (drafts.length === 0) {
     return (
       <div className="p-6 text-center">
-        <Bot className={`h-12 w-12 ${theme === 'black' ? 'text-white/40' : 'text-black/40'} mx-auto mb-4`} />
-        <h3 className={`text-lg font-medium ${theme === 'black' ? 'text-white/60' : 'text-black/60'} mb-2`}>
+        <Bot className={`h-12 w-12 ${theme === 'black' ? 'text-white/40' : 'text-gray-600'} mx-auto mb-4`} />
+        <h3 className={`text-lg font-medium ${theme === 'black' ? 'text-white/60' : 'text-gray-800'} mb-2`}>
           No Drafts Available
         </h3>
-        <p className={`${theme === 'black' ? 'text-white/40' : 'text-black/40'} text-sm`}>
+        <p className={`${theme === 'black' ? 'text-white/40' : 'text-gray-600'} text-sm`}>
           AI will automatically create drafts for high-priority emails like showing requests and hot leads.
         </p>
       </div>
@@ -251,7 +251,7 @@ export function DraftPanel({ theme, refreshTrigger, onDraftAction }: DraftPanelP
             <Bot className="h-5 w-5 text-purple-400" />
           </motion.div>
           <div>
-            <h3 className={`font-semibold ${theme === 'black' ? 'text-white' : 'text-black'}`}>
+            <h3 className={`font-semibold ${theme === 'black' ? 'text-white' : 'text-gray-900'}`}>
               AI Drafts
             </h3>
             <motion.div 
@@ -259,7 +259,7 @@ export function DraftPanel({ theme, refreshTrigger, onDraftAction }: DraftPanelP
               style={{
                 background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1))',
                 border: '1px solid rgba(139, 92, 246, 0.4)',
-                color: theme === 'black' ? 'rgb(196, 181, 253)' : 'rgb(109, 40, 217)',
+                color: theme === 'black' ? 'rgb(196, 181, 253)' : 'rgb(88, 28, 135)',
                 boxShadow: '0 0 12px rgba(139, 92, 246, 0.2)'
               }}
               animate={{ scale: drafts.length > 0 ? [1, 1.1, 1] : 1 }}
@@ -328,19 +328,19 @@ export function DraftPanel({ theme, refreshTrigger, onDraftAction }: DraftPanelP
                   <ChevronRight 
                     className={`h-4 w-4 transition-transform ${
                       expandedDraft === draft.id ? 'rotate-90' : ''
-                    } ${theme === 'black' ? 'text-white/40' : 'text-black/40'}`} 
+                    } ${theme === 'black' ? 'text-white/40' : 'text-gray-600'}`} 
                   />
                 </div>
 
-                <div className={`text-sm font-medium ${theme === 'black' ? 'text-white' : 'text-black'} mb-1 truncate`}>
+                <div className={`text-sm font-medium ${theme === 'black' ? 'text-white' : 'text-gray-900'} mb-1 truncate`}>
                   Re: {draft.originalEmail.subject}
                 </div>
                 
-                <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-black/60'} truncate`}>
+                <div className={`text-xs ${theme === 'black' ? 'text-white/60' : 'text-gray-700'} truncate`}>
                   Reply to: {draft.originalEmail.from}
                 </div>
 
-                <div className={`text-xs mt-2 ${theme === 'black' ? 'text-white/50' : 'text-black/50'} line-clamp-2`}>
+                <div className={`text-xs mt-2 ${theme === 'black' ? 'text-white/50' : 'text-gray-600'} line-clamp-2`}>
                   {draft.suggestedContent.substring(0, 150)}...
                 </div>
               </div>
@@ -365,7 +365,7 @@ export function DraftPanel({ theme, refreshTrigger, onDraftAction }: DraftPanelP
                               className={`w-full h-32 p-3 rounded border ${
                                 theme === 'black' 
                                   ? 'bg-white/5 border-white/20 text-white' 
-                                  : 'bg-black/5 border-black/20 text-black'
+                                  : 'bg-gray-50 border-gray-300 text-gray-900'
                               } text-sm resize-none`}
                             />
                             <div className="flex justify-end gap-2">
@@ -391,7 +391,7 @@ export function DraftPanel({ theme, refreshTrigger, onDraftAction }: DraftPanelP
                           </div>
                         ) : (
                           <motion.div 
-                            className={`text-sm ${theme === 'black' ? 'text-white/90' : 'text-black/90'} whitespace-pre-wrap p-3 rounded`}
+                            className={`text-sm ${theme === 'black' ? 'text-white/90' : 'text-gray-900'} whitespace-pre-wrap p-3 rounded`}
                             style={{
                               background: 'var(--glass-surface-subtle)',
                               border: '1px solid var(--glass-border-subtle)',
@@ -458,7 +458,7 @@ export function DraftPanel({ theme, refreshTrigger, onDraftAction }: DraftPanelP
                               className="category-badge-glass"
                               style={{
                                 borderColor: 'rgba(34, 197, 94, 0.4)',
-                                color: theme === 'black' ? 'rgb(134, 239, 172)' : 'rgb(22, 163, 74)'
+                                color: theme === 'black' ? 'rgb(134, 239, 172)' : 'rgb(21, 128, 61)'
                               }}
                             >
                               <Check className="h-4 w-4" />
@@ -474,7 +474,7 @@ export function DraftPanel({ theme, refreshTrigger, onDraftAction }: DraftPanelP
                               className="category-badge-glass"
                               style={{
                                 borderColor: 'rgba(239, 68, 68, 0.4)',
-                                color: theme === 'black' ? 'rgb(252, 165, 165)' : 'rgb(185, 28, 28)'
+                                color: theme === 'black' ? 'rgb(252, 165, 165)' : 'rgb(153, 27, 27)'
                               }}
                             >
                               <X className="h-4 w-4" />
@@ -490,7 +490,7 @@ export function DraftPanel({ theme, refreshTrigger, onDraftAction }: DraftPanelP
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.3 }}
                       >
-                        <div className={`text-xs ${theme === 'black' ? 'text-white/40' : 'text-black/40'} space-y-2`}>
+                        <div className={`text-xs ${theme === 'black' ? 'text-white/40' : 'text-gray-600'} space-y-2`}>
                           <motion.div 
                             className="flex items-center gap-2"
                             whileHover={{ scale: 1.02 }}

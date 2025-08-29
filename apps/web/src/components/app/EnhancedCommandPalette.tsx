@@ -295,19 +295,29 @@ export default function EnhancedCommandPalette({
   return (
     <div className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-sm grid place-items-start p-4">
       <div className="w-full max-w-2xl mx-auto mt-[10vh]">
-        <div className="bg-[var(--background)] border border-[var(--border)] rounded-lg shadow-lg">
-          <div className="flex items-center gap-3 p-4 border-b border-[var(--border)]">
-            <Search className="h-5 w-5 text-[var(--muted-foreground)]" />
+        <div className="glass-modal border border-[var(--glass-border)] rounded-lg shadow-lg" style={{
+          background: 'var(--glass-surface)',
+          backdropFilter: 'blur(16px)',
+        }}>
+          <div className="flex items-center gap-3 p-4 border-b" style={{ borderColor: 'var(--glass-border)' }}>
+            <Search className="h-5 w-5" style={{ color: 'var(--glass-text-muted)' }} />
             <input 
               autoFocus 
               value={query} 
               onChange={(e) => setQuery(e.target.value)} 
               placeholder="Type a command or search..." 
-              className="flex-1 bg-transparent text-base placeholder:text-[var(--muted-foreground)] focus:outline-none"
+              className="flex-1 bg-transparent text-base focus:outline-none"
+              style={{ 
+                color: 'var(--glass-text)',
+                '::placeholder': { color: 'var(--glass-text-muted)' }
+              }}
               aria-label="Command palette search"
               aria-describedby="command-palette-instructions"
             />
-            <div className="text-xs text-[var(--muted-foreground)] bg-[var(--muted)] px-2 py-1 rounded">
+            <div className="text-xs px-2 py-1 rounded glass-button-small" style={{ 
+              color: 'var(--glass-text-muted)',
+              background: 'var(--glass-surface-subtle)'
+            }}>
               ⌘K
             </div>
           </div>
@@ -315,8 +325,8 @@ export default function EnhancedCommandPalette({
           <div className="max-h-[50vh] overflow-auto">
             {filteredActions.length === 0 && (
               <div className="p-8 text-center">
-                <div className="text-sm text-[var(--muted-foreground)]">No results found</div>
-                <div className="text-xs text-[var(--muted-foreground)] mt-1">
+                <div className="text-sm" style={{ color: 'var(--glass-text-muted)' }}>No results found</div>
+                <div className="text-xs mt-1" style={{ color: 'var(--glass-text-muted)' }}>
                   Try searching for navigation, actions, or commands
                 </div>
               </div>
@@ -326,7 +336,11 @@ export default function EnhancedCommandPalette({
               <div key={category}>
                 {categoryActions.length > 0 && (
                   <>
-                    <div className="px-4 py-2 text-xs font-medium text-[var(--muted-foreground)] bg-[var(--muted)] border-b border-[var(--border)]">
+                    <div className="px-4 py-2 text-xs font-medium border-b" style={{
+                      color: 'var(--glass-text-muted)',
+                      background: 'var(--glass-surface-subtle)',
+                      borderColor: 'var(--glass-border)'
+                    }}>
                       {getCategoryTitle(category as ActionCategory)}
                     </div>
                     {categoryActions.map((action, actionIndex) => {
@@ -339,24 +353,39 @@ export default function EnhancedCommandPalette({
                             actualSetOpen(false); 
                             setQuery(""); 
                           }} 
-                          className={`w-full text-left px-4 py-3 hover:bg-[var(--muted)] transition-colors border-b border-[var(--border)] last:border-b-0 ${
-                            globalIndex === selectedIndex ? "bg-[var(--muted)]" : ""
+                          className={`w-full text-left px-4 py-3 transition-colors border-b glass-hover-lift last:border-b-0 ${
+                            globalIndex === selectedIndex ? "glass-surface" : ""
                           }`}
+                          style={{
+                            borderColor: 'var(--glass-border)',
+                            color: 'var(--glass-text)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'var(--glass-surface-subtle)';
+                          }}
+                          onMouseLeave={(e) => {
+                            if (globalIndex !== selectedIndex) {
+                              e.currentTarget.style.background = 'transparent';
+                            }
+                          }}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="text-[var(--muted-foreground)]">
+                            <div style={{ color: 'var(--glass-text-muted)' }}>
                               {action.icon}
                             </div>
                             <div className="flex-1">
-                              <div className="text-sm font-medium">{action.title}</div>
+                              <div className="text-sm font-medium" style={{ color: 'var(--glass-text)' }}>{action.title}</div>
                               {action.description && (
-                                <div className="text-xs text-[var(--muted-foreground)] mt-1">
+                                <div className="text-xs mt-1" style={{ color: 'var(--glass-text-muted)' }}>
                                   {action.description}
                                 </div>
                               )}
                             </div>
                             {action.shortcut && (
-                              <div className="text-xs text-[var(--muted-foreground)] bg-[var(--muted)] px-2 py-1 rounded">
+                              <div className="text-xs px-2 py-1 rounded" style={{ 
+                                color: 'var(--glass-text-muted)',
+                                background: 'var(--glass-surface-subtle)'
+                              }}>
                                 {action.shortcut}
                               </div>
                             )}
@@ -370,16 +399,19 @@ export default function EnhancedCommandPalette({
             ))}
           </div>
           
-          <div className="px-4 py-3 border-t border-[var(--border)] text-xs text-[var(--muted-foreground)] flex items-center justify-between">
+          <div className="px-4 py-3 border-t text-xs flex items-center justify-between" style={{
+            borderColor: 'var(--glass-border)',
+            color: 'var(--glass-text-muted)'
+          }}>
             <div id="command-palette-instructions" className="flex items-center gap-4">
               <span className="flex items-center gap-1">
-                <kbd className="bg-[var(--muted)] px-1 py-0.5 rounded" aria-label="Arrow keys">↑↓</kbd> to navigate
+                <kbd className="px-1 py-0.5 rounded" style={{ background: 'var(--glass-surface-subtle)' }} aria-label="Arrow keys">↑↓</kbd> to navigate
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="bg-[var(--muted)] px-1 py-0.5 rounded" aria-label="Enter key">Enter</kbd> to select
+                <kbd className="px-1 py-0.5 rounded" style={{ background: 'var(--glass-surface-subtle)' }} aria-label="Enter key">Enter</kbd> to select
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="bg-[var(--muted)] px-1 py-0.5 rounded" aria-label="Escape key">Esc</kbd> to close
+                <kbd className="px-1 py-0.5 rounded" style={{ background: 'var(--glass-surface-subtle)' }} aria-label="Escape key">Esc</kbd> to close
               </span>
             </div>
             <div role="status" aria-live="polite">

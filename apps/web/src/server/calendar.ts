@@ -400,20 +400,19 @@ export class GoogleCalendarService {
           continue;
         }
 
-        // Check if event already exists
+        // Check if event already exists using Google Calendar event ID as primary key
         const existingEvent = await prisma.calendarEvent.findFirst({
           where: {
             orgId,
             accountId: calendarAccountId,
-            start: new Date(event.start.dateTime || event.start.date!),
-            end: new Date(event.end?.dateTime || event.end?.date!),
-            titleEnc: await encryptForOrg(orgId, event.summary || 'Untitled Event', 'calendar:title')
+            googleEventId: event.id
           }
         });
 
         const eventData = {
           orgId,
           accountId: calendarAccountId,
+          googleEventId: event.id,
           start: new Date(event.start.dateTime || event.start.date!),
           end: new Date(event.end?.dateTime || event.end?.date!),
           titleEnc: await encryptForOrg(orgId, event.summary || 'Untitled Event', 'calendar:title'),
@@ -520,20 +519,19 @@ export class GoogleCalendarService {
       for (const event of events) {
         if (!event.id || !event.start) continue;
 
-        // Check if event already exists
+        // Check if event already exists using Google Calendar event ID as primary key
         const existingEvent = await prisma.calendarEvent.findFirst({
           where: {
             orgId,
             accountId: calendarAccountId,
-            start: new Date(event.start.dateTime || event.start.date!),
-            end: new Date(event.end?.dateTime || event.end?.date!),
-            titleEnc: await encryptForOrg(orgId, event.summary || 'Untitled Event', 'calendar:title')
+            googleEventId: event.id
           }
         });
 
         const eventData = {
           orgId,
           accountId: calendarAccountId,
+          googleEventId: event.id,
           start: new Date(event.start.dateTime || event.start.date!),
           end: new Date(event.end?.dateTime || event.end?.date!),
           titleEnc: await encryptForOrg(orgId, event.summary || 'Untitled Event', 'calendar:title'),
