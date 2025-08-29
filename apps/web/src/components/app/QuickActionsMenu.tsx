@@ -396,5 +396,6 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
         onClose={() => setShowCreateTaskModal(false)}
       />
     )}
+    </>
   );
 }
