@@ -306,10 +306,9 @@ export default function EnhancedCommandPalette({
               value={query} 
               onChange={(e) => setQuery(e.target.value)} 
               placeholder="Type a command or search..." 
-              className="flex-1 bg-transparent text-base focus:outline-none"
+              className="flex-1 bg-transparent text-base focus:outline-none command-palette-input"
               style={{ 
-                color: 'var(--glass-text)',
-                '::placeholder': { color: 'var(--glass-text-muted)' }
+                color: 'var(--glass-text)'
               }}
               aria-label="Command palette search"
               aria-describedby="command-palette-instructions"

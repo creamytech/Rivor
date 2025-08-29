@@ -5484,6 +5484,12 @@ body.glass-theme-white[data-permanent-theme="true"] {
   overflow: hidden;
 }
 
+/* Command palette input placeholder styling */
+.command-palette-input::placeholder {
+  color: var(--glass-text-muted) !important;
+  opacity: 0.7;
+}
+
 /* Force dialog visibility for quick action modals */
 [data-radix-dialog-content] {
   position: fixed !important;

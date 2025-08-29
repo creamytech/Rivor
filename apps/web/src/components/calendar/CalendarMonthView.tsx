@@ -173,7 +173,7 @@ export default function CalendarMonthView({
                 transition={prefersReducedMotion ? {} : { delay: index * 0.01 }}
                 className={cn(
                   'min-h-[120px] p-2 border border-slate-200 dark:border-slate-700 rounded-lg',
-                  'hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors',
+                  'hover:bg-gray-100 dark:hover:bg-slate-800/50 cursor-pointer transition-colors',
                   !isCurrentMonthDay && 'bg-slate-50/50 dark:bg-slate-800/20',
                   isTodayDate && 'ring-2 ring-teal-400 bg-teal-50 dark:bg-teal-950/30'
                 )}

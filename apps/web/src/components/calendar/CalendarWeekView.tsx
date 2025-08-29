@@ -225,7 +225,7 @@ export default function CalendarWeekView({
                     key={hour}
                     className={cn(
                       'h-16 border-b border-slate-100 dark:border-slate-800 p-1 relative',
-                      'hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors'
+                      'hover:bg-gray-100 dark:hover:bg-slate-800/50 cursor-pointer transition-colors'
                     )}
                     onClick={() => onEventCreate?.(day, hour)}
                   >
