@@ -835,6 +835,47 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
         onOpenChange={setShowComposeModal}
       />
 
+      {/* Test simple modal instead of Radix Dialog */}
+      {showCreateContactModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          zIndex: 10000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div style={{
+            background: 'rgba(255, 0, 0, 0.98)',
+            border: '3px solid rgba(255, 255, 255, 0.8)',
+            borderRadius: '12px',
+            padding: '24px',
+            maxWidth: '400px',
+            width: '90%'
+          }}>
+            <h2 style={{ color: 'white', marginBottom: '16px' }}>Create Contact Modal Test</h2>
+            <p style={{ color: 'white', marginBottom: '16px' }}>This is a test modal to verify rendering works.</p>
+            <button 
+              onClick={() => setShowCreateContactModal(false)}
+              style={{
+                background: 'white',
+                color: 'black',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '6px',
+                cursor: 'pointer'
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       <Dialog open={showCreateContactModal} onOpenChange={setShowCreateContactModal}>
         <DialogContent 
           className="max-w-md glass-modal rounded-xl overflow-hidden"
@@ -842,7 +883,8 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
           style={{ 
             background: 'rgba(255, 0, 0, 0.98)',
             border: '3px solid rgba(255, 255, 255, 0.8)',
-            backdropFilter: 'blur(32px) saturate(1.4) brightness(0.85)'
+            backdropFilter: 'blur(32px) saturate(1.4) brightness(0.85)',
+            display: 'none'
           }}
         >
           <DialogHeader className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--glass-border)' }}>
