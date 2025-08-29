@@ -36,7 +36,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { signOut, useSession } from "next-auth/react";
-import GlassCursor from "@/components/ui/GlassCursor";
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -1426,7 +1425,6 @@ export default function AppShell({ children, rightDrawer }: AppShellProps) {
       <Toaster />
       
       {/* Custom Glass Cursor */}
-      <GlassCursor />
     </div>
   );
 }

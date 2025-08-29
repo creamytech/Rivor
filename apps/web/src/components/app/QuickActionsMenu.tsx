@@ -371,29 +371,29 @@ export default function QuickActionsMenu({ isOpen, onClose }: QuickActionsMenuPr
     {/* Modal Components */}
     {showCreateLeadModal && (
       <CreateLeadModal 
-        isOpen={showCreateLeadModal}
-        onClose={() => setShowCreateLeadModal(false)}
+        open={showCreateLeadModal}
+        onOpenChange={setShowCreateLeadModal}
       />
     )}
     
     {showComposeModal && (
       <ComposeEmailModal 
-        isOpen={showComposeModal}
-        onClose={() => setShowComposeModal(false)}
+        open={showComposeModal}
+        onOpenChange={setShowComposeModal}
       />
     )}
     
     {showCreateEventModal && (
       <CreateEventModal 
-        isOpen={showCreateEventModal}
-        onClose={() => setShowCreateEventModal(false)}
+        open={showCreateEventModal}
+        onOpenChange={setShowCreateEventModal}
       />
     )}
     
     {showCreateTaskModal && (
       <CreateTaskModal 
-        isOpen={showCreateTaskModal}
-        onClose={() => setShowCreateTaskModal(false)}
+        open={showCreateTaskModal}
+        onOpenChange={setShowCreateTaskModal}
       />
     )}
     </>
