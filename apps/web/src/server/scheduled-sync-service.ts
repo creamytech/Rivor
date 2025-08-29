@@ -10,12 +10,13 @@ interface SyncScheduleConfig {
 }
 
 export class ScheduledSyncService {
-  private intervals: Map<string, NodeJS.Timeout> = new Map();
+  private emailIntervals: Map<string, NodeJS.Timeout> = new Map();
+  private calendarIntervals: Map<string, NodeJS.Timeout> = new Map();
   private activeSyncs: Set<string> = new Set();
   
   private defaultConfig: SyncScheduleConfig = {
-    emailSyncIntervalMinutes: 10, // 10 minutes for email
-    calendarSyncIntervalMinutes: 15, // 15 minutes for calendar
+    emailSyncIntervalMinutes: 120, // 2 hours for email (as requested - every few hours)
+    calendarSyncIntervalMinutes: 240, // 4 hours for calendar
     enabled: true,
     maxConcurrentSyncs: 3
   };
@@ -69,22 +70,28 @@ export class ScheduledSyncService {
         return;
       }
 
-      // Set up the interval for this organization
-      const interval = setInterval(async () => {
-        await this.executeSyncForOrg(orgId);
+      // Set up separate intervals for email and calendar
+      const emailInterval = setInterval(async () => {
+        await this.executeSyncForOrg(orgId, 'email');
       }, config.emailSyncIntervalMinutes * 60 * 1000);
 
-      this.intervals.set(orgId, interval);
+      const calendarInterval = setInterval(async () => {
+        await this.executeSyncForOrg(orgId, 'calendar');
+      }, config.calendarSyncIntervalMinutes * 60 * 1000);
+
+      this.emailIntervals.set(orgId, emailInterval);
+      this.calendarIntervals.set(orgId, calendarInterval);
 
       logger.info('Scheduled sync started for organization', {
         orgId,
-        intervalMinutes: config.emailSyncIntervalMinutes,
+        emailIntervalHours: config.emailSyncIntervalMinutes / 60,
+        calendarIntervalHours: config.calendarSyncIntervalMinutes / 60,
         action: 'org_sync_started'
       });
 
       // Execute initial sync after a short delay
       setTimeout(() => {
-        this.executeSyncForOrg(orgId);
+        this.executeSyncForOrg(orgId, 'both');
       }, 30000); // 30 seconds delay
 
     } catch (error) {
@@ -99,10 +106,20 @@ export class ScheduledSyncService {
    * Stop scheduled sync for a specific organization
    */
   async stopOrgSync(orgId: string): Promise<void> {
-    const interval = this.intervals.get(orgId);
-    if (interval) {
-      clearInterval(interval);
-      this.intervals.delete(orgId);
+    const emailInterval = this.emailIntervals.get(orgId);
+    const calendarInterval = this.calendarIntervals.get(orgId);
+    
+    if (emailInterval) {
+      clearInterval(emailInterval);
+      this.emailIntervals.delete(orgId);
+    }
+    
+    if (calendarInterval) {
+      clearInterval(calendarInterval);
+      this.calendarIntervals.delete(orgId);
+    }
+    
+    if (emailInterval || calendarInterval) {
       logger.info('Scheduled sync stopped for organization', { orgId });
     }
   }
@@ -111,11 +128,18 @@ export class ScheduledSyncService {
    * Stop all scheduled syncs
    */
   async stopAllSyncs(): Promise<void> {
-    for (const [orgId, interval] of this.intervals) {
+    for (const [orgId, interval] of this.emailIntervals) {
       clearInterval(interval);
-      logger.info('Stopping scheduled sync for organization', { orgId });
+      logger.info('Stopping email sync for organization', { orgId });
     }
-    this.intervals.clear();
+    
+    for (const [orgId, interval] of this.calendarIntervals) {
+      clearInterval(interval);
+      logger.info('Stopping calendar sync for organization', { orgId });
+    }
+    
+    this.emailIntervals.clear();
+    this.calendarIntervals.clear();
     this.activeSyncs.clear();
     logger.info('All scheduled syncs stopped');
   }
@@ -123,13 +147,14 @@ export class ScheduledSyncService {
   /**
    * Execute sync for a specific organization
    */
-  private async executeSyncForOrg(orgId: string): Promise<void> {
-    const syncKey = `sync-${orgId}`;
+  private async executeSyncForOrg(orgId: string, syncType: 'email' | 'calendar' | 'both' = 'both'): Promise<void> {
+    const syncKey = `sync-${orgId}-${syncType}`;
     
-    // Prevent concurrent syncs for the same org
+    // Prevent concurrent syncs for the same org and type
     if (this.activeSyncs.has(syncKey)) {
       logger.info('Sync already in progress for organization', { 
         orgId,
+        syncType,
         action: 'sync_skip_concurrent'
       });
       return;
@@ -152,6 +177,7 @@ export class ScheduledSyncService {
     try {
       logger.info('Starting scheduled sync for organization', {
         orgId,
+        syncType,
         action: 'scheduled_sync_start'
       });
 
@@ -202,7 +228,7 @@ export class ScheduledSyncService {
         });
 
         // Trigger inbox refresh for connected clients
-        await this.triggerInboxRefresh(orgId, syncResult.result);
+        await this.triggerInboxRefresh(orgId, syncResult.result as any);
 
       } else {
         const error = await syncResponse.text();
@@ -279,29 +305,53 @@ export class ScheduledSyncService {
    */
   async getSyncStatus(orgId: string): Promise<{
     scheduled: boolean;
+    emailScheduled: boolean;
+    calendarScheduled: boolean;
     lastSync?: Date;
-    nextSync?: Date;
+    nextEmailSync?: Date;
+    nextCalendarSync?: Date;
     activeSyncs: number;
   }> {
-    const isScheduled = this.intervals.has(orgId);
+    const emailScheduled = this.emailIntervals.has(orgId);
+    const calendarScheduled = this.calendarIntervals.has(orgId);
     const config = await this.getSyncConfig(orgId);
     
-    // Get last sync from email accounts
-    const lastSyncAccount = await prisma.emailAccount.findFirst({
-      where: { orgId },
-      orderBy: { updatedAt: 'desc' },
-      select: { updatedAt: true }
-    });
+    // Get last sync from both email and calendar accounts
+    const [lastEmailSync, lastCalendarSync] = await Promise.all([
+      prisma.emailAccount.findFirst({
+        where: { orgId },
+        orderBy: { updatedAt: 'desc' },
+        select: { updatedAt: true }
+      }),
+      prisma.calendarAccount.findFirst({
+        where: { orgId },
+        orderBy: { updatedAt: 'desc' },
+        select: { updatedAt: true }
+      })
+    ]);
 
-    let nextSync: Date | undefined;
-    if (isScheduled && lastSyncAccount?.updatedAt) {
-      nextSync = new Date(lastSyncAccount.updatedAt.getTime() + (config.emailSyncIntervalMinutes * 60 * 1000));
+    let nextEmailSync: Date | undefined;
+    let nextCalendarSync: Date | undefined;
+    
+    if (emailScheduled && lastEmailSync?.updatedAt) {
+      nextEmailSync = new Date(lastEmailSync.updatedAt.getTime() + (config.emailSyncIntervalMinutes * 60 * 1000));
+    }
+    
+    if (calendarScheduled && lastCalendarSync?.updatedAt) {
+      nextCalendarSync = new Date(lastCalendarSync.updatedAt.getTime() + (config.calendarSyncIntervalMinutes * 60 * 1000));
     }
 
+    // Get the most recent sync time between email and calendar
+    const lastSyncTimes = [lastEmailSync?.updatedAt, lastCalendarSync?.updatedAt].filter(Boolean);
+    const lastSync = lastSyncTimes.length > 0 ? new Date(Math.max(...lastSyncTimes.map(d => d!.getTime()))) : undefined;
+
     return {
-      scheduled: isScheduled,
-      lastSync: lastSyncAccount?.updatedAt || undefined,
-      nextSync,
+      scheduled: emailScheduled || calendarScheduled,
+      emailScheduled,
+      calendarScheduled,
+      lastSync,
+      nextEmailSync,
+      nextCalendarSync,
       activeSyncs: this.activeSyncs.size
     };
   }
@@ -324,14 +374,5 @@ export class ScheduledSyncService {
 // Global instance
 export const scheduledSyncService = new ScheduledSyncService();
 
-// Auto-start on module load in production
-if (process.env.NODE_ENV === 'production') {
-  // Start the service after a short delay to allow the app to fully initialize
-  setTimeout(() => {
-    scheduledSyncService.startScheduledSync().catch(error => {
-      logger.error('Failed to auto-start scheduled sync service', {
-        error: error instanceof Error ? error.message : String(error)
-      });
-    });
-  }, 10000); // 10 second delay
-}
+// Note: Service is now started through the worker system in startWorkers.ts
+// This ensures proper coordination with other background services

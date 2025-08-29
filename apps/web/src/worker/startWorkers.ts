@@ -1,6 +1,7 @@
 import { startEmailBackfillWorker } from './emailBackfillWorker';
 import { startCalendarSyncWorker } from './calendarSyncWorker';
 import { startEmailSyncWorker } from './emailSyncWorker';
+import { scheduledSyncService } from '@/server/scheduled-sync-service';
 import { logger } from '@/lib/logger';
 
 export function startAllWorkers() {
@@ -12,15 +13,24 @@ export function startAllWorkers() {
     // Start calendar workers
     const calendarSyncWorker = startCalendarSyncWorker();
     
+    // Start scheduled sync service for automatic background syncing
+    scheduledSyncService.startScheduledSync().catch(error => {
+      logger.error('Failed to start scheduled sync service', {
+        error: error instanceof Error ? error.message : String(error),
+        action: 'scheduled_sync_start_failed'
+      });
+    });
+    
     logger.info('All workers started successfully', {
-      workers: ['emailBackfill', 'emailSync', 'calendarSync'],
+      workers: ['emailBackfill', 'emailSync', 'calendarSync', 'scheduledSync'],
       action: 'workers_started'
     });
     
     return {
       emailBackfillWorker,
       emailSyncWorker,
-      calendarSyncWorker
+      calendarSyncWorker,
+      scheduledSyncService
     };
   } catch (error) {
     logger.error('Failed to start workers', {
