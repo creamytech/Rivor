@@ -251,6 +251,7 @@ export async function POST(req: NextRequest) {
                   aiCategory: workflowResult.aiAnalysis?.category,
                   priorityScore: workflowResult.aiAnalysis?.priorityScore
                 });
+              }
             } catch (threadError) {
               logger.error('Thread AI workflow failed', {
                 correlationId,
